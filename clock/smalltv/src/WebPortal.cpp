@@ -603,7 +603,14 @@ static void handleUpdateUpload() {
 #if defined(SMALLTV_ESP8266)
     WiFiUDP::stopAll();   // free UDP sockets so the OTA has max contiguous flash/heap
 #endif
+#if defined(SMALLTV_CLAWD)
+    // The whole free slot: Updater::begin already refuses an image that would
+    // overlap the running one. The usual extra 4 KB slack made a ~520 KB image
+    // unable to replace itself in the 4m3m 1 MB sketch area.
+    uint32_t maxSpace = ESP.getFreeSketchSpace() & 0xFFFFF000;
+#else
     uint32_t maxSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+#endif
     if (!Update.begin(maxSpace)) Update.printError(Serial);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (Update.write(up.buf, up.currentSize) != up.currentSize) Update.printError(Serial);
