@@ -143,8 +143,8 @@ def test_hook_forwards_payload_to_daemon():
 # ---- CLI ---------------------------------------------------------------------------
 def test_cli_builds_requests():
     cli = load_cli()
-    assert cli.build(["say", "uong", "nuoc", "--secs", "5"]) == \
-        ("POST", "/poke", {"cmd": "say", "text": "uong nuoc", "secs": 5.0})
+    assert cli.build(["say", "drink", "water", "--secs", "5"]) == \
+        ("POST", "/poke", {"cmd": "say", "text": "drink water", "secs": 5.0})
     assert cli.build(["play", "double", "jump"]) == ("POST", "/poke", {"cmd": "play", "anim": "double jump"})
     assert cli.build(["focus", "25"]) == ("POST", "/poke", {"cmd": "focus", "mins": "25"})
     assert cli.build(["wave"]) == ("POST", "/poke", {"cmd": "wave"})
@@ -159,12 +159,12 @@ def test_cli_end_to_end(monkeypatch, capsys):
     assert cli.main(["wave"]) == 1                      # no daemon
     with LiveServer() as srv:
         monkeypatch.setenv("CLAWD_EVENT_PORT", str(srv.server.port))
-        assert cli.main(["say", "uống nước"]) == 0
+        assert cli.main(["say", "drink water"]) == 0
         d = srv.brain.desired(time.time())
-        assert (d["a"], d["txt"]) == ("idle", "uong nuoc")
+        assert (d["a"], d["txt"]) == ("idle", "drink water")
         assert cli.main(["focus", "abc"]) == 2
         assert cli.main(["focus", "25"]) == 0
         capsys.readouterr()
         assert cli.main(["status"]) == 0
         out = capsys.readouterr().out
-        assert "clock: idle - uong nuoc" in out and "focus: 2" in out
+        assert "clock: idle - drink water" in out and "focus: 2" in out

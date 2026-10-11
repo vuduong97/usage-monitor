@@ -165,7 +165,7 @@ class Tracker:
 
         attn = [s for s in main if s.state == "attention"]
         if attn:
-            return View("notification", latest(attn).msg or "Can ban xem", "agent")
+            return View("notification", latest(attn).msg or "Needs you", "agent")
         errs = [s for s in main if s.error_until > now]
         if errs:
             t = latest(errs).error_tool
@@ -189,7 +189,7 @@ class Tracker:
         if active:
             return View("thinking", "", "agent")
         if any(s.done_until > now for s in main):
-            return View("happy", "Xong!", "agent")
+            return View("happy", "Done!", "agent")
         return None
 
     def snapshot(self, now: float) -> list[dict]:
@@ -362,15 +362,15 @@ class Pet:
                 if 5 * 60 <= minute < 11 * 60 and self.greeted != today:
                     self.greeted = today
                     self._save()
-                    self.push("happy", "Chao buoi sang!", 3)
+                    self.push("happy", "Good morning!", 3)
                 else:
-                    self.push("happy", "Chao mung tro lai!", 3)
+                    self.push("happy", "Welcome back!", 3)
         if self.away:
             return
         if (_in_window(self._minute(now), c.yawn_from, c.quiet_start)
                 and now - self.last_yawn >= c.yawn_every and not self.moments):
             self.last_yawn = now
-            self.push("yawn", "Buon ngu qua...", 4)
+            self.push("yawn", "So sleepy...", 4)
         if isinstance(usage, dict) and usage.get("ok", True) is not False \
                 and isinstance(usage.get("s"), (int, float)) and usage.get("acct") != "ent":
             pct = float(usage["s"])
@@ -380,10 +380,10 @@ class Pet:
                 (prev >= 20 and pct <= prev - 30)
                 or (sr is not None and prev_sr is not None and sr > prev_sr + 120 and pct < prev))
             if reset:
-                self.push("double jump", "Quota moi!", 5)
+                self.push("double jump", "Fresh quota!", 5)
             elif pct >= c.low_pct and now - self.last_low >= c.low_every and not self.moments:
                 self.last_low = now
-                self.push("low battery", f"Phien {int(pct)}%", 6)
+                self.push("low battery", f"Session {int(pct)}%", 6)
             self.last_pct, self.last_reset_min = pct, sr
 
     def on_turn(self, now: float) -> None:
@@ -393,7 +393,7 @@ class Pet:
         self.turns += 1
         self._save()
         if self.cfg.milestone and self.turns % self.cfg.milestone == 0:
-            self.push("heart eyes", f"{self.turns} luot hom nay!", 4)
+            self.push("heart eyes", f"{self.turns} turns today!", 4)
 
     # -- outputs --
     def moment(self, now: float) -> View | None:
@@ -469,7 +469,7 @@ class Pokes:
     def moment(self, now: float) -> View | None:
         if self.focus_until and now >= self.focus_until:
             self.focus_until = 0.0
-            self.moments = [Moment("happy", "Xong focus!", 6, now)]
+            self.moments = [Moment("happy", "Focus done!", 6, now)]
         return _play(self.moments, now, "poke")
 
     def focus_left(self, now: float) -> int:

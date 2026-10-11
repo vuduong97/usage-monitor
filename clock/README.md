@@ -70,7 +70,7 @@ Config (`~/.config/claude-usage-monitor/config`, all optional): `events = off`,
 
 ```sh
 clawd status                 # what the clock shows + live sessions
-clawd wave | clawd say "uống nước" | clawd play "double jump"
+clawd wave | clawd say "drink water" | clawd play "double jump"
 clawd focus 25 | clawd focus stop
 clawd anims
 ```

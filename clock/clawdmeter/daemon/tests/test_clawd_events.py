@@ -135,8 +135,8 @@ def test_pi_event_validation():
     assert (e["sid"], e["msg"], e["sub"]) == ("pi:x", "Pick one", False)
 
 
-def test_ascii_text_folds_vietnamese():
-    assert ev.ascii_text("uống nước đi bạn") == "uong nuoc di ban"
+def test_ascii_text_folds_accents():
+    assert ev.ascii_text("Café naïve Đà Lạt") == "Cafe naive Da Lat"
     assert ev.ascii_text("a" * 200, 10) == "aaaaaaa..."
 
 
@@ -153,12 +153,12 @@ def test_pet_falls_asleep_and_wakes_with_greeting(tmp_path):
     assert p.continuous(T0 + 100) is None
     assert p.moment(T0 + 100).anim == "wake"
     v = p.moment(T0 + 102.5)
-    assert (v.anim, v.text) == ("happy", "Chao buoi sang!")
+    assert (v.anim, v.text) == ("happy", "Good morning!")
     # second return the same morning: no second "good morning"
     p.observe(T0 + 200, 400, None)
     p.observe(T0 + 300, 1, None)
     p.moment(T0 + 300)
-    assert p.moment(T0 + 302.5).text == "Chao mung tro lai!"
+    assert p.moment(T0 + 302.5).text == "Welcome back!"
     assert json.loads((tmp_path / "pet.json").read_text())["greeted"] == "2026-10-11"
 
 
@@ -173,7 +173,7 @@ def test_pet_usage_low_and_reset():
     p = ev.Pet(localtime=local(14, 0))
     p.observe(T0, 1, {"s": 85, "sr": 30, "ok": True})
     v = p.moment(T0)
-    assert (v.anim, v.text) == ("low battery", "Phien 85%")
+    assert (v.anim, v.text) == ("low battery", "Session 85%")
     p.moments.clear()
     p.observe(T0 + 60, 1, {"s": 86, "sr": 29, "ok": True})
     assert p.moment(T0 + 60) is None                 # not again within low_every
@@ -191,7 +191,7 @@ def test_pet_milestone_every_n_turns_and_new_day(tmp_path):
     assert p.moment(T0) is None
     p.on_turn(T0)
     v = p.moment(T0)
-    assert (v.anim, v.text) == ("heart eyes", "10 luot hom nay!")
+    assert (v.anim, v.text) == ("heart eyes", "10 turns today!")
     assert ev.Pet(store=tmp_path / "pet.json", localtime=local(15, 0)).turns == 10
     q = ev.Pet(store=tmp_path / "pet.json",
                localtime=lambda _t: time.struct_time((2026, 10, 12, 9, 0, 0, 0, 285, 0)))
@@ -216,9 +216,9 @@ def brain_at(hour=14):
 def test_poke_say_beats_agent_then_agent_returns():
     b = brain_at()
     b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0)
-    assert b.pokes.handle({"cmd": "say", "text": "uống nước"}, T0) == {"ok": True}
+    assert b.pokes.handle({"cmd": "say", "text": "drink water"}, T0) == {"ok": True}
     d = b.desired(T0)
-    assert (d["a"], d["txt"]) == ("idle", "uong nuoc")
+    assert (d["a"], d["txt"]) == ("idle", "drink water")
     assert b.desired(T0 + 11)["a"] == "typing"
 
 
@@ -249,7 +249,7 @@ def test_focus_countdown_reading_then_done():
     assert (d["a"], d["cd"]) == ("notification", 0) and d["txt"].startswith("Allow")
     b.tracker.ingest(claude("Stop"), T0 + 7)
     d = b.desired(T0 + 1500)
-    assert (d["a"], d["txt"]) == ("happy", "Xong focus!")
+    assert (d["a"], d["txt"]) == ("happy", "Focus done!")
     assert b.pokes.focus_until == 0
     b.pokes.handle({"cmd": "focus", "mins": 5}, T0)
     b.pokes.handle({"cmd": "focus", "mins": "stop"}, T0)
