@@ -61,7 +61,7 @@ POKE_SECS = 2.5           # reactions.clickLeft / clickRight
 ANNOYED_SECS = 3.5        # reactions.annoyed
 
 # Agent variants (clawd-home's own triggers).
-ULTRATHINK_AFTER = 30     # thinking this long without a tool call
+ULTRATHINK_AFTER = 30     # this long with no tool running (from the prompt or the last tool)
 EDIT_STREAK = 10          # this many edit tools in a row: "typing boss"
 WIZARD_AFTER = 1800       # a turn running this long: "wizard"
 DIZZY_ERRORS, DIZZY_WINDOW = 3, 120   # this many errors within the window: "dizzy"
@@ -80,6 +80,41 @@ TEST_CMD = re.compile(
 
 def is_test_command(cmd) -> bool:
     return isinstance(cmd, str) and bool(TEST_CMD.search(cmd))
+
+
+# A turn the user asked to debug: a debug/fix command or skill, or the word itself.
+# "loi" alone is not enough: without accents "lỗi" (error) is "lời" (reply).
+DEBUG_SKILLS = re.compile(r"^(?:ak[:-])?(?:debug|fix)$", re.I)
+DEBUG_WORDS = re.compile(r"(?<!\w)(?:/(?:ak:|skill:ak-)(?:debug|fix)|debug\w*|fix|bugs?|lỗi)(?!\w)", re.I)
+SKILL_BLOCK = re.compile(r"<skill\b[^>]*>[\s\S]*?(?:</skill>|$)")
+SKILL_NAME = re.compile(r"<skill\s+name=\"([^\"]+)\"")
+DEBUG_SKILL_FILE = re.compile(r"(?:^|[/\\])ak-(?:debug|fix)[/\\]SKILL\.md$", re.I)
+
+
+def is_debug_prompt(text) -> bool:
+    """A prompt that asks for debugging. Skill bodies a harness expanded into the
+    prompt (pi's <skill name=...>...</skill>) only count by their name: their
+    text mentions fixes and bugs whatever the task is."""
+    if not isinstance(text, str):
+        return False
+    text = unicodedata.normalize("NFC", text)
+    if any(DEBUG_SKILLS.match(n) for n in SKILL_NAME.findall(text)):
+        return True
+    return bool(DEBUG_WORDS.search(SKILL_BLOCK.sub(" ", text)))
+
+
+def is_debug_skill_load(tool, inp) -> bool:
+    """A tool call that loads the debug/fix skill: Claude Code's Skill tool, or
+    reading that skill's SKILL.md (how pi and Claude both load a skill file)."""
+    if not isinstance(inp, dict):
+        return False
+    name = str(tool or "").lower()
+    if name == "skill":
+        return bool(DEBUG_SKILLS.match(str(inp.get("skill") or inp.get("command") or "").strip("/ ")))
+    if tool_action(name) == "read":
+        path = inp.get("file_path") or inp.get("path")
+        return isinstance(path, str) and bool(DEBUG_SKILL_FILE.search(path))
+    return False
 
 
 def log(msg: str) -> None:
@@ -106,6 +141,9 @@ ACTION_TEXT = {                      # action: (while running, when it failed)
     "plan": ("Planning", "Plan failed"),
     "": ("Working", "Tool failed"),
 }
+READING_ACTIONS = ("read", "search")   # the last tool read or searched: "reading"
+# Per-session animations that still show (with a session count) when 2+ sessions run.
+SESSION_SHOWS_THROUGH = {"ultrathink", "debugger", "reading"}
 TOOL_ACTIONS = {
     **dict.fromkeys(("bash", "bashoutput", "bg_run"), "run"),
     **dict.fromkeys(("read", "notebookread", "ls", "read_symbol", "read_enclosing"), "read"),
@@ -163,6 +201,8 @@ class Sess:
     done_until: float = 0.0
     since: float = 0.0         # when state last changed
     turn_start: float = 0.0    # first prompt/tool of the running turn
+    running: int = 0           # tools started and not finished yet
+    quiet_since: float = 0.0   # no tool running since then (ultrathink)
     testing: bool = False      # the running tool is a test command
     debugging: bool = False    # a tool failed in this turn or the one before
     debug_next: bool = False   # ... so the next turn debugs too
@@ -202,7 +242,7 @@ class Tracker:
         s = self.sessions.get(sid)
         if s is None:
             s = self.sessions[sid] = Sess(sid=sid, src=str(ev.get("src") or ""),
-                                          sub=bool(ev.get("sub")), since=now)
+                                          sub=bool(ev.get("sub")), since=now, quiet_since=now)
         s.last = now
         before = s.state
         self._apply(s, kind, ev, now)
@@ -213,23 +253,32 @@ class Tracker:
     def _apply(self, s: Sess, kind: str, ev: dict, now: float) -> None:
         raw = ev.get("tool") or ""
         tool = ascii_text(raw, 24)
+        if kind in ("tool_done", "tool_error"):
+            s.running = max(s.running - 1, 0)
+            if not s.running:
+                s.quiet_since = now
         if kind == "prompt":
             s.state, s.msg = "thinking", ""
             s.turn_start, s.edits, s.testing = now, 0, False
-            s.debugging, s.debug_next = s.debug_next, False
+            s.running, s.quiet_since = 0, now
+            s.debugging, s.debug_next = s.debug_next or bool(ev.get("debug")), False
         elif kind == "tool":
             s.state, s.msg = "working", ""
             if not s.turn_start:
                 s.turn_start = now
+            s.running = min(s.running + 1, 16)
             if tool:
                 s.tool, s.action = tool, tool_action(raw)
                 s.edits = s.edits + 1 if s.action == "edit" else 0
             s.testing = is_test_command(ev.get("cmd"))
+            if ev.get("debug"):
+                s.debugging = True
         elif kind == "tool_done":
             s.state, s.msg, s.testing = "working", "", False
         elif kind == "attention_done":
             if s.state in ("attention", "waiting"):
                 s.state, s.msg = "thinking", ""
+                s.quiet_since = now
         elif kind == "attention_seen":         # the user went to that session: stop calling
             if s.state == "attention":
                 s.state, s.msg = "waiting", ""
@@ -249,7 +298,7 @@ class Tracker:
         elif kind == "compact":
             s.state = "sweeping"
         elif kind == "compact_done":
-            s.state = "thinking"
+            s.state, s.quiet_since = "thinking", now
         elif kind == "stop":
             s.state, s.subs, s.msg = "idle", 0, ""
             s.done_until = now + DONE_SHOW
@@ -264,6 +313,7 @@ class Tracker:
             self._error(now)
         if kind in ("stop", "abort", "stop_error"):
             s.turn_start, s.debugging, s.edits, s.testing = 0.0, False, 0, False
+            s.running = 0
 
     def expire(self, now: float) -> None:
         for sid, s in list(self.sessions.items()):
@@ -300,28 +350,36 @@ class Tracker:
         if subs == 1:
             return View("headphones", "1 subagent", "agent")
         active = [s for s in main if s.state in ("thinking", "working")]
-        if len(active) >= 3:
-            return View("building", f"{len(active)} sessions", "agent")
-        if len(active) == 2:
+        if len(active) >= 2:
+            # The most recent session's reading/debugger/ultrathink shows through,
+            # counted; anything plainer leaves the many-sessions animation.
+            v = self._session(latest(active), now)
+            if v.anim in SESSION_SHOWS_THROUGH:
+                return replace(v, text=f"{v.text} ({len(active)})")
+            if len(active) >= 3:
+                return View("building", f"{len(active)} sessions", "agent")
             return View("headphones", "2 sessions", "agent")
-        working = [s for s in active if s.state == "working"]
-        if working:
-            return self._working(latest(working), now)
         if active:
-            if now - latest(active).since >= ULTRATHINK_AFTER:
-                return View("ultrathink", "Thinking hard", "agent")
-            return View("thinking", "", "agent")
+            return self._session(active[0], now)
         if any(s.done_until > now for s in main):
             return View("happy", "Done!", "agent")
         return None
 
     @staticmethod
-    def _working(s: Sess, now: float) -> View:
+    def _session(s: Sess, now: float) -> View:
+        """One thinking/working session: ultrathink > debugger > reading >
+        typing boss > wizard > typing (thinking before its first tool)."""
+        if not s.running and now - s.quiet_since >= ULTRATHINK_AFTER:
+            return View("ultrathink", "Thinking hard", "agent")
+        if s.state == "thinking":
+            return View("thinking", "", "agent")
         text = ACTION_TEXT[s.action][0]
         if s.testing:
             return View("debugger", "Testing", "agent")
         if s.debugging:
-            return View("debugger", "Debugging", "agent")
+            return View("debugger", "Debugger", "agent")
+        if s.action in READING_ACTIONS:
+            return View("reading", text, "agent")
         if s.edits >= EDIT_STREAK:
             return View("typing boss", text, "agent")
         if s.turn_start and now - s.turn_start >= WIZARD_AFTER:
@@ -330,7 +388,8 @@ class Tracker:
 
     def snapshot(self, now: float) -> list[dict]:
         return [{"sid": s.sid, "src": s.src, "sub": s.sub, "state": s.state,
-                 "tool": s.tool, "subs": s.subs, "age": round(now - s.last)}
+                 "tool": s.tool, "subs": s.subs, "running": s.running,
+                 "debug": s.debugging, "age": round(now - s.last)}
                 for s in self.sessions.values()]
 
 
@@ -364,10 +423,14 @@ def claude_event(p) -> dict | None:
         return None
     raw_tool = p.get("tool_name")
     tool = raw_tool if isinstance(raw_tool, str) else ""
-    ev = {"src": "claude", "sid": f"claude:{sid}", "tool": tool}
+    ev: dict[str, object] = {"src": "claude", "sid": f"claude:{sid}", "tool": tool}
     inp = p.get("tool_input")
     if isinstance(inp, dict) and isinstance(inp.get("command"), str):
         ev["cmd"] = inp["command"][:300]
+    if name == "UserPromptSubmit" and is_debug_prompt(p.get("prompt")):
+        ev["debug"] = True                  # only the verdict travels, never the prompt
+    if name == "PreToolUse" and is_debug_skill_load(tool, inp):
+        ev["debug"] = True
     if name in _CLAUDE_SIMPLE:
         return {**ev, "ev": _CLAUDE_SIMPLE[name]}
     if name == "PreToolUse":
@@ -397,7 +460,8 @@ def pi_event(p) -> dict | None:
         return None
     return {"src": "pi", "sid": f"pi:{str(p['sid'])[:160]}", "ev": p["ev"],
             "tool": str(p.get("tool") or ""), "msg": str(p.get("msg") or ""),
-            "cmd": str(p.get("cmd") or "")[:300], "sub": bool(p.get("sub"))}
+            "cmd": str(p.get("cmd") or "")[:300], "sub": bool(p.get("sub")),
+            "debug": isinstance(p.get("debug"), bool) and bool(p["debug"])}
 
 
 # =============================================================================

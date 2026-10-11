@@ -42,11 +42,17 @@ clawd CLI ─────────┘                          ├─ /api/us
   after the last agent event) > usage screens.
 - Agent priority: needs you (`notification`) > `dizzy` (3 errors in 2 min) > error >
   compacting (`sweeping`) > 2+ subagents (`juggling`) > 1 subagent or 2 sessions
-  (`headphones`) > 3+ sessions (`building`) > tool running > `thinking` (after 30 s
-  without a tool: `ultrathink`) > done (`happy`, 4 s).
-  A running tool shows `debugger` when it runs tests, or after an error (the rest of that
-  turn and the whole next one), `typing boss` after 10 edits in a row, `wizard` once a turn runs 30 min,
-  else `typing`.
+  (`headphones`) > 3+ sessions (`building`) > one session > done (`happy`, 4 s).
+- One session, highest first: `ultrathink` ("Thinking hard": no tool running for 30 s,
+  counted from the prompt or the last tool to finish) > `thinking` (before the first tool) >
+  `debugger` ("Testing" while a test command runs; "Debugger" for the rest of a turn after an
+  error and the whole next one, a turn whose prompt says `/ak:debug`, `/ak:fix`, debug, fix,
+  bug or `lỗi`, or once the agent loads the ak-debug/ak-fix skill) > `reading` (the last tool
+  read or searched: Reading/Searching) > `typing boss` (10 edits in a row) > `wizard`
+  (a turn running 30 min) > `typing`.
+  With 2+ sessions, the latest session's `ultrathink`/`debugger`/`reading` still shows,
+  with the count: `Reading (3)`. Prompt text never goes further than the hook: the daemon
+  (Claude) or the pi extension only keeps whether it asks for debugging.
 - Holds (clawd-on-desk's `minDisplay`): an agent animation stays at least 1 s
   (needs you / error / dizzy 5 s, compacting 5.5 s, done 4 s) unless a poke comes.
 - The clock names the action, never the raw tool: Running (bash), Reading, Editing,

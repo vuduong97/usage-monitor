@@ -447,7 +447,7 @@ def test_event_server_routes():
                                     "tool_name": "Grep", "tool_response": "x" * 100000})
             assert st == 200 and b.wake.is_set()
             st, body = await _request(s.port, "GET", "/state")
-            assert st == 200 and body["desired"]["a"] == "typing"
+            assert st == 200 and body["desired"]["a"] == "reading"
             assert body["sessions"][0]["sid"] == "claude:z"
             st, _ = await _request(s.port, "POST", "/hook/pi", {"ev": "prompt", "sid": "p"})
             assert st == 200 and "pi:p" in b.tracker.sessions
@@ -502,8 +502,125 @@ def test_long_thinking_becomes_ultrathink():
     assert t.view(T0 + ev.ULTRATHINK_AFTER - 1).anim == "thinking"
     v = t.view(T0 + ev.ULTRATHINK_AFTER)
     assert (v.anim, v.text) == ("ultrathink", "Thinking hard")
-    t.ingest(claude("PreToolUse", tool_name="Read"), T0 + 40)
+    t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 40)
     assert t.view(T0 + 40).anim == "typing"
+
+
+def test_ultrathink_between_tools_counts_from_the_last_tool_and_parallel_tools():
+    t = ev.Tracker()
+    t.ingest(claude("UserPromptSubmit"), T0)
+    t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 1)
+    assert t.view(T0 + 200).anim == "typing"                 # a long tool is not thinking
+    t.ingest(claude("PostToolUse", tool_name="Bash"), T0 + 200)
+    assert t.view(T0 + 200 + ev.ULTRATHINK_AFTER - 1).anim == "typing"
+    v = t.view(T0 + 200 + ev.ULTRATHINK_AFTER)
+    assert (v.anim, v.text) == ("ultrathink", "Thinking hard")
+    # pi runs tools in parallel: quiet only once every one of them finished
+    u = ev.Tracker()
+    pi = lambda e, at, **kw: u.ingest(ev.pi_event({"ev": e, "sid": "p", **kw}), at)
+    pi("prompt", T0)
+    pi("tool", T0 + 1, tool="bash")
+    pi("tool", T0 + 1, tool="bash")
+    pi("tool_done", T0 + 2, tool="bash")
+    assert u.view(T0 + 60).anim == "typing"
+    pi("tool_error", T0 + 61, tool="bash")
+    assert u.view(T0 + 61 + ev.ULTRATHINK_AFTER).anim == "ultrathink"
+    # a question answered, a compaction, a new prompt or the end reset the clock
+    pi("attention", T0 + 100, msg="Which?")
+    pi("attention_done", T0 + 200)
+    assert u.view(T0 + 210).anim == "thinking"
+    pi("stop", T0 + 220)
+    assert u.sessions["pi:p"].running == 0
+
+
+@pytest.mark.parametrize("tool", ["Read", "read", "ls", "read_symbol", "Grep", "find", "Glob"])
+def test_reading_and_searching_tools_read(tool):
+    t = ev.Tracker()
+    t.ingest(claude("UserPromptSubmit"), T0)
+    t.ingest(claude("PreToolUse", tool_name=tool), T0 + 1)
+    v = t.view(T0 + 1)
+    assert v.anim == "reading" and v.text in ("Reading", "Searching")
+    t.ingest(claude("PostToolUse", tool_name=tool), T0 + 1.1)
+    assert t.view(T0 + 5).anim == "reading"                  # stays until the next tool
+    t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 6)
+    assert t.view(T0 + 6).anim == "typing"
+
+
+@pytest.mark.parametrize("prompt,debug", [
+    ("/ak:debug the flash script", True), ("/ak:fix it", True), ("/skill:ak-debug x", True),
+    ("why does this debugging fail", True), ("Fix the build", True), ("a bug in flash.sh", True),
+    ("s\u1eeda l\u1ed7i flash.sh", True), ("su\u031b\u0309a lo\u0302\u0303i", True),  # NFD input too
+    ("tr\u1ea3 l\u1eddi b\u1eb1ng ti\u1ebfng Vi\u1ec7t", False), ("tra loi nhanh", False),
+    ("add a prefix and a suffix", False), ("debounce the input", False),
+    ('<skill name="ak-debug" location="x">\nbody\n</skill>\n\nwhy?', True),
+    ('<skill name="ak-cook" location="x">\nfix bugs, debug\n</skill>\n\n--auto', False),
+    (None, False)])
+def test_debug_prompts(prompt, debug):
+    assert ev.is_debug_prompt(prompt) is debug
+
+
+def test_debug_skill_loads():
+    assert ev.is_debug_skill_load("Skill", {"skill": "ak:debug"})
+    assert ev.is_debug_skill_load("Skill", {"command": "/ak:fix"})
+    assert not ev.is_debug_skill_load("Skill", {"skill": "ak:cook"})
+    assert ev.is_debug_skill_load("Read", {"file_path": "/u/.agents/skills/ak-debug/SKILL.md"})
+    assert ev.is_debug_skill_load("read", {"path": "skills/ak-fix/SKILL.md"})
+    assert not ev.is_debug_skill_load("read", {"path": "skills/ak-debug/references/x.md"})
+    assert not ev.is_debug_skill_load("Edit", {"file_path": "skills/ak-debug/SKILL.md"})
+    assert not ev.is_debug_skill_load("Read", None)
+
+
+def test_debug_turns_from_the_prompt_or_the_skill_show_the_debugger():
+    t = ev.Tracker()
+    t.ingest(claude("UserPromptSubmit", prompt="s\u1eeda l\u1ed7i flash.sh"), T0)
+    assert t.view(T0).anim == "thinking"
+    for k, tool in enumerate(("Bash", "Read", "Edit")):
+        t.ingest(claude("PreToolUse", tool_name=tool), T0 + 1 + k)
+        v = t.view(T0 + 1 + k)
+        assert (v.anim, v.text) == ("debugger", "Debugger")    # debugger beats reading
+        t.ingest(claude("PostToolUse", tool_name=tool), T0 + 1.5 + k)
+    t.ingest(claude("PreToolUse", tool_name="Bash", tool_input={"command": "pytest"}), T0 + 5)
+    assert t.view(T0 + 5).text == "Testing"
+    t.ingest(claude("PostToolUse", tool_name="Bash"), T0 + 6)
+    assert t.view(T0 + 6 + ev.ULTRATHINK_AFTER).anim == "ultrathink"  # beats the debugger
+    t.ingest(claude("Stop"), T0 + 50)
+    t.ingest(claude("UserPromptSubmit", prompt="tr\u1ea3 l\u1eddi ng\u1eafn"), T0 + 60)
+    t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 61)
+    assert t.view(T0 + 61).anim == "typing"                  # only that turn
+    t.ingest(claude("PreToolUse", tool_name="Skill", tool_input={"skill": "ak:debug"}), T0 + 62)
+    t.ingest(claude("PostToolUse", tool_name="Skill"), T0 + 62.5)
+    t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 63)
+    assert t.view(T0 + 63).anim == "debugger"                # loading the skill starts one
+    u = ev.Tracker()                                         # pi sends only the verdict
+    u.ingest(ev.pi_event({"ev": "prompt", "sid": "p", "debug": True}), T0)
+    u.ingest(ev.pi_event({"ev": "tool", "sid": "p", "tool": "edit"}), T0 + 1)
+    assert u.view(T0 + 1).anim == "debugger"
+    assert ev.pi_event({"ev": "prompt", "sid": "p", "debug": "yes"})["debug"] is False
+
+
+def test_many_sessions_let_the_latest_sessions_reading_debugger_ultrathink_through():
+    t = ev.Tracker()
+    for k, sid in enumerate("abc"):
+        t.ingest(claude("PreToolUse", sid=sid, tool_name="Edit"), T0 + k)
+        t.ingest(claude("PostToolUse", sid=sid, tool_name="Edit"), T0 + k + 0.5)
+    assert (t.view(T0 + 2.5).anim, t.view(T0 + 2.5).text) == ("building", "3 sessions")
+    t.ingest(claude("PreToolUse", sid="b", tool_name="Read"), T0 + 3)
+    v = t.view(T0 + 3)
+    assert (v.anim, v.text) == ("reading", "Reading (3)")
+    t.ingest(claude("PreToolUse", sid="a", tool_name="Bash",
+                    tool_input={"command": "npm test"}), T0 + 4)
+    assert t.view(T0 + 4).text == "Testing (3)"
+    t.ingest(claude("SessionEnd", sid="c"), T0 + 5)
+    t.ingest(claude("PostToolUse", sid="a", tool_name="Bash"), T0 + 5)
+    t.ingest(claude("PostToolUse", sid="b", tool_name="Read"), T0 + 6)
+    v = t.view(T0 + 6 + ev.ULTRATHINK_AFTER)
+    assert (v.anim, v.text) == ("ultrathink", "Thinking hard (2)")
+    t.ingest(claude("PreToolUse", sid="a", tool_name="Edit"), T0 + 40)
+    assert (t.view(T0 + 40).anim, t.view(T0 + 40).text) == ("headphones", "2 sessions")
+    t.ingest(claude("SubagentStart", sid="a"), T0 + 41)          # subagents still come first
+    t.ingest(claude("PreToolUse", sid="b", tool_name="Read"), T0 + 42)
+    assert t.view(T0 + 42).anim == "headphones"
+    assert t.view(T0 + 42).text == "1 subagent"
 
 
 @pytest.mark.parametrize("cmd,test", [
@@ -525,7 +642,7 @@ def test_running_tests_and_fixing_after_a_failure_show_the_debugger():
     assert t.view(T0 + 2).anim == "error"
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 10)
     v = t.view(T0 + 10)
-    assert (v.anim, v.text) == ("debugger", "Debugging")     # rest of the turn after an error
+    assert (v.anim, v.text) == ("debugger", "Debugger")      # rest of the turn after an error
     t.ingest(claude("Stop"), T0 + 11)
     t.ingest(claude("UserPromptSubmit"), T0 + 20)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 21)
@@ -563,11 +680,13 @@ def test_edit_streak_types_like_a_boss_and_long_turns_cast_wizard():
     t.ingest(claude("PreToolUse", tool_name="MultiEdit"), T0 + 9)
     v = t.view(T0 + 9)
     assert (v.anim, v.text) == ("typing boss", "Editing")
-    t.ingest(claude("PreToolUse", tool_name="Read"), T0 + 10)
+    t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 10)
     assert t.view(T0 + 10).anim == "typing"                  # the streak broke
-    t.ingest(claude("PreToolUse", tool_name="Grep"), T0 + ev.WIZARD_AFTER)
+    t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + ev.WIZARD_AFTER)
     v = t.view(T0 + ev.WIZARD_AFTER)
-    assert (v.anim, v.text) == ("wizard", "Searching")
+    assert (v.anim, v.text) == ("wizard", "Running")
+    t.ingest(claude("PreToolUse", tool_name="Grep"), T0 + ev.WIZARD_AFTER + 1)
+    assert t.view(T0 + ev.WIZARD_AFTER + 1).anim == "reading"   # reading beats wizard
 
 
 def test_min_display_holds_agent_animations_but_not_against_a_poke():
