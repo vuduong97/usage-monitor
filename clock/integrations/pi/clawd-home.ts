@@ -168,7 +168,8 @@ export default function clawdHome(
       asking = sessionId(ctx);
       return emit("attention", ctx, { tool, msg: firstQuestion(e?.input) || "pi has a question" });
     }
-    emit("tool", ctx, { tool });
+    const cmd = e?.input?.command;      // lets the daemon spot test runs ("debugger")
+    emit("tool", ctx, typeof cmd === "string" ? { tool, cmd: cmd.slice(0, 300) } : { tool });
     if (SUBAGENT_TOOLS.has(tool)) emit("subagent_start", ctx, { tool });
     return undefined;
   });

@@ -12,7 +12,13 @@ Sources, all on 127.0.0.1 (EventServer):
   GET  /state        what the clock should show now + live sessions (debug)
 
 Layers, highest first: poke moment > agent activity > focus timer > pet
-moment > pet away/sleep > nothing (the clock shows its usage screens).
+moment > pet away/sleep > idle rotation for a while after the last agent
+activity > nothing (the clock shows its usage screens).
+
+A view can be a sequence the clock plays through on its own (the sleep chain
+yawn -> doze -> collapse -> sleeping, or the idle rotation): each animation
+plays one full pass, the clock switches at pass ends, and only urgent views
+(needs you, errors, pokes, waking up) cut the current pass short.
 """
 from __future__ import annotations
 
@@ -24,7 +30,7 @@ import subprocess
 import time
 import unicodedata
 import urllib.parse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 
@@ -42,9 +48,38 @@ MAX_BODY = 4 * 1024 * 1024
 SESSION_TTL = 600         # a working/thinking session silent this long went away
 ATTENTION_TTL = 1800      # how long "needs you" stays up without an answer
 IDLE_FORGET = 3600        # drop idle sessions after this
-ERROR_SHOW = 4.0
-DONE_SHOW = 4.0
 TEXT_MAX = 90
+
+# Timings from clawd-on-desk's theme (themes/clawd/theme.json), in seconds.
+ERROR_SHOW = 5.0          # autoReturn.error
+DONE_SHOW = 4.0           # autoReturn.attention (the "Done!" happy)
+DIZZY_SHOW = 6.0          # autoReturn.dizzy
+MIN_DISPLAY = {"notification": 5.0, "error": 5.0, "dizzy": 5.0, "sweeping": 5.5, "happy": 4.0}
+MIN_DISPLAY_WORKING = 1.0  # minDisplay.working / .thinking: every other agent animation
+WAKE_SECS = 1.5           # wakeDuration
+POKE_SECS = 2.5           # reactions.clickLeft / clickRight
+ANNOYED_SECS = 3.5        # reactions.annoyed
+
+# Agent variants (clawd-home's own triggers).
+ULTRATHINK_AFTER = 30     # thinking this long without a tool call
+EDIT_STREAK = 10          # this many edit tools in a row: "typing boss"
+WIZARD_AFTER = 1800       # a turn running this long: "wizard"
+DIZZY_ERRORS, DIZZY_WINDOW = 3, 120   # this many errors within the window: "dizzy"
+ANNOYED_POKES, ANNOYED_WINDOW = 3, 5  # this many pokes within the window: "annoyed"
+
+SLEEP_CHAIN = ("yawn", "doze", "collapse", "sleeping")
+IDLE_ROTATION = ("idle", "look", "bubble", "reading")
+
+# A shell command that runs a test suite (Bash / bash tool input).
+TEST_CMD = re.compile(
+    r"(?:^|[\s;&|(])(?:pytest|py\.test|jest|vitest|mocha|tox|nox|rspec|phpunit|ctest"
+    r"|go\s+test|cargo\s+(?:test|nextest)|(?:npm|pnpm|yarn|bun)(?:\s+run)?\s+test(?::\S+)?"
+    r"|node\s+--test|deno\s+test|make\s+(?:test|check)|python3?\s+-m\s+(?:pytest|unittest)"
+    r"|pio\s+test|swift\s+test|dotnet\s+test|mvn\s+test|gradlew?\s+test)(?=$|[\s;&|)])")
+
+
+def is_test_command(cmd) -> bool:
+    return isinstance(cmd, str) and bool(TEST_CMD.search(cmd))
 
 
 def log(msg: str) -> None:
@@ -92,9 +127,20 @@ def tool_action(name) -> str:
 
 @dataclass(frozen=True)
 class View:
-    anim: str
+    anim: str                 # what it is called (for logs, `clawd status`, holds)
     text: str = ""
     layer: str = ""           # poke | agent | focus | pet
+    seq: tuple[str, ...] = ()  # the clock plays these in order (default: just anim)
+    rep: bool = False         # cycle seq instead of looping its last animation
+    urgent: bool = False      # replace what plays now instead of at its pass end
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return self.seq or (self.anim,)
+
+
+def min_display(anim: str) -> float:
+    return MIN_DISPLAY.get(anim, MIN_DISPLAY_WORKING)
 
 
 # =============================================================================
@@ -115,6 +161,12 @@ class Sess:
     error_until: float = 0.0
     error_text: str = ""
     done_until: float = 0.0
+    since: float = 0.0         # when state last changed
+    turn_start: float = 0.0    # first prompt/tool of the running turn
+    testing: bool = False      # the running tool is a test command
+    debugging: bool = False    # a tool failed in this turn or the one before
+    debug_next: bool = False   # ... so the next turn debugs too
+    edits: int = 0             # edit tools in a row
 
 
 EVENTS = {"start", "prompt", "tool", "tool_done", "tool_error", "subagent_start",
@@ -129,29 +181,52 @@ class Tracker:
     def __init__(self, on_turn: Callable[[float], None] | None = None) -> None:
         self.sessions: dict[str, Sess] = {}
         self.on_turn = on_turn
+        self.last_activity = 0.0       # last accepted event, for the pet's idle rotation
+        self.errors: list[float] = []  # recent failures (dizzy)
+        self.dizzy_until = 0.0
+
+    def _error(self, now: float) -> None:
+        self.errors = [t for t in self.errors if now - t < DIZZY_WINDOW] + [now]
+        if len(self.errors) >= DIZZY_ERRORS:
+            self.errors.clear()
+            self.dizzy_until = now + DIZZY_SHOW
 
     def ingest(self, ev: dict, now: float) -> bool:
         kind = str(ev.get("ev") or "")
         sid = str(ev.get("sid") or "")[:200]
         if kind not in EVENTS or not sid:
             return False
+        self.last_activity = now
         if kind == "end":
             return self.sessions.pop(sid, None) is not None
         s = self.sessions.get(sid)
         if s is None:
             s = self.sessions[sid] = Sess(sid=sid, src=str(ev.get("src") or ""),
-                                          sub=bool(ev.get("sub")))
+                                          sub=bool(ev.get("sub")), since=now)
         s.last = now
+        before = s.state
+        self._apply(s, kind, ev, now)
+        if s.state != before:
+            s.since = now
+        return True
+
+    def _apply(self, s: Sess, kind: str, ev: dict, now: float) -> None:
         raw = ev.get("tool") or ""
         tool = ascii_text(raw, 24)
         if kind == "prompt":
             s.state, s.msg = "thinking", ""
+            s.turn_start, s.edits, s.testing = now, 0, False
+            s.debugging, s.debug_next = s.debug_next, False
         elif kind == "tool":
             s.state, s.msg = "working", ""
+            if not s.turn_start:
+                s.turn_start = now
             if tool:
                 s.tool, s.action = tool, tool_action(raw)
+                s.edits = s.edits + 1 if s.action == "edit" else 0
+            s.testing = is_test_command(ev.get("cmd"))
         elif kind == "tool_done":
-            s.state, s.msg = "working", ""
+            s.state, s.msg, s.testing = "working", "", False
         elif kind == "attention_done":
             if s.state in ("attention", "waiting"):
                 s.state, s.msg = "thinking", ""
@@ -163,6 +238,8 @@ class Tracker:
                 s.state = "working"
             action = tool_action(raw) if tool else s.action
             s.error_until, s.error_text = now + ERROR_SHOW, ACTION_TEXT[action][1]
+            s.testing, s.debugging, s.debug_next = False, True, True
+            self._error(now)
         elif kind == "subagent_start":
             s.subs = min(s.subs + 1, 8)
         elif kind == "subagent_stop":
@@ -183,7 +260,10 @@ class Tracker:
         elif kind == "stop_error":
             s.state, s.subs, s.msg = "idle", 0, ""
             s.error_until, s.error_text = now + ERROR_SHOW, "Error"
-        return True
+            s.debug_next = True
+            self._error(now)
+        if kind in ("stop", "abort", "stop_error"):
+            s.turn_start, s.debugging, s.edits, s.testing = 0.0, False, 0, False
 
     def expire(self, now: float) -> None:
         for sid, s in list(self.sessions.items()):
@@ -205,10 +285,12 @@ class Tracker:
 
         attn = [s for s in main if s.state == "attention"]
         if attn:
-            return View("notification", latest(attn).msg or "Needs you", "agent")
+            return View("notification", latest(attn).msg or "Needs you", "agent", urgent=True)
+        if self.dizzy_until > now:
+            return View("dizzy", "Too many errors", "agent", urgent=True)
         errs = [s for s in main if s.error_until > now]
         if errs:
-            return View("error", latest(errs).error_text or "Error", "agent")
+            return View("error", latest(errs).error_text or "Error", "agent", urgent=True)
         if any(s.state == "sweeping" for s in main):
             return View("sweeping", "Compacting", "agent")
         subs = sum(s.subs for s in main) + sum(
@@ -224,12 +306,27 @@ class Tracker:
             return View("headphones", "2 sessions", "agent")
         working = [s for s in active if s.state == "working"]
         if working:
-            return View("typing", ACTION_TEXT[latest(working).action][0], "agent")
+            return self._working(latest(working), now)
         if active:
+            if now - latest(active).since >= ULTRATHINK_AFTER:
+                return View("ultrathink", "Thinking hard", "agent")
             return View("thinking", "", "agent")
         if any(s.done_until > now for s in main):
             return View("happy", "Done!", "agent")
         return None
+
+    @staticmethod
+    def _working(s: Sess, now: float) -> View:
+        text = ACTION_TEXT[s.action][0]
+        if s.testing:
+            return View("debugger", "Testing", "agent")
+        if s.debugging:
+            return View("debugger", "Debugging", "agent")
+        if s.edits >= EDIT_STREAK:
+            return View("typing boss", text, "agent")
+        if s.turn_start and now - s.turn_start >= WIZARD_AFTER:
+            return View("wizard", text, "agent")
+        return View("typing", text, "agent")
 
     def snapshot(self, now: float) -> list[dict]:
         return [{"sid": s.sid, "src": s.src, "sub": s.sub, "state": s.state,
@@ -268,6 +365,9 @@ def claude_event(p) -> dict | None:
     raw_tool = p.get("tool_name")
     tool = raw_tool if isinstance(raw_tool, str) else ""
     ev = {"src": "claude", "sid": f"claude:{sid}", "tool": tool}
+    inp = p.get("tool_input")
+    if isinstance(inp, dict) and isinstance(inp.get("command"), str):
+        ev["cmd"] = inp["command"][:300]
     if name in _CLAUDE_SIMPLE:
         return {**ev, "ev": _CLAUDE_SIMPLE[name]}
     if name == "PreToolUse":
@@ -297,7 +397,7 @@ def pi_event(p) -> dict | None:
         return None
     return {"src": "pi", "sid": f"pi:{str(p['sid'])[:160]}", "ev": p["ev"],
             "tool": str(p.get("tool") or ""), "msg": str(p.get("msg") or ""),
-            "sub": bool(p.get("sub"))}
+            "cmd": str(p.get("cmd") or "")[:300], "sub": bool(p.get("sub"))}
 
 
 # =============================================================================
@@ -309,6 +409,8 @@ class Moment:
     text: str
     secs: float
     start: float = 0.0
+    seq: tuple[str, ...] = ()
+    urgent: bool = False
 
 
 @dataclass
@@ -322,6 +424,7 @@ class PetConfig:
     yawn_from: int = 22 * 60
     yawn_every: int = 1800
     milestone: int = 10            # turns per day
+    idle_linger: int = 300         # idle rotation this long after the last agent activity
 
 
 def _in_window(minute: int, start: int, end: int) -> bool:
@@ -336,7 +439,7 @@ def _play(queue: list[Moment], now: float, layer: str) -> View | None:
         if not m.start:
             m.start = now
         if now - m.start < m.secs:
-            return View(m.anim, m.text, layer)
+            return View(m.anim, m.text, layer, seq=m.seq, urgent=m.urgent)
         queue.pop(0)
     return None
 
@@ -394,18 +497,18 @@ class Pet:
         if idle_s is not None:
             away = idle_s >= c.away_after
             if away and not self.away:
-                self.away = True
-                self.moments = [Moment("yawn", "", 4)]
+                self.away = True               # continuous(): the sleep chain
+                self.moments = []
             elif not away and self.away:
                 self.away = False
-                self.moments = [Moment("wake", "", 2)]
                 today, minute = self._today(now), self._minute(now)
                 if 5 * 60 <= minute < 11 * 60 and self.greeted != today:
                     self.greeted = today
                     self._save()
-                    self.push("happy", "Good morning!", 3)
+                    text = "Good morning!"
                 else:
-                    self.push("happy", "Welcome back!", 3)
+                    text = "Welcome back!"
+                self.moments = [Moment("wake", text, WAKE_SECS + 3, seq=("wake", "happy"), urgent=True)]
         if self.away:
             return
         if (_in_window(self._minute(now), c.yawn_from, c.quiet_start)
@@ -440,8 +543,12 @@ class Pet:
     def moment(self, now: float) -> View | None:
         return _play(self.moments, now, "pet")
 
-    def continuous(self, now: float) -> View | None:
-        return View("sleeping", "", "pet") if self.away else None
+    def continuous(self, now: float, last_activity: float = 0.0) -> View | None:
+        if self.away:
+            return View("sleeping", "", "pet", seq=SLEEP_CHAIN)
+        if last_activity and now - last_activity < self.cfg.idle_linger:
+            return View("idle", "", "pet", seq=IDLE_ROTATION, rep=True)
+        return None
 
     def dim(self, now: float) -> int:
         c = self.cfg
@@ -467,6 +574,8 @@ class Pokes:
     def __init__(self) -> None:
         self.moments: list[Moment] = []
         self.focus_until = 0.0
+        self.poked: list[float] = []
+        self.left = False
 
     def handle(self, cmd: dict, now: float) -> dict:
         op = cmd.get("cmd")
@@ -494,6 +603,15 @@ class Pokes:
                 if not 0 < m <= 600:
                     return {"ok": False, "error": "mins must be 1..600"}
                 self.focus_until = now + m * 60
+        elif op == "poke":                       # the desktop pet's clicks
+            self.poked = [t for t in self.poked if now - t < ANNOYED_WINDOW] + [now]
+            if len(self.poked) >= ANNOYED_POKES:
+                self.poked.clear()
+                self._one("annoyed", cmd.get("text") or "", ANNOYED_SECS, now)
+            else:
+                self.left = not self.left
+                self._one("react left" if self.left else "react right", cmd.get("text") or "",
+                          POKE_SECS, now)
         elif op == "clear":
             self.moments.clear()
         else:
@@ -505,12 +623,12 @@ class Pokes:
             s = max(1.0, min(float(secs), 300.0))
         except (TypeError, ValueError):
             s = 6.0
-        self.moments = [Moment(ascii_text(anim, 15), ascii_text(text), s, now)]
+        self.moments = [Moment(ascii_text(anim, 15), ascii_text(text), s, now, urgent=True)]
 
     def moment(self, now: float) -> View | None:
         if self.focus_until and now >= self.focus_until:
             self.focus_until = 0.0
-            self.moments = [Moment("happy", "Focus done!", 6, now)]
+            self.moments = [Moment("happy", "Focus done!", 6, now, urgent=True)]
         return _play(self.moments, now, "poke")
 
     def focus_left(self, now: float) -> int:
@@ -532,20 +650,37 @@ class Brain:
         self.pokes = Pokes()
         self.wake = asyncio.Event()
         self.usage: dict | None = None          # latest usage payload (Publisher)
+        self.shown: View | None = None          # last view handed out, for minDisplay
+        self.shown_since = 0.0
+
+    def _hold(self, v: View | None, now: float) -> View | None:
+        """clawd-on-desk's minDisplay: an agent animation stays up at least
+        min_display(anim) seconds before anything but a poke replaces it."""
+        sh = self.shown
+        if (sh is not None and sh.layer == "agent" and (v is None or v.layer != "poke")
+                and (v is None or v.names != sh.names)
+                and now - self.shown_since < min_display(sh.anim)):
+            return sh
+        if v is None or sh is None or v.names != sh.names or v.rep != sh.rep:
+            self.shown_since = now
+        self.shown = v
+        return v
 
     def desired(self, now: float) -> dict:
-        """{'a', 'txt', 'cd', 'dim', 'focus_until'} for this instant."""
+        """{'a', 'seq', 'rep', 'u', 'txt', 'cd', 'dim', 'focus_until'} for this instant."""
         v = self.pokes.moment(now) or self.tracker.view(now)
         focus = self.pokes.focus_left(now)
         cd = 0
         if focus and (v is None or (v.layer == "agent" and v.anim not in FOCUS_KEEPS_TEXT)):
-            v = View(v.anim if v else "reading", "Focus", v.layer if v else "focus")
+            v = replace(v, text="Focus") if v else View("reading", "Focus", "focus")
             cd = focus
         if v is None:
-            v = self.pet.moment(now) or self.pet.continuous(now)
+            v = self.pet.moment(now) or self.pet.continuous(now, self.tracker.last_activity)
+        v = self._hold(v, now)
         txt = v.text if v else ""
         txt = txt[:1].upper() + txt[1:]          # the clock text always starts with a capital
-        return {"a": v.anim if v else "", "txt": txt, "cd": cd,
+        return {"a": v.anim if v else "", "seq": list(v.names) if v else [],
+                "rep": bool(v and v.rep), "u": bool(v and v.urgent), "txt": txt, "cd": cd,
                 "dim": self.pet.dim(now), "focus_until": int(self.pokes.focus_until) if cd else 0}
 
 
@@ -556,7 +691,12 @@ def state_url(target: str) -> str:
 
 
 def wire(d: dict) -> dict:
-    out = {"a": d["a"], "ttl": STATE_TTL}
+    seq = d.get("seq") or []
+    out = {"a": seq if len(seq) > 1 else d["a"], "ttl": STATE_TTL}
+    if d.get("rep"):
+        out["rep"] = True
+    if d.get("u"):
+        out["u"] = True
     if d["txt"]:
         out["txt"] = d["txt"]
     if d["cd"]:
@@ -584,7 +724,8 @@ class StatePusher:
 
     @staticmethod
     def key(d: dict) -> tuple:
-        return (d["a"], d["txt"], d["dim"], d["focus_until"])
+        return (d["a"], tuple(d.get("seq") or ()), d.get("rep", False), d["txt"], d["dim"],
+                d["focus_until"])
 
     async def step(self) -> bool:
         now = self.clock()
@@ -752,4 +893,5 @@ def read_pet_config(read_value: Callable[[str], str | None]) -> PetConfig:
     c.quiet_dim = max(0, min(100, num("quiet_dim", c.quiet_dim)))
     c.away_after = max(30, num("away_after", c.away_after))
     c.milestone = max(0, num("milestone_turns", c.milestone))
+    c.idle_linger = max(0, num("idle_linger", c.idle_linger))
     return c

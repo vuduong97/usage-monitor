@@ -38,6 +38,8 @@ test("maps pi lifecycle onto clawd events and never returns a value", () => {
     "attention", "tool_done", "attention", "attention_done", "compact", "compact_done", "stop", "abort", "end",
   ]);
   assert.equal(sent[7].msg, "Which DB?");
+  assert.equal(sent[1].cmd, "ls");               // bash commands go along (test runs)
+  assert.equal(sent[3].cmd, undefined);
   assert.ok(sent.every((s) => s.sid === "S1" && s.sub === false));
   fire("before_agent_start", {}, child);
   assert.deepEqual(sent.at(-1), { ev: "prompt", sid: "C1", sub: true });

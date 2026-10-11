@@ -148,6 +148,7 @@ def test_cli_builds_requests():
     assert cli.build(["play", "double", "jump"]) == ("POST", "/poke", {"cmd": "play", "anim": "double jump"})
     assert cli.build(["focus", "25"]) == ("POST", "/poke", {"cmd": "focus", "mins": "25"})
     assert cli.build(["wave"]) == ("POST", "/poke", {"cmd": "wave"})
+    assert cli.build(["poke"]) == ("POST", "/poke", {"cmd": "poke"})
     assert cli.build(["status"]) == ("GET", "/state", None)
     with pytest.raises(SystemExit):
         cli.build(["dance"])

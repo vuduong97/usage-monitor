@@ -2,6 +2,7 @@
 """clawd — poke the desk clock's Clawd through the clawd-home daemon.
 
   clawd wave [TEXT]                 Clawd celebrates (default "Hi!")
+  clawd poke                        nudge Clawd (left/right; poke too often and he gets annoyed)
   clawd say TEXT [--anim A] [--secs N]
   clawd play ANIM [--text T] [--secs N]
   clawd focus MINUTES | clawd focus stop
@@ -21,9 +22,11 @@ import sys
 import urllib.error
 import urllib.request
 
-ANIMS = ["thinking", "typing", "building", "headphones", "juggling", "error", "happy",
-         "notification", "sweeping", "carrying", "idle", "reading", "yawn", "doze",
-         "sleeping", "wake", "low battery", "double jump", "heart eyes"]
+ANIMS = ["thinking", "ultrathink", "typing", "typing boss", "building", "wizard", "debugger",
+         "headphones", "juggling", "error", "dizzy", "happy", "notification", "sweeping",
+         "carrying", "idle", "look", "bubble", "reading", "yawn", "doze", "collapse",
+         "sleeping", "wake", "low battery", "double jump", "heart eyes", "react left",
+         "react right", "annoyed"]
 
 
 def port() -> int:
@@ -51,6 +54,7 @@ def build(argv: list[str]) -> tuple[str, str, dict | None]:
     ap = argparse.ArgumentParser(prog="clawd", description="Poke the desk clock's Clawd.")
     sub = ap.add_subparsers(dest="op", required=True)
     w = sub.add_parser("wave"); w.add_argument("text", nargs="*")
+    sub.add_parser("poke")
     s = sub.add_parser("say"); s.add_argument("text", nargs="+")
     s.add_argument("--anim"); s.add_argument("--secs", type=float)
     p = sub.add_parser("play"); p.add_argument("anim", nargs="+")
