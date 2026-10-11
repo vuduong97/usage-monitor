@@ -60,6 +60,36 @@ def ascii_text(text, limit: int = TEXT_MAX) -> str:
     return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
 
 
+# Tool name (Claude Code or pi, any case) -> the action the clock shows.
+# Anything not listed reads as plain "Working" / "Tool failed".
+ACTION_TEXT = {                      # action: (while running, when it failed)
+    "run": ("Running", "Run failed"),
+    "read": ("Reading", "Read failed"),
+    "edit": ("Editing", "Edit failed"),
+    "search": ("Searching", "Search failed"),
+    "browse": ("Browsing", "Browse failed"),
+    "plan": ("Planning", "Plan failed"),
+    "": ("Working", "Tool failed"),
+}
+TOOL_ACTIONS = {
+    **dict.fromkeys(("bash", "bashoutput", "bg_run"), "run"),
+    **dict.fromkeys(("read", "notebookread", "ls", "read_symbol", "read_enclosing"), "read"),
+    **dict.fromkeys(("edit", "multiedit", "write", "notebookedit"), "edit"),
+    **dict.fromkeys(("grep", "glob", "find", "symbol_search"), "search"),
+    **dict.fromkeys(("webfetch", "websearch", "web_fetch", "batch_web_fetch"), "browse"),
+    **dict.fromkeys(("todowrite", "todo"), "plan"),
+}
+
+
+def tool_action(name) -> str:
+    """The action key for a raw tool name; an MCP tool (mcp__<server>__<tool>)
+    is looked up by its own name."""
+    name = str(name or "").strip().lower()
+    if name.startswith("mcp__"):
+        name = name.split("__", 2)[-1]
+    return TOOL_ACTIONS.get(name, "")
+
+
 @dataclass(frozen=True)
 class View:
     anim: str
@@ -77,12 +107,13 @@ class Sess:
     sub: bool = False          # a child agent process (e.g. `pi -p` run by a subagent)
     state: str = "idle"        # idle | thinking | working | attention | waiting | sweeping
     #   waiting = still needs an answer, but the user has seen it (hidden)
-    tool: str = ""
+    tool: str = ""             # raw tool name, for `clawd status`
+    action: str = ""           # its ACTION_TEXT key, for the clock
     msg: str = ""
     subs: int = 0              # live subagents this session started
     last: float = 0.0
     error_until: float = 0.0
-    error_tool: str = ""
+    error_text: str = ""
     done_until: float = 0.0
 
 
@@ -111,11 +142,14 @@ class Tracker:
             s = self.sessions[sid] = Sess(sid=sid, src=str(ev.get("src") or ""),
                                           sub=bool(ev.get("sub")))
         s.last = now
-        tool = ascii_text(ev.get("tool") or "", 24)
+        raw = ev.get("tool") or ""
+        tool = ascii_text(raw, 24)
         if kind == "prompt":
             s.state, s.msg = "thinking", ""
         elif kind == "tool":
-            s.state, s.tool, s.msg = "working", tool or s.tool, ""
+            s.state, s.msg = "working", ""
+            if tool:
+                s.tool, s.action = tool, tool_action(raw)
         elif kind == "tool_done":
             s.state, s.msg = "working", ""
         elif kind == "attention_done":
@@ -127,7 +161,8 @@ class Tracker:
         elif kind == "tool_error":
             if s.state not in ("attention", "waiting"):
                 s.state = "working"
-            s.error_until, s.error_tool = now + ERROR_SHOW, tool or s.tool
+            action = tool_action(raw) if tool else s.action
+            s.error_until, s.error_text = now + ERROR_SHOW, ACTION_TEXT[action][1]
         elif kind == "subagent_start":
             s.subs = min(s.subs + 1, 8)
         elif kind == "subagent_stop":
@@ -147,7 +182,7 @@ class Tracker:
             s.state, s.subs, s.msg = "idle", 0, ""
         elif kind == "stop_error":
             s.state, s.subs, s.msg = "idle", 0, ""
-            s.error_until, s.error_tool = now + ERROR_SHOW, ""
+            s.error_until, s.error_text = now + ERROR_SHOW, "Error"
         return True
 
     def expire(self, now: float) -> None:
@@ -173,8 +208,7 @@ class Tracker:
             return View("notification", latest(attn).msg or "Needs you", "agent")
         errs = [s for s in main if s.error_until > now]
         if errs:
-            t = latest(errs).error_tool
-            return View("error", f"{t} failed" if t else "Error", "agent")
+            return View("error", latest(errs).error_text or "Error", "agent")
         if any(s.state == "sweeping" for s in main):
             return View("sweeping", "Compacting", "agent")
         subs = sum(s.subs for s in main) + sum(
@@ -190,7 +224,7 @@ class Tracker:
             return View("headphones", "2 sessions", "agent")
         working = [s for s in active if s.state == "working"]
         if working:
-            return View("typing", latest(working).tool, "agent")
+            return View("typing", ACTION_TEXT[latest(working).action][0], "agent")
         if active:
             return View("thinking", "", "agent")
         if any(s.done_until > now for s in main):

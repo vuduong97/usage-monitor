@@ -37,7 +37,8 @@ def test_single_session_flow_prompt_tool_stop():
     assert t.view(T0).anim == "thinking"
     t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 1)
     v = t.view(T0 + 1)
-    assert (v.anim, v.text) == ("typing", "Bash")
+    assert (v.anim, v.text) == ("typing", "Running")
+    assert t.sessions["claude:s1"].tool == "Bash"      # raw name kept for `clawd status`
     t.ingest(claude("Stop"), T0 + 2)
     assert t.view(T0 + 2).anim == "happy"
     assert t.view(T0 + 2 + ev.DONE_SHOW + 0.1) is None
@@ -51,7 +52,7 @@ def test_priority_attention_over_error_over_subagents():
     assert t.view(T0).anim == "juggling"
     t.ingest(claude("PostToolUseFailure", tool_name="Bash"), T0 + 1)
     v = t.view(T0 + 1)
-    assert (v.anim, v.text) == ("error", "Bash failed")
+    assert (v.anim, v.text) == ("error", "Run failed")
     t.ingest(claude("PermissionRequest", sid="s2", tool_name="Bash",
                     tool_input={"command": "npm test"}), T0 + 1)
     v = t.view(T0 + 1)
@@ -62,6 +63,43 @@ def test_priority_attention_over_error_over_subagents():
     assert t.view(T0 + 11).anim == "juggling"
     t.ingest(claude("SubagentStop"), T0 + 12)
     assert t.view(T0 + 12).anim == "headphones"
+
+
+@pytest.mark.parametrize("tool,text", [
+    ("Bash", "Running"), ("bash", "Running"), ("bg_run", "Running"),
+    ("Read", "Reading"), ("read_symbol", "Reading"),
+    ("MultiEdit", "Editing"), ("write", "Editing"),
+    ("Grep", "Searching"), ("Glob", "Searching"),
+    ("WebFetch", "Browsing"), ("batch_web_fetch", "Browsing"),
+    ("TodoWrite", "Planning"), ("todo", "Planning"),
+    ("mcp__cry_opera__slide_bash", "Working"),
+    ("mcp__x__read", "Reading"),                 # an MCP tool goes by its own name
+    ("mcp__some_long_server_name__web_fetch", "Browsing"),   # matched before the 24-char cap
+    ("Frobnicate", "Working"),
+])
+def test_tool_shows_an_action_word(tool, text):
+    t = ev.Tracker()
+    t.ingest({"src": "pi", "sid": "p1", "ev": "tool", "tool": tool}, T0)
+    assert t.view(T0).text == text
+
+
+@pytest.mark.parametrize("tool,text", [
+    ("Edit", "Edit failed"), ("bash", "Run failed"), ("Grep", "Search failed"),
+    ("Frobnicate", "Tool failed"), ("mcp__x__slide_bash", "Tool failed"),
+])
+def test_tool_error_shows_the_failed_action(tool, text):
+    t = ev.Tracker()
+    t.ingest({"src": "pi", "sid": "p1", "ev": "tool_error", "tool": tool}, T0)
+    assert t.view(T0).text == text
+
+
+def test_tool_error_without_a_name_uses_the_running_tool_and_stop_error_says_error():
+    t = ev.Tracker()
+    t.ingest({"src": "pi", "sid": "p1", "ev": "tool", "tool": "read"}, T0)
+    t.ingest({"src": "pi", "sid": "p1", "ev": "tool_error"}, T0)
+    assert t.view(T0).text == "Read failed"
+    t.ingest({"src": "pi", "sid": "p1", "ev": "stop_error"}, T0 + 10)
+    assert t.view(T0 + 10).text == "Error"
 
 
 def test_session_counts_pick_typing_headphones_building():
@@ -258,7 +296,7 @@ def test_clock_text_starts_with_a_capital():
     assert b.desired(T0)["txt"] == "Break time, 2 min"
     b.pokes.handle({"cmd": "clear"}, T0)
     b.tracker.ingest(claude("PreToolUse", tool_name="mcp__web__fetch"), T0)
-    assert b.desired(T0)["txt"] == "Mcp__web__fetch"
+    assert b.desired(T0)["txt"] == "Working"          # raw tool names never reach the clock
     b.tracker.ingest(claude("Stop"), T0)
     assert b.desired(T0)["txt"] == "Done!"
 

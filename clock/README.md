@@ -36,6 +36,10 @@ clawd CLI ─────────┘                          ├─ /api/us
 - Agent priority: needs you (`notification`) > error > compacting (`sweeping`) >
   2+ subagents (`juggling`) > 1 subagent or 2 sessions (`headphones`) >
   3+ sessions (`building`) > tool running (`typing`) > `thinking` > done (`happy`, 4 s).
+- The clock names the action, never the raw tool: Running (bash), Reading, Editing,
+  Searching, Browsing, Planning, otherwise Working; a failed tool shows `Run failed`,
+  `Edit failed`... or `Tool failed`. The table is `TOOL_ACTIONS` in `clawd_events.py`;
+  `clawd status` still lists the raw tool name.
 - pi "needs you" clears as soon as you go to that session (focus its terminal tab, click or
   press a key), even before answering, and stays off until the next question. Claude Code
   has no focus/key hook, so its "needs you" clears only on an answer.
