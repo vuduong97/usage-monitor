@@ -45,6 +45,12 @@ CONNECT_TIMEOUT = 20.0
 # Linux: token lives in ~/.claude/.credentials.json.
 KEYCHAIN_SERVICE = "Claude Code-credentials"
 DEFAULT_CONFIG_DIR = Path.home() / ".claude"
+# Claude Code 2.1.29x+ ("storage v5") keeps the default login in a shared
+# Anthropic credentials store instead: <dir>/active_config names the profile and
+# <dir>/credentials/<profile>.json holds {"type": "oauth_token",
+# "access_token", "expires_at" (ms), ...}. The Keychain item is then left with
+# only MCP state, so it must be checked first.
+ANTHROPIC_STORE_DIR = Path.home() / ".config" / "anthropic"
 SAVED_ADDR_FILE = Path.home() / ".config" / "claude-usage-monitor" / "ble-address"
 CONFIG_FILE = Path.home() / ".config" / "claude-usage-monitor" / "config"
 # Written by Claude Code hooks: `attention` holds {"m", "s"} (message, session
@@ -199,8 +205,13 @@ def read_token_for(config_dir: Path) -> str | None:
     fall back to Keychain when no file is present — preserving existing
     single-plan macOS behavior. Additional macOS dirs are read from their files;
     a work plan whose token lives only in the single Keychain entry can't be told
-    apart there (documented follow-up).
+    apart there (documented follow-up). For the default dir, a live token in the
+    Anthropic credentials store (newer Claude Code) wins over both.
     """
+    if config_dir == DEFAULT_CONFIG_DIR:
+        tok = _read_token_store()
+        if tok:
+            return tok
     cred = config_dir / ".credentials.json"
     try:
         if cred.exists():
@@ -210,6 +221,36 @@ def read_token_for(config_dir: Path) -> str | None:
     if sys.platform == "darwin" and config_dir == DEFAULT_CONFIG_DIR:
         return _read_token_keychain()
     return None
+
+
+def _read_token_store(store: Path | None = None, now: float | None = None) -> str | None:
+    """Unexpired OAuth access token from the Anthropic credentials store, or None.
+
+    Expired or non-OAuth entries return None so older storage (file/Keychain)
+    still gets a chance; Claude Code refreshes this file whenever it runs.
+    """
+    store = store or ANTHROPIC_STORE_DIR
+    try:
+        profile = (store / "active_config").read_text().strip() or "default"
+    except OSError:
+        profile = "default"
+    if "/" in profile or profile.startswith("."):
+        return None
+    try:
+        data = json.loads((store / "credentials" / f"{profile}.json").read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("type") != "oauth_token":
+        return None
+    tok = data.get("access_token")
+    if not isinstance(tok, str) or not tok.strip():
+        return None
+    exp = data.get("expires_at")
+    if isinstance(exp, (int, float)) and exp > 0:
+        exp_s = exp / 1000 if exp > 1e11 else exp
+        if exp_s <= (now if now is not None else time.time()):
+            return None
+    return tok.strip()
 
 
 def load_cached_address() -> str | None:

@@ -9,12 +9,21 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 import daemon.claude_usage_daemon as mod
 from daemon.claude_usage_daemon import PlanSelector, read_config_dirs, read_token_for
 
 
 def _run(coro):
     return asyncio.run(coro)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_anthropic_store(tmp_path_factory, monkeypatch):
+    # The default dir now checks ~/.config/anthropic first; never read the
+    # developer's real login from a unit test.
+    monkeypatch.setattr(mod, "ANTHROPIC_STORE_DIR", tmp_path_factory.mktemp("no-store"))
 
 
 # ---------------------------------------------------------------------------
