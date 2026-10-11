@@ -142,7 +142,7 @@ ACTION_TEXT = {                      # action: (while running, when it failed)
     "": ("Working", "Tool failed"),
 }
 READING_ACTIONS = ("read", "search")   # the last tool read or searched: "reading"
-# Per-session animations that still show (with a session count) when 2+ sessions run.
+# Per-session animations that still show (with the agent count) when 2+ agents run.
 SESSION_SHOWS_THROUGH = {"ultrathink", "debugger", "reading"}
 TOOL_ACTIONS = {
     **dict.fromkeys(("bash", "bashoutput", "bg_run"), "run"),
@@ -366,24 +366,24 @@ class Tracker:
             return View("error", latest(errs).error_text or "Error", "agent", urgent=True)
         if any(s.state == "sweeping" for s in main):
             return View("sweeping", "Compacting", "agent")
-        subs = sum(s.subs for s in main) + sum(
-            1 for s in live if s.sub and s.state in ("thinking", "working"))
-        if subs >= 2:
-            return View("juggling", f"{subs} subagents", "agent")
-        if subs == 1:
-            return View("headphones", "1 subagent", "agent")
+        # Agents: running main sessions + their subagents + live child processes.
         active = [s for s in main if s.state in ("thinking", "working")]
-        if len(active) >= 2:
-            # The most recent session's reading/debugger/ultrathink shows through,
-            # counted; anything plainer leaves the many-sessions animation.
-            v = self._session(latest(active), now)
-            if v.anim in SESSION_SHOWS_THROUGH:
-                return replace(v, text=f"{v.text} ({len(active)})")
-            if len(active) >= 3:
-                return View("building", f"{len(active)} sessions", "agent")
-            return View("headphones", "2 sessions", "agent")
-        if active:
+        agents = len(active) + sum(s.subs for s in main) + sum(
+            1 for s in live if s.sub and s.state in ("thinking", "working"))
+        if agents == 1 and active:
             return self._session(active[0], now)
+        if agents:
+            # The most recent session's reading/debugger/ultrathink shows through,
+            # counted; anything plainer leaves the many-agents animation.
+            if active:
+                v = self._session(latest(active), now)
+                if v.anim in SESSION_SHOWS_THROUGH:
+                    return replace(v, text=f"{v.text} ({agents})")
+            # One extra agent beside a running session: headphones; more: juggling.
+            # With no main session running, the agents left are all extra.
+            extra = agents - 1 if active else agents
+            noun = "agent" if agents == 1 else "agents"
+            return View("headphones" if extra <= 1 else "juggling", f"{agents} {noun}", "agent")
         if any(s.done_until > now for s in main):
             return View("happy", "Done!", "agent")
         return None
@@ -395,7 +395,7 @@ class Tracker:
         if not s.running and now - s.quiet_since >= ULTRATHINK_AFTER:
             return View("ultrathink", "Thinking hard", "agent")
         if s.state == "thinking":
-            return View("thinking", "", "agent")
+            return View("thinking", "Thinking", "agent")
         text = ACTION_TEXT[s.action][0]
         if s.testing:
             return View("debugger", "Testing", "agent")

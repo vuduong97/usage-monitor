@@ -34,7 +34,8 @@ def test_single_session_flow_prompt_tool_stop():
     t = ev.Tracker()
     assert t.view(T0) is None
     t.ingest(claude("UserPromptSubmit"), T0)
-    assert t.view(T0).anim == "thinking"
+    v = t.view(T0)
+    assert (v.anim, v.text) == ("thinking", "Thinking")
     t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 1)
     v = t.view(T0 + 1)
     assert (v.anim, v.text) == ("typing", "Running")
@@ -49,7 +50,7 @@ def test_priority_attention_over_error_over_subagents():
     t.ingest(claude("PreToolUse", tool_name="Task"), T0)
     t.ingest(claude("SubagentStart"), T0)
     t.ingest(claude("SubagentStart"), T0)
-    assert t.view(T0).anim == "juggling"
+    assert (t.view(T0).anim, t.view(T0).text) == ("juggling", "3 agents")
     t.ingest(claude("PostToolUseFailure", tool_name="Bash"), T0 + 1)
     v = t.view(T0 + 1)
     assert (v.anim, v.text) == ("error", "Run failed")
@@ -60,9 +61,14 @@ def test_priority_attention_over_error_over_subagents():
     # error passes, attention stays until that session moves on
     assert t.view(T0 + 10).anim == "notification"
     t.ingest(claude("PreToolUse", sid="s2", tool_name="Bash"), T0 + 11)
-    assert t.view(T0 + 11).anim == "juggling"
+    assert (t.view(T0 + 11).anim, t.view(T0 + 11).text) == ("juggling", "4 agents")
     t.ingest(claude("SubagentStop"), T0 + 12)
-    assert t.view(T0 + 12).anim == "headphones"
+    t.ingest(claude("SubagentStop"), T0 + 12)
+    v = t.view(T0 + 12)          # s1 failed a tool: its debugger shows through, counted
+    assert (v.anim, v.text) == ("debugger", "Debugger (2)")
+    t.ingest(claude("PreToolUse", sid="s2", tool_name="Edit"), T0 + 13)
+    v = t.view(T0 + 13)
+    assert (v.anim, v.text) == ("headphones", "2 agents")
 
 
 @pytest.mark.parametrize("tool,text", [
@@ -102,15 +108,40 @@ def test_tool_error_without_a_name_uses_the_running_tool_and_stop_error_says_err
     assert t.view(T0 + 10).text == "Error"
 
 
-def test_session_counts_pick_typing_headphones_building():
+def test_agent_counts_pick_the_session_headphones_juggling():
     t = ev.Tracker()
     t.ingest(claude("PreToolUse", sid="a", tool_name="Edit"), T0)
     assert t.view(T0).anim == "typing"
-    t.ingest(claude("UserPromptSubmit", sid="b"), T0)
-    assert t.view(T0).anim == "headphones"
-    t.ingest(ev.pi_event({"ev": "prompt", "sid": "c"}), T0)
+    t.ingest(claude("UserPromptSubmit", sid="b"), T0 + 1)     # the latest is thinking
+    v = t.view(T0 + 1)
+    assert (v.anim, v.text) == ("headphones", "2 agents")
+    t.ingest(ev.pi_event({"ev": "prompt", "sid": "c"}), T0 + 2)
+    v = t.view(T0 + 2)
+    assert (v.anim, v.text) == ("juggling", "3 agents")
+
+
+def test_a_subagent_counts_as_an_agent():
+    t = ev.Tracker()
+    t.ingest(claude("PreToolUse", tool_name="Task"), T0)
+    t.ingest(claude("SubagentStart"), T0)
     v = t.view(T0)
-    assert (v.anim, v.text) == ("building", "3 sessions")
+    assert (v.anim, v.text) == ("headphones", "2 agents")
+    t.ingest(claude("PreToolUse", sid="b", tool_name="Edit"), T0 + 1)
+    v = t.view(T0 + 1)
+    assert (v.anim, v.text) == ("juggling", "3 agents")
+    t.ingest(claude("PreToolUse", tool_name="Read"), T0 + 2)  # shows through, counted
+    v = t.view(T0 + 2)
+    assert (v.anim, v.text) == ("reading", "Reading (3)")
+
+
+def test_children_still_running_after_the_main_session_stops():
+    t = ev.Tracker()
+    t.ingest(ev.pi_event({"ev": "prompt", "sid": "child1", "sub": True}), T0)
+    v = t.view(T0)
+    assert (v.anim, v.text) == ("headphones", "1 agent")
+    t.ingest(ev.pi_event({"ev": "prompt", "sid": "child2", "sub": True}), T0)
+    v = t.view(T0)
+    assert (v.anim, v.text) == ("juggling", "2 agents")
 
 
 def test_pi_child_processes_count_as_subagents_and_never_celebrate():
@@ -118,9 +149,9 @@ def test_pi_child_processes_count_as_subagents_and_never_celebrate():
     t = ev.Tracker(on_turn=turns.append)
     t.ingest(ev.pi_event({"ev": "tool", "sid": "main", "tool": "subagent"}), T0)
     t.ingest(ev.pi_event({"ev": "prompt", "sid": "child1", "sub": True}), T0)
-    assert t.view(T0).anim == "headphones"
+    assert (t.view(T0).anim, t.view(T0).text) == ("headphones", "2 agents")
     t.ingest(ev.pi_event({"ev": "prompt", "sid": "child2", "sub": True}), T0)
-    assert t.view(T0).anim == "juggling"
+    assert (t.view(T0).anim, t.view(T0).text) == ("juggling", "3 agents")
     t.ingest(ev.pi_event({"ev": "stop", "sid": "child1", "sub": True}), T0 + 1)
     t.ingest(ev.pi_event({"ev": "stop", "sid": "child2", "sub": True}), T0 + 1)
     assert turns == []
@@ -660,29 +691,36 @@ def test_debug_turns_from_the_prompt_or_the_skill_show_the_debugger():
     assert ev.pi_event({"ev": "prompt", "sid": "p", "debug": "yes"})["debug"] is False
 
 
-def test_many_sessions_let_the_latest_sessions_reading_debugger_ultrathink_through():
+def test_many_agents_let_the_latest_sessions_reading_debugger_ultrathink_through():
     t = ev.Tracker()
     for k, sid in enumerate("abc"):
         t.ingest(claude("PreToolUse", sid=sid, tool_name="Edit"), T0 + k)
         t.ingest(claude("PostToolUse", sid=sid, tool_name="Edit"), T0 + k + 0.5)
-    assert (t.view(T0 + 2.5).anim, t.view(T0 + 2.5).text) == ("building", "3 sessions")
+    assert (t.view(T0 + 2.5).anim, t.view(T0 + 2.5).text) == ("juggling", "3 agents")
     t.ingest(claude("PreToolUse", sid="b", tool_name="Read"), T0 + 3)
     v = t.view(T0 + 3)
     assert (v.anim, v.text) == ("reading", "Reading (3)")
     t.ingest(claude("PreToolUse", sid="a", tool_name="Bash",
                     tool_input={"command": "npm test"}), T0 + 4)
     assert t.view(T0 + 4).text == "Testing (3)"
-    t.ingest(claude("SessionEnd", sid="c"), T0 + 5)
-    t.ingest(claude("PostToolUse", sid="a", tool_name="Bash"), T0 + 5)
-    t.ingest(claude("PostToolUse", sid="b", tool_name="Read"), T0 + 6)
-    v = t.view(T0 + 6 + ev.ULTRATHINK_AFTER)
+    t.ingest(claude("PostToolUse", sid="a", tool_name="Bash"), T0 + 4.2)
+    t.ingest(claude("PostToolUseFailure", sid="c", tool_name="Edit"), T0 + 4.3)
+    t.ingest(claude("PreToolUse", sid="c", tool_name="Edit"), T0 + 4.3 + ev.ERROR_SHOW)
+    v = t.view(T0 + 4.3 + ev.ERROR_SHOW)
+    assert (v.anim, v.text) == ("debugger", "Debugger (3)")
+    t.ingest(claude("SessionEnd", sid="c"), T0 + 10)
+    t.ingest(claude("Stop", sid="a"), T0 + 10)
+    t.ingest(claude("UserPromptSubmit", sid="a"), T0 + 11)
+    t.ingest(claude("PostToolUse", sid="b", tool_name="Read"), T0 + 11)
+    v = t.view(T0 + 11 + ev.ULTRATHINK_AFTER)
     assert (v.anim, v.text) == ("ultrathink", "Thinking hard (2)")
-    t.ingest(claude("PreToolUse", sid="a", tool_name="Edit"), T0 + 40)
-    assert (t.view(T0 + 40).anim, t.view(T0 + 40).text) == ("headphones", "2 sessions")
-    t.ingest(claude("SubagentStart", sid="a"), T0 + 41)          # subagents still come first
-    t.ingest(claude("PreToolUse", sid="b", tool_name="Read"), T0 + 42)
-    assert t.view(T0 + 42).anim == "headphones"
-    assert t.view(T0 + 42).text == "1 subagent"
+    t.ingest(claude("PreToolUse", sid="a", tool_name="Edit"), T0 + 50)
+    assert (t.view(T0 + 50).anim, t.view(T0 + 50).text) == ("headphones", "2 agents")
+    t.ingest(claude("SubagentStart", sid="a"), T0 + 51)          # a subagent adds one
+    assert (t.view(T0 + 51).anim, t.view(T0 + 51).text) == ("juggling", "3 agents")
+    t.ingest(claude("PreToolUse", sid="b", tool_name="Read"), T0 + 52)
+    v = t.view(T0 + 52)
+    assert (v.anim, v.text) == ("reading", "Reading (3)")
 
 
 @pytest.mark.parametrize("cmd,test", [

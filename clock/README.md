@@ -41,21 +41,24 @@ clawd CLI ─────────┘                          ├─ /api/us
   sleep chain > idle rotation (`idle`/`look`/`bubble`/`reading`, for `idle_linger`
   after the last agent event) > usage screens.
 - Agent priority: needs you > `dizzy` (3 errors in 2 min) > error >
-  compacting (`sweeping`) > 2+ subagents (`juggling`) > 1 subagent or 2 sessions
-  (`headphones`) > 3+ sessions (`building`) > one session > done (`happy`, 4 s).
+  compacting (`sweeping`) > agents > done (`happy`, 4 s). Agents are the running main
+  sessions plus their subagents plus live child processes (`pi -p` from a subagent): one
+  shows that session's animation; 2 show `headphones` ("2 agents"); 3+ show `juggling`
+  ("3 agents"). With no main session running, 1 leftover agent shows `headphones` and 2+
+  `juggling`. `building` is only played on request.
 - Needs you: a question (pi `ask_user_question`/`ask_user`/`question`, Claude
   `AskUserQuestion`) cycles `react left` ⇄ `react right` (Clawd looks around with a `?`,
   ~5.5 s a side) under the question; a permission request, a pi dialog or a Claude
   notification shows `notification`. `clawd status` names the question view `question`.
 - One session, highest first: `ultrathink` ("Thinking hard": no tool running for 30 s,
-  counted from the prompt or the last tool to finish) > `thinking` (before the first tool) >
+  counted from the prompt or the last tool to finish) > `thinking` ("Thinking", before the first tool) >
   `debugger` ("Testing" while a test command runs; "Debugger" for the rest of a turn after an
   error and the whole next one, a turn whose prompt says `/ak:debug`, `/ak:fix`, debug, fix,
   bug or `lỗi`, or once the agent loads the ak-debug/ak-fix skill) > `reading` (the last tool
   read or searched: Reading/Searching) > `typing boss` (10 edits in a row) > `wizard`
   (a turn running 30 min) > `typing`.
-  With 2+ sessions, the latest session's `ultrathink`/`debugger`/`reading` still shows,
-  with the count: `Reading (3)`. Prompt text never goes further than the hook: the daemon
+  With 2+ agents, the latest main session's `ultrathink`/`debugger`/`reading` still shows,
+  with the agent count: `Reading (3)`. Prompt text never goes further than the hook: the daemon
   (Claude) or the pi extension only keeps whether it asks for debugging.
 - Holds (clawd-on-desk's `minDisplay`): an agent animation stays at least 1 s
   (needs you / error / dizzy 5 s, compacting 5.5 s, done 4 s) unless a poke comes.
