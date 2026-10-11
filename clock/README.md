@@ -40,9 +40,13 @@ clawd CLI ─────────┘                          ├─ /api/us
 - Layers, highest first: `clawd` poke > agent activity > focus timer > pet moment >
   sleep chain > idle rotation (`idle`/`look`/`bubble`/`reading`, for `idle_linger`
   after the last agent event) > usage screens.
-- Agent priority: needs you (`notification`) > `dizzy` (3 errors in 2 min) > error >
+- Agent priority: needs you > `dizzy` (3 errors in 2 min) > error >
   compacting (`sweeping`) > 2+ subagents (`juggling`) > 1 subagent or 2 sessions
   (`headphones`) > 3+ sessions (`building`) > one session > done (`happy`, 4 s).
+- Needs you: a question (pi `ask_user_question`/`ask_user`/`question`, Claude
+  `AskUserQuestion`) cycles `react left` ⇄ `react right` (Clawd looks around with a `?`,
+  ~5.5 s a side) under the question; a permission request, a pi dialog or a Claude
+  notification shows `notification`. `clawd status` names the question view `question`.
 - One session, highest first: `ultrathink` ("Thinking hard": no tool running for 30 s,
   counted from the prompt or the last tool to finish) > `thinking` (before the first tool) >
   `debugger` ("Testing" while a test command runs; "Debugger" for the rest of a turn after an

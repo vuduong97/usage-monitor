@@ -170,6 +170,55 @@ def test_attention_seen_hides_needs_you_until_the_next_question():
     assert t.sessions["pi:p2"].state == "thinking"
 
 
+def test_questions_look_left_and_right_other_attention_stays_notification():
+    t = ev.Tracker()
+    pi = lambda e, sid="p1", **kw: t.ingest(ev.pi_event({"ev": e, "sid": sid, **kw}), T0)
+    pi("prompt")
+    pi("attention", tool="ask_user_question", msg="Which DB?")
+    v = t.view(T0)
+    assert (v.anim, v.text, v.names, v.rep, v.urgent) == (
+        "question", "Which DB?", ("react left", "react right"), True, True)
+    pi("attention_seen")                           # seen: hidden, like any attention
+    assert t.view(T0) is None
+    pi("attention_done")                           # answered: back to work
+    assert t.view(T0).anim == "thinking" and not t.sessions["pi:p1"].asking
+    pi("attention", msg="pi needs you")           # a plain pi dialog
+    assert t.view(T0).anim == "notification"
+    pi("attention_done")
+    for tool in ("ask_user", "question"):
+        pi("attention", tool=tool, msg="Q")
+        assert t.view(T0).anim == "question"
+        pi("attention_done")
+    # Claude: AskUserQuestion is a question; a later generic Notification keeps it
+    t.ingest(claude("PreToolUse", sid="c1", tool_name="AskUserQuestion",
+                    tool_input={"questions": [{"question": "Which anim?"}]}), T0 + 1)
+    v = t.view(T0 + 1)
+    assert (v.anim, v.text) == ("question", "Which anim?")
+    t.ingest(claude("Notification", sid="c1", message="Claude needs your input"), T0 + 2)
+    assert t.view(T0 + 2).anim == "question"
+    t.ingest(claude("PostToolUse", sid="c1", tool_name="AskUserQuestion"), T0 + 3)
+    t.ingest(claude("PermissionRequest", sid="c1", tool_name="Bash",
+                    tool_input={"command": "rm -rf x"}), T0 + 4)
+    v = t.view(T0 + 4)
+    assert v.anim == "notification" and v.text.startswith("Allow") and v.seq == ()
+    t.ingest(claude("Notification", sid="c2", message="Claude needs your permission",
+                    notification_type="permission_prompt"), T0 + 5)
+    assert t.view(T0 + 5).anim == "notification"
+
+
+def test_a_question_expires_and_stopping_forgets_it():
+    t = ev.Tracker()
+    t.ingest(ev.pi_event({"ev": "attention", "sid": "p1", "tool": "ask_user_question"}), T0)
+    assert t.view(T0).text == "Has a question"
+    t.view(T0 + ev.ATTENTION_TTL + 1)
+    assert t.sessions["pi:p1"].state == "idle" and not t.sessions["pi:p1"].asking
+    t.ingest(ev.pi_event({"ev": "attention", "sid": "p2", "tool": "question"}), T0)
+    t.ingest(ev.pi_event({"ev": "abort", "sid": "p2"}), T0)
+    assert not t.sessions["pi:p2"].asking
+    assert ev.is_question_tool("mcp__srv__ask_user_question")
+    assert not ev.is_question_tool("Bash") and not ev.is_question_tool(None)
+
+
 def test_seen_session_alone_shows_nothing_and_expires_like_attention():
     t = ev.Tracker()
     t.ingest(ev.pi_event({"ev": "attention", "sid": "p1"}), T0)
@@ -313,6 +362,19 @@ def test_poke_validation():
     assert p.handle({"cmd": "play", "anim": "double jump", "secs": 3}, T0)["ok"]
     assert p.moment(T0).anim == "double jump"
     assert p.handle({"cmd": "clear"}, T0)["ok"] and p.moment(T0) is None
+
+
+def test_a_question_during_focus_keeps_its_text_and_holds_like_notification():
+    b = brain_at()
+    b.pokes.handle({"cmd": "focus", "mins": 25}, T0)
+    b.tracker.ingest(claude("PreToolUse", tool_name="AskUserQuestion",
+                            tool_input={"questions": [{"question": "which DB?"}]}), T0)
+    d = b.desired(T0)
+    assert (d["a"], d["seq"], d["rep"], d["u"], d["txt"], d["cd"]) == (
+        "question", ["react left", "react right"], True, True, "Which DB?", 0)
+    b.tracker.ingest(claude("PostToolUse", tool_name="AskUserQuestion"), T0 + 1)
+    assert b.desired(T0 + 1)["a"] == "question"       # min display, like notification
+    assert b.desired(T0 + 5.5)["a"] != "question"
 
 
 def test_focus_countdown_reading_then_done():

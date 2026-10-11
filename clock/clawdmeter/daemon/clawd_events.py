@@ -54,7 +54,7 @@ TEXT_MAX = 90
 ERROR_SHOW = 5.0          # autoReturn.error
 DONE_SHOW = 4.0           # autoReturn.attention (the "Done!" happy)
 DIZZY_SHOW = 6.0          # autoReturn.dizzy
-MIN_DISPLAY = {"notification": 5.0, "error": 5.0, "dizzy": 5.0, "sweeping": 5.5, "happy": 4.0}
+MIN_DISPLAY = {"notification": 5.0, "question": 5.0, "error": 5.0, "dizzy": 5.0, "sweeping": 5.5, "happy": 4.0}
 MIN_DISPLAY_WORKING = 1.0  # minDisplay.working / .thinking: every other agent animation
 WAKE_SECS = 1.5           # wakeDuration
 POKE_SECS = 2.5           # reactions.clickLeft / clickRight
@@ -154,6 +154,19 @@ TOOL_ACTIONS = {
 }
 
 
+# Tools an agent uses to ask the user something: the clock shows Clawd looking left
+# and right with a "?" (react left/right) instead of the plain notification.
+QUESTION_TOOLS = {"ask_user_question", "ask_user", "question", "askuserquestion"}
+QUESTION_SEQ = ("react left", "react right")
+
+
+def is_question_tool(name) -> bool:
+    name = str(name or "").strip().lower()
+    if name.startswith("mcp__"):
+        name = name.split("__", 2)[-1]
+    return name in QUESTION_TOOLS
+
+
 def tool_action(name) -> str:
     """The action key for a raw tool name; an MCP tool (mcp__<server>__<tool>)
     is looked up by its own name."""
@@ -194,6 +207,7 @@ class Sess:
     tool: str = ""             # raw tool name, for `clawd status`
     action: str = ""           # its ACTION_TEXT key, for the clock
     msg: str = ""
+    asking: bool = False       # the attention is a question tool (react left/right)
     subs: int = 0              # live subagents this session started
     last: float = 0.0
     error_until: float = 0.0
@@ -277,7 +291,7 @@ class Tracker:
             s.state, s.msg, s.testing = "working", "", False
         elif kind == "attention_done":
             if s.state in ("attention", "waiting"):
-                s.state, s.msg = "thinking", ""
+                s.state, s.msg, s.asking = "thinking", "", False
                 s.quiet_since = now
         elif kind == "attention_seen":         # the user went to that session: stop calling
             if s.state == "attention":
@@ -294,7 +308,10 @@ class Tracker:
         elif kind == "subagent_stop":
             s.subs = max(s.subs - 1, 0)
         elif kind == "attention":
-            s.state, s.msg = "attention", ascii_text(ev.get("msg") or "")
+            asking = is_question_tool(raw)
+            if not raw and s.asking and s.state in ("attention", "waiting"):
+                asking = True                   # a generic nudge while a question is open
+            s.state, s.msg, s.asking = "attention", ascii_text(ev.get("msg") or ""), asking
         elif kind == "compact":
             s.state = "sweeping"
         elif kind == "compact_done":
@@ -314,12 +331,14 @@ class Tracker:
         if kind in ("stop", "abort", "stop_error"):
             s.turn_start, s.debugging, s.edits, s.testing = 0.0, False, 0, False
             s.running = 0
+        if s.state not in ("attention", "waiting"):
+            s.asking = False
 
     def expire(self, now: float) -> None:
         for sid, s in list(self.sessions.items()):
             age = now - s.last
             if s.state in ("attention", "waiting") and age > ATTENTION_TTL:
-                s.state, s.msg = "idle", ""
+                s.state, s.msg, s.asking = "idle", "", False
             elif s.state in ("thinking", "working", "sweeping") and age > SESSION_TTL:
                 s.state, s.subs = "idle", 0
             if s.state == "idle" and age > IDLE_FORGET:
@@ -335,7 +354,11 @@ class Tracker:
 
         attn = [s for s in main if s.state == "attention"]
         if attn:
-            return View("notification", latest(attn).msg or "Needs you", "agent", urgent=True)
+            a = latest(attn)
+            if a.asking:
+                return View("question", a.msg or "Has a question", "agent",
+                            seq=QUESTION_SEQ, rep=True, urgent=True)
+            return View("notification", a.msg or "Needs you", "agent", urgent=True)
         if self.dizzy_until > now:
             return View("dizzy", "Too many errors", "agent", urgent=True)
         errs = [s for s in main if s.error_until > now]
@@ -702,7 +725,7 @@ class Pokes:
 # =============================================================================
 # Resolution + push
 # =============================================================================
-FOCUS_KEEPS_TEXT = {"notification", "error"}
+FOCUS_KEEPS_TEXT = {"notification", "question", "error"}
 
 
 class Brain:
