@@ -32,6 +32,11 @@ import httpx
 from bleak import BleakClient
 from bleak.exc import BleakError
 
+try:                       # imported as a package (tests) or run as a script
+    from daemon import clawd_events
+except ImportError:
+    import clawd_events
+
 DEVICE_NAME = "Clawdmeter"
 SERVICE_UUID = "4c41555a-4465-7669-6365-000000000001"
 RX_CHAR_UUID = "4c41555a-4465-7669-6365-000000000002"
@@ -1161,6 +1166,7 @@ class Publisher:
         self.alert_unsent = False
         self.clear_unsent = False
         self.quiet = False        # "no usable source" already logged
+        self.on_payload: Callable[[dict], None] | None = None   # clawd-home pet sees usage
 
     def attach_ble(self, session: Session) -> None:
         self.ble = session
@@ -1242,6 +1248,8 @@ class Publisher:
 
     async def send(self, payload: dict, ble: Session | None, targets: list[str]) -> bool:
         delivered = False
+        if self.on_payload is not None:
+            self.on_payload(payload)
         if ble is not None:
             delivered = await ble.write_payload(payload)
         if targets:
@@ -1446,6 +1454,7 @@ async def main() -> None:
 
     publisher = Publisher()
     pub_task = asyncio.create_task(publisher.run(stop_event))
+    events_task, events_server = await start_events(publisher, stop_event)
     try:
         if ble_on:
             await ble_loop(stop_event, publisher)
@@ -1458,6 +1467,34 @@ async def main() -> None:
         stop_event.set()
         publisher.wake.set()
         await pub_task
+        if events_task is not None:
+            await events_task
+        if events_server is not None:
+            await events_server.close()
+
+
+async def start_events(publisher: "Publisher", stop_event: asyncio.Event):
+    """clawd-home: the local event server (Claude Code hooks, pi extension,
+    `clawd` CLI) and the push of the resulting desk state to every WiFi clock.
+    `events = off` in the config disables both."""
+    if read_onoff_setting("events", default="on") != "on":
+        log("Clawd events off (events = off)")
+        return None, None
+    pet = clawd_events.Pet(clawd_events.read_pet_config(read_config_value),
+                           store=ATTENTION_DIR / "pet.json")
+    brain = clawd_events.Brain(pet)
+
+    def on_payload(p: dict) -> None:
+        brain.usage = p
+    publisher.on_payload = on_payload
+    server = clawd_events.EventServer(brain, port=clawd_events.read_event_port(read_config_value))
+    try:
+        await server.start()
+    except OSError as e:
+        log(f"Event server not started ({e}); agent events disabled")
+        return None, None
+    pusher = clawd_events.StatePusher(brain, read_http_targets)
+    return asyncio.create_task(pusher.run(stop_event)), server
 
 
 async def ble_loop(stop_event: asyncio.Event, publisher: Publisher) -> None:
