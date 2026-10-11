@@ -2,7 +2,11 @@
 #include "Platform.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#if defined(SMALLTV_CLAWD)
+#include "webui_clawd.h"   // same page minus the compiled-out feature tabs
+#else
 #include "webui.h"
+#endif
 #include "Net.h"
 #include "Gfx.h"
 #include "OtaUpdate.h"
@@ -10,6 +14,7 @@
 #include "UsageClient.h"
 #if WITH_USAGE
 #include "ClawdAnim.h"
+#include "ClawdPack.h"
 #include "ClawdUi.h"
 #endif
 #if WITH_RADAR
@@ -417,11 +422,59 @@ static void handleHeap() {
   o["reset"] = appResetReason();
   o["version"] = FW_VERSION;
 #if WITH_USAGE
+  o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();
 #endif
   sendJson(doc);
 }
+
+#if WITH_USAGE
+// Replace the Clawd animation pack (/clawd.pak, tools/clawd_assets.js). The
+// pack normally goes on through the stock firmware's /upload before this image
+// is flashed; this is the in-place way to update it. Staged to a temp file so
+// a failed upload never leaves a half pack behind.
+//   curl -F "file=@data/clawd.pak" http://<ip>/api/clawdpak
+static File g_pakUpload;
+static bool g_pakFailed = false;
+static void handleClawdPakUpload() {
+  HTTPUpload& up = server.upload();
+  // Checked while the body streams in too (like /update), or an unauthenticated
+  // POST could still write the file and only lose the final answer.
+  if (S->auth.enabled && S->auth.pass.length() &&
+      !server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str())) {
+    g_pakFailed = true;
+    if (g_pakUpload) g_pakUpload.close();
+    return;
+  }
+  if (up.status == UPLOAD_FILE_START) {
+    g_pakFailed = false;
+    g_pakUpload = LittleFS.open("/clawd.pak.tmp", "w");
+    if (!g_pakUpload) g_pakFailed = true;
+  } else if (up.status == UPLOAD_FILE_WRITE) {
+    if (g_pakUpload && g_pakUpload.write(up.buf, up.currentSize) != up.currentSize) g_pakFailed = true;
+  } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
+    if (g_pakUpload) g_pakUpload.close();
+    if (up.status == UPLOAD_FILE_ABORTED) g_pakFailed = true;
+  }
+  yield();
+}
+static void handleClawdPakDone() {
+  if (!requireAuth()) return;
+  bool ok = !g_pakFailed;
+  if (ok) {
+    LittleFS.remove(CLAWD_PACK_PATH);
+    ok = LittleFS.rename("/clawd.pak.tmp", CLAWD_PACK_PATH) && clawdPackOpen();
+    clawdUiBegin();     // re-read descriptors, restart the screens
+  } else {
+    LittleFS.remove("/clawd.pak.tmp");
+  }
+  JsonDocument doc;
+  doc["ok"] = ok;
+  doc["anims"] = clawdPackCount();
+  sendJson(doc, ok ? 200 : 500);
+}
+#endif
 
 // Attention overlay. Every field is optional and falls back to the preset named
 // by "type" (itself defaulting to "info"), so the smallest useful request is
@@ -548,6 +601,9 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/selfupdate", HTTP_POST, handleSelfUpdate);
   server.on("/api/usage", HTTP_POST, handleUsagePush);   // daemon pushes usage here
   server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
+#if WITH_USAGE
+  server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
+#endif
 #if WITH_HA
   server.on("/api/ha/clear", HTTP_POST, handleHaClear);  // purge HA screens (device + broker retained)
 #endif

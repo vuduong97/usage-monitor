@@ -1,51 +1,63 @@
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
 #include "ClawdRate.h"
-#include "clawd_anims.h"
+#include "ClawdPack.h"
 
 // ---- catalogue ----------------------------------------------------------------
-int clawdAnimCount() { return CLAWD_ANIM_COUNT; }
+// Frame buffers: the splash and the idle mini never show together, so they
+// share one; the corner mascot has its own.
+static uint8_t g_bigBuf[CLAWD_MAX_FRAME];
+static uint8_t g_masBuf[CLAWD_MAX_FRAME];
+
+int clawdAnimCount() { return clawdPackCount(); }
 
 void clawdAnimName(int i, char* out, int n) {
   if (n <= 0) return;
   out[0] = 0;
-  if (i < 0 || i >= CLAWD_ANIM_COUNT) return;
   ClawdAnim a;
-  clawdAnimGet(CLAWD_ANIMS, i, a);
+  if (!clawdPackAnim(i, a)) return;
   strncpy(out, a.name, n - 1);
   out[n - 1] = 0;
 }
 
 int clawdAnimFind(const char* name) {
   char buf[16];
-  for (int i = 0; i < CLAWD_ANIM_COUNT; i++) {
+  for (int i = 0; i < clawdPackCount(); i++) {
     clawdAnimName(i, buf, sizeof(buf));
     if (strcmp(buf, name) == 0) return i;
   }
   return -1;
 }
 
-// Design colours: the surface applies colour correction when pixels are pushed.
 static void loadPalette(const ClawdAnim& a, uint16_t* out) {
   for (int k = 0; k < 16; k++) out[k] = a.palette[k];
 }
 
 // ---- player -------------------------------------------------------------------
 void ClawdPlayer::start(int i, uint32_t now) {
-  index = (int16_t)i;
-  clawdAnimGet(CLAWD_ANIMS, i, a);
+  index = clawdPackAnim(i, a) ? (int16_t)i : (int16_t)-1;
   frame = 0;
   frameStart = now;
   loopEntered = now;
   inLoop = false;
   loopRelease = false;
   holding = false;
+  loaded = 0xFFFF;
+  sync();
+}
+
+void ClawdPlayer::sync() {
+  if (index < 0 || loaded == frame) return;
+  if (!clawdPackFrame(a, frame, buf)) { loaded = 0xFFFF; return; }
+  loaded = frame;
+  hold = clawdPackHold(a, frame);
 }
 
 bool ClawdPlayer::tick(uint32_t now, bool& completed) {
   completed = false;
   if (index < 0 || holding || a.frameCount == 0) return false;
-  if (now - frameStart < clawdAnimHold(a, frame)) return false;
+  sync();
+  if (now - frameStart < hold) return false;
   const bool fromLoop = inLoop;
   uint16_t next = frame + 1;
   if (frame == a.loopEnd && !loopRelease) next = a.loopStart;
@@ -56,6 +68,7 @@ bool ClawdPlayer::tick(uint32_t now, bool& completed) {
   }
   frame = next;
   frameStart = now;
+  sync();
   const bool nowIn = frame >= a.loopStart && frame <= a.loopEnd;
   if (nowIn && !fromLoop) loopEntered = now;
   inLoop = nowIn;
@@ -87,6 +100,7 @@ static uint8_t g_stagePrev[GRID * GRID / 2];   // last painted cells, 4 bpp
 
 void ClawdSplash::begin() {
   player_.index = -1;
+  player_.buf = g_bigBuf;
   active_ = false;
 }
 
@@ -127,7 +141,9 @@ void ClawdSplash::startAnim(int index) {
 }
 
 void ClawdSplash::pick() {
-  if (fixed_ >= 0 && fixed_ < CLAWD_ANIM_COUNT) { startAnim(fixed_); return; }
+  const int count = clawdPackCount();
+  if (count == 0) return;
+  if (fixed_ >= 0) { startAnim(fixed_ < count ? fixed_ : 0); return; }
   int g = clawdRateGroup();
   if (g < 0 || g > 3) g = 0;
   for (int tries = 0; tries < 4; tries++) {
@@ -155,6 +171,7 @@ void ClawdSplash::walkBegin(int target) {
   walkFace_ = walkDir_;
   player_.frame = 0;
   player_.frameStart = clawdNow();
+  player_.sync();
   player_.holding = false;
   player_.loopRelease = false;
   player_.inLoop = false;
@@ -187,7 +204,7 @@ uint8_t ClawdSplash::cellAt(void* self, int gx, int gy) {
   const int ay = STAGE_ANCHOR_Y + a.oy;
   int sx = gx - ax;
   if (s.walkKind_ && s.walkFace_ < 0) sx = a.w - 1 - sx;   // walking left: mirror
-  return clawdAnimCell(a, s.player_.frame, sx, gy - ay);
+  return clawdFrameCell(a, s.player_.cells(), sx, gy - ay);
 }
 
 void ClawdSplash::render(bool force) {
@@ -264,6 +281,7 @@ static const uint16_t MAS_STILL_MS[4] = {10000, 7000, 5000, 3500};
 static uint8_t g_mascotPrev[MAS_GW * MAS_GH / 2 + 1];
 
 void ClawdMascot::begin(int x, int y) {
+  player_.buf = g_masBuf;
   x_ = (int16_t)x;
   y_ = (int16_t)y;
   reset();
@@ -300,7 +318,7 @@ void ClawdMascot::setAttention(bool on) {
 uint8_t ClawdMascot::cellAt(void* self, int gx, int gy) {
   ClawdMascot& m = *(ClawdMascot*)self;
   const ClawdAnim& a = m.player_.a;
-  return clawdAnimCell(a, m.player_.frame, gx - a.ox, gy - a.oy);
+  return clawdFrameCell(a, m.player_.cells(), gx - a.ox, gy - a.oy);
 }
 
 void ClawdMascot::render(bool force) {
@@ -348,35 +366,38 @@ void ClawdMascot::tick(int rate) {
 // =============================================================================
 void ClawdMini::begin(const char* name, int cx, int cy, int px) {
   int idx = clawdAnimFind(name);
-  ok_ = idx >= 0;
+  ok_ = idx >= 0 && clawdPackAnim(idx, a_);
   if (!ok_) return;
-  clawdAnimGet(CLAWD_ANIMS, idx, a_);
   loadPalette(a_, pal_);
   int amax = a_.w > a_.h ? a_.w : a_.h;
   cell_ = (uint8_t)(px / amax < 1 ? 1 : px / amax);
   x_ = (int16_t)(cx - a_.w * cell_ / 2);
   y_ = (int16_t)(cy - a_.h * cell_ / 2);
   frame_ = 0;
+  hold_ = clawdPackHold(a_, 0);
   started_ = clawdNow();
   force_ = true;
 }
 
 uint8_t ClawdMini::cellAt(void* self, int gx, int gy) {
   ClawdMini& m = *(ClawdMini*)self;
-  return clawdAnimCell(m.a_, m.frame_, gx, gy);
+  return clawdFrameCell(m.a_, g_bigBuf, gx, gy);
 }
 
 void ClawdMini::tick() {
   if (!ok_) return;
   const uint32_t now = clawdNow();
   bool changed = force_;
-  if (now - started_ >= clawdAnimHold(a_, frame_)) {
+  if (now - started_ >= hold_) {
     started_ = now;
     frame_ = (frame_ + 1) % a_.frameCount;
+    hold_ = clawdPackHold(a_, frame_);
     changed = true;
   }
   if (!changed) return;
-  // Shares the splash's diff buffer: the two never show at the same time.
+  // The buffer is shared with the splash, so reload on every paint.
+  if (!clawdPackFrame(a_, frame_, g_bigBuf)) return;
+  // Shares the splash's diff buffer too: the two never show at the same time.
   clawdRenderCells(cellAt, this, 0, 0, a_.w, a_.h, cell_, x_, y_, pal_, g_stagePrev, force_);
   force_ = false;
 }

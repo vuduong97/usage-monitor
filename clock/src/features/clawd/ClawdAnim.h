@@ -13,15 +13,19 @@
 #pragma once
 #include <stdint.h>
 #include "ClawdAssets.h"
+#include "ClawdPack.h"
 
-int  clawdAnimFind(const char* name);           // index in CLAWD_ANIMS, or -1
+int  clawdAnimFind(const char* name);           // index in the pack, or -1
 int  clawdAnimCount();
 void clawdAnimName(int index, char* out, int n);
 
 // intro -> loop -> outro sequencing for one animation.
 struct ClawdPlayer {
   int16_t   index = -1;
-  ClawdAnim a;                 // descriptor copied out of flash
+  ClawdAnim a;                 // descriptor read from the pack
+  uint8_t*  buf = nullptr;     // CLAWD_MAX_FRAME bytes: the current frame's cells
+  uint16_t  loaded = 0xFFFF;   // frame held in buf
+  uint16_t  hold = 100;        // ms the loaded frame shows
   uint16_t  frame = 0;
   uint32_t  frameStart = 0;
   uint32_t  loopEntered = 0;
@@ -30,6 +34,8 @@ struct ClawdPlayer {
   bool      holding = false;       // completed: resting on frame 0
 
   void start(int index, uint32_t now);
+  void sync();                 // load `frame` into buf if it isn't there yet
+  const uint8_t* cells() const { return (index >= 0 && loaded == frame) ? buf : nullptr; }
   // Advance by elapsed time. Returns true when the frame changed. `completed`
   // is set when the file ran past its last frame (the caller decides whether
   // to replay, switch or hold); the frame is then back at 0.
@@ -105,7 +111,7 @@ class ClawdMini {
   ClawdAnim a_;
   uint16_t  pal_[16];
   bool      ok_ = false, force_ = true;
-  uint16_t  frame_ = 0;
+  uint16_t  frame_ = 0, hold_ = 100;
   uint32_t  started_ = 0;
   int16_t   x_ = 0, y_ = 0;
   uint8_t   cell_ = 2;

@@ -5,6 +5,7 @@
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
 #include "ClawdRate.h"
+#include "ClawdPack.h"
 #include "clawd_fonts.h"
 #include <stdio.h>
 #include <string.h>
@@ -308,6 +309,7 @@ static void endAlert() {
 void clawdUiBegin() {
   memset(&g_data, 0, sizeof(g_data));
   g_data.sessionResetMin = g_data.weeklyResetMin = -1;
+  clawdPackOpen();
   g_splash.begin();
   g_mascot.begin(MASCOT_X, MASCOT_Y);
   g_mini.begin("cloud", CLAWD_W / 2, IDLE_CY, IDLE_PX);
@@ -392,6 +394,13 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
     if (want == VIEW_SPLASH) {
       shownAnim = fixedAnim;
       g_splash.show(fixedAnim);
+      if (!clawdPackOk()) {          // animations not uploaded: say so, don't sit black
+        static const char* const msg = "clawd.pak missing";
+        ClawdText t = {&CF_STYRENE_14, msg,
+                       (int16_t)(CLAWD_W / 2 - clawdTextWidth(CF_STYRENE_14, msg) / 2),
+                       (int16_t)(CLAWD_H / 2 - 8), CLAWD_DIM};
+        clawdRender(0, CLAWD_H / 2 - 8, CLAWD_W, 20, CLAWD_BG, nullptr, 0, &t, 1);
+      }
     } else {
       g_splash.hide();
       if (was == VIEW_SPLASH || was == VIEW_NONE) g_mascot.reset();

@@ -107,6 +107,9 @@ static bool fetchUsage(const Settings& s) {
 
   std::unique_ptr<NetClient> client;
   if (https) {
+#if defined(SMALLTV_CLAWD)
+    return false;   // no TLS in the Clawdmeter build: use http:// or push mode
+#endif
     if (ESP.getFreeHeap() < 20000) return false;   // too little heap for TLS (incl. the 9 KB thunk); skip, don't crash
     client.reset(platformMakeSecureClient(2048));   // LAN / self-hosted endpoint
   } else {

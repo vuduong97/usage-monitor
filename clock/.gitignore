@@ -42,3 +42,6 @@ dependencies.lock
 
 # manual quotes-branch staging dir (see .github/scripts/fetch-quotes.mjs)
 /out/
+
+# Backups pulled from the stock clock (contain WiFi/API secrets)
+.stock-backup/
