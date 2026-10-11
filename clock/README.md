@@ -85,7 +85,13 @@ clawd anims
 ## Firmware
 
 ```sh
-cd smalltv && pio run -e smalltv_clawd                       # image must stay <= ~524 KB
+tools/flash.sh               # build + size check + OTA to /update + wait for the reboot (~35 s)
+tools/flash.sh --no-build    # re-flash the last build
+#  clock: CLAWD_CLOCK, else http_targets in ~/.config/claude-usage-monitor/config
+#  web password (if enabled): CLAWD_AUTH=user:pass
+
+# by hand:
+cd smalltv && pio run -e smalltv_clawd                       # image must stay <= 524,288 B
 curl -F "firmware=@.pio/build/smalltv_clawd/firmware.bin" http://192.168.1.48/update
 tools/clawd_preview/run.sh                                   # desktop render of the screens
 ```
