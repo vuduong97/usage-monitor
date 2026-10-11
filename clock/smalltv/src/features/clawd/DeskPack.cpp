@@ -133,7 +133,7 @@ struct SpanOut {
   }
 };
 
-bool deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx) {
+bool deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx, bool full) {
   if (!fn || d > a.frameCount) return false;
   uint8_t ix[8];
   if (!backendRead(a.indexOff + 4u * d, ix, 8)) return false;
@@ -157,8 +157,13 @@ bool deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx) {
         if (lo < 0 || hi < 0) return false;
         k = (uint32_t)lo | ((uint32_t)hi << 8);
       }
-      out.flush();
-      i += k;
+      if (full) {
+        if (i + k > cells) return false;
+        while (k--) out.put(i++, 0);
+      } else {
+        out.flush();
+        i += k;
+      }
     } else if (op < 0x80) {                            // literal pixels
       const int k = (op & 0x3F) + 1;
       if (i + k > cells) return false;
@@ -181,6 +186,7 @@ bool deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx) {
     }
     if (i > cells) return false;
   }
+  if (full) while (i < cells) out.put(i++, 0);
   out.flush();
   return !r.err;
 }

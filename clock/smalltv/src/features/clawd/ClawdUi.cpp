@@ -352,56 +352,79 @@ static void deskStat(uint32_t drawUs, uint32_t lateUs) {
 }
 
 // Apply delta `d` of the current animation to the panel.
-static bool deskDraw(uint16_t d) {
+static bool deskDraw(uint16_t d, bool full = false) {
   if (g_desk.index < 0) return false;
-  if (!deskPackDraw(g_desk.a, d, deskSpan, nullptr)) {
+  if (!deskPackDraw(g_desk.a, d, deskSpan, nullptr, full)) {
     g_desk.index = -1;               // pack gone or corrupt: stop drawing from it
     return false;
   }
   return true;
 }
 
-// Black out the current animation's crop (the screen part we may touch).
-static void deskClearCrop() {
-  if (g_desk.index < 0) return;
+// A screen rectangle [x0,x1) x [y0,y1); empty when x1 <= x0 or y1 <= y0.
+struct DeskRect { int x0, y0, x1, y1; };
+static const DeskRect DESK_NONE = {0, 0, 0, 0};
+
+// The current animation's crop on screen (the part it may touch), or empty.
+static DeskRect deskCrop() {
+  if (g_desk.index < 0) return DESK_NONE;
   const DeskAnim& a = g_desk.a;
-  int y0 = a.y - g_desk.shift, y1 = y0 + a.h;
-  if (y0 < 0) y0 = 0;
-  if (y1 > g_desk.limit) y1 = g_desk.limit;
-  if (y1 > y0) fillRect(a.x, y0, a.w, y1 - y0, CLAWD_BG);
+  DeskRect r = {a.x, a.y - g_desk.shift, a.x + a.w, a.y - g_desk.shift + a.h};
+  if (r.y0 < 0) r.y0 = 0;
+  if (r.y1 > g_desk.limit) r.y1 = g_desk.limit;
+  return r;
 }
 
-// Start item g_desk.item of g_desk.seq from its first frame. The crop area
-// must be black (a full repaint, or deskClearCrop of the previous one).
-static void deskStartItem(uint32_t now) {
+static void fillDeskRect(int x0, int y0, int x1, int y1) {
+  if (x1 > x0 && y1 > y0) fillRect(x0, y0, x1 - x0, y1 - y0, CLAWD_BG);
+}
+
+// Black out `r` except where it overlaps `keep` (up to four bands).
+static void deskClearExcept(const DeskRect& r, const DeskRect& keep) {
+  const int ix0 = r.x0 > keep.x0 ? r.x0 : keep.x0, ix1 = r.x1 < keep.x1 ? r.x1 : keep.x1;
+  const int iy0 = r.y0 > keep.y0 ? r.y0 : keep.y0, iy1 = r.y1 < keep.y1 ? r.y1 : keep.y1;
+  if (ix1 <= ix0 || iy1 <= iy0) { fillDeskRect(r.x0, r.y0, r.x1, r.y1); return; }
+  fillDeskRect(r.x0, r.y0, r.x1, iy0);       // above
+  fillDeskRect(r.x0, iy1, r.x1, r.y1);       // below
+  fillDeskRect(r.x0, iy0, ix0, iy1);         // left
+  fillDeskRect(ix1, iy0, r.x1, iy1);         // right
+}
+
+// Start item g_desk.item of g_desk.seq from its first frame. `old` is the
+// screen area that may still show something (the previous crop, or the whole
+// scene); empty when it is already black. Frame 0 is painted in full over the
+// old picture and only the part of `old` outside the new crop is blacked out,
+// so a switch never flashes black (the panel has no framebuffer to hide it).
+static void deskStartItem(uint32_t now, const DeskRect& old) {
   int idx = deskPackFind(g_desk.seq.names[g_desk.item]);
   if (idx < 0 && deskPackCount() > 0) idx = 0;        // unknown name: still show Clawd
   g_desk.index = (idx >= 0 && deskPackAnim(idx, g_desk.a)) ? (int16_t)idx : (int16_t)-1;
   g_desk.frame = 0;
   g_desk.held = false;
+  const bool dirty = old.x1 > old.x0 && old.y1 > old.y0;
+  if (dirty) deskClearExcept(old, deskCrop());
   const uint32_t t0 = clawdMicros();
-  if (!deskDraw(0)) return;
+  if (!deskDraw(0, dirty)) return;
   deskStat(clawdMicros() - t0, 0);
   g_desk.due = now + deskPackHold(g_desk.a, 0);
 }
 
 // Take over g_deskWant from its first item.
-static void deskAdopt(uint32_t now, bool clear) {
-  if (clear) deskClearCrop();
+static void deskAdopt(uint32_t now, const DeskRect& old) {
   g_desk.seq = g_deskWant;
   g_desk.item = 0;
   g_deskSwitch = g_deskSwitchNow = false;
-  deskStartItem(now);
+  deskStartItem(now, old);
 }
 
 // One step past the last frame: next item, loop back, or hold.
 static void deskPassEnd(uint32_t now, uint32_t late) {
-  if (g_deskSwitch) { deskAdopt(now, true); return; }
+  if (g_deskSwitch) { deskAdopt(now, deskCrop()); return; }
   const DeskSeq& q = g_desk.seq;
   if (g_desk.item + 1 < q.n || (q.repeat && q.n > 1)) {
-    deskClearCrop();
+    const DeskRect old = deskCrop();
     g_desk.item = (uint8_t)((g_desk.item + 1) % q.n);
-    deskStartItem(now);
+    deskStartItem(now, old);
     return;
   }
   if (g_desk.a.flags & DESK_FLAG_ONCE) { g_desk.held = true; return; }
@@ -415,7 +438,7 @@ static void deskPassEnd(uint32_t now, uint32_t late) {
 static void deskStep(uint32_t now) {
   if (g_desk.index < 0) return;
   if (g_deskSwitch && (g_deskSwitchNow || g_desk.held || now - g_deskSwitchSince >= DESK_SWITCH_WAIT_MS)) {
-    deskAdopt(now, true);
+    deskAdopt(now, deskCrop());
     return;
   }
   if (g_desk.held || (int32_t)(now - g_desk.due) < 0) return;
@@ -447,12 +470,24 @@ static void deskLine(uint32_t now, char* out, size_t n) {
 
 static bool deskHasLine() { return g_deskText[0] || g_cdOn; }
 
-// force: the screen was just cleared; restart the sequence from its first frame.
-static void deskTick(uint32_t now, bool force) {
+enum DeskRestart : uint8_t { DESK_STEP, DESK_ON_BLACK, DESK_IN_PLACE };
+
+// DESK_ON_BLACK: the screen was just cleared; DESK_IN_PLACE: the desk is still
+// on screen (new sequence, or the text line came or went). Both restart the
+// sequence from its first frame; in place it is painted over the old scene.
+static void deskTick(uint32_t now, DeskRestart restart) {
+  const bool force = restart != DESK_STEP;
   if (force) {
     g_desk.shift = deskHasLine() ? DESK_TEXT_SHIFT : 0;
     g_desk.limit = deskHasLine() ? DESK_TEXT_TOP : CLAWD_H;
-    deskAdopt(now, false);
+    if (restart == DESK_IN_PLACE) {
+      // the line band is redrawn by drawStatus below; the scene above it in place
+      if (deskHasLine()) fillDeskRect(0, g_desk.limit, CLAWD_W, CLAWD_H);
+      deskAdopt(now, DeskRect{0, 0, CLAWD_W, g_desk.limit});
+      if (g_desk.index < 0) fillDeskRect(0, 0, CLAWD_W, CLAWD_H);
+    } else {
+      deskAdopt(now, DESK_NONE);
+    }
     if (g_desk.index < 0) {
       static const char* const msg = "desk.pak missing";
       ClawdText t = {&CF_STYRENE_14, msg,
@@ -669,13 +704,19 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
     const View was = g_view;
     g_view = want;
     g_dirtyAll = false;
+    if (want == VIEW_DESK && was == VIEW_DESK) {   // repaint the desk without a black flash
+      g_deskDirty = false;
+      g_statusDrawn[0] = 0;
+      deskTick(now, DESK_IN_PLACE);
+      return;
+    }
     fillRect(0, 0, CLAWD_W, CLAWD_H, CLAWD_BG);
     g_frameOn = false;
     if (want == VIEW_DESK) {
       g_splash.hide();
       g_deskDirty = false;
       g_statusDrawn[0] = 0;
-      deskTick(now, true);
+      deskTick(now, DESK_ON_BLACK);
       return;
     }
     if (want == VIEW_SPLASH) {
@@ -702,7 +743,7 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
   }
 
   if (g_view == VIEW_DESK) {
-    deskTick(now, false);
+    deskTick(now, DESK_STEP);
     return;
   }
   if (g_view == VIEW_SPLASH) {

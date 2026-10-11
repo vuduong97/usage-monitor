@@ -39,6 +39,8 @@ int  deskPackFind(const char* name);       // index or -1
 bool deskPackAnim(int index, DeskAnim& out);
 // Apply delta `d` (0..frameCount-1 = frames, frameCount = the wrap) by calling
 // `fn` for every changed run, top to bottom. False on a read error or bad data
-// (what was drawn so far stays drawn).
-bool     deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx);
+// (what was drawn so far stays drawn). `full` also paints the skipped pixels
+// as index 0: for frame 0 (a delta from black) that repaints the whole crop
+// over whatever is on screen, without blacking it out first.
+bool     deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx, bool full = false);
 uint16_t deskPackHold(const DeskAnim& a, uint16_t f);   // ms; 50 on error
