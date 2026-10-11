@@ -36,6 +36,9 @@ clawd CLI ─────────┘                          ├─ /api/us
 - Agent priority: needs you (`notification`) > error > compacting (`sweeping`) >
   2+ subagents (`juggling`) > 1 subagent or 2 sessions (`headphones`) >
   3+ sessions (`building`) > tool running (`typing`) > `thinking` > done (`happy`, 4 s).
+- pi "needs you" clears as soon as you go to that session (focus its terminal tab, click or
+  press a key), even before answering, and stays off until the next question. Claude Code
+  has no focus/key hook, so its "needs you" clears only on an answer.
 - Pet: 23:00–07:00 brightness cap 15%; 5 min without keyboard/mouse → yawn → sleeping, back → wake + greeting;
   evening yawn 22:00–23:00; session ≥ 80% → `low battery`; quota reset → `double jump`;
   every 10 finished turns a day → `heart eyes`.

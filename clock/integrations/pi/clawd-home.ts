@@ -9,12 +9,24 @@
 // processes pi-subagents starts) reports as a sub-session: the clock counts
 // it as a subagent and never celebrates its turns.
 //
+// "Needs you" clears once the user goes to that session: while it is pending,
+// the first focus-in, mouse click or keypress on the terminal sends one
+// `attention_seen`. That input is read by a passive extra listener on
+// process.stdin (pi itself reads stdin the same way); ctx.ui.onTerminalInput
+// is not enough because in fullscreen mode pi's viewport consumes focus-in
+// and clicks before extension listeners see them.
+//
 // Install: integrations/pi/install.sh (symlinks this file into
 // ~/.pi/agent/extensions/).
 import http from "node:http";
 
 type Ctx = { mode?: string; sessionManager?: { getSessionId?: () => string } };
 type Pi = { on: (event: string, handler: (e: any, ctx: Ctx) => unknown) => unknown };
+type Input = {
+  isTTY?: boolean;
+  on: (event: "data", listener: (chunk: unknown) => void) => unknown;
+  off: (event: "data", listener: (chunk: unknown) => void) => unknown;
+};
 
 const PORT = Number(process.env.CLAWD_EVENT_PORT) || 47913;
 const SUBAGENT_TOOLS = new Set(["subagent"]);     // pi-subagents
@@ -26,6 +38,52 @@ export function sessionId(ctx: Ctx): string {
   } catch {
     return "default";
   }
+}
+
+// Escape sequences in a stdin chunk, longest forms first: DCS/SOS/PM/APC and
+// OSC strings (terminal replies), legacy X10 mouse, CSI, SS3.
+// Built from ESC/BEL strings: matching control characters is the point here.
+const ESC = String.fromCharCode(27);
+const BEL = String.fromCharCode(7);
+const ST = `(?:${BEL}|${ESC}\\\\)`;
+const ESCAPES = new RegExp(
+  [
+    `${ESC}[P_^X][\\s\\S]*?${ST}`,          // DCS/SOS/PM/APC
+    `${ESC}\\][\\s\\S]*?${ST}`,             // OSC
+    `${ESC}\\[M[\\s\\S]{3}`,                 // X10 mouse
+    `${ESC}\\[([0-?]*)[ -/]*([@-~])`,         // CSI
+    `${ESC}O[@-~]`,                           // SS3
+  ].join("|"),
+  "g",
+);
+const KEY_FINALS = new Set("ABCDEFHPQSZ~u");     // cursor/F-keys, Shift-Tab, ~-keys, kitty CSI-u
+
+/** Whether a raw stdin chunk holds something the user did: focus-in, a mouse
+ *  press, or a key. Terminal replies (colors, sizes, device attributes, mode
+ *  reports), focus-out, mouse motion, wheel and releases do not count. */
+export function isUserInput(chunk: unknown): boolean {
+  let s: string;
+  try {
+    if (typeof chunk === "string") s = chunk;
+    else if (Buffer.isBuffer(chunk)) s = chunk.toString("utf8");
+    else return false;
+  } catch {
+    return false;
+  }
+  let found = false;
+  const rest = s.replace(ESCAPES, (seq: string, csiParams?: string, final?: string) => {
+    const params = csiParams ?? "";
+    if (found) return "";
+    if (seq.startsWith(`${ESC}O`)) found = true;                         // SS3 key
+    else if (final === undefined) return "";                            // OSC/DCS/APC/X10
+    else if (params === "" && final === "I") found = true;              // focus in
+    else if (params.startsWith("<")) {                                  // SGR mouse
+      const b = Number(params.slice(1).split(";")[0]);
+      found = final === "M" && (b & 0xe0) === 0 && (b & 3) !== 3;       // press, not motion/wheel
+    } else if (!/^[?<>=]/.test(params)) found = KEY_FINALS.has(final);  // private = a reply
+    return "";
+  });
+  return found || rest.length > 0;                                       // typed text, Enter, Esc
 }
 
 export function post(body: Record<string, unknown>, port = PORT): void {
@@ -53,10 +111,48 @@ function firstQuestion(input: any): string {
   }
 }
 
-export default function clawdHome(pi: Pi, send: (b: Record<string, unknown>) => void = post) {
+const CLEARS_ATTENTION = new Set(["attention_done", "prompt", "stop", "abort", "end"]);
+
+export default function clawdHome(
+  pi: Pi,
+  send: (b: Record<string, unknown>) => void = post,
+  input: Input | undefined = process.stdin,
+) {
+  let pending: string | undefined;          // sid whose "needs you" the user has not seen yet
+  let listening = false;
+  const onInput = (chunk: unknown) => {
+    try {
+      if (pending === undefined || !isUserInput(chunk)) return;
+      const sid = pending;
+      pending = undefined;                  // one `attention_seen` per question
+      send({ ev: "attention_seen", sid, sub: false });
+    } catch {
+      /* never let reporting affect pi */
+    }
+  };
+  const listen = (on: boolean) => {
+    try {
+      if (on === listening || !input?.isTTY) return;
+      if (on) input.on("data", onInput);
+      else input.off("data", onInput);
+      listening = on;
+    } catch {
+      /* ignore */
+    }
+  };
+
   const emit = (ev: string, ctx: Ctx, extra: Record<string, unknown> = {}) => {
     try {
-      send({ ev, sid: sessionId(ctx), sub: ctx?.mode !== undefined && ctx.mode !== "tui", ...extra });
+      const sid = sessionId(ctx);
+      const sub = ctx?.mode !== undefined && ctx.mode !== "tui";
+      if (ev === "attention" && !sub) {
+        pending = sid;
+        listen(true);
+      } else if (pending === sid && (CLEARS_ATTENTION.has(ev) || QUESTION_TOOLS.has(String(extra.tool ?? "")))) {
+        pending = undefined;                // answered or moved on before the user came
+      }
+      if (ev === "end") listen(false);
+      send({ ev, sid, sub, ...extra });
     } catch {
       /* ignore */
     }

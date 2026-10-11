@@ -111,6 +111,36 @@ def test_attention_expires_after_ttl():
     assert t.view(T0 + ev.ATTENTION_TTL + 1) is None
 
 
+def test_attention_seen_hides_needs_you_until_the_next_question():
+    t = ev.Tracker()
+    pi = lambda e, sid="p1", **kw: t.ingest(ev.pi_event({"ev": e, "sid": sid, **kw}), T0)
+    pi("prompt", sid="p2")
+    pi("attention", msg="pi needs you")
+    v = t.view(T0)
+    assert (v.anim, v.text) == ("notification", "pi needs you")
+    pi("attention_seen")
+    assert t.sessions["pi:p1"].state == "waiting"
+    assert t.view(T0).anim == "thinking"         # the other session shows, not p1
+    pi("attention_seen")                           # a repeat changes nothing
+    assert t.sessions["pi:p1"].state == "waiting"
+    pi("attention", msg="Allow rm?")             # a new question calls again
+    assert t.view(T0).text == "Allow rm?"
+    pi("attention_seen")
+    pi("attention_done")                           # answered: back to work
+    assert t.sessions["pi:p1"].state == "thinking"
+    pi("attention_seen", sid="p2")                # not waiting on anything: ignored
+    assert t.sessions["pi:p2"].state == "thinking"
+
+
+def test_seen_session_alone_shows_nothing_and_expires_like_attention():
+    t = ev.Tracker()
+    t.ingest(ev.pi_event({"ev": "attention", "sid": "p1"}), T0)
+    t.ingest(ev.pi_event({"ev": "attention_seen", "sid": "p1"}), T0 + 1)
+    assert t.view(T0 + 1) is None
+    t.view(T0 + 1 + ev.ATTENTION_TTL + 1)
+    assert t.sessions["pi:p1"].state == "idle"
+
+
 # ---- Claude hook mapping --------------------------------------------------------------
 def test_claude_mapping():
     assert claude("UserPromptSubmit")["ev"] == "prompt"

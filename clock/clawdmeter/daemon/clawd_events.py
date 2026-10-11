@@ -75,7 +75,8 @@ class Sess:
     sid: str
     src: str
     sub: bool = False          # a child agent process (e.g. `pi -p` run by a subagent)
-    state: str = "idle"        # idle | thinking | working | attention | sweeping
+    state: str = "idle"        # idle | thinking | working | attention | waiting | sweeping
+    #   waiting = still needs an answer, but the user has seen it (hidden)
     tool: str = ""
     msg: str = ""
     subs: int = 0              # live subagents this session started
@@ -86,7 +87,8 @@ class Sess:
 
 
 EVENTS = {"start", "prompt", "tool", "tool_done", "tool_error", "subagent_start",
-          "subagent_stop", "attention", "attention_done", "compact", "compact_done",
+          "subagent_stop", "attention", "attention_seen", "attention_done", "compact",
+          "compact_done",
           "stop", "stop_error", "abort", "end"}
 
 
@@ -117,10 +119,13 @@ class Tracker:
         elif kind == "tool_done":
             s.state, s.msg = "working", ""
         elif kind == "attention_done":
-            if s.state == "attention":
+            if s.state in ("attention", "waiting"):
                 s.state, s.msg = "thinking", ""
+        elif kind == "attention_seen":         # the user went to that session: stop calling
+            if s.state == "attention":
+                s.state, s.msg = "waiting", ""
         elif kind == "tool_error":
-            if s.state != "attention":
+            if s.state not in ("attention", "waiting"):
                 s.state = "working"
             s.error_until, s.error_tool = now + ERROR_SHOW, tool or s.tool
         elif kind == "subagent_start":
@@ -148,7 +153,7 @@ class Tracker:
     def expire(self, now: float) -> None:
         for sid, s in list(self.sessions.items()):
             age = now - s.last
-            if s.state == "attention" and age > ATTENTION_TTL:
+            if s.state in ("attention", "waiting") and age > ATTENTION_TTL:
                 s.state, s.msg = "idle", ""
             elif s.state in ("thinking", "working", "sweeping") and age > SESSION_TTL:
                 s.state, s.subs = "idle", 0
