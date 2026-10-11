@@ -502,7 +502,9 @@ class Brain:
             cd = focus
         if v is None:
             v = self.pet.moment(now) or self.pet.continuous(now)
-        return {"a": v.anim if v else "", "txt": v.text if v else "", "cd": cd,
+        txt = v.text if v else ""
+        txt = txt[:1].upper() + txt[1:]          # the clock text always starts with a capital
+        return {"a": v.anim if v else "", "txt": txt, "cd": cd,
                 "dim": self.pet.dim(now), "focus_until": int(self.pokes.focus_until) if cd else 0}
 
 

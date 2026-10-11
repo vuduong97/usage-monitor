@@ -218,8 +218,19 @@ def test_poke_say_beats_agent_then_agent_returns():
     b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0)
     assert b.pokes.handle({"cmd": "say", "text": "drink water"}, T0) == {"ok": True}
     d = b.desired(T0)
-    assert (d["a"], d["txt"]) == ("idle", "drink water")
+    assert (d["a"], d["txt"]) == ("idle", "Drink water")
     assert b.desired(T0 + 11)["a"] == "typing"
+
+
+def test_clock_text_starts_with_a_capital():
+    b = brain_at()
+    b.pokes.handle({"cmd": "say", "text": "break time, 2 min"}, T0)
+    assert b.desired(T0)["txt"] == "Break time, 2 min"
+    b.pokes.handle({"cmd": "clear"}, T0)
+    b.tracker.ingest(claude("PreToolUse", tool_name="mcp__web__fetch"), T0)
+    assert b.desired(T0)["txt"] == "Mcp__web__fetch"
+    b.tracker.ingest(claude("Stop"), T0)
+    assert b.desired(T0)["txt"] == "Done!"
 
 
 def test_poke_validation():

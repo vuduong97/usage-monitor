@@ -161,10 +161,10 @@ def test_cli_end_to_end(monkeypatch, capsys):
         monkeypatch.setenv("CLAWD_EVENT_PORT", str(srv.server.port))
         assert cli.main(["say", "drink water"]) == 0
         d = srv.brain.desired(time.time())
-        assert (d["a"], d["txt"]) == ("idle", "drink water")
+        assert (d["a"], d["txt"]) == ("idle", "Drink water")
         assert cli.main(["focus", "abc"]) == 2
         assert cli.main(["focus", "25"]) == 0
         capsys.readouterr()
         assert cli.main(["status"]) == 0
         out = capsys.readouterr().out
-        assert "clock: idle - drink water" in out and "focus: 2" in out
+        assert "clock: idle - Drink water" in out and "focus: 2" in out
