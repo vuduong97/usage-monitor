@@ -49,6 +49,18 @@ beep = off
 #   (unset) = WiFi push off (default)
 # http_targets = 192.168.0.125
 
+# Also show the Claude accounts held by a local CLIProxyAPI (macOS daemon).
+# Each active Claude account in the proxy competes with config_dirs for "the
+# plan in use", like an extra config dir. The daemon asks the proxy to fetch
+# the read-only usage numbers with the account's token ($TOKEN$ is filled in
+# proxy-side), so the Claude token never leaves the proxy.
+# The management key is read from the macOS Keychain, never from this file:
+#   security add-generic-password -U -s clawdmeter-cliproxy -a "$USER" -w
+#   off = ignore the proxy (default)
+#   on  = poll every active claude account in it
+# cliproxy = off
+# cliproxy_url = http://localhost:8317
+
 # Bluetooth on the macOS daemon. Set off when you only use WiFi screens, so the
 # daemon stops scanning for a BLE Clawdmeter. Read at startup (restart to apply).
 #   on  = look for the BLE device (default)

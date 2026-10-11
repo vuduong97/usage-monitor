@@ -24,6 +24,10 @@ def _no_real_anthropic_store(tmp_path_factory, monkeypatch):
     # The default dir now checks ~/.config/anthropic first; never read the
     # developer's real login from a unit test.
     monkeypatch.setattr(mod, "ANTHROPIC_STORE_DIR", tmp_path_factory.mktemp("no-store"))
+    # Nor the real config (cliproxy = on would reach the developer's proxy), and
+    # start every test without a source in backoff.
+    monkeypatch.setattr(mod, "CONFIG_FILE", tmp_path_factory.mktemp("cfg") / "config")
+    mod._BACKOFF.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +158,7 @@ def test_poll_active_payload_picks_active_and_skips_tokenless(monkeypatch):
         return {"s": 25, "ok": True} if token == "tA" else None
 
     sel = PlanSelector()
-    with patch.object(mod, "poll_api", new=AsyncMock(side_effect=fake_poll)):
+    with patch.object(mod, "poll_token", new=AsyncMock(side_effect=fake_poll)):
         payload = _run(mod.poll_active_payload(sel))
     assert payload == {"s": 25, "ok": True}  # only A had a token
 
@@ -162,7 +166,7 @@ def test_poll_active_payload_picks_active_and_skips_tokenless(monkeypatch):
 def test_poll_active_payload_returns_none_when_all_fail(monkeypatch):
     monkeypatch.setattr(mod, "read_config_dirs", lambda: [A, B])
     monkeypatch.setattr(mod, "read_token_for", lambda d: None)
-    with patch.object(mod, "poll_api", new=AsyncMock(return_value=None)):
+    with patch.object(mod, "poll_token", new=AsyncMock(return_value=None)):
         assert _run(mod.poll_active_payload(PlanSelector())) is None
 
 
@@ -173,7 +177,7 @@ def test_poll_active_payload_selects_higher_util_plan(monkeypatch):
     async def fake_poll(token):
         return {"s": 12, "ok": True} if token == "tA" else {"s": 40, "ok": True}
 
-    with patch.object(mod, "poll_api", new=AsyncMock(side_effect=fake_poll)):
+    with patch.object(mod, "poll_token", new=AsyncMock(side_effect=fake_poll)):
         payload = _run(mod.poll_active_payload(PlanSelector()))
     assert payload["s"] == 40  # startup -> highest util plan (B)
 

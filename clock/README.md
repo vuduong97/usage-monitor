@@ -96,6 +96,27 @@ ble = off                         # optional: WiFi only, stop scanning for a BLE
 
 A bare host is posted to `http://<host>/api/usage`. One API poll feeds the BLE device and every WiFi target, so this adds no API calls. Attention alerts, Enterprise mode and the clock are carried too. `http_targets` is re-read every tick; `ble` is read at startup.
 
+#### How usage is read
+
+Each poll reads the read-only usage endpoint that Claude Code's `/usage` shows (`/api/oauth/usage`), so polling costs no quota. Only when it has no 5-hour window for the account (Enterprise spend limits) does the daemon fall back to the older probe: a 1-token Haiku request whose rate-limit headers carry the numbers.
+
+Claude Code 2.1.29x and later keep the login in `~/.config/anthropic/credentials/`. The daemon reads it there first, then `~/.claude/.credentials.json`, then the Keychain.
+
+#### Accounts in CLIProxyAPI
+
+If your Claude subscription is logged in to a local [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI), the macOS daemon can show it too, alongside the `claude login` account:
+
+```sh
+security add-generic-password -U -s clawdmeter-cliproxy -a "$USER" -w   # paste the management key
+```
+
+```ini
+cliproxy = on
+# cliproxy_url = http://localhost:8317   # default
+```
+
+Every active Claude account in the proxy (`/v0/management/auth-files`, re-listed every 5 minutes) becomes a plan next to your config dirs, and the clock shows whichever plan's session usage rose most recently. The daemon sends the usage request through the proxy's management `api-call` endpoint with `$TOKEN$` as the bearer, so the proxy fills in the account's token and the daemon never holds it. If the proxy is down, or the key is wrong, that source is skipped; the screen shows "No data" only when every source is dead.
+
 
 ## Linux installation
 

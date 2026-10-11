@@ -80,6 +80,33 @@ API_BODY = {
 }
 
 
+# Read-only usage endpoint (what Claude Code's /usage shows). Costs no quota,
+# unlike the Haiku probe above, which stays as the fallback for accounts where
+# it reports nothing usable (Enterprise spend limits, API organizations).
+USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
+USAGE_HEADERS_TEMPLATE = {
+    "anthropic-beta": "oauth-2025-04-20",
+    "Content-Type": "application/json",
+    "User-Agent": "claude-code/2.1.5",
+}
+
+# CLIProxyAPI (https://github.com/router-for-me/CLIProxyAPI) as a usage source:
+# the daemon asks the proxy's management API to make the usage request with an
+# account's token (`$TOKEN$` is substituted proxy-side), so the Claude token
+# never leaves the proxy. The management key lives only in the macOS Keychain.
+CLIPROXY_DEFAULT_URL = "http://localhost:8317"
+CLIPROXY_KEYCHAIN_SERVICE = "clawdmeter-cliproxy"
+CLIPROXY_AUTH_FILES_PATH = "/v0/management/auth-files"
+CLIPROXY_API_CALL_PATH = "/v8/management/requests/api-call"
+CLIPROXY_ACCOUNTS_TTL = 300      # re-list proxy accounts every 5 minutes
+CLIPROXY_TIMEOUT = 20.0
+
+
+class UsageNotApplicable(Exception):
+    """The usage endpoint has no 5h/7d windows for this account (API
+    organization, Enterprise spend limit, endpoint gone): use the fallback."""
+
+
 class TokenExpired(Exception):
     """Raised by poll_api on a 401/403 — the access token is dead. The daemon never
     refreshes (pure free-ride: Claude Code owns refreshing), so the caller just
@@ -611,6 +638,264 @@ def _billing_period_info(now: float, reset_ts: str) -> dict:
     }
 
 
+def _minutes_until(iso_ts, now: float) -> int:
+    """Whole minutes from `now` until an ISO-8601 timestamp (0 if past/invalid)."""
+    if not isinstance(iso_ts, str) or not iso_ts:
+        return 0
+    try:
+        ts = datetime.datetime.fromisoformat(iso_ts.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return 0
+    mins = (ts - now) / 60.0
+    return int(round(mins)) if mins > 0 else 0
+
+
+def _window_pct(window: dict | None) -> int:
+    try:
+        return max(0, min(100, int(round(float((window or {}).get("utilization") or 0)))))
+    except (TypeError, ValueError):
+        return 0
+
+
+def usage_from_oauth_usage(body, now: float | None = None) -> dict:
+    """Map an /api/oauth/usage response to the device payload (s sr w wr st acct ok).
+
+    Raises UsageNotApplicable when the response carries no 5h window, so the
+    caller can fall back to the rate-limit-header probe.
+    """
+    if not isinstance(body, dict):
+        raise UsageNotApplicable("not a JSON object")
+    five = body.get("five_hour")
+    if not isinstance(five, dict) or five.get("utilization") is None:
+        raise UsageNotApplicable("no five_hour window")
+    week = body.get("seven_day") if isinstance(body.get("seven_day"), dict) else None
+    now = time.time() if now is None else now
+    status = "allowed"
+    if five.get("locked_reason") or (week or {}).get("locked_reason"):
+        status = "rejected"
+    else:
+        for lim in body.get("limits") or []:
+            if (isinstance(lim, dict) and lim.get("kind") in ("session", "weekly")
+                    and lim.get("severity") not in (None, "normal")):
+                status = "allowed_warning"
+                break
+    return {
+        "s": _window_pct(five),
+        "sr": _minutes_until(five.get("resets_at"), now),
+        "w": _window_pct(week),
+        "wr": _minutes_until((week or {}).get("resets_at"), now),
+        "st": status,
+        "acct": "pro",
+        "ok": True,
+    }
+
+
+def _usage_result(status: int, text: str) -> dict | None:
+    """Shared handling of a usage-endpoint answer, direct or via the proxy.
+
+    401/403 -> TokenExpired; 404 or a "not applicable" 400 -> UsageNotApplicable;
+    other errors -> None (try again next poll); 200 -> device payload.
+    """
+    if status in (401, 403):
+        raise TokenExpired()
+    if status == 404 or (status == 400 and "not applicable" in text.lower()):
+        raise UsageNotApplicable(f"HTTP {status}")
+    if status >= 400:
+        log(f"Usage endpoint HTTP {status}: {text[:200]}")
+        return None
+    try:
+        body = json.loads(text)
+    except ValueError:
+        log("Usage endpoint returned non-JSON")
+        return None
+    payload = usage_from_oauth_usage(body)
+    add_chime_field(payload)
+    add_clock_fields(payload)
+    return payload
+
+
+async def poll_usage_endpoint(token: str) -> dict | None:
+    """Usage for a Claude Code token via the read-only /api/oauth/usage."""
+    headers = dict(USAGE_HEADERS_TEMPLATE)
+    headers["Authorization"] = f"Bearer {token}"
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as http:
+            resp = await http.get(USAGE_URL, headers=headers)
+    except httpx.HTTPError as e:
+        log(f"Usage endpoint call failed: {e}")
+        return None
+    return _usage_result(resp.status_code, resp.text)
+
+
+async def poll_token(token: str) -> dict | None:
+    """Payload for one Claude Code token: the usage endpoint first, the Haiku
+    rate-limit-header probe (poll_api) only when the endpoint has no 5h/7d
+    windows for this account."""
+    try:
+        return await poll_usage_endpoint(token)
+    except UsageNotApplicable as e:
+        log(f"Usage endpoint not applicable ({e}); using the rate-limit headers")
+        return await poll_api(token)
+
+
+def read_cliproxy_key() -> str | None:
+    """The CLIProxyAPI management key from the Keychain, or None."""
+    if sys.platform != "darwin":
+        return None
+    try:
+        out = subprocess.run(
+            ["security", "find-generic-password", "-s", CLIPROXY_KEYCHAIN_SERVICE, "-w"],
+            check=True, capture_output=True, text=True, timeout=10,
+        )
+    except subprocess.CalledProcessError:
+        return None
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        log(f"cliproxy: Keychain access error: {e}")
+        return None
+    key = _decode_keychain_blob(out.stdout).strip()
+    return key or None
+
+
+def read_cliproxy_url() -> str:
+    url = (read_config_value("cliproxy_url") or CLIPROXY_DEFAULT_URL).strip().rstrip("/")
+    return url if url.startswith(("http://", "https://")) else "http://" + url
+
+
+class CliProxySource:
+    """Every active Claude account in CLIProxyAPI, each polled as its own plan.
+
+    Plan keys are "cliproxy:<auth index>". Proxy-level failures (not running,
+    wrong key, timeout) make the whole source yield nothing this cycle; a
+    401/403 for one account makes only that account dead.
+    """
+
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None) -> None:
+        self._transport = transport   # tests inject httpx.MockTransport
+        self._problem = ""            # last source-level failure, logged once
+        self._backoff: dict[str, float] = {}   # auth index -> retry time
+        self._accounts: list[str] = []
+        self._listed_at = 0.0
+        self._listed_url = ""
+
+    def _report(self, problem: str) -> None:
+        """Log a source-level failure once, not on every 5 s retry tick."""
+        if problem and problem != self._problem:
+            log(problem)
+        self._problem = problem
+
+    async def _list_accounts(self, http: httpx.AsyncClient, url: str, key: str) -> list[str] | None:
+        now = time.time()
+        if url == self._listed_url and now - self._listed_at < CLIPROXY_ACCOUNTS_TTL:
+            return self._accounts
+        try:
+            resp = await http.get(url + CLIPROXY_AUTH_FILES_PATH,
+                                  headers={"Authorization": f"Bearer {key}"})
+        except httpx.HTTPError as e:
+            self._report(f"cliproxy: {url} unreachable ({type(e).__name__})")
+            return None
+        if resp.status_code != 200:
+            self._report(f"cliproxy: listing accounts failed (HTTP {resp.status_code}"
+                         f"{', check the management key' if resp.status_code in (401, 403) else ''})")
+            return None
+        try:
+            data = resp.json()
+        except ValueError:
+            self._report("cliproxy: account list is not JSON")
+            return None
+        files = data.get("files") if isinstance(data, dict) else data
+        accounts = []
+        for f in files if isinstance(files, list) else []:
+            if not isinstance(f, dict):
+                continue
+            if (f.get("provider") or f.get("type")) != "claude":
+                continue
+            if f.get("disabled") or f.get("unavailable"):
+                continue
+            idx = f.get("auth_index") or f.get("authIndex")
+            if isinstance(idx, str) and idx:
+                accounts.append(idx)
+        if accounts != self._accounts or url != self._listed_url:
+            log(f"cliproxy: {len(accounts)} claude account(s)")
+        self._accounts, self._listed_at, self._listed_url = accounts, now, url
+        return accounts
+
+    async def _poll_account(self, http: httpx.AsyncClient, url: str, key: str, idx: str) -> dict | None:
+        req = {
+            "authIndex": idx,
+            "method": "GET",
+            "url": USAGE_URL,
+            "header": {**USAGE_HEADERS_TEMPLATE, "Authorization": "Bearer $TOKEN$"},
+        }
+        try:
+            resp = await http.post(url + CLIPROXY_API_CALL_PATH, json=req,
+                                   headers={"Authorization": f"Bearer {key}"})
+        except httpx.HTTPError as e:
+            log(f"cliproxy:{idx[:8]} call failed ({type(e).__name__})")
+            return None
+        if resp.status_code != 200:
+            log(f"cliproxy:{idx[:8]} api-call HTTP {resp.status_code}")
+            if resp.status_code in (401, 403):     # management key rejected
+                self._listed_at = 0.0
+            return None
+        try:
+            wrap = resp.json()
+        except ValueError:
+            log(f"cliproxy:{idx[:8]} api-call returned non-JSON")
+            return None
+        body = wrap.get("body") if isinstance(wrap, dict) else None
+        if not isinstance(body, str):
+            body = json.dumps(body) if body is not None else ""
+        try:
+            status = int(wrap.get("status_code") or wrap.get("status") or 0)
+        except (TypeError, ValueError):
+            status = 0
+        if status == 0:
+            log(f"cliproxy:{idx[:8]} api-call without an upstream status")
+            return None
+        return _usage_result(status, body)
+
+    async def poll(self) -> tuple[dict[str, dict], bool]:
+        """({plan key: payload}, any_live) for this cycle."""
+        key = read_cliproxy_key()
+        if not key:
+            self._report(f"cliproxy: no management key in Keychain (service {CLIPROXY_KEYCHAIN_SERVICE})")
+            return {}, False
+        url = read_cliproxy_url()
+        payloads: dict[str, dict] = {}
+        any_live = False
+        async with httpx.AsyncClient(timeout=CLIPROXY_TIMEOUT, transport=self._transport) as http:
+            accounts = await self._list_accounts(http, url, key)
+            if accounts is not None:
+                self._report("")
+            now = time.time()
+            for idx in accounts or []:
+                plan = f"cliproxy:{idx[:8]}"
+                if self._backoff.get(idx, 0) > now:
+                    any_live = True      # answered recently, just not usefully
+                    continue
+                try:
+                    payload = await self._poll_account(http, url, key, idx)
+                except TokenExpired:
+                    log(f"{plan}: token expired/invalid in the proxy; skipping")
+                    continue
+                except UsageNotApplicable as e:
+                    log(f"{plan}: usage not applicable ({e}); skipping")
+                    self._backoff[idx] = now + CLIPROXY_ACCOUNTS_TTL
+                    any_live = True
+                    continue
+                any_live = True
+                if payload is None:
+                    self._backoff[idx] = now + POLL_INTERVAL
+                else:
+                    self._backoff.pop(idx, None)
+                    payloads[plan] = payload
+                    log(f"{plan} s={payload['s']} w={payload['w']}")
+        return payloads, any_live
+
+
+_CLIPROXY = CliProxySource()
+
+
 class PlanSelector:
     """Decide which config dir's plan is "active" across polls.
 
@@ -621,12 +906,13 @@ class PlanSelector:
     """
 
     def __init__(self) -> None:
-        self.prev_s: dict[Path, int] = {}
-        self.last_active: dict[Path, int] = {}
+        # Keys: a config dir Path or a "cliproxy:<auth>" string.
+        self.prev_s: dict = {}
+        self.last_active: dict = {}
         self.seq = 0
 
-    def choose(self, sessions: dict[Path, int]) -> Path:
-        """Update state from this cycle's {dir: session_pct} and return the active dir."""
+    def choose(self, sessions: dict) -> object:
+        """Update state from this cycle's {plan: session_pct} and return the active plan."""
         self.seq += 1
         for d, s in sessions.items():
             if d in self.prev_s and s > self.prev_s[d]:
@@ -640,45 +926,68 @@ class PlanSelector:
 _SELECTOR = PlanSelector()
 
 
+# Sources that answered with a non-auth client error (e.g. an API organization's
+# "credit balance too low"): plan key -> time before which they are not retried.
+# Without this the publisher's 5 s retry tick would hammer the API.
+_BACKOFF: dict = {}
+
+
+async def _poll_dir(d: Path) -> tuple[dict | None, bool]:
+    """(payload, live) for one Claude Code config dir."""
+    token = read_token_for(d)
+    if not token:
+        log(f"No token in {d}; skipping")
+        return None, False
+    try:
+        payload = await poll_token(token)
+    except TokenExpired:
+        log(f"Token in {d} expired/invalid; skipping")
+        return None, False
+    if payload is None:
+        # Authenticated but no answer: wait a full poll interval before asking
+        # this dir again rather than retrying every tick.
+        _BACKOFF[d] = time.time() + POLL_INTERVAL
+    return payload, True
+
+
 async def poll_active(selector: PlanSelector = _SELECTOR) -> tuple[dict | None, bool]:
-    """Poll every configured config dir; return ``(active_payload, all_dead)``.
+    """Poll every source; return ``(active_payload, all_dead)``.
 
-    ``active_payload`` — the active plan's payload dict, or None when no dir
-    yields a usable payload this cycle. A single configured dir (the default)
-    collapses to exactly the old single-poll path.
+    Sources are each configured Claude Code config dir and, with
+    ``cliproxy = on``, every active Claude account in CLIProxyAPI. Each is a
+    plan for the selector. A single config dir (the default) collapses to
+    exactly the old single-poll path.
 
-    ``all_dead`` — True when *every* configured dir lacked a usable token this
-    cycle (file/Keychain empty, or a 401/expired token), so the caller can
-    signal "No data". False when at least one token authenticated — including a
-    transient non-auth poll failure worth retrying silently rather than idling.
+    ``all_dead`` — True when *every* source lacked a usable token this cycle
+    (file/Keychain empty, a 401/expired token, proxy unreachable), so the caller
+    can signal "No data". False when at least one token authenticated —
+    including a transient non-auth poll failure worth retrying silently.
 
-    Pure free-ride: a 401 (TokenExpired) means that dir's token has expired and
-    only Claude Code (its owner) can re-seed it — we never refresh it ourselves.
+    Pure free-ride: a 401 (TokenExpired) means that token has expired and only
+    its owner (Claude Code, CLIProxyAPI) can re-seed it — we never refresh it.
     """
     dirs = read_config_dirs()
-    payloads: dict[Path, dict] = {}
-    sessions: dict[Path, int] = {}
+    payloads: dict = {}
     any_live = False
+    now = time.time()
     for d in dirs:
-        token = read_token_for(d)
-        if not token:
-            log(f"No token in {d}; skipping")
+        if _BACKOFF.get(d, 0) > now:
+            any_live = True          # answered recently, just not usefully
             continue
-        try:
-            payload = await poll_api(token)
-        except TokenExpired:
-            log(f"Token in {d} expired/invalid; skipping")
-            continue
-        # Authenticated: a transient None here isn't an auth failure, so the
-        # dir counts as live and we stay silent rather than idling the device.
-        any_live = True
+        payload, live = await _poll_dir(d)
+        any_live = any_live or live
         if payload is not None:
+            _BACKOFF.pop(d, None)
             payloads[d] = payload
-            sessions[d] = int(payload.get("s", 0) or 0)
+    if read_onoff_setting("cliproxy") == "on":
+        proxy_payloads, proxy_live = await _CLIPROXY.poll()
+        any_live = any_live or proxy_live
+        payloads.update(proxy_payloads)
     if not payloads:
         return None, not any_live
+    sessions = {k: int(p.get("s", 0) or 0) for k, p in payloads.items()}
     active = selector.choose(sessions)
-    if len(dirs) > 1:
+    if len(payloads) > 1 or len(dirs) > 1:
         log(f"Active plan: {active} (s={sessions[active]})")
     return payloads[active], False
 
@@ -851,6 +1160,7 @@ class Publisher:
         self.alert: dict | None = None   # latest alert, kept to match its session's clear
         self.alert_unsent = False
         self.clear_unsent = False
+        self.quiet = False        # "no usable source" already logged
 
     def attach_ble(self, session: Session) -> None:
         self.ble = session
@@ -907,6 +1217,7 @@ class Publisher:
         if self.clear_unsent:
             extra["x"] = 1
         if payload is not None:
+            self.quiet = False
             out = {**payload, **extra}
         elif dead:
             # No live token in any config dir (missing, or a 401/expired token)
@@ -915,9 +1226,12 @@ class Publisher:
                 "`claude login` or use the CLI to let Claude Code renew it")
             out = {"ok": False, **extra}
         else:
-            # Transient poll failure (a live token that didn't answer this
-            # cycle) -> stay silent and retry next tick.
-            log("No usable config dir this cycle")
+            # A live token that didn't answer usefully this cycle -> stay
+            # silent. poll_active backs that source off for a poll interval,
+            # so the next ticks don't hammer the API.
+            if not self.quiet:
+                log("No usable source this cycle; retrying quietly")
+            self.quiet = True
             return
 
         # Guard last_poll on delivery so a failed write retries next tick
