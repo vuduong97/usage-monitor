@@ -10,6 +10,7 @@
 
 static uint32_t g_now = 1000;
 uint32_t clawdNow() { return g_now; }
+uint32_t clawdMicros() { return g_now * 1000u; }
 
 static uint16_t fb[CLAWD_W * CLAWD_H];
 static long g_pushed = 0;
@@ -134,32 +135,45 @@ int main(int argc, char** argv) {
   // marquee text, then expiry back to the usage screen
   {
     clawdUiPayload(base());
-    struct { const char* anim; const char* text; int cd; } cases[] = {
-        {"typing", "", 0},
-        {"juggling", "2 subagents", 0},
-        {"notification", "Allow Bash: npm test -- --watch in clawd-home?", 0},
-        {"reading", "Focus", 1500},
-        {"sleeping", "", 0},
-        {"error", "Test failed", 0},
+    // anim: comma-separated sequence; rep: cycle it; ms: how long to play before the shot
+    struct { const char* anim; const char* text; int cd; bool rep; uint32_t ms; } cases[] = {
+        {"typing", "", 0, false, 1700},
+        {"juggling", "2 subagents", 0, false, 1700},
+        {"notification", "Allow Bash: npm test -- --watch in clawd-home?", 0, false, 1700},
+        {"reading", "Focus", 1500, false, 1700},
+        {"yawn,doze,collapse,sleeping", "", 0, false, 24000},   // 7 + 4 + 11 s: in "sleeping"
+        {"wake,happy", "Welcome back!", 0, false, 2500},       // mid "happy"
+        {"idle,look", "", 0, true, 1700},
+        {"error", "Test failed", 0, false, 1700},
     };
     int k = 0;
     for (auto& c : cases) {
       ClawdState s;
       memset(&s, 0, sizeof(s));
-      strncpy(s.anim, c.anim, sizeof(s.anim) - 1);
+      char list[64];
+      strncpy(list, c.anim, sizeof(list) - 1);
+      list[sizeof(list) - 1] = 0;
+      for (char* tok = strtok(list, ","); tok && s.animCount < CLAWD_SEQ_MAX; tok = strtok(nullptr, ","))
+        strncpy(s.anim[s.animCount++], tok, sizeof(s.anim[0]) - 1);
+      s.repeat = c.rep;
+      s.urgent = true;
       strncpy(s.text, c.text, sizeof(s.text) - 1);
       s.countdownSec = c.cd;
       s.dim = -1;
-      s.ttlSec = 10;
+      s.ttlSec = 30;
       clawdUiState(s);
-      run(1700, CLAWD_SCREEN_AUTO, -1);
-      char n[48];
-      snprintf(n, sizeof(n), "11-desk-%d-%s", k++, c.anim);
+      run(c.ms, CLAWD_SCREEN_AUTO, -1);
+      char n[64];
+      snprintf(n, sizeof(n), "11-desk-%d-%s", k++, clawdUiAnimName());
+      for (char* p = n; *p; p++) if (*p == ' ') *p = '_';
       shot(dir, n);
     }
     clawdUiPayload(base());
-    run(11000, CLAWD_SCREEN_AUTO, -1);
+    run(31000, CLAWD_SCREEN_AUTO, -1);
     shot(dir, "12-desk-expired");
+    ClawdDeskStats ds;
+    clawdUiDeskStats(ds);
+    printf("desk frames drawn: %u\n", (unsigned)ds.total);
   }
   printf("pixels pushed: %ld\n", g_pushed);
   return 0;

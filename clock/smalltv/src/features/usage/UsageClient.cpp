@@ -101,7 +101,10 @@ bool usageApply(const String& body) {
 
 // Pushed screen state (POST /api/state), clawd-home daemon:
 //   { "a":"typing", "txt":"Allow Bash?", "cd":1500, "dim":30, "ttl":60 }
-//   a   = desk.pak animation, "" / absent = back to the usage screens
+//   { "a":["yawn","doze","collapse","sleeping"] }   { "a":["idle","look"], "rep":1 }
+//   a   = desk.pak animation or a sequence of up to 4 (each plays one pass, the
+//         last loops; rep = cycle them all), "" / absent = back to the usage screens
+//   u   = urgent: replace what plays now instead of at the end of its pass
 //   txt = ASCII line under it      cd  = countdown seconds appended as MM:SS
 //   dim = 0..100 brightness cap    ttl = seconds the state lives (resent ~20 s)
 bool usageApplyState(const String& body) {
@@ -109,7 +112,20 @@ bool usageApplyState(const String& body) {
   if (deserializeJson(doc, body) || !doc.is<JsonObject>()) return false;
   ClawdState s;
   memset(&s, 0, sizeof(s));
-  strlcpy(s.anim, doc["a"] | "", sizeof(s.anim));
+  JsonVariant a = doc["a"];
+  if (a.is<JsonArray>()) {
+    for (JsonVariant v : a.as<JsonArray>()) {
+      if (s.animCount >= CLAWD_SEQ_MAX) break;
+      const char* n = v | "";
+      if (!n[0]) continue;
+      strlcpy(s.anim[s.animCount++], n, sizeof(s.anim[0]));
+    }
+  } else if ((a | "")[0]) {
+    strlcpy(s.anim[0], a | "", sizeof(s.anim[0]));
+    s.animCount = 1;
+  }
+  s.repeat = doc["rep"] | false;
+  s.urgent = doc["u"] | false;
   strlcpy(s.text, doc["txt"] | "", sizeof(s.text));
   s.countdownSec = doc["cd"] | 0L;
   s.dim = doc["dim"].is<int>() ? (int16_t)constrain(doc["dim"].as<int>(), -1, 100) : (int16_t)-1;

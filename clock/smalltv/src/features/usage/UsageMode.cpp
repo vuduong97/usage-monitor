@@ -8,6 +8,7 @@
 UsageMode g_usageMode;
 
 uint32_t clawdNow() { return millis(); }
+uint32_t clawdMicros() { return micros(); }
 
 // The panel as a ClawdSurface. Composed bands are pushed in one SPI burst
 // each; the Display tab's colour correction (gfxTint) is applied on the way
@@ -22,6 +23,10 @@ class GfxSurface : public ClawdSurface {
     for (int i = 0; i < w * h; i++) p[i] = gfxTint(p[i]);   // identity fast path inside
     gfxDev()->draw16bitRGBBitmap(x, y, p, w, h);
     yield();   // a full-screen repaint is ~30 bands: keep WiFi + the watchdog fed
+  }
+  void span(int x, int y, int w, uint16_t* px) override {
+    for (int i = 0; i < w; i++) px[i] = gfxTint(px[i]);
+    gfxDev()->draw16bitRGBBitmap(x, y, px, w, 1);
   }
   uint16_t tint(uint16_t c) override { return gfxTint(c); }
 };

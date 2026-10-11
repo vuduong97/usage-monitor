@@ -22,3 +22,5 @@ tools/desk/out/
 smalltv/.stock-backup/
 # PlatformIO
 .pio/
+# clangd index
+smalltv/.cache/

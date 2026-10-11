@@ -34,6 +34,10 @@ class ClawdSurface {
   virtual ~ClawdSurface() {}
   virtual void fill(int x, int y, int w, int h, uint16_t color) = 0;
   virtual void push(int x, int y, int w, int h, const uint16_t* pixels) = 0;
+  // One row of pixels; the desk player sends hundreds a frame, so the device
+  // version skips push()'s per-call yield (the player yields once a frame).
+  // `pixels` is scratch the surface may modify.
+  virtual void span(int x, int y, int w, uint16_t* pixels) { push(x, y, w, 1, pixels); }
   // Device colour correction (the Display tab's per-channel gain); identity on
   // the desktop. Applied to every colour on its way to the panel.
   virtual uint16_t tint(uint16_t c) { return c; }

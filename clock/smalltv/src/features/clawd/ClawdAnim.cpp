@@ -5,14 +5,10 @@
 
 // ---- catalogue ----------------------------------------------------------------
 // Frame buffers: the splash and the idle mini never show together, so they
-// share one; the corner mascot has its own. Both halves of one pool, which
-// the full-screen desk view (ClawdDesk) borrows whole while it shows: none of
-// the three players are on screen then, and each reloads its frame on return.
+// share one; the corner mascot has its own. Both halves of one pool.
 static uint8_t  g_framePool[2 * CLAWD_MAX_FRAME];
 static uint8_t* const g_bigBuf = g_framePool;
 static uint8_t* const g_masBuf = g_framePool + CLAWD_MAX_FRAME;
-
-uint8_t* clawdFramePool() { return g_framePool; }
 
 int clawdAnimCount() { return clawdPackCount(); }
 
@@ -102,7 +98,6 @@ static const char* const GROUPS[4][4] = {
 };
 
 static uint8_t g_stagePrev[GRID * GRID / 2];   // last painted cells, 4 bpp
-uint8_t* clawdStagePrev() { return g_stagePrev; }
 
 void ClawdSplash::begin() {
   player_.index = -1;

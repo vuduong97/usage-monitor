@@ -27,8 +27,19 @@ struct ClawdData {
 // desk animation for agent activity / pet moods, an optional text line with an
 // optional countdown, and a brightness cap. Everything expires after ttl so a
 // daemon that dies never leaves the clock stuck on "typing".
+//
+// The animation is a sequence of up to CLAWD_SEQ_MAX desk.pak names: each one
+// plays one full pass (intro + one loop, or to its end) and hands over to the
+// next, so chains like yawn -> doze -> collapse -> sleeping join seamlessly.
+// The last one then loops, or with `repeat` the whole list cycles (idle
+// rotation). A different sequence takes over at the end of the current pass
+// (at most DESK_SWITCH_WAIT_MS later), or at once when `urgent`.
+#define CLAWD_SEQ_MAX 4
 struct ClawdState {
-  char    anim[16];          // desk.pak animation name, "" = no desk view
+  char    anim[CLAWD_SEQ_MAX][16]; // desk.pak animation names, animCount = 0: no desk view
+  uint8_t animCount;
+  bool    repeat;            // cycle the whole sequence instead of looping the last
+  bool    urgent;            // replace what plays now instead of at its pass end
   char    text[96];          // ASCII line under the animation, "" = none
   int32_t countdownSec;      // > 0: append MM:SS counting down from this
   int16_t dim;               // 0..100 brightness cap, -1 = none
@@ -49,3 +60,17 @@ bool clawdUiOnDesk();
 void clawdUiService(uint8_t screen, int8_t fixedAnim);
 bool        clawdUiOnSplash();
 const char* clawdUiAnimName();               // what the splash is playing ("" if none)
+
+// The desk pack is about to be replaced: close it and stop drawing from it.
+void clawdUiDeskReleased();
+
+// Desk player timing over the last DESK_STATS frames (for /api/heap): draw
+// time per frame (decode + SPI) and how late frames started against their due
+// time, in microseconds.
+struct ClawdDeskStats {
+  uint16_t frames;           // samples in the window
+  uint32_t drawP50, drawP95, drawMax;
+  uint32_t lateP95;
+  uint32_t total;            // frames drawn since boot
+};
+void clawdUiDeskStats(ClawdDeskStats& out);

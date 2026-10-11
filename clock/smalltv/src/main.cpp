@@ -19,6 +19,7 @@
 #include "Mode.h"
 #include "Clock.h"
 #include "WgClient.h"
+#include "CrashLog.h"
 #if WITH_THEME
 #include "features/theme/ThemeMode.h"
 #endif
@@ -179,7 +180,11 @@ void setup() {
   // device's UART isn't exposed — so we also show it on screen below. On the
   // ESP8266 we also keep the crash PC (epc1) for addr2line decoding; the
   // ESP32-C2 (RISC-V) doesn't expose it, so epc/addr come back empty there.
+  crashLogBegin();
   PlatformReset pr = platformResetInfo();
+  // A panic/abort/stack overflow also reads "Software/System restart": the
+  // crash log tells it apart (no safe mode for those, only the record).
+  if (!pr.wasCrash && crashLogBootWasCrash()) pr.reason = "Crash (panic/abort/stack)";
   Serial.print("[boot] reset reason: ");
   Serial.println(pr.reason);
 
@@ -261,6 +266,7 @@ void loop() {
 
   if (webPortalRebootDue()) {
     delay(120);
+    crashLogMarkRestart();
     ESP.restart();
   }
 

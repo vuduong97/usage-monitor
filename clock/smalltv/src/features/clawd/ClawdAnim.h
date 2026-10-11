@@ -118,10 +118,4 @@ class ClawdMini {
 };
 
 uint32_t clawdNow();   // millis(); supplied by the platform (device or preview)
-
-// Shared buffers lent to the desk view while the splash/mascot/mini are off
-// screen: the frame pool (2 * CLAWD_MAX_FRAME bytes) and the 60x60 stage diff
-// buffer (1,800 bytes).
-#define CLAWD_FRAME_POOL (2 * CLAWD_MAX_FRAME)
-uint8_t* clawdFramePool();
-uint8_t* clawdStagePrev();
+uint32_t clawdMicros(); // micros(), for the desk player's timing stats

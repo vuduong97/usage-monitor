@@ -38,7 +38,7 @@ const codec = require('./desk_codec');
 const SS = 2;                                  // screenshot px per panel pixel
 const VB = { x: -15, y: -25, w: 45, h: 45 };   // every clawd-on-desk Clawd SVG uses this viewBox
 const PAGE_PX = VB.w * PX_PER_UNIT * SS;
-const CLIP = { x: (WINDOW.x - VB.x) * PX_PER_UNIT * SS, y: (WINDOW.y - VB.y) * PX_PER_UNIT * SS, w: SIZE * SS, h: SIZE * SS };
+const CLIP = { x: (WINDOW.x - VB.x) * PX_PER_UNIT * SS, y: (WINDOW.y - VB.y) * PX_PER_UNIT * SS, width: SIZE * SS, height: SIZE * SS };
 const RENDER_VERSION = 2;                      // bump to invalidate build/desk/cache
 const MAX_BAD = 0.02;                          // --verify: share of pixels a frame may get wrong
 
@@ -190,32 +190,63 @@ async function renderCached(getPage, def, svgText) {
 }
 
 // ---- 2. palette -----------------------------------------------------------------
+const rgb565 = (c) => (((c >> 16) & 0xf8) << 8) | (((c >> 8) & 0xfc) << 3) | ((c & 0xff) >> 3);
 function dist(a, b) {
   const dr = (a >> 16) - (b >> 16), dg = ((a >> 8) & 255) - ((b >> 8) & 255), db = (a & 255) - (b & 255);
   return 2 * dr * dr + 4 * dg * dg + 3 * db * db;
 }
+// Reduce to 15 colours + black. Colours that look the same on the RGB565 panel
+// are folded first; then, repeatedly, the colour whose merge into its nearest
+// neighbour (black included) costs the least error — pixel count x distance —
+// is merged. So near-duplicate edge shades go first while a rare but distinct
+// colour (a grey fade frame) survives. Survivors keep their exact value (never
+// averaged), so flat art stays flat.
 function buildPalette(frames) {
   const count = new Map();
   for (const f of frames) for (const c of f) if (c) count.set(c, (count.get(c) || 0) + 1);
-  // Merge the rarest colour into its nearest neighbour (black included) until
-  // 15 remain. Colours are kept exact (never averaged) so flat art stays flat.
-  const map = new Map([...count.keys()].map((k) => [k, k]));
-  const live = new Map(count);
-  while (live.size > 15) {
-    let rare = null, rareN = Infinity;
-    for (const [k, v] of live) if (v < rareN) { rare = k; rareN = v; }
-    let near = 0, nearD = dist(0, rare);
-    for (const k of live.keys()) if (k !== rare) { const d = dist(k, rare); if (d < nearD) { near = k; nearD = d; } }
-    if (near) live.set(near, live.get(near) + rareN);
-    live.delete(rare);
-    for (const [k, v] of map) if (v === rare) map.set(k, near);
+  const bucket = new Map();                     // rgb565 -> [representative, count]
+  const toBucket = new Map();
+  for (const [c, n] of count) {
+    const k = rgb565(c);
+    const b = bucket.get(k);
+    if (!b) bucket.set(k, [c, n]);
+    else { if (n > count.get(b[0])) b[0] = c; b[1] += n; }
+    toBucket.set(c, k);
   }
-  const palette = [0, ...[...live.keys()].sort((a, b) => live.get(b) - live.get(a))];
-  const index = new Map(palette.map((c, i) => [c, i]));
-  const lut = new Map([...map].map(([k, v]) => [k, v ? index.get(v) : 0]));
+  const keys = [...bucket.values()].map((b) => b[0]);
+  const n = keys.length;
+  const cnt = Float64Array.from([...bucket.values()].map((b) => b[1]));
+  const alive = new Uint8Array(n).fill(1);
+  const nn = new Int32Array(n), nd = new Float64Array(n);
+  const nearest = (i) => {
+    let best = -1, bd = dist(0, keys[i]);
+    for (let j = 0; j < n; j++) if (j !== i && alive[j]) { const d = dist(keys[i], keys[j]); if (d < bd) { bd = d; best = j; } }
+    nn[i] = best; nd[i] = bd;
+  };
+  for (let i = 0; i < n; i++) nearest(i);
+  let live = n;
+  while (live > 15) {
+    let r = -1, rc = Infinity;
+    for (let i = 0; i < n; i++) if (alive[i] && cnt[i] * nd[i] < rc) { rc = cnt[i] * nd[i]; r = i; }
+    const t = nn[r];
+    alive[r] = 0; live--;
+    if (t >= 0) cnt[t] += cnt[r];
+    for (let i = 0; i < n; i++) if (alive[i] && nn[i] === r) nearest(i);
+  }
+  const survivors = [];
+  for (let i = 0; i < n; i++) if (alive[i]) survivors.push(i);
+  survivors.sort((a, b) => cnt[b] - cnt[a]);
+  const palette = [0, ...survivors.map((i) => keys[i])];
+  // Every source colour goes to its nearest palette entry (black included), not
+  // to wherever its merge chain ended: chains drift.
+  const lut = new Map();
+  for (const c of count.keys()) {
+    let best = 0, bd = dist(0, c);
+    for (let k = 1; k < palette.length; k++) { const d = dist(palette[k], c); if (d < bd) { bd = d; best = k; } }
+    lut.set(c, best);
+  }
   return { palette, lut };
 }
-const rgb565 = (c) => (((c >> 16) & 0xf8) << 8) | (((c >> 8) & 0xfc) << 3) | ((c & 0xff) >> 3);
 
 // ---- 3. pack one animation ------------------------------------------------------
 function packAnim(def, r) {
@@ -255,26 +286,31 @@ function packAnim(def, r) {
 
 // ---- 4. verify --------------------------------------------------------------------
 // Decode the packed frames (the same algorithm as the clock) and compare each
-// with the Chrome render: a pixel is bad when it lands on the wrong side of
-// ink/background or its colour is visibly off.
+// with the Chrome render (pixelBad).
+// Visibly wrong: off by more than ~40 levels per channel. Background is black,
+// so a near-black fade drawn as background is fine.
+function pixelBad(want, got) {
+  return dist(want, got) > 9 * 40 * 40;
+}
+
 function verifyAnim(a) {
   const states = codec.decodeAnim(a.frames, a.w * a.h, a.w);
-  let worst = 0, worstAt = 0;
+  let worst = 0, worstAt = 0, overFrames = 0;
   states.slice(0, a.cropFrames.length).forEach((s, i) => {
     if (Buffer.compare(Buffer.from(s), Buffer.from(a.cropFrames[i])) !== 0) throw new Error(`${a.name}: codec mismatch at frame ${i}`);
     let bad = 0, ink = 0;
     for (let y = 0; y < a.h; y++) for (let x = 0; x < a.w; x++) {
       const want = a.src[i][(a.y + y) * SIZE + a.x + x], got = a.paletteRgb[s[y * a.w + x]];
       if (want) ink++;
-      const inkMismatch = (want !== 0) !== (got !== 0);
-      if (inkMismatch || (want && dist(want, got) > 3 * 40 * 40)) bad++;
+      if (pixelBad(want, got)) bad++;
     }
     const share = bad / Math.max(ink, 1);
     if (share > worst) { worst = share; worstAt = i; }
+    if (share > MAX_BAD) overFrames++;
   });
   const wrapped = states[states.length - 1];
   if (Buffer.compare(Buffer.from(wrapped), Buffer.from(a.cropFrames[a.loopStart])) !== 0) throw new Error(`${a.name}: wrap does not land on the loop start`);
-  return { worst, worstAt, crc: states.map((s) => codec.crc32(s)) };
+  return { worst, worstAt, overFrames, crc: states.map((s) => codec.crc32(s)) };
 }
 
 // ---- pack file ---------------------------------------------------------------------
@@ -337,6 +373,28 @@ function writeSheet(a, file) {
   fs.writeFileSync(file, PNG.sync.write(png));
 }
 
+// Render | packed | diff (red = wrong pixel) of one frame at 2x, for QA.
+function writeWorst(a, fi, file) {
+  const S = 2, W = SIZE * S, png = new PNG({ width: 3 * W + 8, height: W });
+  png.data.fill(40);
+  const put = (bx, x, y, c) => {
+    for (let dy = 0; dy < S; dy++) for (let dx = 0; dx < S; dx++) {
+      const o = ((y * S + dy) * png.width + bx + x * S + dx) * 4;
+      png.data[o] = c >> 16; png.data[o + 1] = (c >> 8) & 255; png.data[o + 2] = c & 255; png.data[o + 3] = 255;
+    }
+  };
+  const f = a.cropFrames[fi];
+  for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+    const want = a.src[fi][y * SIZE + x];
+    const cx = x - a.x, cy = y - a.y;
+    const got = cx >= 0 && cy >= 0 && cx < a.w && cy < a.h ? a.paletteRgb[f[cy * a.w + cx]] : 0;
+    put(0, x, y, want);
+    put(W + 4, x, y, got);
+    put(2 * W + 8, x, y, pixelBad(want, got) ? 0xff0000 : (want ? 0x404040 : 0));
+  }
+  fs.writeFileSync(file, PNG.sync.write(png));
+}
+
 async function main() {
   const dir = svgDir();
   const only = opt('--only');
@@ -381,8 +439,12 @@ async function main() {
       console.log(`${a.name.padEnd(14)} ${String(a.frames.length - 1).padStart(3)} frames ${a.timing.padEnd(16)} ` +
         `${a.w}x${a.h}@${a.x},${a.y}  ${a.srcColors} -> ${a.paletteRgb.length - 1} colours  ` +
         `${String(bytes).padStart(7)} B (max frame ${Math.max(...a.frames.map((f) => f.length))} B)  ` +
-        `worst ${(v.worst * 100).toFixed(2)}% @${v.worstAt}${bad ? '  FAIL' : ''}`);
-      if (flag('--sheet')) writeSheet(a, path.join(outDir, 'sheets', `${a.name.replace(/\s+/g, '-')}.png`));
+        `worst ${(v.worst * 100).toFixed(2)}% @${v.worstAt}${bad ? `  FAIL (${v.overFrames} frames)` : ''}`);
+      if (flag('--sheet')) {
+        const base = path.join(outDir, 'sheets', a.name.replace(/\s+/g, '-'));
+        writeSheet(a, `${base}.png`);
+        writeWorst(a, v.worstAt, `${base}-worst.png`);
+      }
     }
   } finally {
     if (browser) await browser.close();

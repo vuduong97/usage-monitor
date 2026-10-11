@@ -30,6 +30,7 @@
 #include "features/theme/ThemeWeb.h"
 #endif
 #include "SettingsTransaction.h"
+#include "CrashLog.h"
 #if WITH_HA
 #include "HaScreens.h"
 #include "MqttClient.h"
@@ -438,9 +439,11 @@ static void handleHeap() {
   o["minMaxblk"] = g_minMaxBlk;
 #if defined(SMALLTV_ESP8266)
   o["frag"] = ESP.getHeapFragmentation();
+  o["contFree"] = ESP.getFreeContStack();   // loop() stack never used yet (low-water mark)
 #endif
   o["uptime"] = millis() / 1000;
   o["reset"] = appResetReason();
+  if (crashLogLast().length()) o["crash"] = crashLogLast();   // last crash since power on
   o["version"] = FW_VERSION;
 #if WITH_USAGE
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
@@ -448,6 +451,17 @@ static void handleHeap() {
   o["anim"] = clawdUiAnimName();
   o["desk"] = deskPackCount();          // 0 = /desk.pak missing or invalid
   o["onDesk"] = clawdUiOnDesk();
+  {   // desk player: decode + SPI time per frame and lateness, last 128 frames (us)
+    ClawdDeskStats ds;
+    clawdUiDeskStats(ds);
+    JsonObject d = o["deskStats"].to<JsonObject>();
+    d["n"] = ds.frames;
+    d["total"] = ds.total;
+    d["drawP50"] = ds.drawP50;
+    d["drawP95"] = ds.drawP95;
+    d["drawMax"] = ds.drawMax;
+    d["lateP95"] = ds.lateP95;
+  }
 #endif
 #if defined(SMALLTV_ESP8266)
   {
@@ -538,6 +552,115 @@ static void handleDeskPakDone() {
   doc["anims"] = deskPackCount();
   sendJson(doc, ok ? 200 : 500);
 }
+
+#if defined(SMALLTV_ESP8266)
+// Filesystem maintenance for the shared LittleFS (the stock firmware's assets +
+// ours), driven by clawd-home tools/stock_fs.sh: back the stock files up to the
+// Mac, free their space, and put them back before a return to stock. All of it
+// needs the web password when one is set (config.json holds WiFi credentials).
+//   GET  /api/fs/list            "<size>\t<path>\n" for every file
+//   GET  /api/fs/get?path=/x     one file
+//   GET  /api/fs/raw             the whole LittleFS partition, byte for byte
+//   POST /api/fs/put?path=/x     multipart upload to that path (dirs created)
+//   POST /api/fs/rm?path=/x      delete one file (empty dirs go with it)
+#include <flash_hal.h>
+static void fsListDir(const String& dir, uint8_t depth) {
+  Dir d = LittleFS.openDir(dir);
+  while (d.next()) {
+    const String p = (dir == "/" ? String("/") : dir + "/") + d.fileName();
+    if (d.isDirectory()) {
+      if (depth < 8) fsListDir(p, depth + 1);
+    } else {
+      server.sendContent(String(d.fileSize()) + "\t" + p + "\n");
+    }
+    yield();
+  }
+}
+static void handleFsList() {
+  if (!requireAuth()) return;
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "text/plain", "");
+  fsListDir("/", 0);
+  server.sendContent("");
+}
+static bool fsPathArg(String& p) {
+  p = server.arg("path");
+  if (!p.startsWith("/") || p.indexOf("..") >= 0 || p.length() > 64) {
+    server.send(400, "text/plain", "bad path");
+    return false;
+  }
+  return true;
+}
+static void handleFsGet() {
+  if (!requireAuth()) return;
+  String p;
+  if (!fsPathArg(p)) return;
+  File f = LittleFS.open(p, "r");
+  if (!f || f.isDirectory()) { server.send(404, "text/plain", "no such file"); return; }
+  server.streamFile(f, "application/octet-stream");
+  f.close();
+}
+static void handleFsRaw() {
+  if (!requireAuth()) return;
+  const uint32_t start = FS_PHYS_ADDR, size = FS_PHYS_SIZE;
+  server.setContentLength(size);
+  server.send(200, "application/octet-stream", "");
+  uint32_t buf[128];
+  for (uint32_t off = 0; off < size; off += sizeof(buf)) {
+    const uint32_t n = size - off < sizeof(buf) ? size - off : sizeof(buf);
+    if (!ESP.flashRead(start + off, buf, n)) break;
+    if (server.client().write((const uint8_t*)buf, n) != n) break;
+    yield();
+  }
+}
+static File g_fsPut;
+static bool g_fsPutFailed = false;
+static void handleFsPutUpload() {
+  HTTPUpload& up = server.upload();
+  if (S->auth.enabled && S->auth.pass.length() &&
+      !server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str())) {
+    g_fsPutFailed = true;
+    if (g_fsPut) g_fsPut.close();
+    return;
+  }
+  if (up.status == UPLOAD_FILE_START) {
+    String p = server.arg("path");
+    g_fsPutFailed = !p.startsWith("/") || p.indexOf("..") >= 0 || p.length() > 64;
+    if (!g_fsPutFailed) {
+      g_fsPut = LittleFS.open(p, "w");
+      if (!g_fsPut) g_fsPutFailed = true;
+    }
+  } else if (up.status == UPLOAD_FILE_WRITE) {
+    if (g_fsPut && g_fsPut.write(up.buf, up.currentSize) != up.currentSize) g_fsPutFailed = true;
+  } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
+    if (g_fsPut) g_fsPut.close();
+    if (up.status == UPLOAD_FILE_ABORTED) g_fsPutFailed = true;
+  }
+  yield();
+}
+static void handleFsPutDone() {
+  if (!requireAuth()) return;
+  String p;
+  if (!fsPathArg(p)) return;
+  if (g_fsPutFailed) LittleFS.remove(p);
+  File f = LittleFS.open(p, "r");
+  JsonDocument doc;
+  doc["ok"] = !g_fsPutFailed && f;
+  doc["size"] = f ? (uint32_t)f.size() : 0;
+  if (f) f.close();
+  sendJson(doc, g_fsPutFailed ? 500 : 200);
+}
+static void handleFsRm() {
+  if (!requireAuth()) return;
+  String p;
+  if (!fsPathArg(p)) return;
+  if (p == DESK_PACK_PATH) clawdUiDeskReleased();
+  const bool ok = LittleFS.remove(p);
+  JsonDocument doc;
+  doc["ok"] = ok;
+  sendJson(doc, ok ? 200 : 404);
+}
+#endif
 #endif
 
 // Attention overlay. Every field is optional and falls back to the preset named
@@ -675,6 +798,13 @@ void webPortalBegin(Settings& settings) {
 #if WITH_USAGE
   server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
   server.on("/api/deskpak", HTTP_POST, handleDeskPakDone, handleDeskPakUpload);
+#if defined(SMALLTV_ESP8266)
+  server.on("/api/fs/list", HTTP_GET, handleFsList);
+  server.on("/api/fs/get", HTTP_GET, handleFsGet);
+  server.on("/api/fs/raw", HTTP_GET, handleFsRaw);
+  server.on("/api/fs/put", HTTP_POST, handleFsPutDone, handleFsPutUpload);
+  server.on("/api/fs/rm", HTTP_POST, handleFsRm);
+#endif
   server.on("/api/state", HTTP_POST, handleStatePush);    // daemon pushes screen state here
 #endif
 #if WITH_HA
