@@ -1,0 +1,24 @@
+# OS / editors
+.DS_Store
+.vscode/
+# agent harness state (never commit)
+.pi/
+.claude/
+# Python
+__pycache__/
+*.pyc
+.venv/
+# Node
+node_modules/
+package-lock.json
+# Generated from clawd-on-desk artwork (All Rights Reserved) — personal use only, NEVER commit
+build/desk/
+*.desk.pak
+desk.pak
+smalltv/data/desk.pak
+tools/desk/out/
+# Stock-clock backups (contain Wi-Fi/API secrets)
+.stock-backup/
+smalltv/.stock-backup/
+# PlatformIO
+.pio/
