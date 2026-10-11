@@ -99,6 +99,25 @@ bool usageApply(const String& body) {
   return applyUsageDoc(g_usage, doc);
 }
 
+// Pushed screen state (POST /api/state), clawd-home daemon:
+//   { "a":"typing", "txt":"Allow Bash?", "cd":1500, "dim":30, "ttl":60 }
+//   a   = desk.pak animation, "" / absent = back to the usage screens
+//   txt = ASCII line under it      cd  = countdown seconds appended as MM:SS
+//   dim = 0..100 brightness cap    ttl = seconds the state lives (resent ~20 s)
+bool usageApplyState(const String& body) {
+  JsonDocument doc;
+  if (deserializeJson(doc, body) || !doc.is<JsonObject>()) return false;
+  ClawdState s;
+  memset(&s, 0, sizeof(s));
+  strlcpy(s.anim, doc["a"] | "", sizeof(s.anim));
+  strlcpy(s.text, doc["txt"] | "", sizeof(s.text));
+  s.countdownSec = doc["cd"] | 0L;
+  s.dim = doc["dim"].is<int>() ? (int16_t)constrain(doc["dim"].as<int>(), -1, 100) : (int16_t)-1;
+  s.ttlSec = (uint16_t)constrain(doc["ttl"] | 60, 1, 3600);
+  clawdUiState(s);
+  return true;
+}
+
 // ---- one HTTP(S) GET + parse (mirrors StockClient::fetchUrl) ----------------
 static bool fetchUsage(const Settings& s) {
   const String& url = s.usage.usageUrl;

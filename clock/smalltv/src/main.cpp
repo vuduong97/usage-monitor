@@ -32,6 +32,9 @@
 #if WITH_USAGE
 #include "UsageMode.h"
 #endif
+#if defined(SMALLTV_CLAWD)
+#include "ClawdUi.h"
+#endif
 #if WITH_RADAR
 #include "RadarMode.h"
 #endif
@@ -122,7 +125,16 @@ static uint8_t  g_ldrCache   = DEFAULT_BRIGHTNESS;   // last LDR reading (2 s ca
 
 // Single brightness resolver: night mode overrides auto-brightness overrides the
 // manual level. Only writes the PWM when the effective target changes.
+static uint8_t appBaseBrightness();
 static uint8_t appEffectiveBrightness() {
+  uint8_t b = appBaseBrightness();
+#if defined(SMALLTV_CLAWD)
+  const int cap = clawdUiDim();       // daemon's quiet-hours cap (POST /api/state)
+  if (cap >= 0 && cap < b) b = (uint8_t)cap;
+#endif
+  return b;
+}
+static uint8_t appBaseBrightness() {
   if (clockNightActive()) return g_settings.clock.nightLevel;
 #if HAS_LDR
   if (g_settings.autoBrightness) {

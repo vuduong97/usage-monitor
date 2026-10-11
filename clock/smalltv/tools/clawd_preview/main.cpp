@@ -130,6 +130,37 @@ int main(int argc, char** argv) {
     snprintf(n, sizeof(n), "10-splash-%02d-%s", i, name);
     shot(dir, n);
   }
+  // desk view (POST /api/state): plain, with a text line, with a countdown,
+  // marquee text, then expiry back to the usage screen
+  {
+    clawdUiPayload(base());
+    struct { const char* anim; const char* text; int cd; } cases[] = {
+        {"typing", "", 0},
+        {"juggling", "2 subagents", 0},
+        {"notification", "Allow Bash: npm test -- --watch in clawd-home?", 0},
+        {"reading", "Focus", 1500},
+        {"sleeping", "", 0},
+        {"error", "Test failed", 0},
+    };
+    int k = 0;
+    for (auto& c : cases) {
+      ClawdState s;
+      memset(&s, 0, sizeof(s));
+      strncpy(s.anim, c.anim, sizeof(s.anim) - 1);
+      strncpy(s.text, c.text, sizeof(s.text) - 1);
+      s.countdownSec = c.cd;
+      s.dim = -1;
+      s.ttlSec = 10;
+      clawdUiState(s);
+      run(1700, CLAWD_SCREEN_AUTO, -1);
+      char n[48];
+      snprintf(n, sizeof(n), "11-desk-%d-%s", k++, c.anim);
+      shot(dir, n);
+    }
+    clawdUiPayload(base());
+    run(11000, CLAWD_SCREEN_AUTO, -1);
+    shot(dir, "12-desk-expired");
+  }
   printf("pixels pushed: %ld\n", g_pushed);
   return 0;
 }

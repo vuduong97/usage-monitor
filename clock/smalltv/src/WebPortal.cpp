@@ -15,6 +15,7 @@
 #if WITH_USAGE
 #include "ClawdAnim.h"
 #include "ClawdPack.h"
+#include "DeskPack.h"
 #include "ClawdUi.h"
 #endif
 #if WITH_RADAR
@@ -405,6 +406,21 @@ static void handleUsagePush() {
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
 
+// Screen state push (clawd-home daemon): full-screen desk animation, text line,
+// countdown, brightness cap. Open like /api/usage: the daemon on the LAN sends
+// it every few seconds and it can only change what the clock shows, for ttl.
+static void handleStatePush() {
+  if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
+#if WITH_USAGE
+  bool ok = usageApplyState(server.arg("plain"));
+  uint32_t h = ESP.getFreeHeap();
+  if (h < g_minHeap) g_minHeap = h;
+#else
+  bool ok = false;
+#endif
+  server.send(ok ? 200 : 400, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
 // Heap watch for long-run stability checks: numbers only, nothing settable, so
 // it is open like /api/usage and a logger can poll it without credentials.
 //   while sleep 60; do curl -s http://<ip>/api/heap; echo; done >> heap.log
@@ -430,6 +446,14 @@ static void handleHeap() {
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();
+  o["desk"] = deskPackCount();          // 0 = /desk.pak missing or invalid
+  o["onDesk"] = clawdUiOnDesk();
+#endif
+#if defined(SMALLTV_ESP8266)
+  {
+    FSInfo fi;
+    if (LittleFS.info(fi)) { o["fsTotal"] = fi.totalBytes; o["fsUsed"] = fi.usedBytes; }
+  }
 #endif
   sendJson(doc);
 }
@@ -442,7 +466,11 @@ static void handleHeap() {
 //   curl -F "file=@data/clawd.pak" http://<ip>/api/clawdpak
 static File g_pakUpload;
 static bool g_pakFailed = false;
-static void handleClawdPakUpload() {
+static const char* g_pakTmp = "/clawd.pak.tmp";
+static void pakUpload();
+static void handleClawdPakUpload() { g_pakTmp = "/clawd.pak.tmp"; pakUpload(); }
+static void handleDeskPakUpload() { g_pakTmp = "/desk.pak.tmp"; pakUpload(); }
+static void pakUpload() {
   HTTPUpload& up = server.upload();
   // Checked while the body streams in too (like /update), or an unauthenticated
   // POST could still write the file and only lose the final answer.
@@ -454,7 +482,7 @@ static void handleClawdPakUpload() {
   }
   if (up.status == UPLOAD_FILE_START) {
     g_pakFailed = false;
-    g_pakUpload = LittleFS.open("/clawd.pak.tmp", "w");
+    g_pakUpload = LittleFS.open(g_pakTmp, "w");
     if (!g_pakUpload) g_pakFailed = true;
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (g_pakUpload && g_pakUpload.write(up.buf, up.currentSize) != up.currentSize) g_pakFailed = true;
@@ -477,6 +505,23 @@ static void handleClawdPakDone() {
   JsonDocument doc;
   doc["ok"] = ok;
   doc["anims"] = clawdPackCount();
+  sendJson(doc, ok ? 200 : 500);
+}
+// Same for the desk animations (/desk.pak, clawd-home tools/desk):
+//   curl -F "file=@build/desk/desk.pak" http://<ip>/api/deskpak
+static void handleDeskPakDone() {
+  if (!requireAuth()) return;
+  bool ok = !g_pakFailed;
+  if (ok) {
+    LittleFS.remove(DESK_PACK_PATH);
+    ok = LittleFS.rename("/desk.pak.tmp", DESK_PACK_PATH) && deskPackOpen();
+    clawdUiBegin();
+  } else {
+    LittleFS.remove("/desk.pak.tmp");
+  }
+  JsonDocument doc;
+  doc["ok"] = ok;
+  doc["anims"] = deskPackCount();
   sendJson(doc, ok ? 200 : 500);
 }
 #endif
@@ -608,6 +653,8 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
 #if WITH_USAGE
   server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
+  server.on("/api/deskpak", HTTP_POST, handleDeskPakDone, handleDeskPakUpload);
+  server.on("/api/state", HTTP_POST, handleStatePush);    // daemon pushes screen state here
 #endif
 #if WITH_HA
   server.on("/api/ha/clear", HTTP_POST, handleHaClear);  // purge HA screens (device + broker retained)

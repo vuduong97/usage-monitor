@@ -6,6 +6,7 @@
 #include "ClawdDraw.h"
 #include "ClawdRate.h"
 #include "ClawdPack.h"
+#include "DeskPack.h"
 #include "clawd_fonts.h"
 #include <stdio.h>
 #include <string.h>
@@ -36,7 +37,12 @@
 #define ALERT_TIMEOUT_MS 120000UL
 #define ANIM_MSG_MS      4000UL
 
-enum View : int8_t { VIEW_NONE = -1, VIEW_SPLASH, VIEW_IDLE, VIEW_USAGE };
+#define DESK_CELL        (CLAWD_W / DESK_GRID)          // 4 px
+#define DESK_TEXT_ROWS   52                             // grid rows shown when a text line shows:
+                                                        // the bottom 52 (feet kept, bubble tops lose 8)
+#define STATE_TTL_MAX    3600
+
+enum View : int8_t { VIEW_NONE = -1, VIEW_SPLASH, VIEW_IDLE, VIEW_USAGE, VIEW_DESK };
 
 static ClawdSplash g_splash;
 static ClawdMascot g_mascot;
@@ -58,6 +64,26 @@ static bool      g_alert = false;
 static char      g_alertMsg[128];
 static uint32_t  g_alertSince = 0;
 static bool      g_frameOn = false;
+
+// desk view (POST /api/state)
+static bool      g_deskOn = false;
+static uint32_t  g_deskUntil = 0, g_deskSince = 0;
+static char      g_deskWant[16] = "";
+static char      g_deskText[96] = "";
+static bool      g_cdOn = false;
+static uint32_t  g_cdEndMs = 0;
+static int16_t   g_dim = -1;
+static uint32_t  g_dimUntil = 0;
+static bool      g_deskDirty = true;      // anim/text changed: full desk repaint
+
+struct DeskPlayer {
+  int16_t  index = -1;
+  DeskAnim a;
+  uint16_t frame = 0, hold = 100;
+  uint32_t frameStart = 0;
+  bool     loaded = false;
+};
+static DeskPlayer g_desk;
 
 static View      g_view = VIEW_NONE;
 static bool      g_dirtyAll = true;
@@ -230,7 +256,7 @@ static void drawTitle(uint32_t now) {
 }
 
 // ---- status line -------------------------------------------------------------------
-static void drawStatus(const char* text, bool marquee, uint32_t now) {
+static void drawStatus(const char* text, bool marquee, uint32_t now, uint32_t since) {
   const ClawdFont& f = CF_MONO_18;
   const int tw = clawdTextWidth(f, text);
   ClawdText runs[2];
@@ -239,7 +265,7 @@ static void drawStatus(const char* text, bool marquee, uint32_t now) {
     runs[n++] = {&f, text, (int16_t)(CLAWD_W / 2 - tw / 2), STATUS_Y, CLAWD_ACCENT};
   } else {
     const int gap = 48, period = tw + gap;
-    const int off = (int)((now - g_alertSince) * 40 / 1000 % (uint32_t)period);   // 40 px/s
+    const int off = (int)((now - since) * 40 / 1000 % (uint32_t)period);   // 40 px/s
     runs[n++] = {&f, text, (int16_t)(MARGIN - off), STATUS_Y, CLAWD_ACCENT};
     runs[n++] = {&f, text, (int16_t)(MARGIN - off + period), STATUS_Y, CLAWD_ACCENT};
   }
@@ -251,7 +277,7 @@ static void tickStatus(uint32_t now, bool force) {
     static uint32_t last = 0;
     if (!force && now - last < 50) return;
     last = now;
-    drawStatus(g_alertMsg, true, now);
+    drawStatus(g_alertMsg, true, now, g_alertSince);
     g_statusDrawn[0] = 0;
     return;
   }
@@ -282,7 +308,83 @@ static void tickStatus(uint32_t now, bool force) {
   snprintf(buf, sizeof(buf), "%s %s\xE2\x80\xA6", SPINNER[g_spinIdx], word);
   if (!force && strcmp(buf, g_statusDrawn) == 0) return;
   strcpy(g_statusDrawn, buf);
-  drawStatus(buf, false, now);
+  drawStatus(buf, false, now, now);
+}
+
+// ---- desk view (full-screen clawd-on-desk animation) --------------------------------
+static bool deskLive(uint32_t now) { return g_deskOn && (int32_t)(g_deskUntil - now) > 0; }
+
+static void deskLoad(uint32_t now) {
+  g_desk.loaded = deskPackFrame(g_desk.a, g_desk.frame, clawdFramePool(), CLAWD_FRAME_POOL);
+  g_desk.hold = deskPackHold(g_desk.a, g_desk.frame);
+  g_desk.frameStart = now;
+}
+
+static void deskStart(uint32_t now) {
+  int idx = deskPackFind(g_deskWant);
+  if (idx < 0 && deskPackCount() > 0) idx = 0;        // unknown name: still show Clawd
+  g_desk.index = (idx >= 0 && deskPackAnim(idx, g_desk.a)) ? (int16_t)idx : (int16_t)-1;
+  g_desk.frame = 0;
+  g_desk.loaded = false;
+  if (g_desk.index >= 0) deskLoad(now);
+}
+
+static uint8_t deskCell(void*, int gx, int gy) {
+  const DeskAnim& a = g_desk.a;
+  if (g_desk.index < 0 || !g_desk.loaded) return 0;
+  const int x = gx - a.ox, y = gy - a.oy;
+  if (x < 0 || y < 0 || x >= a.w || y >= a.h) return 0;
+  const uint32_t i = (uint32_t)y * a.w + x;
+  const uint8_t b = clawdFramePool()[i >> 1];
+  return (i & 1) ? (b & 0x0F) : (b >> 4);
+}
+
+static void deskLine(uint32_t now, char* out, size_t n) {
+  out[0] = 0;
+  if (g_cdOn) {
+    int32_t left = (int32_t)(g_cdEndMs - now);
+    if (left < 0) left = 0;
+    const int s = (int)((left + 999) / 1000);
+    snprintf(out, n, "%s%s%02d:%02d", g_deskText, g_deskText[0] ? " " : "", s / 60, s % 60);
+  } else {
+    snprintf(out, n, "%s", g_deskText);
+  }
+}
+
+static void deskTick(uint32_t now, bool force) {
+  char line[112];
+  deskLine(now, line, sizeof(line));
+  const int rows = line[0] ? DESK_TEXT_ROWS : DESK_GRID;
+  bool changed = force;
+  if (g_desk.index >= 0 && now - g_desk.frameStart >= g_desk.hold) {
+    g_desk.frame = (uint16_t)((g_desk.frame + 1) % g_desk.a.frameCount);
+    deskLoad(now);
+    changed = true;
+  }
+  if (changed) {
+    if (g_desk.index >= 0)
+      clawdRenderCells(deskCell, nullptr, 0, DESK_GRID - rows, DESK_GRID, rows, DESK_CELL, 0, 0,
+                       g_desk.a.palette, clawdStagePrev(), force);
+    else if (force) {
+      static const char* const msg = "desk.pak missing";
+      ClawdText t = {&CF_STYRENE_14, msg,
+                     (int16_t)(CLAWD_W / 2 - clawdTextWidth(CF_STYRENE_14, msg) / 2),
+                     (int16_t)(CLAWD_H / 2 - 8), CLAWD_DIM};
+      clawdRender(0, CLAWD_H / 2 - 8, CLAWD_W, 20, CLAWD_BG, nullptr, 0, &t, 1);
+    }
+  }
+  if (!line[0]) return;
+  const bool marquee = clawdTextWidth(CF_MONO_18, line) > CONTENT_W;
+  static uint32_t last = 0;
+  if (marquee) {
+    if (!force && now - last < 50) return;
+    last = now;
+  } else if (!force && strcmp(line, g_statusDrawn) == 0) {
+    return;
+  }
+  strncpy(g_statusDrawn, line, sizeof(g_statusDrawn) - 1);
+  g_statusDrawn[sizeof(g_statusDrawn) - 1] = 0;
+  drawStatus(line, marquee, now, g_deskSince);
 }
 
 // ---- alert frame -------------------------------------------------------------------
@@ -299,7 +401,7 @@ static void endAlert() {
   if (!g_alert) return;
   g_alert = false;
   g_mascot.setAttention(false);
-  if (g_view != VIEW_SPLASH) {
+  if (g_view != VIEW_SPLASH && g_view != VIEW_DESK) {
     drawFrame(false);
     g_statusDrawn[0] = 0;
   }
@@ -310,6 +412,9 @@ void clawdUiBegin() {
   memset(&g_data, 0, sizeof(g_data));
   g_data.sessionResetMin = g_data.weeklyResetMin = -1;
   clawdPackOpen();
+  deskPackOpen();
+  g_desk.index = -1;
+  g_deskDirty = true;
   g_splash.begin();
   g_mascot.begin(MASCOT_X, MASCOT_Y);
   g_mini.begin("cloud", CLAWD_W / 2, IDLE_CY, IDLE_PX);
@@ -359,12 +464,43 @@ void clawdUiPayload(const ClawdData& d) {
   g_dirtyPanels = true;
 }
 
+void clawdUiState(const ClawdState& s) {
+  const uint32_t now = clawdNow();
+  const uint32_t ttl = (uint32_t)(s.ttlSec == 0 ? 60 : (s.ttlSec > STATE_TTL_MAX ? STATE_TTL_MAX : s.ttlSec)) * 1000UL;
+  g_dim = (s.dim >= 0 && s.dim <= 100) ? s.dim : -1;
+  g_dimUntil = now + ttl;
+  if (!s.anim[0]) { g_deskOn = false; return; }
+  const bool wasLive = deskLive(now);
+  if (!wasLive || strcmp(s.anim, g_deskWant) != 0) {
+    strncpy(g_deskWant, s.anim, sizeof(g_deskWant) - 1);
+    g_deskWant[sizeof(g_deskWant) - 1] = 0;
+    g_desk.index = -2;                           // (re)start on the next service
+  }
+  const bool cd = s.countdownSec > 0;
+  if (strcmp(s.text, g_deskText) != 0 || cd != g_cdOn) {
+    strncpy(g_deskText, s.text, sizeof(g_deskText) - 1);
+    g_deskText[sizeof(g_deskText) - 1] = 0;
+    g_deskSince = now;
+    g_deskDirty = true;                          // the line appeared/went: rows change
+  }
+  g_cdOn = cd;
+  if (cd) g_cdEndMs = now + (uint32_t)s.countdownSec * 1000UL;
+  g_deskOn = true;
+  g_deskUntil = now + ttl;
+}
+
+int clawdUiDim() {
+  return (g_dim >= 0 && (int32_t)(g_dimUntil - clawdNow()) > 0) ? g_dim : -1;
+}
+
 bool clawdUiOnSplash() { return g_view == VIEW_SPLASH; }
+bool clawdUiOnDesk() { return g_view == VIEW_DESK; }
 
 const char* clawdUiAnimName() {
   static char name[16];
   name[0] = 0;
   if (g_view == VIEW_SPLASH) clawdAnimName(g_splash.current(), name, sizeof(name));
+  else if (g_view == VIEW_DESK && g_desk.index >= 0) strncpy(name, g_desk.a.name, sizeof(name) - 1);
   return name;
 }
 
@@ -374,7 +510,8 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
 
   const bool fresh = dataFresh(now);
   View want;
-  if (g_alert)                             want = fresh ? VIEW_USAGE : VIEW_IDLE;
+  if (deskLive(now))                       want = VIEW_DESK;
+  else if (g_alert)                        want = fresh ? VIEW_USAGE : VIEW_IDLE;
   else if (screen == CLAWD_SCREEN_SPLASH)  want = VIEW_SPLASH;
   else if (screen == CLAWD_SCREEN_USAGE)   want = fresh ? VIEW_USAGE : VIEW_IDLE;
   else                                     want = fresh ? VIEW_USAGE : VIEW_SPLASH;
@@ -385,12 +522,23 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
     g_splash.show(fixedAnim);
   }
 
+  if (want == VIEW_DESK && g_view == VIEW_DESK && (g_deskDirty || g_desk.index == -2))
+    g_dirtyAll = true;               // new animation or text line: repaint the desk
+
   if (want != g_view || g_dirtyAll) {
     const View was = g_view;
     g_view = want;
     g_dirtyAll = false;
     fillRect(0, 0, CLAWD_W, CLAWD_H, CLAWD_BG);
     g_frameOn = false;
+    if (want == VIEW_DESK) {
+      g_splash.hide();
+      g_deskDirty = false;
+      g_statusDrawn[0] = 0;
+      if (g_desk.index < 0 || was != VIEW_DESK) deskStart(now);
+      deskTick(now, true);
+      return;
+    }
     if (want == VIEW_SPLASH) {
       shownAnim = fixedAnim;
       g_splash.show(fixedAnim);
@@ -403,7 +551,8 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
       }
     } else {
       g_splash.hide();
-      if (was == VIEW_SPLASH || was == VIEW_NONE) g_mascot.reset();
+      // the desk view borrowed the mascot's frame buffer: reload it
+      if (was == VIEW_SPLASH || was == VIEW_NONE || was == VIEW_DESK) g_mascot.reset();
       g_mascot.invalidate();
       g_mini.reset();
       g_dirtyTitle = true;
@@ -413,6 +562,10 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
     }
   }
 
+  if (g_view == VIEW_DESK) {
+    deskTick(now, false);
+    return;
+  }
   if (g_view == VIEW_SPLASH) {
     g_splash.tick();
     return;

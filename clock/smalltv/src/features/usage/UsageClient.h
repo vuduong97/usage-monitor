@@ -16,3 +16,4 @@ bool usageFresh(uint32_t withinMs);       // true if the last good update is rec
 // Apply a usage payload PUSHED to the device (POST /api/usage) — used when the
 // device can't reach the daemon (Wi-Fi client isolation) so the daemon pushes.
 bool usageApply(const String& body);      // parse {s,sr,w,wr,st,ok}; true on success
+bool usageApplyState(const String& body); // parse {a,txt,cd,dim,ttl} (POST /api/state)
