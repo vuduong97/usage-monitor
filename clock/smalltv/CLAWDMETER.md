@@ -46,7 +46,31 @@ smalltv-mod's usual `4m1m` layout overlaps that region and would destroy it. So 
   - The ticker, radar, HA, notify and theme features are compiled out.
   - The web UI and settings JSON leave out those features' tabs and slices.
 - Both firmwares use the same Arduino core: SDK `2.2.2-dev(38a443e)` and LittleFS disk format v2.0. So they read and write the shared filesystem safely.
-- The stock firmware keeps its settings in EEPROM, and this firmware never touches EEPROM. This firmware only adds `/config.json`, `/clawd.pak` and transient `*.tmp` files.
+- The stock firmware keeps its settings in EEPROM, and this firmware never touches EEPROM. This firmware only adds `/config.json`, `/clawd.pak`, `/desk.pak` and transient `*.tmp` files.
+
+## Stock files moved to the Mac (2026-10-12)
+
+`/desk.pak` (2.8 MB, 30 full-screen animations) does not fit next to the stock files (1.5 MB), so they were backed up and deleted from the clock with `tools/stock_fs.sh` (repo root). It talks to auth-gated endpoints this firmware has for that (ESP8266 only):
+
+| Endpoint | |
+|---|---|
+| `GET /api/fs/list` | `size<TAB>path` per file |
+| `GET /api/fs/get?path=` | one file |
+| `GET /api/fs/raw` | the whole LittleFS partition, raw |
+| `POST /api/fs/put?path=` | multipart upload; directories are created |
+| `POST /api/fs/rm?path=` | delete; empty directories go too |
+
+```sh
+tools/stock_fs.sh backup            # -> .stock-backup/fs-<stamp>/ (files, list.tsv, sha256.tsv, littlefs.bin)
+tools/stock_fs.sh verify <dir>      # unpacks littlefs.bin with mklittlefs, compares; writes VERIFIED
+tools/stock_fs.sh delete <dir>      # only after VERIFIED; keeps config.json, clawd.pak, desk.pak
+tools/stock_fs.sh restore <dir>     # deletes desk.pak, puts the stock files back
+tools/stock_fs.sh check <dir>       # what is on the clock vs the backup
+```
+
+`/api/fs/get` and `/api/fs/raw` can read `/config.json` (WiFi password): keep a web password set (`CLAWD_AUTH=user:pass` for the script).
+
+The backup in use is `.stock-backup/fs-20261012-000754/` (72 files, git-ignored: `config.json` holds the WiFi password). **Run `restore` before going back to stock**, or the stock firmware boots without its web UI, icons and fonts.
 
 ## Install (from stock) — done 2026-10-11, device 192.168.1.48 / clawdmeter.local
 
@@ -67,6 +91,7 @@ To update this firmware later, use `curl -F "firmware=@.pio/build/smalltv_clawd/
 ## Back to stock (verified 2026-10-11)
 
 ```sh
+tools/stock_fs.sh restore .stock-backup/fs-20261012-000754   # the stock files first
 curl -F "firmware=@SDPro_V1.0.6_20260525_174828.bin" http://<clock-ip>/update
 ```
 
@@ -96,8 +121,12 @@ ble = off                           # if there is no Bluetooth Clawdmeter
 - `heap`, `maxblk`, `minHeap`, `minMaxblk`, `frag`
 - `uptime`, `reset`, `version`
 - `pak` (animations loaded; 0 means `/clawd.pak` is missing), `splash`, `anim`
+- `desk` (animations in `/desk.pak`), `onDesk`, `fsTotal`, `fsUsed`
+- `contFree`: the least free `loop()` stack seen so far (of 4 KB)
+- `crash` (only after one): the last crash since power on, from `custom_crash_callback` in RTC memory (`src/CrashLog.cpp`): count, reason, exccause, epc, excvaddr and the code addresses found on the stack (feed them to `addr2line`). On this core a panic/abort/stack overflow restarts as "Software/System restart", like `ESP.restart()`; with the record, `reset` then reads `Crash (panic/abort/stack)`.
+- `deskStats`: over the last 128 desk frames, `drawP50`/`drawP95`/`drawMax` (µs to decode and push one frame) and `lateP95` (µs a frame started after its time)
 
-Measured on the device: `minHeap` stayed at 24,064 B or more through usage, Enterprise and alert payloads.
+Measured on the device: `minHeap` stayed at 24,064 B or more through usage, Enterprise and alert payloads. With the desk view (2026-10-12, after a reboot): `minHeap` ≥ 22,568 B; draw p95 11 ms (`typing`) to 45 ms (`building`, the busiest), `lateP95` 5 ms.
 
 ```sh
 while sleep 60; do curl -s http://clawdmeter.local/api/heap; echo; done >> heap.log   # 24 h soak
@@ -112,11 +141,13 @@ while sleep 60; do curl -s http://clawdmeter.local/api/heap; echo; done >> heap.
 | `ClawdDraw.*` | No framebuffer. Each region is composed in 4-row bands (1,920 B): background, anti-aliased shapes, then anti-aliased text. One SPI push per band. Pixel-art cells are diffed per grid row. |
 | `ClawdAnim.*` | Port of `splash.cpp`: player, splash with walkers and rate groups, corner mascot, mini. |
 | `ClawdRate.*` | Port of `usage_rate.cpp`. |
-| `ClawdUi.*` | Screens, views, alert and status line. |
+| `ClawdUi.*` | Screens, views, alert and status line; the desk player (sequences, pass-end switching, timing stats). |
+| `DeskPack.*` | `/desk.pak` (CLDK v2) reader. 1:1 240 px frames as row deltas (skip / literal / run ops, 16 colours per animation), streamed in 128 B reads and pushed as row spans. Format notes in `tools/desk/desk_codec.js`. |
+| `tools/desk_check/run.sh` | Host build of `DeskPack.cpp`: decodes every frame of `build/desk/desk.pak` and checks it against the encoder's `desk.crc.json`. |
 | `features/usage/UsageMode.cpp` | Glue: Arduino_GFX surface plus ticking. |
 | `tools/clawd_preview/run.sh` | Desktop build of the same renderer. Writes PNGs of every screen and animation to `.pio/clawd_preview/`. |
 | `tools/gzip_webui.py` | Writes `webui.h` and `webui_clawd.h`, the latter without the ticker, radar and HA tabs. |
 
-Build (`pio run -e smalltv_clawd`): static RAM 47,836 B (58.4%), image 517,904 B.
+Build (`pio run -e smalltv_clawd`): static RAM 48,996 B (59.8%), image 510,208 B. That leaves about 14 KB of the 524,288 B clawd → clawd OTA budget: check the size before adding features (`tools/flash.sh` refuses larger images).
 
 The plain `smalltv` env (4m1m, all features) still builds, but it would need `/clawd.pak` on its own filesystem and is not meant for this clock.
