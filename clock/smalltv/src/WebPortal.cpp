@@ -469,7 +469,21 @@ static bool g_pakFailed = false;
 static const char* g_pakTmp = "/clawd.pak.tmp";
 static void pakUpload();
 static void handleClawdPakUpload() { g_pakTmp = "/clawd.pak.tmp"; pakUpload(); }
-static void handleDeskPakUpload() { g_pakTmp = "/desk.pak.tmp"; pakUpload(); }
+// The desk pack takes most of the free space (the stock firmware's assets stay
+// on the filesystem), so the old and new packs never fit side by side: the old
+// one goes before the new one streams in, and the desk view shows
+// "desk.pak missing" until the upload completes.
+static void handleDeskPakUpload() {
+  g_pakTmp = "/desk.pak.tmp";
+  if (server.upload().status == UPLOAD_FILE_START &&
+      (!S->auth.enabled || !S->auth.pass.length() ||
+       server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str()))) {
+    clawdUiDeskReleased();
+    LittleFS.remove(DESK_PACK_PATH);
+    LittleFS.remove(g_pakTmp);
+  }
+  pakUpload();
+}
 static void pakUpload() {
   HTTPUpload& up = server.upload();
   // Checked while the body streams in too (like /update), or an unauthenticated

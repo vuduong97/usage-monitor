@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // desk_to_pak.js — render clawd-on-desk's animated Clawd SVGs into /desk.pak,
-// the clock's full-screen "agent" animations.
+// the clock's full-screen "agent" animations (format CLDK v2).
 //
 // PERSONAL USE ONLY. The artwork belongs to its authors (clawd-on-desk
 // assets/LICENSE: All Rights Reserved; the Clawd character is Anthropic's).
@@ -8,35 +8,43 @@
 // Never commit the output or ship it to anyone.
 //
 // Pipeline, per animation:
-//   1. open the SVG in headless Chrome on a black page (the clock's background),
-//      pause every CSS animation and step currentTime at FPS;
-//   2. screenshot each step at SS px per output cell and reduce every SSxSS
-//      block to one colour (dominant non-black colour if it covers enough of
-//      the block, otherwise background);
-//   3. merge the colours down to a 15-colour palette (+ black), collapse
+//   1. open the SVG in headless Chrome, pause every CSS animation, read the
+//      timing (intro = one-shot parts, loop = the repeating cycle), then step
+//      currentTime at the animation's fps and screenshot the 30x30-unit window
+//      at 2x; each 2x2 block becomes one panel pixel (dominant non-black
+//      colour, or background). Renders are cached in build/desk/cache/.
+//   2. merge the colours down to a 15-colour palette (+ black), collapse
 //      identical consecutive frames into longer holds, crop to the union box;
-//   4. run-length encode each frame (nibble colour, nibble run-1).
+//   3. encode every frame as a delta from the previous one (frame 0 from a
+//      black screen) plus one "wrap" delta from the last frame back to the
+//      loop start, so the clock only redraws what changed;
+//   4. decode the result again and compare it with the render (--verify
+//      fails the run when a frame is off by more than 2% of its pixels).
 //
 // Usage:
 //   CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js [--only a,b] [--probe] [--sheet]
-// Output: build/desk/desk.pak (+ build/desk/sheets/*.png with --sheet)
+// Output: build/desk/desk.pak, build/desk/desk.crc.json (+ build/desk/sheets/*.png with --sheet)
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
+const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { PNG } = require('pngjs');
-const puppeteer = require('puppeteer-core');
-const { ANIMS, GRID, CPU, WINDOW, FPS, MAX_MS, MAX_CELLS } = require('./desk_anims');
+const { ANIMS, SIZE, PX_PER_UNIT, WINDOW, FPS, MAX_MS } = require('./desk_anims');
+const codec = require('./desk_codec');
 
-const SS = 8;                                  // screenshot px per output cell
+const SS = 2;                                  // screenshot px per panel pixel
 const VB = { x: -15, y: -25, w: 45, h: 45 };   // every clawd-on-desk Clawd SVG uses this viewBox
-const PX_PER_UNIT = CPU * SS;
-const PAGE_PX = VB.w * PX_PER_UNIT;
-const MIN_COVER = 0.4;                         // non-black share of a block that makes it ink
+const PAGE_PX = VB.w * PX_PER_UNIT * SS;
+const CLIP = { x: (WINDOW.x - VB.x) * PX_PER_UNIT * SS, y: (WINDOW.y - VB.y) * PX_PER_UNIT * SS, w: SIZE * SS, h: SIZE * SS };
+const RENDER_VERSION = 2;                      // bump to invalidate build/desk/cache
+const MAX_BAD = 0.02;                          // --verify: share of pixels a frame may get wrong
 
 const root = path.resolve(__dirname, '..', '..');
 const outDir = path.join(root, 'build', 'desk');
+const cacheDir = path.join(outDir, 'cache');
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
 const opt = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : null; };
@@ -59,7 +67,33 @@ function svgDir() {
 }
 
 // ---- 1. render -------------------------------------------------------------------
-async function renderFrames(page, svgText) {
+// Clip timing from the CSS animations: one-shot parts (finite iterations) and
+// start delays form the intro; the infinite ones repeat with the LCM of their
+// periods (or the longest period when the LCM is too long to render).
+function clipTiming(list, fps, maxMs) {
+  let intro = 0;
+  const periods = [];
+  for (const a of list) {
+    if (Number.isFinite(a.iterations)) intro = Math.max(intro, a.delay + a.duration * a.iterations);
+    else if (a.duration > 0) { periods.push(a.period); intro = Math.max(intro, a.delay); }
+  }
+  const step = 1000 / fps;
+  if (!periods.length) {                       // one-shot: play, then hold the last frame
+    const total = Math.min(Math.max(intro, step), maxMs);
+    return { introMs: total, loopMs: 0, once: true };
+  }
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const q = periods.map((p) => Math.max(10, Math.round(p / 10) * 10));
+  let lcm = q[0];
+  for (const p of q.slice(1)) { lcm = (lcm / gcd(lcm, p)) * p; if (lcm > maxMs) break; }
+  let loop = lcm <= maxMs ? lcm : Math.max(...q);
+  intro = Math.round(intro / step) * step;
+  loop = Math.min(loop, maxMs - Math.min(intro, maxMs / 2));
+  if (intro + loop > maxMs) intro = Math.max(0, maxMs - loop);
+  return { introMs: intro, loopMs: Math.max(loop, step), once: false };
+}
+
+async function renderFrames(page, svgText, fps, maxMs) {
   const svg = svgText
     .replace(/<\?xml[^>]*>/, '')
     .replace(/<svg\b([^>]*?)\swidth="[^"]*"/, '<svg$1')
@@ -68,61 +102,94 @@ async function renderFrames(page, svgText) {
   await page.setContent(
     `<!doctype html><html><body style="margin:0;background:#000;overflow:hidden">${svg}</body></html>`,
     { waitUntil: 'load' });
-  const totalMs = await page.evaluate((maxMs) => {
-    const anims = document.getAnimations();
-    let ms = 0;
-    for (const a of anims) {
-      a.pause();
-      const t = a.effect.getComputedTiming();
-      const span = Number.isFinite(t.endTime) ? t.endTime : (t.delay || 0) + t.duration;
-      if (Number.isFinite(span)) ms = Math.max(ms, span);
-    }
-    return Math.min(Math.max(ms, 100), maxMs);
-  }, MAX_MS);
-  const step = 1000 / FPS;
-  const n = Math.max(1, Math.round(totalMs / step));
+  const list = await page.evaluate(() => document.getAnimations().map((a) => {
+    a.pause();
+    const t = a.effect.getTiming(), c = a.effect.getComputedTiming();
+    const duration = Number(c.duration) || 0;
+    const alt = /alternate/.test(t.direction || '');
+    return { delay: t.delay || 0, duration, iterations: c.iterations,
+      period: alt ? 2 * duration : duration };
+  }).map((a) => ({ ...a, iterations: a.iterations === Infinity ? null : a.iterations })));
+  for (const a of list) if (a.iterations === null) a.iterations = Infinity;
+  const timing = clipTiming(list, fps, maxMs);
+  const step = 1000 / fps;
+  const total = timing.introMs + timing.loopMs;
+  const n = Math.max(1, Math.round(total / step));
   const frames = [];
   for (let i = 0; i < n; i++) {
     const t = i * step;
     await page.evaluate((tt) => { for (const a of document.getAnimations()) a.currentTime = tt; }, t);
-    const buf = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: PAGE_PX, height: PAGE_PX } });
-    frames.push(PNG.sync.read(buf));
+    const buf = await page.screenshot({ type: 'png', clip: CLIP });
+    frames.push(toPixels(PNG.sync.read(buf)));
   }
-  return { frames, stepMs: step, totalMs };
+  return { frames, stepMs: step, ...timing, loopStart: timing.once ? n - 1 : Math.round(timing.introMs / step) };
 }
 
-// ---- 2. cells ---------------------------------------------------------------------
-// Returns a GRID x GRID array of 0xRRGGBB (0 = background) for the window.
-function toCells(png) {
-  const cells = new Int32Array(GRID * GRID);
-  const ux0 = WINDOW.x - VB.x, uy0 = WINDOW.y - VB.y;   // window origin in page units
-  for (let gy = 0; gy < GRID; gy++) {
-    for (let gx = 0; gx < GRID; gx++) {
-      const px0 = Math.round(ux0 * PX_PER_UNIT) + gx * SS;
-      const py0 = Math.round(uy0 * PX_PER_UNIT) + gy * SS;
-      const hist = new Map();
-      let ink = 0;
-      for (let y = py0; y < py0 + SS; y++) {
-        for (let x = px0; x < px0 + SS; x++) {
-          if (x < 0 || y < 0 || x >= png.width || y >= png.height) continue;
-          const o = (y * png.width + x) * 4;
-          const r = png.data[o], g = png.data[o + 1], b = png.data[o + 2];
-          if (r + g + b < 24) continue;                 // background (or near it)
-          ink++;
-          const k = (r << 16) | (g << 8) | b;
-          hist.set(k, (hist.get(k) || 0) + 1);
-        }
+// One 0xRRGGBB (0 = background) per panel pixel: the dominant non-black colour
+// of its SSxSS block when at least half the block is ink.
+function toPixels(png) {
+  const out = new Int32Array(SIZE * SIZE);
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const cols = [];
+      for (let dy = 0; dy < SS; dy++) for (let dx = 0; dx < SS; dx++) {
+        const o = ((y * SS + dy) * png.width + x * SS + dx) * 4;
+        const r = png.data[o], g = png.data[o + 1], b = png.data[o + 2];
+        if (r + g + b >= 24) cols.push((r << 16) | (g << 8) | b);
       }
-      if (ink < MIN_COVER * SS * SS) continue;
-      let best = 0, bestN = -1;
-      for (const [k, v] of hist) if (v > bestN) { best = k; bestN = v; }
-      cells[gy * GRID + gx] = best;
+      if (cols.length * 2 < SS * SS) continue;
+      let best = cols[0], bestN = 0;
+      for (const c of cols) { let k = 0; for (const d of cols) if (d === c) k++; if (k > bestN) { best = c; bestN = k; } }
+      out[y * SIZE + x] = best || 1;
     }
   }
-  return cells;
+  return out;
 }
 
-// ---- 3. palette -----------------------------------------------------------------
+// A cache file that does not parse is treated as a miss and re-rendered.
+function readCache(file) {
+  try {
+    const raw = zlib.inflateSync(fs.readFileSync(file));
+    const metaLen = raw.readUInt32LE(0);
+    const meta = JSON.parse(raw.subarray(4, 4 + metaLen).toString());
+    const body = raw.subarray(4 + metaLen);
+    if (body.length !== meta.count * SIZE * SIZE * 4) return null;
+    return { meta, body };
+  } catch {
+    return null;
+  }
+}
+
+function cacheKey(def, svgText, fps, maxMs) {
+  return crypto.createHash('sha1')
+    .update(JSON.stringify({ v: RENDER_VERSION, SIZE, PX_PER_UNIT, WINDOW, SS, fps, maxMs }))
+    .update(svgText).digest('hex').slice(0, 16) + '-' + def.name.replace(/\s+/g, '-');
+}
+
+async function renderCached(getPage, def, svgText) {
+  const fps = def.fps || FPS, maxMs = def.maxMs || MAX_MS;
+  const file = path.join(cacheDir, cacheKey(def, svgText, fps, maxMs) + '.bin');
+  const cached = fs.existsSync(file) && !flag('--no-cache') ? readCache(file) : null;
+  if (cached) {
+    const { meta, body } = cached;
+    const frames = [];
+    for (let i = 0; i < meta.count; i++) {
+      const b = body.subarray(i * SIZE * SIZE * 4, (i + 1) * SIZE * SIZE * 4);
+      frames.push(new Int32Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.length)));
+    }
+    return { ...meta, frames };
+  }
+  const r = await renderFrames(await getPage(), svgText, fps, maxMs);
+  const meta = { count: r.frames.length, stepMs: r.stepMs, introMs: r.introMs, loopMs: r.loopMs,
+    once: r.once, loopStart: r.loopStart };
+  const m = Buffer.from(JSON.stringify(meta));
+  const head = Buffer.alloc(4); head.writeUInt32LE(m.length, 0);
+  fs.mkdirSync(cacheDir, { recursive: true });
+  fs.writeFileSync(file, zlib.deflateSync(Buffer.concat([head, m, ...r.frames.map((f) => Buffer.from(f.buffer))]), { level: 1 }));
+  return r;
+}
+
+// ---- 2. palette -----------------------------------------------------------------
 function dist(a, b) {
   const dr = (a >> 16) - (b >> 16), dg = ((a >> 8) & 255) - ((b >> 8) & 255), db = (a & 255) - (b & 255);
   return 2 * dr * dr + 4 * dg * dg + 3 * db * db;
@@ -130,99 +197,119 @@ function dist(a, b) {
 function buildPalette(frames) {
   const count = new Map();
   for (const f of frames) for (const c of f) if (c) count.set(c, (count.get(c) || 0) + 1);
-  // Merge the rarest colour into its nearest neighbour until 15 remain. Colours
-  // are kept exact (never averaged) so flat pixel art stays flat.
+  // Merge the rarest colour into its nearest neighbour (black included) until
+  // 15 remain. Colours are kept exact (never averaged) so flat art stays flat.
   const map = new Map([...count.keys()].map((k) => [k, k]));
   const live = new Map(count);
   while (live.size > 15) {
     let rare = null, rareN = Infinity;
     for (const [k, v] of live) if (v < rareN) { rare = k; rareN = v; }
-    let near = null, nearD = Infinity;
+    let near = 0, nearD = dist(0, rare);
     for (const k of live.keys()) if (k !== rare) { const d = dist(k, rare); if (d < nearD) { near = k; nearD = d; } }
-    live.set(near, live.get(near) + rareN);
+    if (near) live.set(near, live.get(near) + rareN);
     live.delete(rare);
     for (const [k, v] of map) if (v === rare) map.set(k, near);
   }
   const palette = [0, ...[...live.keys()].sort((a, b) => live.get(b) - live.get(a))];
   const index = new Map(palette.map((c, i) => [c, i]));
-  const lut = (c) => (c ? index.get(map.get(c)) : 0);
+  const lut = new Map([...map].map(([k, v]) => [k, v ? index.get(v) : 0]));
   return { palette, lut };
 }
 const rgb565 = (c) => (((c >> 16) & 0xf8) << 8) | (((c >> 8) & 0xfc) << 3) | ((c & 0xff) >> 3);
 
-// ---- 4. pack one animation ------------------------------------------------------
-function packAnim(def, rendered) {
-  const cellFrames = rendered.frames.map(toCells);
-  const { palette, lut } = buildPalette(cellFrames);
-  let idx = cellFrames.map((f) => Uint8Array.from(f, lut));
-  // collapse identical consecutive frames
-  const frames = [], holds = [];
-  for (const f of idx) {
+// ---- 3. pack one animation ------------------------------------------------------
+function packAnim(def, r) {
+  const { palette, lut } = buildPalette(r.frames);
+  const full = r.frames.map((f) => Uint8Array.from(f, (c) => (c ? lut.get(c) : 0)));
+  // collapse identical consecutive frames (never across the loop start)
+  const frames = [], holds = [], src = [];
+  let loopStart = 0;
+  full.forEach((f, i) => {
     const last = frames[frames.length - 1];
-    if (last && Buffer.compare(Buffer.from(last), Buffer.from(f)) === 0) holds[holds.length - 1] += rendered.stepMs;
-    else { frames.push(f); holds.push(rendered.stepMs); }
-  }
+    if (i !== r.loopStart && last && Buffer.compare(Buffer.from(last), Buffer.from(f)) === 0) {
+      holds[holds.length - 1] += r.stepMs;
+    } else {
+      if (i === r.loopStart) loopStart = frames.length;
+      frames.push(f); holds.push(r.stepMs); src.push(r.frames[i]);
+    }
+  });
   // union crop
-  let x0 = GRID, y0 = GRID, x1 = -1, y1 = -1;
+  let x0 = SIZE, y0 = SIZE, x1 = -1, y1 = -1;
   for (const f of frames) for (let i = 0; i < f.length; i++) if (f[i]) {
-    const x = i % GRID, y = (i / GRID) | 0;
+    const x = i % SIZE, y = (i / SIZE) | 0;
     if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
   }
   if (x1 < 0) throw new Error(`${def.name}: empty`);
   const w = x1 - x0 + 1, h = y1 - y0 + 1;
-  if (w * h > MAX_CELLS) throw new Error(`${def.name}: crop ${w}x${h} exceeds ${MAX_CELLS} cells`);
-  const enc = frames.map((f) => {
-    const out = [];
-    let cur = -1, run = 0;
-    const flush = () => { while (run > 0) { const r = Math.min(run, 16); out.push((cur << 4) | (r - 1)); run -= r; } };
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const v = f[y * GRID + x];
-      if (v === cur) run++;
-      else { flush(); cur = v; run = 1; }
-    }
-    flush();
-    return Buffer.from(out);
-  });
+  const crop = (f) => { const o = new Uint8Array(w * h); for (let y = 0; y < h; y++) o.set(f.subarray((y0 + y) * SIZE + x0, (y0 + y) * SIZE + x0 + w), y * w); return o; };
+  const cropped = frames.map(crop);
+  const enc = codec.encodeAnim(cropped, loopStart, w);
   return {
-    name: def.name, w, h, ox: x0, oy: y0, frames: enc, cropFrames: frames,
+    name: def.name, x: x0, y: y0, w, h, frames: enc, cropFrames: cropped, src, loopStart, once: r.once,
     holds: holds.map((x) => Math.min(65535, Math.round(x))),
     palette: palette.map(rgb565), paletteRgb: palette,
-    srcColors: new Set(cellFrames.flatMap((f) => [...f])).size - 1,
+    srcColors: new Set(r.frames.flatMap((f) => [...new Set(f)])).size - 1,
+    timing: `${Math.round(r.introMs)}+${Math.round(r.loopMs)} ms${r.once ? ' once' : ''}`,
   };
+}
+
+// ---- 4. verify --------------------------------------------------------------------
+// Decode the packed frames (the same algorithm as the clock) and compare each
+// with the Chrome render: a pixel is bad when it lands on the wrong side of
+// ink/background or its colour is visibly off.
+function verifyAnim(a) {
+  const states = codec.decodeAnim(a.frames, a.w * a.h, a.w);
+  let worst = 0, worstAt = 0;
+  states.slice(0, a.cropFrames.length).forEach((s, i) => {
+    if (Buffer.compare(Buffer.from(s), Buffer.from(a.cropFrames[i])) !== 0) throw new Error(`${a.name}: codec mismatch at frame ${i}`);
+    let bad = 0, ink = 0;
+    for (let y = 0; y < a.h; y++) for (let x = 0; x < a.w; x++) {
+      const want = a.src[i][(a.y + y) * SIZE + a.x + x], got = a.paletteRgb[s[y * a.w + x]];
+      if (want) ink++;
+      const inkMismatch = (want !== 0) !== (got !== 0);
+      if (inkMismatch || (want && dist(want, got) > 3 * 40 * 40)) bad++;
+    }
+    const share = bad / Math.max(ink, 1);
+    if (share > worst) { worst = share; worstAt = i; }
+  });
+  const wrapped = states[states.length - 1];
+  if (Buffer.compare(Buffer.from(wrapped), Buffer.from(a.cropFrames[a.loopStart])) !== 0) throw new Error(`${a.name}: wrap does not land on the loop start`);
+  return { worst, worstAt, crc: states.map((s) => codec.crc32(s)) };
 }
 
 // ---- pack file ---------------------------------------------------------------------
 // Little-endian.
-//   header  "CLDK", u16 version (1), u16 count, u8 grid, u8 cells/unit,
-//           u16 reserved, u32 reserved                                    16 B
-//   desc    name[16], u8 w, h, ox, oy, u16 frameCount, loopStart, loopEnd,
-//           u16 maxFrameBytes (largest RLE frame), u16 palette[16] (RGB565),
-//           u32 indexOff                                                    64 B
-//   index   u32 offsets[frameCount + 1] (RLE frame i = [off[i], off[i+1]))
+//   header  "CLDK", u16 version (2), u16 count, u16 size (240), u16 reserved,
+//           u32 reserved                                                   16 B
+//   desc    name[16], u8 x, y, w, h (crop on the panel), u16 frameCount,
+//           u16 loopStart, u16 maxFrameBytes, u8 flags (bit 0: once),
+//           u8 reserved, u16 palette[16] (RGB565), u32 indexOff            64 B
+//   index   u32 offsets[frameCount + 2]: frame i = [off[i], off[i+1]) for
+//           i < frameCount, then the wrap delta (last frame -> loopStart)
 //   holds   u16 ms[frameCount]
-//   frames  RLE: byte = colour << 4 | (run - 1), row-major over the w x h crop
+//   frames  delta ops over the w x h crop, row-major (see desk_codec.js)
 function writePak(anims) {
   const head = Buffer.alloc(16);
   head.write('CLDK', 0, 'latin1');
-  head.writeUInt16LE(1, 4);
+  head.writeUInt16LE(2, 4);
   head.writeUInt16LE(anims.length, 6);
-  head.writeUInt8(GRID, 8);
-  head.writeUInt8(CPU, 9);
+  head.writeUInt16LE(SIZE, 8);
   const descs = [], bodies = [];
   let off = 16 + 64 * anims.length;
   for (const a of anims) {
-    const n = a.frames.length;
-    const index = Buffer.alloc(4 * (n + 1));
+    const n = a.frames.length - 1;             // + the wrap delta
+    const index = Buffer.alloc(4 * (n + 2));
     const holds = Buffer.alloc(2 * n);
     let fo = off + index.length + holds.length;
     a.frames.forEach((f, i) => { index.writeUInt32LE(fo, 4 * i); fo += f.length; });
-    index.writeUInt32LE(fo, 4 * n);
+    index.writeUInt32LE(fo, 4 * (n + 1));
     a.holds.forEach((h, i) => holds.writeUInt16LE(h, 2 * i));
     const d = Buffer.alloc(64);
     d.write(a.name.slice(0, 15), 0, 'latin1');
-    d.writeUInt8(a.w, 16); d.writeUInt8(a.h, 17); d.writeUInt8(a.ox, 18); d.writeUInt8(a.oy, 19);
-    d.writeUInt16LE(n, 20); d.writeUInt16LE(0, 22); d.writeUInt16LE(n - 1, 24);
-    d.writeUInt16LE(Math.max(...a.frames.map((f) => f.length)), 26);
+    d.writeUInt8(a.x, 16); d.writeUInt8(a.y, 17); d.writeUInt8(a.w, 18); d.writeUInt8(a.h, 19);
+    d.writeUInt16LE(n, 20); d.writeUInt16LE(a.loopStart, 22);
+    d.writeUInt16LE(Math.max(...a.frames.map((f) => f.length)), 24);
+    d.writeUInt8(a.once ? 1 : 0, 26);
     for (let k = 0; k < 16; k++) d.writeUInt16LE(a.palette[k] || 0, 28 + 2 * k);
     d.writeUInt32LE(off, 60);
     descs.push(d);
@@ -235,18 +322,16 @@ function writePak(anims) {
 
 // ---- contact sheets (QA) -----------------------------------------------------------
 function writeSheet(a, file) {
-  const cell = 4, cols = Math.min(8, a.cropFrames.length);
-  const rows = Math.ceil(a.cropFrames.length / cols);
-  const W = GRID * cell, png = new PNG({ width: cols * (W + 4), height: rows * (W + 4) });
+  const pick = [...new Set([0, 1, 2, 3, 4, 5].map((k) => Math.round(k * (a.cropFrames.length - 1) / 5)))];
+  const W = SIZE, png = new PNG({ width: pick.length * (W + 4), height: W });
   png.data.fill(40);
-  a.cropFrames.forEach((f, i) => {
-    const bx = (i % cols) * (W + 4), by = ((i / cols) | 0) * (W + 4);
-    for (let gy = 0; gy < GRID; gy++) for (let gx = 0; gx < GRID; gx++) {
-      const c = a.paletteRgb[f[gy * GRID + gx]];
-      for (let y = 0; y < cell; y++) for (let x = 0; x < cell; x++) {
-        const o = ((by + gy * cell + y) * png.width + bx + gx * cell + x) * 4;
-        png.data[o] = c >> 16; png.data[o + 1] = (c >> 8) & 255; png.data[o + 2] = c & 255; png.data[o + 3] = 255;
-      }
+  pick.forEach((fi, j) => {
+    const f = a.cropFrames[fi], bx = j * (W + 4);
+    for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+      const cx = x - a.x, cy = y - a.y;
+      const c = cx >= 0 && cy >= 0 && cx < a.w && cy < a.h ? a.paletteRgb[f[cy * a.w + cx]] : 0;
+      const o = (y * png.width + bx + x) * 4;
+      png.data[o] = c >> 16; png.data[o + 1] = (c >> 8) & 255; png.data[o + 2] = c & 255; png.data[o + 3] = 255;
     }
   });
   fs.writeFileSync(file, PNG.sync.write(png));
@@ -258,44 +343,59 @@ async function main() {
   const defs = ANIMS.filter((d) => !only || only.split(',').includes(d.name));
   if (!defs.length) throw new Error('no animations selected');
   fs.mkdirSync(path.join(outDir, 'sheets'), { recursive: true });
-  const browser = await puppeteer.launch({ executablePath: chromePath(), headless: true,
-    args: ['--force-device-scale-factor=1', '--hide-scrollbars'] });
-  const anims = [];
-  try {
-    const page = await browser.newPage();
+  let browser = null, page = null;
+  const getPage = async () => {
+    if (page) return page;
+    const puppeteer = require('puppeteer-core');
+    browser = await puppeteer.launch({ executablePath: chromePath(), headless: true,
+      args: ['--force-device-scale-factor=1', '--hide-scrollbars'] });
+    page = await browser.newPage();
     await page.setViewport({ width: PAGE_PX, height: PAGE_PX, deviceScaleFactor: 1 });
+    return page;
+  };
+  const anims = [], crcs = {};
+  let failed = 0;
+  try {
     for (const def of defs) {
       const text = fs.readFileSync(path.join(dir, def.svg), 'utf8');
-      const r = await renderFrames(page, text);
       if (flag('--probe')) {
-        // union ink box in SVG units over the whole viewBox
-        let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
-        for (const p of r.frames) for (let y = 0; y < p.height; y += 2) for (let x = 0; x < p.width; x += 2) {
-          const o = (y * p.width + x) * 4;
-          if (p.data[o] + p.data[o + 1] + p.data[o + 2] < 24) continue;
+        const r = await renderFrames(await getPage(), text, def.fps || FPS, def.maxMs || MAX_MS);
+        let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1, edge = 0;
+        for (const f of r.frames) for (let i = 0; i < f.length; i++) if (f[i]) {
+          const x = i % SIZE, y = (i / SIZE) | 0;
           if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+          if (x === 0 || y === 0 || x === SIZE - 1 || y === SIZE - 1) edge++;
         }
-        const u = (v, o) => (v / PX_PER_UNIT + o).toFixed(1);
-        console.log(`${def.name.padEnd(14)} ${r.frames.length} frames ${Math.round(r.totalMs)} ms  x ${u(x0, VB.x)}..${u(x1, VB.x)}  y ${u(y0, VB.y)}..${u(y1, VB.y)}`);
+        console.log(`${def.name.padEnd(14)} ${r.frames.length} frames intro ${r.introMs} loop ${r.loopMs}${r.once ? ' once' : ''}  ` +
+          `ink x ${x0}..${x1} y ${y0}..${y1}${edge ? `  CLIPPED (${edge} edge px)` : ''}`);
         continue;
       }
+      const r = await renderCached(getPage, def, text);
       const a = packAnim(def, r);
+      const v = verifyAnim(a);
+      crcs[a.name] = v.crc;
       anims.push(a);
       const bytes = a.frames.reduce((s, f) => s + f.length, 0);
-      console.log(`${a.name.padEnd(14)} ${String(a.frames.length).padStart(3)} frames  ${a.w}x${a.h}@${a.ox},${a.oy}  ` +
-        `${a.srcColors} -> ${a.paletteRgb.length - 1} colours  ${bytes} B (max frame ${Math.max(...a.frames.map((f) => f.length))} B)`);
+      const bad = v.worst > MAX_BAD;
+      if (bad) failed++;
+      console.log(`${a.name.padEnd(14)} ${String(a.frames.length - 1).padStart(3)} frames ${a.timing.padEnd(16)} ` +
+        `${a.w}x${a.h}@${a.x},${a.y}  ${a.srcColors} -> ${a.paletteRgb.length - 1} colours  ` +
+        `${String(bytes).padStart(7)} B (max frame ${Math.max(...a.frames.map((f) => f.length))} B)  ` +
+        `worst ${(v.worst * 100).toFixed(2)}% @${v.worstAt}${bad ? '  FAIL' : ''}`);
       if (flag('--sheet')) writeSheet(a, path.join(outDir, 'sheets', `${a.name.replace(/\s+/g, '-')}.png`));
     }
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
   if (flag('--probe')) return;
   const pak = writePak(anims);
   const file = path.join(outDir, 'desk.pak');
   fs.writeFileSync(file, pak);
+  fs.writeFileSync(path.join(outDir, 'desk.crc.json'), JSON.stringify(crcs));
   let rev = '';
   try { rev = execFileSync('git', ['-C', process.env.CLAWD_ON_DESK_DIR, 'rev-parse', '--short', 'HEAD']).toString().trim(); } catch {}
   console.log(`${path.relative(root, file)}: ${anims.length} animations, ${pak.length} bytes (clawd-on-desk ${rev || '?'})`);
+  if (failed && flag('--verify')) { console.error(`${failed} animation(s) over ${MAX_BAD * 100}% bad pixels`); process.exit(1); }
 }
 
 main().catch((e) => { console.error(e.message || e); process.exit(1); });
