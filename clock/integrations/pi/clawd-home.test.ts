@@ -24,6 +24,7 @@ test("maps pi lifecycle onto clawd events and never returns a value", () => {
     ["tool_call", { toolName: "subagent" }],
     ["tool_result", { toolName: "subagent" }],
     ["tool_call", { toolName: "ask_user_question", input: { questions: [{ question: "Which DB?" }] } }],
+    ["tool_result", { toolName: "ask_user_question" }],
     ["ui_prompt_start", { title: "Allow?" }],
     ["ui_prompt_end", {}],
     ["session_before_compact", {}],
@@ -34,7 +35,7 @@ test("maps pi lifecycle onto clawd events and never returns a value", () => {
   ] as const) assert.equal(fire(name, e), undefined);
   assert.deepEqual(sent.map((s) => s.ev), [
     "prompt", "tool", "tool_error", "tool", "subagent_start", "subagent_stop", "tool_done",
-    "attention", "attention", "attention_done", "compact", "compact_done", "stop", "abort", "end",
+    "attention", "tool_done", "attention", "attention_done", "compact", "compact_done", "stop", "abort", "end",
   ]);
   assert.equal(sent[7].msg, "Which DB?");
   assert.ok(sent.every((s) => s.sid === "S1" && s.sub === false));
@@ -118,6 +119,23 @@ test("going to a waiting session sends attention_seen once per question", () => 
   assert.equal(stdin.listenerCount("data"), 1);     // never stacked
   fire("session_shutdown");
   assert.equal(stdin.listenerCount("data"), 0);
+});
+
+test("a question tool's own untitled dialog keeps the question on the clock", () => {
+  const sent: any[] = [];
+  const { pi, handlers } = fakePi();
+  clawdHome(pi, (b) => sent.push(b), fakeStdin());
+  const fire = (name: string, e: any = {}, ctx: any = tui) => handlers.get(name)!(e, ctx);
+  const other = { mode: "tui", sessionManager: { getSessionId: () => "S2" } };
+  fire("tool_call", { toolName: "ask_user_question", input: { questions: [{ question: "Which anim?" }] } });
+  fire("ui_prompt_start", {});                     // ask_user_question's ctx.ui.custom()
+  fire("ui_prompt_start", {}, other);              // another session is not affected
+  fire("ui_prompt_end");
+  fire("tool_result", { toolName: "ask_user_question" });
+  fire("ui_prompt_start", {});                     // a later plain dialog shows again
+  assert.deepEqual(sent.filter((s) => s.ev === "attention").map((s) => [s.sid, s.msg]), [
+    ["S1", "Which anim?"], ["S2", "pi needs you"], ["S1", "pi needs you"],
+  ]);
 });
 
 test("no stdin listener for sub-sessions or a non-TTY stdin", () => {

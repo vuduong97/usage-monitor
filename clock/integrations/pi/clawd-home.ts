@@ -120,6 +120,7 @@ export default function clawdHome(
 ) {
   let pending: string | undefined;          // sid whose "needs you" the user has not seen yet
   let listening = false;
+  let asking: string | undefined;           // sid with a question tool (ask_user_question...) open
   const onInput = (chunk: unknown) => {
     try {
       if (pending === undefined || !isUserInput(chunk)) return;
@@ -163,7 +164,10 @@ export default function clawdHome(
   pi.on("before_agent_start", (_e, ctx) => emit("prompt", ctx));
   pi.on("tool_call", (e, ctx) => {
     const tool = String(e?.toolName ?? "");
-    if (QUESTION_TOOLS.has(tool)) return emit("attention", ctx, { tool, msg: firstQuestion(e?.input) || "pi has a question" });
+    if (QUESTION_TOOLS.has(tool)) {
+      asking = sessionId(ctx);
+      return emit("attention", ctx, { tool, msg: firstQuestion(e?.input) || "pi has a question" });
+    }
     emit("tool", ctx, { tool });
     if (SUBAGENT_TOOLS.has(tool)) emit("subagent_start", ctx, { tool });
     return undefined;
@@ -171,13 +175,22 @@ export default function clawdHome(
   pi.on("tool_result", (e, ctx) => {
     const tool = String(e?.toolName ?? "");
     if (SUBAGENT_TOOLS.has(tool)) emit("subagent_stop", ctx, { tool });
+    if (QUESTION_TOOLS.has(tool) && asking === sessionId(ctx)) asking = undefined;
     return emit(e?.isError ? "tool_error" : "tool_done", ctx, { tool });
   });
-  pi.on("ui_prompt_start", (e, ctx) => emit("attention", ctx, { msg: String(e?.title ?? "") || "pi needs you" }));
+  pi.on("ui_prompt_start", (e, ctx) => {
+    // A question tool opens its own (untitled) dialog: keep showing its question
+    // instead of replacing it with the generic text.
+    if (asking !== undefined && asking === sessionId(ctx)) return undefined;
+    return emit("attention", ctx, { msg: String(e?.title ?? "") || "pi needs you" });
+  });
   pi.on("ui_prompt_end", (_e, ctx) => emit("attention_done", ctx));
   pi.on("session_before_compact", (_e, ctx) => emit("compact", ctx));
   pi.on("session_compact", (_e, ctx) => emit("compact_done", ctx));
   pi.on("session_compact_failed", (_e, ctx) => emit("compact_done", ctx));
-  pi.on("agent_settled", (e, ctx) => emit(e?.aborted ? "abort" : "stop", ctx));
+  pi.on("agent_settled", (e, ctx) => {
+    asking = undefined;
+    return emit(e?.aborted ? "abort" : "stop", ctx);
+  });
   pi.on("session_shutdown", (_e, ctx) => emit("end", ctx));
 }
