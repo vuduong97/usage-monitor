@@ -409,6 +409,11 @@ static void handleUsagePush() {
 // it is open like /api/usage and a logger can poll it without credentials.
 //   while sleep 60; do curl -s http://<ip>/api/heap; echo; done >> heap.log
 static void handleHeap() {
+  {   // sample now too, so the first request after boot never reports UINT32_MAX
+    uint32_t h = ESP.getFreeHeap(), b = platformMaxFreeBlock();
+    if (h < g_minHeap) g_minHeap = h;
+    if (b < g_minMaxBlk) g_minMaxBlk = b;
+  }
   JsonDocument doc;
   JsonObject o = doc.to<JsonObject>();
   o["heap"] = ESP.getFreeHeap();
