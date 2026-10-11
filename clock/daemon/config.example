@@ -41,6 +41,20 @@ chime = off
 #   off = silent (default)
 #   on  = chime through the board speaker (boards with audio: S3 AMOLED-2.16 / 1.8, LCD-1.54)
 beep = off
+
+# Push the same payload over WiFi to screens without Bluetooth, e.g. a GeekMagic
+# SmallTV running the smalltv-clawdmeter firmware (macOS daemon). Comma-separated
+# hosts/IPs or full URLs; a bare host gets http://<host>/api/usage. One API poll
+# feeds the BLE device and every target, so this adds no API calls.
+#   (unset) = WiFi push off (default)
+# http_targets = 192.168.0.125
+
+# Bluetooth on the macOS daemon. Set off when you only use WiFi screens, so the
+# daemon stops scanning for a BLE Clawdmeter. Read at startup (restart to apply).
+#   on  = look for the BLE device (default)
+#   off = WiFi push only
+# ble = on
+
 # Show a clock on the Usage screen, in place of the "Usage" title.
 #   off  = no clock; the screen keeps showing "Usage" (default)
 #   auto = show the clock, auto-detecting 12h/24h from this machine's settings

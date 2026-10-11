@@ -4,6 +4,11 @@
 Polls Claude API rate-limit headers and writes a JSON payload to the
 ESP32 "Clawdmeter" peripheral over a custom GATT service. Uses
 bleak (CoreBluetooth backend on macOS).
+
+The same payload can also be pushed over WiFi: every `http_targets` entry in
+the config gets an HTTP POST of the JSON (e.g. a SmallTV running the
+smalltv-clawdmeter firmware, which has no Bluetooth). One poll feeds every
+destination, so adding a WiFi screen does not add API calls.
 """
 
 import asyncio
@@ -19,7 +24,9 @@ import subprocess
 import sys
 import time
 import unicodedata
+import urllib.parse
 from pathlib import Path
+from typing import Callable
 
 import httpx
 from bleak import BleakClient
@@ -47,6 +54,11 @@ ATTENTION_DIR = Path.home() / ".config" / "claude-usage-monitor"
 ATTENTION_FLAG = ATTENTION_DIR / "attention"
 ATTENTION_MAX_AGE = 60
 DEFAULT_MAX_WRITE = 180
+
+# WiFi push (`http_targets`): path appended to a bare host, and the per-request
+# bound so an offline screen never stalls the BLE device sharing the poll.
+HTTP_PUSH_PATH = "/api/usage"
+HTTP_PUSH_TIMEOUT = 5.0
 
 API_URL = "https://api.anthropic.com/v1/messages"
 API_HEADERS_TEMPLATE = {
@@ -323,12 +335,8 @@ async def discover_target(skip_addr: str | None = None):
     return address
 
 
-def read_onoff_setting(name: str) -> str:
-    """Read an off|on option from the config file.
-
-    Defaults to "off" (the device stays silent) so existing setups are
-    unaffected until the user opts in.
-    """
+def read_config_value(name: str) -> str | None:
+    """Raw value of `name = value` in the config file (comments stripped), or None."""
     try:
         if CONFIG_FILE.exists():
             for line in CONFIG_FILE.read_text().splitlines():
@@ -337,12 +345,52 @@ def read_onoff_setting(name: str) -> str:
                     continue
                 key, val = line.split("=", 1)
                 if key.strip().lower() == name:
-                    val = val.strip().lower()
-                    if val in ("off", "on"):
-                        return val
+                    return val.strip()
     except OSError:
         pass
-    return "off"
+    return None
+
+
+def read_onoff_setting(name: str, default: str = "off") -> str:
+    """Read an off|on option from the config file.
+
+    Defaults to "off" (the device stays silent) so existing setups are
+    unaffected until the user opts in.
+    """
+    val = (read_config_value(name) or "").lower()
+    return val if val in ("off", "on") else default
+
+
+def normalize_http_target(raw: str) -> str | None:
+    """Turn an `http_targets` entry into a push URL, or None if unusable.
+
+    A bare host or IP (`192.168.0.125`, `smalltv.local:80`) becomes
+    `http://<host>/api/usage`; a full URL keeps its own path.
+    """
+    raw = raw.strip()
+    if not raw:
+        return None
+    if "://" not in raw:
+        raw = "http://" + raw
+    parts = urllib.parse.urlsplit(raw)
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return None
+    path = parts.path if parts.path not in ("", "/") else HTTP_PUSH_PATH
+    return urllib.parse.urlunsplit((parts.scheme, parts.netloc, path, parts.query, ""))
+
+
+def read_http_targets() -> list[str]:
+    """Push URLs from the comma-separated `http_targets` option (empty = WiFi push off)."""
+    targets = []
+    for raw in (read_config_value("http_targets") or "").split(","):
+        url = normalize_http_target(raw)
+        if url is None:
+            if raw.strip():
+                log(f"Ignoring invalid http_targets entry: {raw.strip()!r}")
+            continue
+        if url not in targets:
+            targets.append(url)
+    return targets
 
 
 def read_chime_setting() -> str:
@@ -667,6 +715,8 @@ class Session:
     def __init__(self, client: BleakClient) -> None:
         self.client = client
         self.refresh_requested = asyncio.Event()
+        self.on_refresh: Callable[[], None] | None = None   # Publisher hook: poll now
+        self.data_writes = 0      # usage payloads delivered on this link
         rx = client.services.get_characteristic(RX_CHAR_UUID)
         self.max_write = rx.max_write_without_response_size if rx else DEFAULT_MAX_WRITE
         log(f"Max write size: {self.max_write} bytes")
@@ -674,6 +724,8 @@ class Session:
     def _on_refresh(self, _char, _data: bytearray) -> None:
         log("Refresh requested by device")
         self.refresh_requested.set()
+        if self.on_refresh is not None:
+            self.on_refresh()
 
     async def setup_refresh_subscription(self) -> None:
         # start_notify awaits CoreBluetooth's CCCD-write confirmation, which
@@ -698,10 +750,162 @@ class Session:
         log(f"Sending: {data.decode()}")
         try:
             await self.client.write_gatt_char(RX_CHAR_UUID, data, response=False)
-            return True
         except BleakError as e:
             log(f"Write failed: {e}")
             return False
+        if payload.get("ok"):
+            self.data_writes += 1
+        return True
+
+
+class HttpSinks:
+    """POSTs each payload to every `http_targets` URL (WiFi screens).
+
+    Logs only when a target's reachability changes, so an unplugged screen
+    doesn't add a line every poll.
+    """
+
+    def __init__(self, transport: httpx.AsyncBaseTransport | None = None) -> None:
+        self._transport = transport
+        self._ok: dict[str, bool] = {}
+
+    async def send(self, targets: list[str], payload: dict) -> bool:
+        """True if at least one target accepted the payload."""
+        body = json.dumps(payload, separators=(",", ":"))
+        async with httpx.AsyncClient(timeout=HTTP_PUSH_TIMEOUT,
+                                     transport=self._transport) as http:
+            results = await asyncio.gather(
+                *(self._post(http, url, body) for url in targets))
+        return any(results)
+
+    async def _post(self, http: httpx.AsyncClient, url: str, body: str) -> bool:
+        try:
+            resp = await http.post(url, content=body,
+                                   headers={"Content-Type": "application/json"})
+            ok, why = resp.status_code == 200, f"HTTP {resp.status_code}"
+        except httpx.HTTPError as e:
+            ok, why = False, str(e) or type(e).__name__
+        if url not in self._ok or self._ok[url] != ok:
+            log(f"WiFi push to {url}: ok" if ok else f"WiFi push to {url} failed: {why}")
+        self._ok[url] = ok
+        return ok
+
+
+class Publisher:
+    """One poll loop feeding every destination: the BLE device while it is
+    connected, plus the `http_targets` WiFi screens.
+
+    Owns the poll schedule and the attention state, so an alert is consumed
+    once and delivered to every destination in the same payload. The firmware
+    treats every write as a full payload, so alerts and clears always ride on a
+    fresh poll, never on their own.
+    """
+
+    def __init__(self, http: HttpSinks | None = None) -> None:
+        self.http = http or HttpSinks()
+        self.ble: Session | None = None
+        self.wake = asyncio.Event()
+        self.force = False        # poll on the next step regardless of schedule
+        self.last_poll = 0.0
+        self.alert: dict | None = None   # latest alert, kept to match its session's clear
+        self.alert_unsent = False
+        self.clear_unsent = False
+
+    def attach_ble(self, session: Session) -> None:
+        self.ble = session
+        session.on_refresh = self.wake.set
+        self.force = True         # a fresh link gets data immediately
+        self.wake.set()
+
+    def detach_ble(self, session: Session) -> None:
+        if self.ble is session:
+            self.ble = None
+        session.on_refresh = None
+
+    async def step(self) -> None:
+        targets = read_http_targets()
+        ble = self.ble if self.ble is not None and self.ble.client.is_connected else None
+        if ble is None and not targets:
+            return    # nobody to show it to: leave attention flags for later
+
+        # One alert slot, latest wins: two sessions alerting in the same tick
+        # keep only the last one.
+        new_alert = take_attention_flag()
+        # A session that is still waiting can notify twice (AskUserQuestion
+        # fires PreToolUse, then a permission_prompt). Keep the first card
+        # and beep once until that session clears.
+        alert = self.alert
+        repeat = new_alert and alert and alert["s"] and new_alert["s"] == alert["s"]
+        if new_alert is not None and not repeat:
+            self.alert, self.alert_unsent, self.clear_unsent = new_alert, True, False
+        clears = take_clears()
+        if self.alert and clears.get(self.alert["s"], 0) > self.alert["t"]:
+            self.clear_unsent = not self.alert_unsent   # never shown, nothing to clear
+            self.alert, self.alert_unsent = None, False
+
+        refresh = ble is not None and ble.refresh_requested.is_set()
+        due = time.time() - self.last_poll >= POLL_INTERVAL
+        if not (self.force or refresh or due or self.alert_unsent or self.clear_unsent):
+            return
+        self.force = False
+        if ble is not None:
+            ble.refresh_requested.clear()
+
+        # Pure free-ride: read whatever access token(s) Claude Code currently
+        # holds across the configured config dirs and NEVER refresh them
+        # ourselves. Claude Code (the token's owner) does all refreshing;
+        # refreshing here would race its rotation and feed the OAuth endpoint's
+        # rate limit (429).
+        payload, dead = await poll_active()
+        extra = {}
+        if self.alert_unsent and self.alert is not None:
+            if read_onoff_setting("beep") == "on":
+                extra["b"] = 1
+            if self.alert["m"]:
+                extra["m"] = self.alert["m"]
+        if self.clear_unsent:
+            extra["x"] = 1
+        if payload is not None:
+            out = {**payload, **extra}
+        elif dead:
+            # No live token in any config dir (missing, or a 401/expired token)
+            # -> show "No data" now instead of stale numbers.
+            log("No usable token; signalling no-data to device \u2014 run "
+                "`claude login` or use the CLI to let Claude Code renew it")
+            out = {"ok": False, **extra}
+        else:
+            # Transient poll failure (a live token that didn't answer this
+            # cycle) -> stay silent and retry next tick.
+            log("No usable config dir this cycle")
+            return
+
+        # Guard last_poll on delivery so a failed write retries next tick
+        # instead of throttling a healthy link for a full POLL_INTERVAL.
+        if await self.send(out, ble, targets):
+            self.last_poll = time.time()
+            self.alert_unsent = self.clear_unsent = False
+
+    async def send(self, payload: dict, ble: Session | None, targets: list[str]) -> bool:
+        delivered = False
+        if ble is not None:
+            delivered = await ble.write_payload(payload)
+        if targets:
+            if ble is None:
+                log(f"Sending: {json.dumps(payload, separators=(',', ':'))}")
+            delivered = await self.http.send(targets, payload) or delivered
+        return delivered
+
+    async def run(self, stop_event: asyncio.Event) -> None:
+        while not stop_event.is_set():
+            try:
+                await self.step()
+            except Exception as e:  # keep the loop alive; the next tick retries
+                log(f"Publish cycle failed: {e!r}")
+            try:
+                await asyncio.wait_for(self.wake.wait(), timeout=TICK)
+            except asyncio.TimeoutError:
+                pass
+            self.wake.clear()
 
 
 def _is_encryption_error(exc: BaseException) -> bool:
@@ -789,8 +993,13 @@ def unpair_macos() -> bool:
     return True
 
 
-async def connect_and_run(target, stop_event: asyncio.Event) -> bool:
-    """Connect to a target and poll until disconnected or stopped.
+async def connect_and_run(target, stop_event: asyncio.Event,
+                          publisher: "Publisher | None" = None) -> bool:
+    """Connect to a target and feed it payloads until disconnected or stopped.
+
+    Payloads come from ``publisher`` (the daemon-wide poll loop, shared with
+    the WiFi push targets). Without one, a private publisher runs for the
+    lifetime of this connection.
 
     ``target`` is either an address string (Linux) or a BLEDevice carrying
     live CoreBluetooth details (macOS). Returns True if the connection was
@@ -823,87 +1032,40 @@ async def connect_and_run(target, stop_event: asyncio.Event) -> bool:
         return False
 
     log("Connected")
-    ATTENTION_FLAG.unlink(missing_ok=True)
-    take_clears()
+    if not read_http_targets():
+        # Drop alerts raised while the device was away. With WiFi screens
+        # configured those alerts were (or are about to be) shown there.
+        ATTENTION_FLAG.unlink(missing_ok=True)
+        take_clears()
     session = Session(client)
     await session.setup_refresh_subscription()
 
-    last_poll = 0.0
-    used_successfully = False
-    alert = None            # latest alert, kept to match its session's clear
-    alert_unsent = False
-    clear_unsent = False
+    own_stop = None
+    own_task = None
+    if publisher is None:
+        publisher = Publisher()
+        own_stop = asyncio.Event()
+        own_task = asyncio.create_task(publisher.run(own_stop))
+    publisher.attach_ble(session)
     try:
         while client.is_connected and not stop_event.is_set():
-            now = time.time()
-            elapsed = now - last_poll
-            # The firmware treats every write as a full payload, so alerts and
-            # clears go out with a fresh poll, never on their own.
-            # One alert slot, latest wins: two sessions alerting in the same tick
-            # keep only the last one.
-            new_alert = take_attention_flag()
-            # A session that is still waiting can notify twice (AskUserQuestion
-            # fires PreToolUse, then a permission_prompt). Keep the first card
-            # and beep once until that session clears.
-            repeat = new_alert and alert and alert["s"] and new_alert["s"] == alert["s"]
-            if new_alert is not None and not repeat:
-                alert, alert_unsent, clear_unsent = new_alert, True, False
-            clears = take_clears()
-            if alert and clears.get(alert["s"], 0) > alert["t"]:
-                clear_unsent = not alert_unsent   # never shown, nothing to clear
-                alert, alert_unsent = None, False
-            if (alert_unsent or clear_unsent or session.refresh_requested.is_set()
-                    or elapsed >= POLL_INTERVAL):
-                session.refresh_requested.clear()
-                # Pure free-ride: read whatever access token(s) Claude Code
-                # currently holds across the configured config dirs and NEVER
-                # refresh them ourselves. Claude Code (the token's owner) does all
-                # refreshing; refreshing here would race its rotation and feed the
-                # OAuth endpoint's rate limit (429). When no dir has a usable token
-                # we signal "No data" so the device idles instead of holding stale
-                # numbers until the CLI re-seeds it.
-                payload, dead = await poll_active()
-                extra = {}
-                if alert_unsent:
-                    if read_onoff_setting("beep") == "on":
-                        extra["b"] = 1
-                    if alert["m"]:
-                        extra["m"] = alert["m"]
-                if clear_unsent:
-                    extra["x"] = 1
-                if payload is not None:
-                    if await session.write_payload({**payload, **extra}):
-                        last_poll = time.time()
-                        used_successfully = True
-                        alert_unsent = clear_unsent = False
-                elif dead:
-                    # No live token in any config dir (missing, or a 401/expired
-                    # token) -> show "No data" now instead of stale numbers. Guard
-                    # last_poll on the write result (like the data path) so a
-                    # failed beat retries next tick instead of throttling what may
-                    # be a healthy link for a full POLL_INTERVAL.
-                    log("No usable token; signalling no-data to device — run "
-                        "`claude login` or use the CLI to let Claude Code renew it")
-                    if await session.write_payload({"ok": False, **extra}):
-                        last_poll = time.time()
-                        alert_unsent = clear_unsent = False
-                else:
-                    # Transient poll failure (a live token that didn't answer this
-                    # cycle) -> stay silent and retry next tick.
-                    log("No usable config dir this cycle")
-
             try:
-                await asyncio.wait_for(session.refresh_requested.wait(), timeout=TICK)
+                await asyncio.wait_for(stop_event.wait(), timeout=TICK)
             except asyncio.TimeoutError:
                 pass
     finally:
+        publisher.detach_ble(session)
+        if own_task is not None and own_stop is not None:
+            own_stop.set()
+            publisher.wake.set()
+            await own_task
         try:
             await client.disconnect()
         except BleakError:
             pass
 
     log("Device disconnected" if not stop_event.is_set() else "Stopping")
-    return used_successfully
+    return session.data_writes > 0
 
 
 async def main() -> None:
@@ -922,7 +1084,29 @@ async def main() -> None:
 
     log("=== Claude Usage Tracker Daemon (BLE, macOS) ===")
     log(f"Poll interval: {POLL_INTERVAL}s")
+    targets = read_http_targets()
+    if targets:
+        log(f"WiFi push targets: {', '.join(targets)}")
+    ble_on = read_onoff_setting("ble", default="on") == "on"
 
+    publisher = Publisher()
+    pub_task = asyncio.create_task(publisher.run(stop_event))
+    try:
+        if ble_on:
+            await ble_loop(stop_event, publisher)
+        else:
+            log("Bluetooth off (ble = off): WiFi push only")
+            if not targets:
+                log("No http_targets configured either; nothing will be sent")
+            await stop_event.wait()
+    finally:
+        stop_event.set()
+        publisher.wake.set()
+        await pub_task
+
+
+async def ble_loop(stop_event: asyncio.Event, publisher: Publisher) -> None:
+    """Find the BLE device, keep it connected, and reconnect with backoff."""
     backoff = 1
     skip_addr: str | None = None  # macOS: a peripheral to skip for one cycle
     while not stop_event.is_set():
@@ -940,7 +1124,7 @@ async def main() -> None:
             continue
 
         addr = target if isinstance(target, str) else target.address
-        ok = await connect_and_run(target, stop_event)
+        ok = await connect_and_run(target, stop_event, publisher)
         if not ok:
             if sys.platform == "darwin":
                 # No string cache to drop; instead skip this stale handle on

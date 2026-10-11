@@ -85,6 +85,17 @@ launchctl unload ~/Library/LaunchAgents/com.user.claude-usage-daemon.plist  # st
 launchctl load -w ~/Library/LaunchAgents/com.user.claude-usage-daemon.plist # start
 ```
 
+#### WiFi screens (HTTP push)
+
+The macOS daemon can also push the same payload over WiFi to screens that have no Bluetooth, such as a GeekMagic SmallTV (ESP8266) running the `smalltv-clawdmeter` firmware. Add the screen to `~/.config/claude-usage-monitor/config`:
+
+```ini
+http_targets = 192.168.0.125      # comma-separated hosts/IPs or full URLs
+ble = off                         # optional: WiFi only, stop scanning for a BLE device
+```
+
+A bare host is posted to `http://<host>/api/usage`. One API poll feeds the BLE device and every WiFi target, so this adds no API calls. Attention alerts, Enterprise mode and the clock are carried too. `http_targets` is re-read every tick; `ble` is read at startup.
+
 
 ## Linux installation
 
