@@ -87,7 +87,7 @@ class Sess:
 
 EVENTS = {"start", "prompt", "tool", "tool_done", "tool_error", "subagent_start",
           "subagent_stop", "attention", "attention_done", "compact", "compact_done",
-          "stop", "stop_error", "end"}
+          "stop", "stop_error", "abort", "end"}
 
 
 class Tracker:
@@ -138,6 +138,8 @@ class Tracker:
             s.done_until = now + DONE_SHOW
             if not s.sub and self.on_turn is not None:
                 self.on_turn(now)
+        elif kind == "abort":                   # the user cancelled: back to idle, quietly
+            s.state, s.subs, s.msg = "idle", 0, ""
         elif kind == "stop_error":
             s.state, s.subs, s.msg = "idle", 0, ""
             s.error_until, s.error_tool = now + ERROR_SHOW, ""

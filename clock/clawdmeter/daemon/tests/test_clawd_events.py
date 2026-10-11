@@ -395,3 +395,11 @@ def test_daemon_wires_events(monkeypatch, tmp_path):
         await task
         await server.close()
     _run(go())
+
+
+def test_abort_returns_to_idle_without_celebrating():
+    turns = []
+    t = ev.Tracker(on_turn=turns.append)
+    t.ingest(ev.pi_event({"ev": "tool", "sid": "a", "tool": "bash"}), T0)
+    t.ingest(ev.pi_event({"ev": "abort", "sid": "a"}), T0 + 1)
+    assert t.view(T0 + 1) is None and turns == []
