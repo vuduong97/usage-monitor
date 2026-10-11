@@ -32,6 +32,27 @@ const PORT = Number(process.env.CLAWD_EVENT_PORT) || 47913;
 const SUBAGENT_TOOLS = new Set(["subagent"]);     // pi-subagents
 const QUESTION_TOOLS = new Set(["ask_user_question", "ask_user", "question"]);
 
+// Debug turns (the daemon's is_debug_prompt / is_debug_skill_load, kept in step):
+// only the verdict is sent, never the prompt. Skill bodies pi expanded into the
+// prompt count by their name only; "loi" alone is not enough ("l\u1eddi" = reply).
+const DEBUG_SKILLS = /^(?:ak[:-])?(?:debug|fix)$/i;
+const DEBUG_WORDS = /(?<![\p{L}\p{N}_])(?:\/(?:ak:|skill:ak-)(?:debug|fix)|debug[\p{L}\p{N}_]*|fix|bugs?|l\u1ed7i)(?![\p{L}\p{N}_])/iu;
+const SKILL_BLOCK = /<skill\b[^>]*>[\s\S]*?(?:<\/skill>|$)/g;
+const SKILL_NAME = /<skill\s+name="([^"]+)"/g;
+const DEBUG_SKILL_FILE = /(?:^|[/\\])ak-(?:debug|fix)[/\\]SKILL\.md$/i;
+
+export function isDebugPrompt(text: unknown): boolean {
+  if (typeof text !== "string") return false;
+  const t = text.normalize("NFC");
+  for (const m of t.matchAll(SKILL_NAME)) if (DEBUG_SKILLS.test(m[1])) return true;
+  return DEBUG_WORDS.test(t.replace(SKILL_BLOCK, " "));
+}
+
+export function isDebugSkillRead(tool: string, input: any): boolean {
+  const path = input?.path ?? input?.file_path;
+  return tool === "read" && typeof path === "string" && DEBUG_SKILL_FILE.test(path);
+}
+
 export function sessionId(ctx: Ctx): string {
   try {
     return String(ctx?.sessionManager?.getSessionId?.() || "default");
@@ -161,7 +182,7 @@ export default function clawdHome(
   };
 
   pi.on("session_start", (_e, ctx) => emit("start", ctx));
-  pi.on("before_agent_start", (_e, ctx) => emit("prompt", ctx));
+  pi.on("before_agent_start", (e, ctx) => emit("prompt", ctx, isDebugPrompt(e?.prompt) ? { debug: true } : {}));
   pi.on("tool_call", (e, ctx) => {
     const tool = String(e?.toolName ?? "");
     if (QUESTION_TOOLS.has(tool)) {
@@ -169,7 +190,9 @@ export default function clawdHome(
       return emit("attention", ctx, { tool, msg: firstQuestion(e?.input) || "pi has a question" });
     }
     const cmd = e?.input?.command;      // lets the daemon spot test runs ("debugger")
-    emit("tool", ctx, typeof cmd === "string" ? { tool, cmd: cmd.slice(0, 300) } : { tool });
+    const extra: Record<string, unknown> = typeof cmd === "string" ? { tool, cmd: cmd.slice(0, 300) } : { tool };
+    if (isDebugSkillRead(tool, e?.input)) extra.debug = true;
+    emit("tool", ctx, extra);
     if (SUBAGENT_TOOLS.has(tool)) emit("subagent_start", ctx, { tool });
     return undefined;
   });

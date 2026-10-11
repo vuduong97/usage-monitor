@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { EventEmitter } from "node:events";
-import clawdHome, { isUserInput, post, sessionId } from "./clawd-home.ts";
+import clawdHome, { isDebugPrompt, isDebugSkillRead, isUserInput, post, sessionId } from "./clawd-home.ts";
 
 function fakePi() {
   const handlers = new Map<string, (e: any, ctx: any) => unknown>();
@@ -121,6 +121,37 @@ test("going to a waiting session sends attention_seen once per question", () => 
   assert.equal(stdin.listenerCount("data"), 1);     // never stacked
   fire("session_shutdown");
   assert.equal(stdin.listenerCount("data"), 0);
+});
+
+test("debug turns send only a verdict, matching the daemon's rules", () => {
+  for (const [prompt, debug] of [
+    ["/ak:debug the flash script", true], ["/skill:ak-fix x", true], ["why does debugging fail", true],
+    ["Fix the build", true], ["a bug here", true], ["s\u1eeda l\u1ed7i flash.sh", true],
+    ["su\u031b\u0309a lo\u0302\u0303i", true],                       // NFD input
+    ["tr\u1ea3 l\u1eddi b\u1eb1ng ti\u1ebfng Vi\u1ec7t", false], ["tra loi nhanh", false],
+    ["add a prefix and a suffix", false], ["debounce the input", false],
+    ['<skill name="ak-debug" location="x">\nbody\n</skill>\n\nwhy?', true],
+    ['<skill name="ak-cook" location="x">\nfix bugs, debug\n</skill>\n\n--auto', false],
+    [undefined, false],
+  ] as const) assert.equal(isDebugPrompt(prompt), debug, String(prompt));
+  assert.ok(isDebugSkillRead("read", { path: "/u/.agents/skills/ak-debug/SKILL.md" }));
+  assert.ok(!isDebugSkillRead("read", { path: "skills/ak-debug/references/x.md" }));
+  assert.ok(!isDebugSkillRead("edit", { path: "skills/ak-fix/SKILL.md" }));
+
+  const sent: any[] = [];
+  const { pi, handlers } = fakePi();
+  clawdHome(pi, (b) => sent.push(b), fakeStdin());
+  const fire = (name: string, e: any = {}) => handlers.get(name)!(e, tui);
+  fire("before_agent_start", { prompt: "s\u1eeda l\u1ed7i flash.sh" });
+  fire("before_agent_start", { prompt: "tr\u1ea3 l\u1eddi ng\u1eafn" });
+  fire("tool_call", { toolName: "read", input: { path: "/s/ak-fix/SKILL.md" } });
+  fire("tool_call", { toolName: "read", input: { path: "README.md" } });
+  assert.deepEqual(sent, [
+    { ev: "prompt", sid: "S1", sub: false, debug: true },
+    { ev: "prompt", sid: "S1", sub: false },
+    { ev: "tool", sid: "S1", sub: false, tool: "read", debug: true },
+    { ev: "tool", sid: "S1", sub: false, tool: "read" },
+  ]);
 });
 
 test("a question tool's own untitled dialog keeps the question on the clock", () => {
