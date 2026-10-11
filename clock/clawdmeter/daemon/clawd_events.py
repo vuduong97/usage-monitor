@@ -265,14 +265,16 @@ def claude_event(p) -> dict | None:
     sid = p.get("session_id")
     if not isinstance(name, str) or not isinstance(sid, str) or not sid:
         return None
-    tool = p.get("tool_name") if isinstance(p.get("tool_name"), str) else ""
+    raw_tool = p.get("tool_name")
+    tool = raw_tool if isinstance(raw_tool, str) else ""
     ev = {"src": "claude", "sid": f"claude:{sid}", "tool": tool}
     if name in _CLAUDE_SIMPLE:
         return {**ev, "ev": _CLAUDE_SIMPLE[name]}
     if name == "PreToolUse":
         if tool == "AskUserQuestion":
             q = ""
-            inp = p.get("tool_input") if isinstance(p.get("tool_input"), dict) else {}
+            raw_inp = p.get("tool_input")
+            inp = raw_inp if isinstance(raw_inp, dict) else {}
             qs = inp.get("questions")
             if isinstance(qs, list) and qs and isinstance(qs[0], dict):
                 q = str(qs[0].get("question") or "")
