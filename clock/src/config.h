@@ -41,6 +41,11 @@
 #elif defined(SMALLTV_ESP32)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32.bin"
   #define FW_VARIANT   "esp32"
+#elif defined(SMALLTV_CLAWD)
+  // Private Clawdmeter fork: upstream releases would overwrite the Clawd UI, so
+  // the GitHub self-updater is disabled (OtaUpdate.cpp). Update via /update.
+  #define UPDATE_ASSET "smalltv-clawdmeter-firmware.bin"
+  #define FW_VARIANT   "esp8266-clawd"
 #elif defined(SMALLTV_LEAN)
   #define UPDATE_ASSET "smalltv-mod-firmware-lean.bin"
   #define FW_VARIANT   "esp8266-lean"

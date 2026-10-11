@@ -8,6 +8,10 @@
 #include "OtaUpdate.h"
 #include "StockClient.h"
 #include "UsageClient.h"
+#if WITH_USAGE
+#include "ClawdAnim.h"
+#include "ClawdUi.h"
+#endif
 #if WITH_RADAR
 #include "RadarClient.h"
 #endif
@@ -36,6 +40,10 @@ static bool             g_reboot = false;
 static uint32_t         g_rebootAt = 0;
 static bool             g_selfUpdate = false;   // GitHub self-update requested
 static String           g_updateMsg;            // last self-update status/error
+// Heap low-water marks since boot, sampled every loop (webPortalLoop) and
+// served by /api/heap for long-run stability checks.
+static uint32_t         g_minHeap = 0xFFFFFFFF;
+static uint32_t         g_minMaxBlk = 0xFFFFFFFF;
 
 static void scheduleReboot(uint32_t inMs) {
   g_reboot = true;
@@ -85,6 +93,15 @@ static void handleGetConfig() {
   feat["radar"]  = (bool)WITH_RADAR;
   feat["ha"]     = (bool)WITH_HA;
   feat["theme"]  = (bool)WITH_THEME;
+#if WITH_USAGE
+  // Clawd animation names, in index order, for the Usage tab's picker.
+  JsonArray anims = root["clawdAnims"].to<JsonArray>();
+  for (int i = 0; i < clawdAnimCount(); i++) {
+    char name[16];
+    clawdAnimName(i, name, sizeof(name));
+    anims.add(String(name));
+  }
+#endif
   // WireGuard is a per-chip decision rather than a per-feature one: it is
   // compiled only where the image has room for it (the ESP32-C2 build).
 #if defined(SMALLTV_WIREGUARD)
@@ -373,11 +390,37 @@ static void handleUsagePush() {
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
 #if WITH_USAGE
   bool ok = usageApply(server.arg("plain"));
+  // Each push is a full JSON parse + possibly a full repaint: worth tracking.
+  uint32_t h = ESP.getFreeHeap();
+  if (h < g_minHeap) g_minHeap = h;
 #else
   bool ok = false;
 #endif
   server.send(ok ? 200 : 400, "application/json",
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
+// Heap watch for long-run stability checks: numbers only, nothing settable, so
+// it is open like /api/usage and a logger can poll it without credentials.
+//   while sleep 60; do curl -s http://<ip>/api/heap; echo; done >> heap.log
+static void handleHeap() {
+  JsonDocument doc;
+  JsonObject o = doc.to<JsonObject>();
+  o["heap"] = ESP.getFreeHeap();
+  o["maxblk"] = platformMaxFreeBlock();
+  o["minHeap"] = g_minHeap;
+  o["minMaxblk"] = g_minMaxBlk;
+#if defined(SMALLTV_ESP8266)
+  o["frag"] = ESP.getHeapFragmentation();
+#endif
+  o["uptime"] = millis() / 1000;
+  o["reset"] = appResetReason();
+  o["version"] = FW_VERSION;
+#if WITH_USAGE
+  o["splash"] = clawdUiOnSplash();
+  o["anim"] = clawdUiAnimName();
+#endif
+  sendJson(doc);
 }
 
 // Attention overlay. Every field is optional and falls back to the preset named
@@ -504,6 +547,7 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/checkupdate", HTTP_GET, handleCheckUpdate);
   server.on("/api/selfupdate", HTTP_POST, handleSelfUpdate);
   server.on("/api/usage", HTTP_POST, handleUsagePush);   // daemon pushes usage here
+  server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
 #if WITH_HA
   server.on("/api/ha/clear", HTTP_POST, handleHaClear);  // purge HA screens (device + broker retained)
 #endif
@@ -524,6 +568,11 @@ void webPortalBegin(Settings& settings) {
 
 void webPortalLoop() {
   server.handleClient();
+  {
+    uint32_t h = ESP.getFreeHeap(), b = platformMaxFreeBlock();
+    if (h < g_minHeap) g_minHeap = h;
+    if (b < g_minMaxBlk) g_minMaxBlk = b;
+  }
 
   // Run the GitHub self-update outside the request handler so the browser gets its
   // response first.

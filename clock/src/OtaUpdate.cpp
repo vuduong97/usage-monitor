@@ -26,6 +26,11 @@ static long verNum(const char* v) {
 
 OtaLatest otaCheckLatest(const Settings& s) {
   OtaLatest r;
+#if defined(SMALLTV_CLAWD)
+  (void)s;
+  r.error = F("disabled in the Clawdmeter build: upload firmware.bin via /update");
+  return r;
+#endif
   if (ESP.getFreeHeap() < 20000) { r.error = F("low heap"); return r; }
 
   String url = F("https://");

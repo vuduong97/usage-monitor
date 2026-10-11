@@ -66,6 +66,8 @@ struct TickerSettings {
 struct UsageSettings {
   String   usageUrl;      // daemon HTTP endpoint, e.g. http://192.168.1.10:8787/
   uint16_t pollSec;       // refresh period
+  uint8_t  screen;        // Clawdmeter screen: 0 auto, 1 usage, 2 splash (CLAWD_SCREEN_*)
+  int8_t   anim;          // splash animation: -1 = by usage rate, else index
 
   void setDefaults();
   void toJson(JsonObject o) const;

@@ -127,16 +127,23 @@ void TickerSettings::fromJson(JsonObjectConst o) {
 void UsageSettings::setDefaults() {
   usageUrl = "";
   pollSec = DEFAULT_POLL_SEC;
+  screen = 0;
+  anim = -1;
 }
 
 void UsageSettings::toJson(JsonObject o) const {
   o["usageUrl"] = usageUrl;
   o["pollSec"]  = pollSec;
+  o["screen"]   = screen;
+  o["anim"]     = anim;
 }
 
 void UsageSettings::fromJson(JsonObjectConst o) {
   if (o["usageUrl"].is<const char*>()) usageUrl = o["usageUrl"].as<String>();
   if (o["pollSec"].is<int>())          pollSec = constrain((int)o["pollSec"], 10, 3600);
+  if (o["screen"].is<int>())           screen = (uint8_t)constrain((int)o["screen"], 0, 2);
+  // Upper bound is the animation table size; ClawdUi falls back to 0 past it.
+  if (o["anim"].is<int>())             anim = (int8_t)constrain((int)o["anim"], -1, 63);
 }
 
 // ===========================================================================

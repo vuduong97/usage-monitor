@@ -2,6 +2,7 @@
 #include "Platform.h"
 #include <ArduinoJson.h>
 #include <math.h>
+#include "ClawdUi.h"
 
 static UsageData g_usage;
 static uint32_t  g_nextPollMs = 0;
@@ -28,14 +29,48 @@ bool usageFresh(uint32_t withinMs) {
 //   s  = 5h utilization %        sr = minutes until 5h reset
 //   w  = 7d utilization %        wr = minutes until 7d reset
 //   st = rate-limit status       ok = false => explicit "no data"
+//
+// Clawdmeter daemon extensions (its BLE payload, same keys over HTTP):
+//   acct = "ent" on Enterprise: s = spending %, tp = % of the billing period
+//          elapsed, rd = reset date ("Jul 1")
+//   t/tf = local wall-clock epoch + 12/24 h format (drives the title clock)
+//   m    = attention message (alert)    x = true: clear the alert
+//   ok   = false is the daemon's "no data" beat: accepted, the screen goes idle
+//          once the last good data ages out. The chime/beep keys (c, b) are
+//   ignored — the SmallTV has no speaker.
 static void usageFilter(JsonDocument& f) {
   f["s"] = true; f["sr"] = true; f["w"] = true;
   f["wr"] = true; f["st"] = true; f["ok"] = true;
+  f["acct"] = true; f["tp"] = true; f["rd"] = true;
+  f["t"] = true; f["tf"] = true; f["m"] = true; f["x"] = true;
+}
+
+// Forward a payload to the Clawdmeter screens.
+static void forwardToClawd(JsonDocument& doc, bool ok) {
+  ClawdData c;
+  memset(&c, 0, sizeof(c));
+  c.ok = ok;
+  c.sessionPct      = constrain(doc["s"] | 0.0f, 0.0f, 100.0f);
+  c.sessionResetMin = doc["sr"] | -1;
+  c.weeklyPct       = constrain(doc["w"] | 0.0f, 0.0f, 100.0f);
+  c.weeklyResetMin  = doc["wr"] | -1;
+  c.enterprise      = strcmp(doc["acct"] | "pro", "ent") == 0;
+  c.timePct         = constrain(doc["tp"] | 0, 0, 100);
+  strlcpy(c.resetDate, doc["rd"] | "", sizeof(c.resetDate));
+  c.clockEpoch      = doc["t"] | 0L;
+  c.clockFmt        = doc["tf"] | 24;
+  strlcpy(c.alertMsg, doc["m"] | "", sizeof(c.alertMsg));
+  c.alertClear      = doc["x"] | false;
+  clawdUiPayload(c);
 }
 
 static bool applyUsageDoc(UsageData& d, JsonDocument& doc) {
-  if (doc["ok"].is<bool>() && doc["ok"].as<bool>() == false) return false;
+  if (doc["ok"].is<bool>() && doc["ok"].as<bool>() == false) {
+    forwardToClawd(doc, false);
+    return true;                       // a valid beat, not a malformed payload
+  }
   if (!doc["s"].is<float>() && !doc["s"].is<int>()) return false;   // require at least session %
+  forwardToClawd(doc, true);
 
   d.sessionPct      = constrain(doc["s"].as<float>(), 0.0f, 100.0f);
   d.weeklyPct       = constrain(doc["w"] | 0.0f, 0.0f, 100.0f);
