@@ -41,8 +41,15 @@ In the advise session, the user asked for the clock to mostly show usage when no
 - Clawd.app rebuilt and reinstalled. Its log says "Clock desk.pak has 31 animations: all idle picks on".
 - Posting `coffee hand`, `shy`, `outlaw` and `["yawn","sleeping","wake"]` to `/api/state` put that name in `deskAnim`, with no fallback to thinking; `loopMaxMs` was 306.
 
+- 15 min soak with no agent running, sampling `/api/heap` `deskAnim` every 2 s (407 samples):
+  - `Done!` ran 12:48:59 → 12:49:07, then usage.
+  - Picks: `outlaw` 12:54:15–12:54:31, `shy` 12:58:31–12:58:34, `look` 13:02:23–13:02:33. Each played one pass.
+  - Gaps were 308 s, 240 s and 229 s, all inside 180–360 s.
+  - 388 of 407 samples (95%) were usage. That count includes the agent turn at the start.
+  - No action-tied animation, and no repeats.
+
 ## Limits / next steps
-- Not yet seen on the clock: a full pick from the app with no agent running (it needs 3–6 min of quiet), and whether ending at exactly one pass looks clean. If the end flickers, the fix is a firmware "one pass, then usage" flag.
+- Whether the end of each pass looks clean was not checked by eye. If it flickers, the fix is a firmware "one pass, then usage" flag.
 - outlaw has alcohol and a cigarette. Reconsider before giving clocks to friends.
 - Only ~24 KB is left on LittleFS. Another animation needs something else removed.
 - One unexplained single test failure in the clawd-home suite did not come back in 50+ reruns. It has no name, because it happened before `-rf` was on.
