@@ -65,10 +65,12 @@ enum : uint8_t {
   CLAWD_LAYOUT_HERO = 2,      // one big 5-hour number, weekly as a strip
   CLAWD_LAYOUT_RINGS = 3,     // two concentric rings around the clock
   CLAWD_LAYOUT_GAUGES = 4,    // two 270 degree gauges side by side
-  CLAWD_LAYOUT_PIXEL = 5,     // 20-block bars, Clawd strolling along the floor
-  CLAWD_LAYOUT_COUNT = 6
+  CLAWD_LAYOUT_PIXEL = 5      // 20-block bars, Clawd strolling along the floor
 };
-#define CLAWD_LAYOUTS ((1u << CLAWD_LAYOUT_COUNT) - 1u)
+// One bit per layout, spelled out: the desktop app's tools/bundle_firmware.py reads this line.
+#define CLAWD_LAYOUTS ((1u << CLAWD_LAYOUT_CLASSIC) | (1u << CLAWD_LAYOUT_PACE) | \
+                       (1u << CLAWD_LAYOUT_HERO) | (1u << CLAWD_LAYOUT_RINGS) | \
+                       (1u << CLAWD_LAYOUT_GAUGES) | (1u << CLAWD_LAYOUT_PIXEL))
 
 #define CLAWD_DATA_FRESH_MS 90000UL   // usage counts as live within this window
 
