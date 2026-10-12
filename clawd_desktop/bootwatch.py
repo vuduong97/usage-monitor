@@ -81,12 +81,17 @@ class BootWatch:
                 retry = url in self._retry and up < FRESH_BOOT
                 self._retry.discard(url)
                 if fresh or retry:
+                    host = urllib.parse.urlsplit(url).netloc
                     if fresh:
-                        log(f"Clock {urllib.parse.urlsplit(url).netloc} restarted "
+                        log(f"Clock {host} restarted "
                             f"(up {up} s): sending its data again")
                     restarted.append(url)
-                    if not await self.on_restart(url, up):
+                    if await self.on_restart(url, up):
+                        log(f"Clock {host} took its data again (up {up} s)")
+                    else:
                         self._retry.add(url)
+                        if fresh:
+                            log(f"Clock {host} did not take the data yet; retrying")
         return restarted
 
     async def run(self, stop: asyncio.Event) -> None:
