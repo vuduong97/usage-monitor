@@ -95,7 +95,7 @@ if [ $state = stock ]; then
   [ -n "$ssid" ] || die "no bench WiFi name"
   cfg=$(mktemp)
   trap 'rm -f "$cfg"' EXIT
-  python3 -c 'import json,sys; print(json.dumps({"wifi":[{"ssid":sys.argv[1],"pass":sys.argv[2]}],"mode":"usage"}))' \
+  python3 -c 'import json,sys; print(json.dumps({"wifi":[{"ssid":sys.argv[1],"pass":sys.argv[2]}]}))' \
     "$ssid" "$pass" > "$cfg"
 
   if [ $yes -eq 0 ] && [ $dry -eq 0 ]; then
@@ -171,7 +171,7 @@ webpw=$(randpw 10)
 appw=$(randpw 8)
 body=$(python3 -c 'import json,sys
 h,ap,appw,pw=sys.argv[1:]
-print(json.dumps({"hostname":h,"apSsid":ap,"apPass":appw,"wifi":[],"mode":"usage",
+print(json.dumps({"hostname":h,"apSsid":ap,"apPass":appw,"wifi":[],
                   "auth":{"enabled":True,"user":"admin","pass":pw}}))' "$newhost" "$ap" "$appw" "$webpw")
 say "set hostname $newhost, setup WiFi $ap, web login admin, forget the bench WiFi"
 if [ $dry -eq 1 ]; then
