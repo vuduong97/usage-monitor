@@ -208,8 +208,9 @@ def test_questions_look_left_and_right_other_attention_stays_notification():
     pi("prompt")
     pi("attention", tool="ask_user_question", msg="Which DB?")
     v = t.view(T0)
-    assert (v.anim, v.text, v.names, v.rep, v.urgent) == (
-        "question", "Which DB?", ("react left", "react right"), True, True)
+    assert (v.anim, v.names, v.rep, v.urgent) == (
+        "question", ("react left", "react right"), True, True)
+    assert v.text in ev.QUESTION_TEXTS                     # an old extension's text is dropped
     pi("attention_seen")                           # seen: hidden, like any attention
     assert t.view(T0) is None
     pi("attention_done")                           # answered: back to work
@@ -225,9 +226,9 @@ def test_questions_look_left_and_right_other_attention_stays_notification():
     t.ingest(claude("PreToolUse", sid="c1", tool_name="AskUserQuestion",
                     tool_input={"questions": [{"question": "Which anim?"}]}), T0 + 1)
     v = t.view(T0 + 1)
-    assert (v.anim, v.text) == ("question", "Which anim?")
+    assert v.anim == "question" and v.text in ev.QUESTION_TEXTS     # never the question
     t.ingest(claude("Notification", sid="c1", message="Claude needs your input"), T0 + 2)
-    assert t.view(T0 + 2).anim == "question"
+    assert (t.view(T0 + 2).anim, t.view(T0 + 2).text) == ("question", v.text)
     t.ingest(claude("PostToolUse", sid="c1", tool_name="AskUserQuestion"), T0 + 3)
     t.ingest(claude("PermissionRequest", sid="c1", tool_name="Bash",
                     tool_input={"command": "rm -rf x"}), T0 + 4)
@@ -241,7 +242,7 @@ def test_questions_look_left_and_right_other_attention_stays_notification():
 def test_a_question_expires_and_stopping_forgets_it():
     t = ev.Tracker()
     t.ingest(ev.pi_event({"ev": "attention", "sid": "p1", "tool": "ask_user_question"}), T0)
-    assert t.view(T0).text == "Has a question"
+    assert t.view(T0).text in ev.QUESTION_TEXTS
     t.view(T0 + ev.ATTENTION_TTL + 1)
     assert t.sessions["pi:p1"].state == "idle" and not t.sessions["pi:p1"].asking
     t.ingest(ev.pi_event({"ev": "attention", "sid": "p2", "tool": "question"}), T0)
@@ -249,6 +250,25 @@ def test_a_question_expires_and_stopping_forgets_it():
     assert not t.sessions["pi:p2"].asking
     assert ev.is_question_tool("mcp__srv__ask_user_question")
     assert not ev.is_question_tool("Bash") and not ev.is_question_tool(None)
+
+
+def test_question_phrase_is_picked_once_per_question_and_never_twice_in_a_row():
+    assert all(len(x) <= 20 and x.isascii() for x in ev.QUESTION_TEXTS)
+    t = ev.Tracker(rng=random.Random(7))
+    pi = lambda e, **kw: t.ingest(ev.pi_event({"ev": e, "sid": "p1", **kw}), T0)
+    seen = []
+    for _ in range(40):
+        pi("attention", tool="ask_user_question")
+        first = t.view(T0).text
+        pi("attention")                            # a generic nudge: same phrase
+        assert t.view(T0).text == first
+        pi("attention_seen")
+        pi("attention")                            # calls again while open: same phrase
+        assert t.view(T0).text == first
+        pi("attention_done")
+        seen.append(first)
+    assert all(a != b for a, b in zip(seen, seen[1:]))
+    assert set(seen) == set(ev.QUESTION_TEXTS)     # every phrase comes up
 
 
 def test_seen_session_alone_shows_nothing_and_expires_like_attention():
@@ -266,7 +286,7 @@ def test_claude_mapping():
     assert claude("PreToolUse", tool_name="Read")["ev"] == "tool"
     q = claude("PreToolUse", tool_name="AskUserQuestion",
                tool_input={"questions": [{"question": "Which DB?"}]})
-    assert (q["ev"], q["msg"]) == ("attention", "Which DB?")
+    assert q["ev"] == "attention" and "Which DB?" not in json.dumps(q)
     assert claude("Notification", message="Claude is waiting for your input",
                   notification_type="idle_prompt") is None
     assert claude("StopFailure")["ev"] == "stop_error"
@@ -393,14 +413,15 @@ def test_poke_validation():
     assert p.handle({"cmd": "clear"}, T0)["ok"] and p.moment(T0) is None
 
 
-def test_a_question_during_focus_keeps_its_text_and_holds_like_notification():
+def test_a_question_during_focus_keeps_its_phrase_and_holds_like_notification():
     b = brain_at()
     b.pokes.handle({"cmd": "focus", "mins": 25}, T0)
     b.tracker.ingest(claude("PreToolUse", tool_name="AskUserQuestion",
                             tool_input={"questions": [{"question": "which DB?"}]}), T0)
     d = b.desired(T0)
-    assert (d["a"], d["seq"], d["rep"], d["u"], d["txt"], d["cd"]) == (
-        "question", ["react left", "react right"], True, True, "Which DB?", 0)
+    assert (d["a"], d["seq"], d["rep"], d["u"], d["cd"]) == (
+        "question", ["react left", "react right"], True, True, 0)
+    assert d["txt"] in ev.QUESTION_TEXTS
     b.tracker.ingest(claude("PostToolUse", tool_name="AskUserQuestion"), T0 + 1)
     assert b.desired(T0 + 1)["a"] == "question"       # min display, like notification
     assert b.desired(T0 + 5.5)["a"] != "question"

@@ -193,6 +193,14 @@ TOOL_ACTIONS = {
 # and right with a "?" (react left/right) instead of the plain notification.
 QUESTION_TOOLS = {"ask_user_question", "ask_user", "question", "askuserquestion"}
 QUESTION_SEQ = ("react left", "react right")
+# What the clock says while a question is open. The question itself never shows
+# (it never even leaves the hook): one phrase is picked per question, at random,
+# never the same as the question before. ASCII, <= 20 chars so it does not scroll.
+QUESTION_TEXTS = (
+    "Hey! Got a question", "Your turn!", "Hey! Over to you", "Your call, boss",
+    "Help me pick?", "Psst... a question", "Knock knock!", "Hmm, help me out?",
+    "Pick one for me?",
+)
 
 
 def is_question_tool(name) -> bool:
@@ -245,6 +253,7 @@ class Sess:
     action: str = ""           # its ACTION_TEXT key, for the clock
     msg: str = ""
     asking: bool = False       # the attention is a question tool (react left/right)
+    ask_text: str = ""         # the QUESTION_TEXTS phrase picked for that question
     subs: int = 0              # live subagents this session started
     last: float = 0.0
     error_until: float = 0.0
@@ -269,9 +278,12 @@ EVENTS = {"start", "prompt", "tool", "tool_done", "tool_error", "subagent_start"
 class Tracker:
     """Per-session agent state, resolved into one desk animation."""
 
-    def __init__(self, on_turn: Callable[[float], None] | None = None) -> None:
+    def __init__(self, on_turn: Callable[[float], None] | None = None,
+                 rng: random.Random | None = None) -> None:
         self.sessions: dict[str, Sess] = {}
         self.on_turn = on_turn
+        self.rng = rng or random.Random()
+        self.last_ask_text = ""        # no phrase twice in a row
         self.errors: list[float] = []  # recent failures (dizzy)
         self.dizzy_until = 0.0
 
@@ -343,10 +355,15 @@ class Tracker:
         elif kind == "subagent_stop":
             s.subs = max(s.subs - 1, 0)
         elif kind == "attention":
+            open_q = s.asking and s.state in ("attention", "waiting")
             asking = is_question_tool(raw)
-            if not raw and s.asking and s.state in ("attention", "waiting"):
+            if not raw and open_q:
                 asking = True                   # a generic nudge while a question is open
-            s.state, s.msg, s.asking = "attention", ascii_text(ev.get("msg") or ""), asking
+            if asking and not open_q:           # a new question: pick its phrase once
+                pool = [t for t in QUESTION_TEXTS if t != self.last_ask_text]
+                s.ask_text = self.last_ask_text = self.rng.choice(pool)
+            msg = "" if asking else ascii_text(ev.get("msg") or "")
+            s.state, s.msg, s.asking = "attention", msg, asking
         elif kind == "compact":
             s.state = "sweeping"
         elif kind == "compact_done":
@@ -391,7 +408,7 @@ class Tracker:
         if attn:
             a = latest(attn)
             if a.asking:
-                return View("question", a.msg or "Has a question", "agent",
+                return View("question", a.ask_text or QUESTION_TEXTS[0], "agent",
                             seq=QUESTION_SEQ, rep=True, urgent=True)
             return View("notification", a.msg or "Needs you", "agent", urgent=True)
         if self.dizzy_until > now:
@@ -498,14 +515,8 @@ def claude_event(p) -> dict | None:
     if name in _CLAUDE_SIMPLE:
         return {**ev, "ev": _CLAUDE_SIMPLE[name]}
     if name == "PreToolUse":
-        if tool == "AskUserQuestion":
-            q = ""
-            raw_inp = p.get("tool_input")
-            inp = raw_inp if isinstance(raw_inp, dict) else {}
-            qs = inp.get("questions")
-            if isinstance(qs, list) and qs and isinstance(qs[0], dict):
-                q = str(qs[0].get("question") or "")
-            return {**ev, "ev": "attention", "msg": q or "Claude has a question"}
+        if tool == "AskUserQuestion":           # the question text stays on this machine
+            return {**ev, "ev": "attention"}
         return {**ev, "ev": "tool"}
     if name == "PermissionRequest":
         return {**ev, "ev": "attention", "msg": "Allow " + _tool_summary(tool, p.get("tool_input"))}

@@ -37,7 +37,8 @@ test("maps pi lifecycle onto clawd events and never returns a value", () => {
     "prompt", "tool", "tool_error", "tool", "subagent_start", "subagent_stop", "tool_done",
     "attention", "tool_done", "attention", "attention_done", "compact", "compact_done", "stop", "abort", "end",
   ]);
-  assert.equal(sent[7].msg, "Which DB?");
+  assert.equal(sent[7].tool, "ask_user_question");
+  assert.ok(!JSON.stringify(sent).includes("Which DB?"));   // the question never leaves pi
   assert.equal(sent[1].cmd, "ls");               // bash commands go along (test runs)
   assert.equal(sent[3].cmd, undefined);
   assert.ok(sent.every((s) => s.sid === "S1" && s.sub === false));
@@ -154,7 +155,7 @@ test("debug turns send only a verdict, matching the daemon's rules", () => {
   ]);
 });
 
-test("a question tool's own untitled dialog keeps the question on the clock", () => {
+test("a question tool's own untitled dialog keeps the question phrase on the clock", () => {
   const sent: any[] = [];
   const { pi, handlers } = fakePi();
   clawdHome(pi, (b) => sent.push(b), fakeStdin());
@@ -167,7 +168,7 @@ test("a question tool's own untitled dialog keeps the question on the clock", ()
   fire("tool_result", { toolName: "ask_user_question" });
   fire("ui_prompt_start", {});                     // a later plain dialog shows again
   assert.deepEqual(sent.filter((s) => s.ev === "attention").map((s) => [s.sid, s.msg]), [
-    ["S1", "Which anim?"], ["S2", "pi needs you"], ["S1", "pi needs you"],
+    ["S1", undefined], ["S2", "pi needs you"], ["S1", "pi needs you"],
   ]);
 });
 

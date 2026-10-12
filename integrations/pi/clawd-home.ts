@@ -123,15 +123,6 @@ export function post(body: Record<string, unknown>, port = PORT): void {
   }
 }
 
-function firstQuestion(input: any): string {
-  try {
-    const q = input?.questions?.[0]?.question ?? input?.question;
-    return typeof q === "string" ? q : "";
-  } catch {
-    return "";
-  }
-}
-
 const CLEARS_ATTENTION = new Set(["attention_done", "prompt", "stop", "abort", "end"]);
 
 export default function clawdHome(
@@ -187,7 +178,9 @@ export default function clawdHome(
     const tool = String(e?.toolName ?? "");
     if (QUESTION_TOOLS.has(tool)) {
       asking = sessionId(ctx);
-      return emit("attention", ctx, { tool, msg: firstQuestion(e?.input) || "pi has a question" });
+      // Only the tool name goes: the question text never leaves pi. The clock
+      // shows one of its own phrases ("Hey! Got a question", "Your turn!", ...).
+      return emit("attention", ctx, { tool });
     }
     const cmd = e?.input?.command;      // lets the daemon spot test runs ("debugger")
     const extra: Record<string, unknown> = typeof cmd === "string" ? { tool, cmd: cmd.slice(0, 300) } : { tool };
@@ -203,8 +196,8 @@ export default function clawdHome(
     return emit(e?.isError ? "tool_error" : "tool_done", ctx, { tool });
   });
   pi.on("ui_prompt_start", (e, ctx) => {
-    // A question tool opens its own (untitled) dialog: keep showing its question
-    // instead of replacing it with the generic text.
+    // A question tool opens its own (untitled) dialog: keep showing the question
+    // phrase instead of replacing it with the generic text.
     if (asking !== undefined && asking === sessionId(ctx)) return undefined;
     return emit("attention", ctx, { msg: String(e?.title ?? "") || "pi needs you" });
   });
