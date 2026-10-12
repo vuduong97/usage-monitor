@@ -1,128 +1,58 @@
 # clawd-home
 
-Private monorepo for the desk clock (JUZIPi SmallTV SD Pro, ESP8266, 240×240):
-it shows Claude usage, and its Clawd now reacts to what Claude Code and pi are
-doing, plus a few pet behaviours and `clawd` CLI pokes.
+Firmware and clock tooling for the Clawd desk clock (JUZIPi SD Pro, ESP8266,
+240×240 ST7789). The clock shows Claude usage and plays Clawd animations that
+react to what Claude Code and pi are doing. The host side is a separate repo,
+**clawd-desktop** (tray app, hooks, pi extension, `clawd` CLI).
 
-**Never pushed anywhere.** Every remote has its push URL set to `DISABLED`.
-The animations in `desk.pak` are rendered from clawd-on-desk art (All Rights
-Reserved, personal use only): they are generated on this Mac and never committed.
+**Private.** Never pushed anywhere. The animation pack `desk.pak` is rendered from
+clawd-on-desk art (All Rights Reserved, personal use only) and the fonts are
+Anthropic's: generated on this Mac and never committed. Origins: `NOTICE`.
 
 ```
-clawdmeter/      git subtree: Clawdmeter (macOS daemon in clawdmeter/daemon/)
-smalltv/         git subtree: smalltv-mod fork running the Clawdmeter UI (env clawd)
+firmware/        PlatformIO project (envs: clawd, clawd_loader), src/, tests/, tools/
 tools/desk/      clawd-on-desk SVG -> build/desk/desk.pak (gitignored)
-tools/stock_fs.sh  back up / delete / restore the stock firmware's files on the clock
-tools/provision.sh stock clock -> clawd clock ready to gift (see "Clocks for friends")
-integrations/
-  claude/        Claude Code hook (clawd-event.sh) + settings.json merge installer
-  pi/            pi extension (clawd-home.ts) + symlink installer
-  cli/clawd      the `clawd` command
-plans/journals/  session journals
+tools/flash.sh   build + size check + OTA a clock
+tools/provision.sh  stock clock -> clawd clock ready to gift
+tools/stock_fs.sh   back up / delete / restore the stock firmware's files on the clock
+PROTOCOL.md      HTTP + mDNS contract with the desktop app (identical copy in both repos)
+docs/FIRMWARE.md flash layout, OTA budget, endpoints, /api/heap, code map
+docs/BEHAVIOUR.md what the clock shows under the app (layers, holds, pet moments)
+plans/           session journals and reports
 ```
 
-## How it fits together
-
-```
-Claude Code hooks ─┐
-pi extension ──────┼─ POST 127.0.0.1:47913 ─> daemon (LaunchAgent) ──> clock 192.168.1.48
-clawd CLI ─────────┘                          ├─ /api/usage  usage bars (every 60 s)
-                                              └─ /api/state  desk anim(s) + text + dim
-```
-
-- The daemon owns all logic (`clawdmeter/daemon/clawd_events.py`). The clock
-  only plays animations from `/desk.pak` (31 of them, full screen at 1:1, 8–20 fps)
-  with an optional text line, `MM:SS` countdown and brightness cap. It returns to
-  the usage screens 60 s after the last `/api/state` (the daemon resends every 20 s
-  while something is up).
-- `/api/state` `a` is one name or a sequence of up to 4: each plays one full pass and
-  the last one loops (`"rep":true` cycles the whole list). A new state switches at the
-  end of the current pass (at most ~2 s later); `"u":true` switches at once.
-- Layers, highest first: `clawd` poke > agent activity > focus timer > pet moment >
-  idle pick > usage screens. When nothing else is up the clock shows usage, and every
-  3–6 min (random) Clawd slips in one idle pick for one pass, never the same twice in a
-  row: `idle`, `look`, `bubble`, `coffee hand`, `shy`, `outlaw`, or `yawn` → `sleeping`
-  → `wake`. Nothing tied to an agent action. Any other layer cancels the pick and the
-  gap starts again once the screen is free. `coffee hand`/`shy`/`outlaw` are only sent
-  when the clock's pak has them (`desk` ≥ 31 in `/api/heap`, read every 5 min).
-- Agent priority: needs you > `dizzy` (3 errors in 2 min) > error >
-  compacting (`sweeping`) > agents > done (`happy`, 7 s, then usage). Agents are the running main
-  sessions plus their subagents plus live child processes (`pi -p` from a subagent): one
-  shows that session's animation; 2 show `headphones` ("2 agents"); 3+ show `juggling`
-  ("3 agents"). With no main session running, 1 leftover agent shows `headphones` and 2+
-  `juggling`. `building` is only played on request.
-- Needs you: a question (pi `ask_user_question`/`ask_user`/`question`, Claude
-  `AskUserQuestion`) cycles `react left` ⇄ `react right` (Clawd looks around with a `?`,
-  ~5.5 s a side) under the question; a permission request, a pi dialog or a Claude
-  notification shows `notification`. `clawd status` names the question view `question`.
-- One session, highest first: `ultrathink` ("Thinking hard": no tool running for 30 s,
-  counted from the prompt or the last tool to finish) > `thinking` ("Thinking", before the first tool) >
-  `debugger` ("Testing" while a test command runs; "Debugging" for the rest of a turn after an
-  error and the whole next one, a turn whose prompt says `/ak:debug`, `/ak:fix`, debug, fix,
-  bug or `lỗi`, or once the agent loads the ak-debug/ak-fix skill) > `reading` (the last tool
-  read or searched: Reading/Searching) > `typing boss` (10 edits in a row) > `wizard`
-  ("Long task": a turn running 30 min) > `typing`. The text always names what the
-  animation shows, and a variant mixed in (`v`) shows the same thing: a keyboard
-  action (Running/Editing...) only swaps `typing` and `typing boss`; plain "Working"
-  also mixes in `building`/`carrying`.
-  With 2+ agents, the latest main session's `ultrathink`/`debugger`/`reading` still shows,
-  with the agent count: `Reading (3)`. Prompt text never goes further than the hook: the daemon
-  (Claude) or the pi extension only keeps whether it asks for debugging.
-- Holds (clawd-on-desk's `minDisplay`): an agent animation stays at least 1 s
-  (needs you / error / dizzy 5 s, compacting 5.5 s, done 4 s) unless a poke comes.
-- The clock names the action, never the raw tool: Running (bash), Reading, Editing,
-  Searching, Browsing, Planning, otherwise Working; a failed tool shows `Run failed`,
-  `Edit failed`... or `Tool failed`. The table is `TOOL_ACTIONS` in `clawd_events.py`;
-  `clawd status` still lists the raw tool name.
-- pi "needs you" clears as soon as you go to that session (focus its terminal tab, click or
-  press a key), even before answering, and stays off until the next question. Claude Code
-  has no focus/key hook, so its "needs you" clears only on an answer.
-- Pet: 23:00–07:00 brightness cap 15%; 5 min without keyboard/mouse (or a locked Mac) changes
-  nothing on screen (usage + idle picks), back → wake → happy + greeting;
-  `clawd poke` → `react left`/`react right`, 3 pokes in 5 s → `annoyed`;
-  evening yawn 22:00–23:00; session ≥ 80% → `low battery`; quota reset → `double jump`;
-  every 10 finished turns a day → `heart eyes`.
-- Hooks are fire-and-forget: the daemon down costs each hook ~10 ms and changes nothing.
-
-## Setup (this Mac)
+## Build
 
 ```sh
-# 1. daemon venv (Homebrew Python: it already has Downloads-folder access)
-cd clawdmeter && /opt/homebrew/opt/python@3.12/bin/python3.12 -m venv daemon/.venv \
-  && daemon/.venv/bin/pip install bleak httpx
-#    LaunchAgent: ~/Library/LaunchAgents/com.user.claude-usage-daemon.plist -> clawd-home/clawdmeter/daemon/
-launchctl unload ~/Library/LaunchAgents/com.user.claude-usage-daemon.plist
-launchctl load -w ~/Library/LaunchAgents/com.user.claude-usage-daemon.plist
+cd firmware
+pio run -e clawd                  # firmware.bin; must stay <= 524,288 B (OTA budget)
+pio run -e clawd_loader           # OTA trampoline for stock clocks with a tiny updater
+sh tests/host/run.sh              # Settings.cpp host test (needs one pio run for ArduinoJson)
+sh tools/desk_check/run.sh        # desk.pak decoder vs the encoder's frame CRCs
+sh tools/clawd_preview/run.sh     # desktop render of the screens -> .pio/clawd_preview/
+python3 tools/gzip_webui.py       # after editing src/webui.html
+```
 
-# 2. hooks + extension + CLI
-python3 integrations/claude/install.py        # --uninstall to remove; backs up settings.json
-sh integrations/pi/install.sh                 # symlink into ~/.pi/agent/extensions/, then /reload
-ln -sfn "$PWD/integrations/cli/clawd" ~/.local/bin/clawd
+## Animations
 
-# 3. animations (needs the clawd-on-desk checkout + Google Chrome)
-cd tools/desk && npm install && cd ../..
-CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js --verify  # -> build/desk/desk.pak
+```sh
+cd tools/desk && npm install && cd ../..          # needs the clawd-on-desk checkout + Google Chrome
+CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js --verify   # -> build/desk/desk.pak
 #   --only NAME,...  --sheet (contact sheets + worst-frame PNGs)  --probe (timings only)
-firmware/tools/desk_check/run.sh               # firmware decoder vs the encoder's frame CRCs
-curl -u admin:<pass> -F "file=@build/desk/desk.pak" http://192.168.1.48/api/deskpak   # ~75 s
+curl -u admin:<pass> -F "file=@build/desk/desk.pak" http://<clock>/api/deskpak   # ~75 s
 ```
 
 `desk.pak` (2.8 MB) only fits because the stock firmware's own files (web UI,
 icons, fonts, GIFs: 1.5 MB) were moved off the clock with `tools/stock_fs.sh`.
-Restore them before flashing the stock firmware (see `firmware/CLAWDMETER.md`).
-
-Config (`~/.config/claude-usage-monitor/config`, all optional): `events = off`,
-`event_port`, `quiet_start = 23:00`, `quiet_end = 07:00`, `quiet_dim = 15`,
-`away_after = 300`, `milestone_turns = 10`.
+Restore them before flashing the stock firmware (see `docs/FIRMWARE.md`).
 
 ## Clocks for friends
 
 Friends do not get this repo. They get a clock flashed here and the desktop app
 from the public repo **clawd-desktop** (`../clawd-desktop`: tray app for Mac and
-Windows, finds the clock over mDNS `_clawdmeter._tcp` or a LAN scan, installs the
-Claude Code hooks itself). Both sides follow `PROTOCOL.md` (identical copy in both
-repos). The app replaces the LaunchAgent daemon on this Mac too: never run both,
-they fight over the clock.
+Windows, finds the clock over mDNS `_clawd._tcp` or a LAN scan, installs the
+Claude Code hooks, the pi extension and the `clawd` CLI itself). Both sides follow
+`PROTOCOL.md` (identical copy in both repos).
 
 Per clock (stock JUZIPi SD Pro, firmware SDPro 1.0.x):
 
@@ -149,7 +79,7 @@ clawd focus 25 | clawd focus stop
 clawd anims
 ```
 
-## Firmware
+## Flash a clock
 
 ```sh
 tools/flash.sh 10.97.44.122              # build + size check + OTA to /update + wait for the reboot (~35 s)
@@ -161,26 +91,11 @@ tools/flash.sh --no-build 10.97.44.122   # re-flash the last build
 # by hand:
 cd firmware && pio run -e clawd                       # image must stay <= 524,288 B
 curl -F "firmware=@.pio/build/clawd/firmware.bin" http://192.168.1.48/update
-tools/clawd_preview/run.sh                                   # desktop render of the screens
 ```
 
 The flash layout stays stock 4m3m (1 MB sketch + 3 MB LittleFS, never formatted;
 the stock files are backed up on the Mac, see above).
-`/update` accepts the stock image for rollback; see `firmware/CLAWDMETER.md`.
-The clawd env drops newlib's float printf/scanf (`firmware/no_float_io.py`):
+`/update` accepts the stock image for rollback; see `docs/FIRMWARE.md`.
+The `clawd` env drops newlib's float printf/scanf (`firmware/no_float_io.py`):
 `%f` prints nothing in this build.
 
-## Tests
-
-```sh
-cd clawdmeter && uv run -q --python 3.12 --with bleak --with httpx --with pytest --with pystray --with Pillow python -m pytest daemon/tests -q
-uv run -q --python 3.12 --with httpx --with pytest python -m pytest integrations/tests -q
-node --test integrations/pi/clawd-home.test.ts
-```
-
-## Upstreams (pull only)
-
-```sh
-git subtree pull --prefix=clawdmeter upstream-clawdmeter main
-git subtree pull --prefix=smalltv    upstream-smalltv    main
-```
