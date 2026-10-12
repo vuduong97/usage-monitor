@@ -1,6 +1,6 @@
 Import("env")
 
-# smalltv_clawd only: the ESP8266 Arduino core force-links newlib's float
+# clawd only: the ESP8266 Arduino core force-links newlib's float
 # printf/scanf (`-u _printf_float -u _scanf_float`, ~8 KB). The clawd build
 # never formats or parses a float through printf/scanf (ticker, the only %f
 # user, is compiled out; dtostrf/String(float) do not use printf), and the

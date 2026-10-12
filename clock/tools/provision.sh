@@ -19,14 +19,14 @@
 # stopped half way can be run again (on clawd it starts at step 4).
 # --dry-run: read-only probes run, every change is printed instead of sent.
 #
-# Needs: build/desk/desk.pak, smalltv/data/clawd.pak, smalltv/.pio/build/smalltv_clawd/firmware.bin
-# (`pio run -e smalltv_clawd`), and the bench WiFi in CLAWD_BENCH_SSID / CLAWD_BENCH_PASS
+# Needs: build/desk/desk.pak, firmware/data/clawd.pak, firmware/.pio/build/clawd/firmware.bin
+# (`pio run -e clawd`), and the bench WiFi in CLAWD_BENCH_SSID / CLAWD_BENCH_PASS
 # (asked for when missing). Passwords and backups land in .stock-backup/ (gitignored).
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-FW=${CLAWD_FW:-"$ROOT/smalltv/.pio/build/smalltv_clawd/firmware.bin"}
-CLAWD_PAK=${CLAWD_PAK:-"$ROOT/smalltv/data/clawd.pak"}
+FW=${CLAWD_FW:-"$ROOT/firmware/.pio/build/clawd/firmware.bin"}
+CLAWD_PAK=${CLAWD_PAK:-"$ROOT/firmware/data/clawd.pak"}
 DESK_PAK=${CLAWD_DESK_PAK:-"$ROOT/build/desk/desk.pak"}
 OUT="$ROOT/.stock-backup/provision"
 FW_MAX=532480       # 520 KB: keeps clawd -> clawd OTA possible (stock -> clawd allows 552,960)

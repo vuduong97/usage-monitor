@@ -10,7 +10,7 @@ Reserved, personal use only): they are generated on this Mac and never committed
 
 ```
 clawdmeter/      git subtree: Clawdmeter (macOS daemon in clawdmeter/daemon/)
-smalltv/         git subtree: smalltv-mod fork running the Clawdmeter UI (env smalltv_clawd)
+smalltv/         git subtree: smalltv-mod fork running the Clawdmeter UI (env clawd)
 tools/desk/      clawd-on-desk SVG -> build/desk/desk.pak (gitignored)
 tools/stock_fs.sh  back up / delete / restore the stock firmware's files on the clock
 tools/provision.sh stock clock -> clawd clock ready to gift (see "Clocks for friends")
@@ -103,13 +103,13 @@ ln -sfn "$PWD/integrations/cli/clawd" ~/.local/bin/clawd
 cd tools/desk && npm install && cd ../..
 CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js --verify  # -> build/desk/desk.pak
 #   --only NAME,...  --sheet (contact sheets + worst-frame PNGs)  --probe (timings only)
-smalltv/tools/desk_check/run.sh               # firmware decoder vs the encoder's frame CRCs
+firmware/tools/desk_check/run.sh               # firmware decoder vs the encoder's frame CRCs
 curl -u admin:<pass> -F "file=@build/desk/desk.pak" http://192.168.1.48/api/deskpak   # ~75 s
 ```
 
 `desk.pak` (2.8 MB) only fits because the stock firmware's own files (web UI,
 icons, fonts, GIFs: 1.5 MB) were moved off the clock with `tools/stock_fs.sh`.
-Restore them before flashing the stock firmware (see `smalltv/CLAWDMETER.md`).
+Restore them before flashing the stock firmware (see `firmware/CLAWDMETER.md`).
 
 Config (`~/.config/claude-usage-monitor/config`, all optional): `events = off`,
 `event_port`, `quiet_start = 23:00`, `quiet_end = 07:00`, `quiet_dim = 15`,
@@ -127,7 +127,7 @@ they fight over the clock.
 Per clock (stock JUZIPi SD Pro, firmware SDPro 1.0.x):
 
 ```sh
-cd smalltv && pio run -e smalltv_clawd && cd ..   # firmware.bin (<= 520 KB)
+cd firmware && pio run -e clawd && cd ..   # firmware.bin (<= 520 KB)
 # join the stock clock to the bench WiFi by hand, read its IP off the screen, then:
 CLAWD_BENCH_SSID=... CLAWD_BENCH_PASS=... tools/provision.sh <clock-ip>
 tools/provision.sh <clock-ip> --dry-run           # what it would do, changes nothing
@@ -159,15 +159,15 @@ tools/flash.sh --no-build 10.97.44.122   # re-flash the last build
 #  web password (if enabled): CLAWD_AUTH=user:pass
 
 # by hand:
-cd smalltv && pio run -e smalltv_clawd                       # image must stay <= 524,288 B
-curl -F "firmware=@.pio/build/smalltv_clawd/firmware.bin" http://192.168.1.48/update
+cd firmware && pio run -e clawd                       # image must stay <= 524,288 B
+curl -F "firmware=@.pio/build/clawd/firmware.bin" http://192.168.1.48/update
 tools/clawd_preview/run.sh                                   # desktop render of the screens
 ```
 
 The flash layout stays stock 4m3m (1 MB sketch + 3 MB LittleFS, never formatted;
 the stock files are backed up on the Mac, see above).
-`/update` accepts the stock image for rollback; see `smalltv/CLAWDMETER.md`.
-The clawd env drops newlib's float printf/scanf (`smalltv/no_float_io.py`):
+`/update` accepts the stock image for rollback; see `firmware/CLAWDMETER.md`.
+The clawd env drops newlib's float printf/scanf (`firmware/no_float_io.py`):
 `%f` prints nothing in this build.
 
 ## Tests

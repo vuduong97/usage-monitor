@@ -15,12 +15,12 @@ package-lock.json
 build/desk/
 *.desk.pak
 desk.pak
-smalltv/data/desk.pak
+firmware/data/desk.pak
 tools/desk/out/
 # Stock-clock backups (contain Wi-Fi/API secrets)
 .stock-backup/
-smalltv/.stock-backup/
+firmware/.stock-backup/
 # PlatformIO
 .pio/
 # clangd index
-smalltv/.cache/
+firmware/.cache/

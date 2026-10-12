@@ -1,5 +1,5 @@
 #!/bin/sh
-# flash.sh — build the clock firmware (env smalltv_clawd) and flash it over WiFi.
+# flash.sh — build the clock firmware (env clawd) and flash it over WiFi.
 #
 #   tools/flash.sh [ip]              build, check the size, upload to /update, wait for the reboot
 #   tools/flash.sh --no-build [ip]   upload the last build as is
@@ -11,8 +11,8 @@
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-FW="$ROOT/smalltv/.pio/build/smalltv_clawd/firmware.bin"
-MAX=524288   # clawd -> clawd OTA budget (smalltv/CLAWDMETER.md)
+FW="$ROOT/firmware/.pio/build/clawd/firmware.bin"
+MAX=524288   # clawd -> clawd OTA budget (firmware/CLAWDMETER.md)
 
 build=1
 clock=
@@ -38,8 +38,8 @@ case $clock in http://*|https://*) base=$clock ;; *) base="http://$clock" ;; esa
 echo "==> clock $base"
 
 if [ $build -eq 1 ]; then
-  echo "==> build (pio run -e smalltv_clawd)"
-  (cd "$ROOT/smalltv" && pio run -e smalltv_clawd)
+  echo "==> build (pio run -e clawd)"
+  (cd "$ROOT/firmware" && pio run -e clawd)
 fi
 [ -f "$FW" ] || { echo "no $FW, build first" >&2; exit 1; }
 

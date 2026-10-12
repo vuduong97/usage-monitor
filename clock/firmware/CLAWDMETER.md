@@ -30,7 +30,7 @@ The stock firmware keeps its web UI, weather icons, flip-clock digits, fonts and
 - None of it is published (the JUZIPi repo only has the `.bin` files).
 - The stock web server cannot download it, apart from `/`, `javascript.js` and `style.css`.
 
-smalltv-mod's usual `4m1m` layout overlaps that region and would destroy it. So `smalltv_clawd` keeps the **stock layout**:
+smalltv-mod's usual `4m1m` layout overlaps that region and would destroy it. So `clawd` keeps the **stock layout**:
 
 - `board_build.ldscript = eagle.flash.4m3m.ld`, the same as stock.
 - The filesystem is **never formatted**: `LittleFSConfig::setAutoFormat(false)`, and there is no format fallback in `settingsBegin()`.
@@ -79,17 +79,17 @@ The backup in use is `.stock-backup/fs-20261012-000754/` (72 files, git-ignored:
 
 ```sh
 H=http://<clock-ip>
-pio run -e smalltv_clawd
+pio run -e clawd
 # 1. the animation pack, through the STOCK firmware's file upload (root dir)
 curl -F "file=@data/clawd.pak;filename=clawd.pak" $H/upload
 # 2. a /config.json so this firmware joins WiFi on first boot (else it opens an AP)
 #    {"hostname":"clawdmeter","wifi":[{"ssid":"…","pass":"…"}],"mode":"usage"}
 curl -F "file=@config.json;filename=config.json" $H/upload
 # 3. the image; the stock OTA rejects filenames not starting with "SDP"
-curl -F "update=@.pio/build/smalltv_clawd/firmware.bin;filename=SDP_clawdmeter.bin" $H/update_ota
+curl -F "update=@.pio/build/clawd/firmware.bin;filename=SDP_clawdmeter.bin" $H/update_ota
 ```
 
-To update this firmware later, use `curl -F "firmware=@.pio/build/smalltv_clawd/firmware.bin" $H/update`, or the System tab. To replace the pack in place, use `curl -F "file=@data/clawd.pak" $H/api/clawdpak`.
+To update this firmware later, use `curl -F "firmware=@.pio/build/clawd/firmware.bin" $H/update`, or the System tab. To replace the pack in place, use `curl -F "file=@data/clawd.pak" $H/api/clawdpak`.
 
 ## Back to stock (verified 2026-10-11)
 
@@ -153,6 +153,6 @@ while sleep 60; do curl -s http://clawdmeter.local/api/heap; echo; done >> heap.
 | `tools/clawd_preview/run.sh` | Desktop build of the same renderer. Writes PNGs of every screen and animation to `.pio/clawd_preview/`. |
 | `tools/gzip_webui.py` | Writes `webui.h` and `webui_clawd.h`, the latter without the ticker, radar and HA tabs. |
 
-Build (`pio run -e smalltv_clawd`): static RAM 48,996 B (59.8%), image 510,208 B. That leaves about 14 KB of the 524,288 B clawd → clawd OTA budget: check the size before adding features (`tools/flash.sh` refuses larger images).
+Build (`pio run -e clawd`): static RAM 48,996 B (59.8%), image 510,208 B. That leaves about 14 KB of the 524,288 B clawd → clawd OTA budget: check the size before adding features (`tools/flash.sh` refuses larger images).
 
 The plain `smalltv` env (4m1m, all features) still builds, but it would need `/clawd.pak` on its own filesystem and is not meant for this clock.
