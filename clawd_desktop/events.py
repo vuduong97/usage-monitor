@@ -143,8 +143,20 @@ ACTION_TEXT = {                      # action: (while running, when it failed)
     "": ("Working", "Tool failed"),
 }
 READING_ACTIONS = ("read", "search")   # the last tool read or searched: "reading"
-# Per-session animations that still show (with the agent count) when 2+ agents run.
+# Per-session animations that still show (with the agent count) when 2+ agents run;
+# a debugging session shows through too, whatever its animation.
 SESSION_SHOWS_THROUGH = {"ultrathink", "debugger", "reading"}
+# Same-meaning variants of a long agent animation (the state's `v`): the clock plays
+# the animation 3 passes, then one variant picked at random, then the animation
+# again. Clocks with older firmware ignore `v` and only play the animation.
+VARIANTS = {
+    "typing": ("building", "carrying", "typing boss"),
+    "typing boss": ("typing", "building"),
+    "wizard": ("typing", "building", "carrying"),
+    "debugger": ("typing", "building"),
+    "ultrathink": ("thinking",),
+}
+DEBUG_VARIANTS = ("debugger",)   # a debugging turn: its action's animation, then this
 TOOL_ACTIONS = {
     **dict.fromkeys(("bash", "bashoutput", "bg_run"), "run"),
     **dict.fromkeys(("read", "notebookread", "ls", "read_symbol", "read_enclosing"), "read"),
@@ -185,6 +197,8 @@ class View:
     seq: tuple[str, ...] = ()  # the clock plays these in order (default: just anim)
     rep: bool = False         # cycle seq instead of looping its last animation
     urgent: bool = False      # replace what plays now instead of at its pass end
+    variants: tuple[str, ...] = ()  # the clock mixes one in every 3 passes (`v`)
+    debug: bool = False       # a debugging session (shows through many agents)
 
     @property
     def names(self) -> tuple[str, ...]:
@@ -378,7 +392,7 @@ class Tracker:
             # counted; anything plainer leaves the many-agents animation.
             if active:
                 v = self._session(latest(active), now)
-                if v.anim in SESSION_SHOWS_THROUGH:
+                if v.anim in SESSION_SHOWS_THROUGH or v.debug:
                     return replace(v, text=f"{v.text} ({agents})")
             # One extra agent beside a running session: headphones; more: juggling.
             # With no main session running, the agents left are all extra.
@@ -391,24 +405,27 @@ class Tracker:
 
     @staticmethod
     def _session(s: Sess, now: float) -> View:
-        """One thinking/working session: ultrathink > debugger > reading >
-        typing boss > wizard > typing (thinking before its first tool)."""
+        """One thinking/working session: ultrathink > testing (debugger) >
+        reading > typing boss > wizard > typing (thinking before its first tool).
+        A debugging turn keeps its action's animation, says "Debugger" and mixes
+        the debugger in as the variant."""
         if not s.running and now - s.quiet_since >= ULTRATHINK_AFTER:
-            return View("ultrathink", "Thinking hard", "agent")
+            return View("ultrathink", "Thinking hard", "agent", variants=VARIANTS["ultrathink"])
         if s.state == "thinking":
             return View("thinking", "Thinking", "agent")
-        text = ACTION_TEXT[s.action][0]
         if s.testing:
-            return View("debugger", "Testing", "agent")
-        if s.debugging:
-            return View("debugger", "Debugger", "agent")
+            return View("debugger", "Testing", "agent", variants=VARIANTS["debugger"])
         if s.action in READING_ACTIONS:
-            return View("reading", text, "agent")
-        if s.edits >= EDIT_STREAK:
-            return View("typing boss", text, "agent")
-        if s.turn_start and now - s.turn_start >= WIZARD_AFTER:
-            return View("wizard", text, "agent")
-        return View("typing", text, "agent")
+            anim = "reading"
+        elif s.edits >= EDIT_STREAK:
+            anim = "typing boss"
+        elif s.turn_start and now - s.turn_start >= WIZARD_AFTER:
+            anim = "wizard"
+        else:
+            anim = "typing"
+        if s.debugging:
+            return View(anim, "Debugger", "agent", variants=DEBUG_VARIANTS, debug=True)
+        return View(anim, ACTION_TEXT[s.action][0], "agent", variants=VARIANTS.get(anim, ()))
 
     def snapshot(self, now: float) -> list[dict]:
         return [{"sid": s.sid, "src": s.src, "sub": s.sub, "state": s.state,
@@ -772,13 +789,14 @@ class Brain:
                 and (v is None or v.names != sh.names)
                 and now - self.shown_since < min_display(sh.anim)):
             return sh
-        if v is None or sh is None or v.names != sh.names or v.rep != sh.rep:
+        if (v is None or sh is None or v.names != sh.names or v.rep != sh.rep
+                or v.variants != sh.variants):
             self.shown_since = now
         self.shown = v
         return v
 
     def desired(self, now: float) -> dict:
-        """{'a', 'seq', 'rep', 'u', 'txt', 'cd', 'dim', 'focus_until'} for this instant."""
+        """{'a', 'seq', 'rep', 'v', 'u', 'txt', 'cd', 'dim', 'focus_until'} for this instant."""
         v = self.pokes.moment(now) or self.tracker.view(now)
         focus = self.pokes.focus_left(now)
         cd = 0
@@ -791,7 +809,8 @@ class Brain:
         txt = v.text if v else ""
         txt = txt[:1].upper() + txt[1:]          # the clock text always starts with a capital
         return {"a": v.anim if v else "", "seq": list(v.names) if v else [],
-                "rep": bool(v and v.rep), "u": bool(v and v.urgent), "txt": txt, "cd": cd,
+                "rep": bool(v and v.rep), "v": list(v.variants) if v else [],
+                "u": bool(v and v.urgent), "txt": txt, "cd": cd,
                 "dim": self.pet.dim(now), "focus_until": int(self.pokes.focus_until) if cd else 0}
 
 
@@ -806,6 +825,8 @@ def wire(d: dict) -> dict:
     out = {"a": seq if len(seq) > 1 else d["a"], "ttl": STATE_TTL}
     if d.get("rep"):
         out["rep"] = True
+    if d.get("v"):
+        out["v"] = list(d["v"])
     if d.get("u"):
         out["u"] = True
     if d["txt"]:
@@ -835,8 +856,8 @@ class StatePusher:
 
     @staticmethod
     def key(d: dict) -> tuple:
-        return (d["a"], tuple(d.get("seq") or ()), d.get("rep", False), d["txt"], d["dim"],
-                d["focus_until"])
+        return (d["a"], tuple(d.get("seq") or ()), d.get("rep", False), tuple(d.get("v") or ()),
+                d["txt"], d["dim"], d["focus_until"])
 
     async def step(self) -> bool:
         now = self.clock()

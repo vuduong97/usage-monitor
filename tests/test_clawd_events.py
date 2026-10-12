@@ -64,8 +64,8 @@ def test_priority_attention_over_error_over_subagents():
     assert (t.view(T0 + 11).anim, t.view(T0 + 11).text) == ("juggling", "4 agents")
     t.ingest(claude("SubagentStop"), T0 + 12)
     t.ingest(claude("SubagentStop"), T0 + 12)
-    v = t.view(T0 + 12)          # s1 failed a tool: its debugger shows through, counted
-    assert (v.anim, v.text) == ("debugger", "Debugger (2)")
+    v = t.view(T0 + 12)          # s1 failed a tool: its debugging shows through, counted
+    assert (v.anim, v.text, v.variants) == ("typing", "Debugger (2)", ("debugger",))
     t.ingest(claude("PreToolUse", sid="s2", tool_name="Edit"), T0 + 13)
     v = t.view(T0 + 13)
     assert (v.anim, v.text) == ("headphones", "2 agents")
@@ -450,6 +450,54 @@ def test_wire_and_state_url():
                     "dim": -1, "focus_until": 0}) == {"a": "x", "ttl": 60, "u": True}
     assert ev.wire({"a": "s", "seq": ["y", "s"], "rep": False, "u": False, "txt": "", "cd": 0,
                     "dim": -1, "focus_until": 0}) == {"a": ["y", "s"], "ttl": 60}
+    assert ev.wire({"a": "typing", "seq": ["typing"], "rep": False, "v": ["building", "carrying"],
+                    "u": False, "txt": "", "cd": 0, "dim": -1, "focus_until": 0}) == \
+        {"a": "typing", "ttl": 60, "v": ["building", "carrying"]}
+    assert "v" not in ev.wire({"a": "x", "v": [], "txt": "", "cd": 0, "dim": -1, "focus_until": 0})
+
+
+@pytest.mark.parametrize("steps,anim,text,variants", [
+    ([("PreToolUse", "Bash", None)], "typing", "Running", ("building", "carrying", "typing boss")),
+    ([("PreToolUse", "Edit", None)], "typing", "Editing", ("building", "carrying", "typing boss")),
+    ([("PreToolUse", "Read", None)], "reading", "Reading", ()),        # reading is short: none
+    ([("PreToolUse", "Grep", None)], "reading", "Searching", ()),
+    ([("PreToolUse", "Bash", {"command": "pytest -q"})], "debugger", "Testing", ("typing", "building")),
+    ([("PreToolUse", "Edit", None)] * ev.EDIT_STREAK, "typing boss", "Editing", ("typing", "building")),
+    ([("PostToolUseFailure", "Bash", None), ("PreToolUse", "Read", None)], "reading", "Debugger",
+     ("debugger",)),
+])
+def test_long_agent_animations_carry_same_meaning_variants(steps, anim, text, variants):
+    t = ev.Tracker()
+    t.ingest(claude("UserPromptSubmit"), T0)
+    now = T0 + 1
+    for name, tool, inp in steps:
+        t.ingest(claude(name, tool_name=tool, **({"tool_input": inp} if inp else {})), now)
+    now += ev.ERROR_SHOW + 1
+    v = t.view(now)
+    assert (v.anim, v.text, v.variants) == (anim, text, variants)
+    assert all(n != anim for n in v.variants)
+
+
+def test_thinking_ultrathink_and_wizard_variants():
+    t = ev.Tracker()
+    t.ingest(claude("UserPromptSubmit"), T0)
+    assert t.view(T0).variants == ()                                   # thinking: none
+    assert t.view(T0 + ev.ULTRATHINK_AFTER).variants == ("thinking",)
+    t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + ev.WIZARD_AFTER)
+    v = t.view(T0 + ev.WIZARD_AFTER)
+    assert (v.anim, v.variants) == ("wizard", ("typing", "building", "carrying"))
+
+
+def test_the_state_carries_variants_and_a_variant_change_is_pushed():
+    b = brain_at()
+    b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0)
+    d = b.desired(T0)
+    assert (d["a"], d["v"]) == ("typing", ["building", "carrying", "typing boss"])
+    b.tracker.sessions["claude:s1"].debugging = True                  # same animation, new mix
+    d2 = b.desired(T0 + 0.5)
+    assert (d2["a"], d2["v"], d2["txt"]) == ("typing", ["debugger"], "Debugger")
+    assert ev.StatePusher.key(d) != ev.StatePusher.key(d2)
+    assert b.desired(T0 + 0.5)["v"] == ["debugger"]
 
 
 def test_read_pet_config_and_port(monkeypatch):
@@ -667,27 +715,28 @@ def test_debug_turns_from_the_prompt_or_the_skill_show_the_debugger():
     t = ev.Tracker()
     t.ingest(claude("UserPromptSubmit", prompt="s\u1eeda l\u1ed7i flash.sh"), T0)
     assert t.view(T0).anim == "thinking"
-    for k, tool in enumerate(("Bash", "Read", "Edit")):
+    for k, (tool, anim) in enumerate((("Bash", "typing"), ("Read", "reading"), ("Edit", "typing"))):
         t.ingest(claude("PreToolUse", tool_name=tool), T0 + 1 + k)
-        v = t.view(T0 + 1 + k)
-        assert (v.anim, v.text) == ("debugger", "Debugger")    # debugger beats reading
+        v = t.view(T0 + 1 + k)                                 # the action's animation wins,
+        assert (v.anim, v.text, v.variants) == (anim, "Debugger", ("debugger",))  # debugger mixed in
         t.ingest(claude("PostToolUse", tool_name=tool), T0 + 1.5 + k)
     t.ingest(claude("PreToolUse", tool_name="Bash", tool_input={"command": "pytest"}), T0 + 5)
-    assert t.view(T0 + 5).text == "Testing"
+    v = t.view(T0 + 5)
+    assert (v.anim, v.text) == ("debugger", "Testing")       # a test run is the debugger
     t.ingest(claude("PostToolUse", tool_name="Bash"), T0 + 6)
     assert t.view(T0 + 6 + ev.ULTRATHINK_AFTER).anim == "ultrathink"  # beats the debugger
     t.ingest(claude("Stop"), T0 + 50)
     t.ingest(claude("UserPromptSubmit", prompt="tr\u1ea3 l\u1eddi ng\u1eafn"), T0 + 60)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 61)
-    assert t.view(T0 + 61).anim == "typing"                  # only that turn
+    assert t.view(T0 + 61).text == "Editing"                 # only that turn
     t.ingest(claude("PreToolUse", tool_name="Skill", tool_input={"skill": "ak:debug"}), T0 + 62)
     t.ingest(claude("PostToolUse", tool_name="Skill"), T0 + 62.5)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 63)
-    assert t.view(T0 + 63).anim == "debugger"                # loading the skill starts one
+    assert t.view(T0 + 63).text == "Debugger"                # loading the skill starts one
     u = ev.Tracker()                                         # pi sends only the verdict
     u.ingest(ev.pi_event({"ev": "prompt", "sid": "p", "debug": True}), T0)
     u.ingest(ev.pi_event({"ev": "tool", "sid": "p", "tool": "edit"}), T0 + 1)
-    assert u.view(T0 + 1).anim == "debugger"
+    assert u.view(T0 + 1).debug
     assert ev.pi_event({"ev": "prompt", "sid": "p", "debug": "yes"})["debug"] is False
 
 
@@ -707,7 +756,7 @@ def test_many_agents_let_the_latest_sessions_reading_debugger_ultrathink_through
     t.ingest(claude("PostToolUseFailure", sid="c", tool_name="Edit"), T0 + 4.3)
     t.ingest(claude("PreToolUse", sid="c", tool_name="Edit"), T0 + 4.3 + ev.ERROR_SHOW)
     v = t.view(T0 + 4.3 + ev.ERROR_SHOW)
-    assert (v.anim, v.text) == ("debugger", "Debugger (3)")
+    assert (v.anim, v.text) == ("typing", "Debugger (3)")
     t.ingest(claude("SessionEnd", sid="c"), T0 + 10)
     t.ingest(claude("Stop", sid="a"), T0 + 10)
     t.ingest(claude("UserPromptSubmit", sid="a"), T0 + 11)
@@ -742,15 +791,16 @@ def test_running_tests_and_fixing_after_a_failure_show_the_debugger():
     assert t.view(T0 + 2).anim == "error"
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 10)
     v = t.view(T0 + 10)
-    assert (v.anim, v.text) == ("debugger", "Debugger")      # rest of the turn after an error
+    assert (v.anim, v.text) == ("typing", "Debugger")        # rest of the turn after an error
     t.ingest(claude("Stop"), T0 + 11)
     t.ingest(claude("UserPromptSubmit"), T0 + 20)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 21)
-    assert t.view(T0 + 21).anim == "debugger"                # and the turn right after
+    assert t.view(T0 + 21).text == "Debugger"                # and the turn right after
     t.ingest(claude("Stop"), T0 + 22)
     t.ingest(claude("UserPromptSubmit"), T0 + 30)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 31)
-    assert t.view(T0 + 31).anim == "typing"                  # then it is over
+    v = t.view(T0 + 31)
+    assert (v.anim, v.text, v.debug) == ("typing", "Editing", False)  # then it is over
     u = ev.Tracker()                                          # pi sends the bash command along
     u.ingest(ev.pi_event({"ev": "tool", "sid": "p", "tool": "bash", "cmd": "go test ./..."}), T0)
     assert u.view(T0).anim == "debugger"
@@ -796,7 +846,7 @@ def test_min_display_holds_agent_animations_but_not_against_a_poke():
     b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 1)
     b.tracker.sessions["claude:s1"].error_until = 0           # error over early
     assert b.desired(T0 + 1)["a"] == "error"                  # held for minDisplay.error
-    assert b.desired(T0 + 5)["a"] == "debugger"
+    assert b.desired(T0 + 5)["txt"] == "Debugger"
     b.pokes.handle({"cmd": "poke"}, T0 + 5.2)
     d = b.desired(T0 + 5.2)
     assert (d["a"], d["u"]) == ("react left", True)           # a poke never waits
