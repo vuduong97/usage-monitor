@@ -136,14 +136,20 @@ function paintPreview(now) {
 async function refreshLive() {
   if (!api || document.hidden) return;
   try {
-    const r = await api.usage_preview();
+    const r = await api.usage_preview(null, !reduce);   // animated loops unless reduced motion
     if (r && r.ok) live = r;
+    // The approximate canvas draws the real Clawd from the clock's own pack, once Python has it
+    // (it reads the clock at most every few minutes, so asking on every refresh is cheap).
+    if (!live.exact && !PV.hasPak()) {
+      const p = await api.clawd_pak();
+      if (p && p.ok) PV.setPak(p.pak);
+    }
   } catch (err) { console.warn('usage_preview failed; keeping the last frame', err); }
   paintPreview(performance.now());
 }
 setInterval(refreshLive, 20000);
 function loop(now) {
-  if (!document.hidden && now - lastPaint > (reduce ? 1000 : 160)) { lastPaint = now; paintPreview(now); }
+  if (!document.hidden && now - lastPaint > (reduce ? 1000 : 80)) { lastPaint = now; paintPreview(now); }
   requestAnimationFrame(loop);
 }
 

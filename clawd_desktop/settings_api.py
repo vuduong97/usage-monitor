@@ -19,6 +19,7 @@ import subprocess
 import threading
 import time
 import webbrowser
+from base64 import b64encode
 from pathlib import Path
 from typing import Any, Callable
 
@@ -27,6 +28,7 @@ from clawd_desktop import __version__, autostart, creds, firmware, hooks, ota, p
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
 from clawd_desktop.discovery import ClockStore, manual_clock
 
+PAK_RETRY_S = 300       # after a failed /clawd.pak read, wait this long before asking again
 HOSTNAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")
 HHMM = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
@@ -136,6 +138,7 @@ class SettingsApi:
         self._payload_source = payload_source  # the last usage payload the engine sent
         self._now = now
         self._frames = pv.FrameCache()
+        self._pak_failed = 0.0                 # when reading /clawd.pak off the clock last failed
         self._remember_screen = remember_screen  # tell the engine the main screen
         self._notify = notify                  # tell the tray (rescan, set host, refresh)
         self._factory = api_factory
@@ -208,13 +211,16 @@ class SettingsApi:
         saved = self._keychain.put(self._key, user, password)
         return {**self.state(), "saved": saved}
 
-    def usage_preview(self, layouts: Any = None) -> dict:
+    def usage_preview(self, layouts: Any = None, motion: Any = True) -> dict:
         """The clock's usage screen for each layout, with the usage the app last sent it.
 
-        {"ok": true, "exact": true, "frames": {"0": "data:image/bmp;..."}, "sentAt": <epoch>|null}
-        when the clock's own renderer is built into the app; with `exact` false there are
-        no frames and the page draws its approximation from `payload` (None: no data yet).
+        {"ok": true, "exact": true, "frames": {"0": "data:image/png;..."}, "sentAt": <epoch>|null}
+        when the clock's own renderer is built into the app: with `motion` each frame is one
+        loop of the screen as it animates (an animated PNG), without it (reduced motion) one
+        still BMP. With `exact` false there are no frames and the page draws its approximation
+        from `payload` (None: no data yet).
         """
+        motion = motion if isinstance(motion, bool) else True     # the page is untrusted input
         if (not isinstance(layouts, list) or not layouts
                 or not all(isinstance(i, int) and not isinstance(i, bool) and 0 <= i < firmware.LAYOUT_COUNT
                            for i in layouts)):
@@ -231,11 +237,11 @@ class SettingsApi:
         for i in dict.fromkeys(layouts):
             if not r.layouts >> i & 1:
                 continue
-            key = pv.frame_key(i, live, int(now // 60))
+            key = pv.frame_key(i, live, int(now // 60), "clip" if motion else "still")
             url = self._frames.get(key)
             if url is None:
                 try:
-                    url = pv.bmp_data_url(r.draw(i, live))
+                    url = pv.apng_data_url(r.clip(i, live)) if motion else pv.bmp_data_url(r.draw(i, live))
                 except (OSError, ValueError, subprocess.SubprocessError) as e:
                     print(f"[settings] preview renderer failed: {e}", flush=True)
                     return out                 # the page falls back to its canvas
@@ -243,6 +249,31 @@ class SettingsApi:
             frames[str(i)] = url
         out.update(exact=True, frames=frames)
         return out
+
+    def clawd_pak(self) -> dict:
+        """The clock's Clawd sprites (/clawd.pak) for the page's approximate preview, which
+        has no renderer: {"ok": true, "pak": "<base64>"}. Kept in the config folder and read
+        again only when /api/heap reports a different pack; never part of the app itself.
+        {"ok": false} when there is none to be had (the page then draws the app icon)."""
+        cache = pv.PakCache(paths.PAK_FILE)
+        have = cache.load()
+        want = self._heap.get("pak") if isinstance(self._heap, dict) else None
+        want = want if isinstance(want, int) and not isinstance(want, bool) and want > 0 else 0
+        if have and (not want or have[1] == want):
+            return {"ok": True, "pak": b64encode(have[0]).decode()}
+        if not want or not self._base or self._now() - self._pak_failed < PAK_RETRY_S:
+            return _fail("nopak", "Đồng hồ chưa có hình Clawd.") if not have else \
+                {"ok": True, "pak": b64encode(have[0]).decode()}
+        try:
+            data = self._api.get_file("/clawd.pak", pv.PAK_MAX)
+            pv.pak_count(data)
+            with contextlib.suppress(OSError):
+                cache.save(data, want)
+        except (ClockError, ValueError) as e:
+            self._pak_failed = self._now()
+            print(f"[settings] could not read clawd.pak from the clock: {e}", flush=True)
+            return {"ok": True, "pak": b64encode(have[0]).decode()} if have else _err(e)
+        return {"ok": True, "pak": b64encode(data).decode()}
 
     # ---- saving --------------------------------------------------------------------
     def _diff(self, edited: Any) -> dict:

@@ -26,3 +26,4 @@ def _private_payload_file(tmp_path, monkeypatch):
     """And the last usage payload the settings window draws the clock from."""
     from clawd_desktop import paths
     monkeypatch.setattr(paths, "PAYLOAD_FILE", tmp_path / "usage_payload.json")
+    monkeypatch.setattr(paths, "PAK_FILE", tmp_path / "clawd.pak")

@@ -1,5 +1,5 @@
 """The clock's screen in the settings window: the stored usage payload, the renderer
-wrapper, the BMP and the bridge call. The real renderer is only exercised when it is built."""
+wrapper, the BMP, the clip and its animated PNG, and the bridge call. The real renderer is only exercised when it is built."""
 import base64
 import hashlib
 import json
@@ -8,6 +8,7 @@ import stat
 import struct
 import sys
 import time
+import zlib
 from pathlib import Path
 
 import pytest
@@ -67,7 +68,8 @@ def test_live_payload_moves_the_wall_clock_to_now_only_when_there_is_one():
     now = 1_800_000_000.0
     live = pv.live_payload(PAYLOAD, now)
     assert live is not None
-    assert live["t"] == int(now) + time.localtime(now).tm_gmtoff
+    local = int(now) + time.localtime(now).tm_gmtoff
+    assert live["t"] == local - local % 60               # on the minute: a clip never shows it change
     assert {k: v for k, v in live.items() if k != "t"} == {k: v for k, v in PAYLOAD.items() if k != "t"}
     assert PAYLOAD["t"] == 1760191500                    # the stored one is not touched
     assert pv.live_payload({"s": 1}, now) == {"s": 1}    # the user turned the clock off: no wall clock
@@ -90,6 +92,65 @@ def test_bmp_is_bottom_up_bgr_and_the_right_size():
     assert bmp[-720:-717] == bytes([30, 20, 10])          # start of the last stored row (the top one)
     with pytest.raises(ValueError):
         pv.bmp_data_url(b"short")
+
+
+# ---- clip and animated PNG ------------------------------------------------------------------
+def clip_bytes(frames):
+    out = [b"CLP1", struct.pack("<H", len(frames))]
+    for delay, x, y, w, h, rgb in frames:
+        out += [struct.pack("<5H", delay, x, y, w, h), rgb]
+    return b"".join(out)
+
+
+FULL = (500, 0, 0, 240, 240, bytes([7, 8, 9]) * (240 * 240))
+SPOT = (120, 10, 20, 2, 1, bytes([1, 2, 3, 4, 5, 6]))
+
+
+def test_parse_clip_reads_every_frame():
+    frames = pv.parse_clip(clip_bytes([FULL, SPOT]))
+    assert [(f.delay_ms, f.x, f.y, f.w, f.h) for f in frames] == [(500, 0, 0, 240, 240), (120, 10, 20, 2, 1)]
+    assert frames[1].rgb == bytes([1, 2, 3, 4, 5, 6])
+
+
+@pytest.mark.parametrize("data", [b"", b"NOPE\x01\x00", clip_bytes([SPOT]),                       # frame 0 not whole
+                                  clip_bytes([FULL])[:-1], clip_bytes([FULL]) + b"x",              # cut / trailing
+                                  clip_bytes([FULL, (1, 239, 0, 2, 1, bytes(6))]),                 # off the screen
+                                  b"CLP1\x02\x00" + clip_bytes([FULL])[6:]])                       # count too high
+def test_parse_clip_rejects_bad_data(data):
+    with pytest.raises(ValueError):
+        pv.parse_clip(data)
+
+
+def png_chunks(png):
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    off, out = 8, []
+    while off < len(png):
+        (n,) = struct.unpack_from(">I", png, off)
+        kind, body = png[off + 4:off + 8], png[off + 8:off + 8 + n]
+        assert struct.unpack_from(">I", png, off + 8 + n)[0] == zlib.crc32(kind + body)
+        out.append((kind, body))
+        off += 12 + n
+    return out
+
+
+def test_apng_loops_the_frames_with_their_delays_and_rectangles():
+    png = pv.apng(pv.parse_clip(clip_bytes([FULL, SPOT])))
+    chunks = png_chunks(png)
+    kinds = [k for k, _ in chunks]
+    assert kinds == [b"IHDR", b"acTL", b"fcTL", b"IDAT", b"fcTL", b"fdAT", b"IEND"]
+    assert struct.unpack(">IIBBBBB", chunks[0][1]) == (240, 240, 8, 2, 0, 0, 0)
+    assert struct.unpack(">II", chunks[1][1]) == (2, 0)                                     # two frames, forever
+    f0 = struct.unpack(">IIIIIHHBB", chunks[2][1])
+    f1 = struct.unpack(">IIIIIHHBB", chunks[4][1])
+    assert f0 == (0, 240, 240, 0, 0, 500, 1000, 0, 0)
+    assert f1 == (1, 2, 1, 10, 20, 120, 1000, 0, 0)                                       # IDAT has no number
+    assert struct.unpack_from(">I", chunks[5][1])[0] == 2                                    # sequence runs on
+    assert zlib.decompress(chunks[5][1][4:]) == b"\0" + bytes([1, 2, 3, 4, 5, 6])          # filter byte + row
+    raw = zlib.decompress(chunks[3][1])
+    assert len(raw) == 240 * 721 and raw[:4] == bytes([0, 7, 8, 9])
+    assert pv.apng_data_url([pv.parse_clip(clip_bytes([FULL]))[0]]).startswith("data:image/png;base64,")
+    with pytest.raises(ValueError):
+        pv.apng([])
 
 
 def test_frame_cache_keeps_the_latest_few():
@@ -144,6 +205,26 @@ def test_draw_returns_the_frame_and_passes_the_payload_on(tmp_path):
 
 
 @posix_only
+def test_clip_asks_for_one_and_parses_it(tmp_path):
+    log = tmp_path / "args"
+    src = tmp_path / "clip.bin"
+    src.write_bytes(clip_bytes([FULL, SPOT]))
+    r = pv.load_renderer(fake_folder(tmp_path, f'echo "$@" > {log}; cat > /dev/null; cat {src}'))
+    assert r is not None
+    assert len(r.clip(5, PAYLOAD)) == 2
+    assert "--clip" in log.read_text().split() and log.read_text().split()[:2] == ["--layout", "5"]
+
+
+@posix_only
+@pytest.mark.parametrize("body", ["exit 1", "printf nope"])
+def test_a_broken_clip_raises(tmp_path, body):
+    r = pv.load_renderer(fake_folder(tmp_path, "cat > /dev/null; " + body))
+    assert r is not None
+    with pytest.raises(ValueError):
+        r.clip(0, PAYLOAD)
+
+
+@posix_only
 def test_a_payload_the_clock_would_reject_draws_the_waiting_screen(tmp_path):
     n = tmp_path / "calls"
     d = fake_folder(tmp_path, f'echo x >> {n}; if [ "$(wc -c)" -gt 0 ]; then exit 2; fi; head -c {pv.FRAME_BYTES} /dev/zero')
@@ -173,6 +254,12 @@ class FakeRenderer:
             raise ValueError("boom")
         return bytes([layout]) * pv.FRAME_BYTES
 
+    def clip(self, layout, payload):
+        self.calls.append((layout, payload))
+        if self.fail:
+            raise ValueError("boom")
+        return pv.parse_clip(clip_bytes([(400, 0, 0, 240, 240, bytes([layout]) * pv.FRAME_BYTES), SPOT]))
+
 
 NOW = 1_800_000_000.0
 
@@ -192,7 +279,17 @@ def test_usage_preview_draws_every_layout_with_the_real_usage():
     live = out["payload"]
     assert live["s"] == 42 and live["w"] == 67 and live["t"] != PAYLOAD["t"]      # real numbers, wall clock now
     assert [c[0] for c in r.calls] == [0, 1, 2, 3, 4, 5] and all(c[1] == live for c in r.calls)
-    assert out["frames"]["1"].startswith("data:image/bmp;base64,")
+    png = base64.b64decode(out["frames"]["1"].split(",", 1)[1])
+    assert out["frames"]["1"].startswith("data:image/png;base64,") and b"acTL" in png     # an animated loop
+
+
+def test_usage_preview_without_motion_draws_still_frames():
+    r = FakeRenderer()
+    b = api_with(r)
+    still = b.usage_preview([1], False)
+    assert still["frames"]["1"].startswith("data:image/bmp;base64,")
+    assert b.usage_preview([1], "yes")["frames"]["1"].startswith("data:image/png;base64,")  # not a bool: animate
+    assert b.usage_preview([1], False) == still and len(r.calls) == 2                       # each kind cached
 
 
 def test_usage_preview_reuses_frames_within_the_minute():
@@ -240,3 +337,98 @@ def test_real_renderer_is_deterministic_and_draws_each_layout():
     assert len({hashlib.sha256(f).hexdigest() for f in frames.values()}) == 6      # six different screens
     assert REAL.draw(1, PAYLOAD) == frames[1]
     assert REAL.draw(0, None) != REAL.draw(0, PAYLOAD)                                   # waiting screen vs usage
+
+
+@pytest.mark.skipif(REAL is None or not os.environ.get("CLAWD_GOLDEN"), reason="needs the built renderer + CLAWD_GOLDEN=1")
+def test_real_clip_loops_clawd_one_rest_and_move():
+    assert REAL is not None
+    live = pv.live_payload(PAYLOAD, NOW)
+    for i in range(6):
+        frames = REAL.clip(i, live)
+        total = sum(f.delay_ms for f in frames)
+        assert len(frames) > 10
+        # corner mascot: a 4 s rest + one act; pixel walker: a round trip of the floor
+        assert (20_000 < total < 50_000) if i == 5 else (5_000 < total < 15_000), (i, total)
+        assert len(pv.apng(frames)) < 150_000
+    assert REAL.clip(5, live) == REAL.clip(5, live)                                        # deterministic
+
+
+# ---- the clock's own clawd.pak for the approximate preview ---------------------------------------
+def make_pak(count=2, w=4, h=3, frames=2):
+    fbytes = (w * h + 1) // 2
+    head = b"CLWD" + struct.pack("<HH", 1, count) + bytes(4)
+    descs, body = b"", b""
+    base = 12 + 72 * count
+    for i in range(count):
+        frames_off = base + len(body)
+        body += bytes([0x12]) * (fbytes * frames)
+        holds_off = base + len(body)
+        body += struct.pack("<%dH" % frames, *([100] * frames))
+        descs += (f"anim{i}".encode().ljust(16, b"\0") + bytes([w, h, 0, 0])
+                  + struct.pack("<4H", frames, 0, frames - 1, fbytes) + bytes(32)
+                  + struct.pack("<II", frames_off, holds_off) + bytes(4))
+    return head + descs + body
+
+
+def test_pak_count_reads_a_pack_and_refuses_anything_else():
+    assert pv.pak_count(make_pak(3)) == 3
+    for bad in [b"", b"NOPE" + bytes(20), make_pak()[:-1], b"CLWD" + struct.pack("<HH", 2, 1) + bytes(200),
+                b"CLWD" + struct.pack("<HH", 1, 0) + bytes(8), b"CLWD" + bytes(pv.PAK_MAX)]:
+        with pytest.raises(ValueError):
+            pv.pak_count(bad)
+
+
+class PakApi(FakeApi):
+    def __init__(self, *a, pak=None, **k):
+        super().__init__(*a, **k)
+        self.pak, self.reads = pak, 0
+
+    def get_file(self, path, max_bytes):
+        self.reads += 1
+        assert path == "/clawd.pak" and max_bytes == pv.PAK_MAX
+        if self.pak is None:
+            raise sa.ClockError("HTTP 404: no such file")
+        return self.pak
+
+
+def pak_api(pak, heap_pak=17, clock=None):
+    fake = PakApi("http://c", pak=pak, heap={"pak": heap_pak, "uptime": 5})
+    t = clock or [NOW]
+    b = sa.SettingsApi("http://c", "k", api_factory=lambda *a, **k: fake,  # type: ignore[arg-type,return-value]
+                       store=ClockStore(Path("/nonexistent/x.json")), now=lambda: t[0])
+    b.state()
+    return b, fake
+
+
+def test_clawd_pak_reads_the_clock_once_and_keeps_it():
+    pak = make_pak()
+    b, fake = pak_api(pak)
+    first = b.clawd_pak()
+    assert first["ok"] and base64.b64decode(first["pak"]) == pak
+    assert paths.PAK_FILE.read_bytes() == pak
+    assert json.loads(paths.PAK_FILE.with_name("clawd.pak.json").read_text()) == {"count": 17}
+    assert sorted(f.name for f in paths.PAK_FILE.parent.glob("clawd*")) == ["clawd.pak", "clawd.pak.json"]  # no .tmp left
+    assert pv.PakCache(paths.PAK_FILE).load() == (pak, 17)
+    assert b.clawd_pak() == first and fake.reads == 1                     # the cache answers now
+    b2, fake2 = pak_api(make_pak(3), heap_pak=3)                          # the clock got a new pack
+    assert base64.b64decode(b2.clawd_pak()["pak"]) == make_pak(3) and fake2.reads == 1
+
+
+def test_clawd_pak_without_one_on_the_clock_says_so_and_does_not_hammer_it():
+    clock = [NOW]
+    b, fake = pak_api(None, clock=clock)
+    assert b.clawd_pak()["ok"] is False and fake.reads == 1
+    assert b.clawd_pak()["ok"] is False and fake.reads == 1               # waits before asking again
+    clock[0] += sa.PAK_RETRY_S + 1
+    b.clawd_pak()
+    assert fake.reads == 2
+    b0, fake0 = pak_api(make_pak(), heap_pak=0)                           # heap: no pack on the clock
+    assert b0.clawd_pak()["code"] == "nopak" and fake0.reads == 0
+
+
+def test_clawd_pak_refuses_a_damaged_pack_and_keeps_the_old_one():
+    good = make_pak()
+    pak_api(good)[0].clawd_pak()
+    b, _ = pak_api(b"CLWD junk", heap_pak=5)                               # a different, broken pack
+    assert base64.b64decode(b.clawd_pak()["pak"]) == good
+    assert paths.PAK_FILE.read_bytes() == good

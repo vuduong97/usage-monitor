@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import httpx
 
@@ -149,6 +150,14 @@ class ClockApi:
         """Apply a backup; the clock reboots afterwards."""
         self._send("POST", "/api/import", json=data)
 
+    def get_file(self, path: str, max_bytes: int) -> bytes:
+        """`GET /api/fs/get?path=`: one file from the clock's filesystem (login needed when
+        set). ClockError when it is missing or bigger than `max_bytes`."""
+        r = self._send("GET", "/api/fs/get", params={"path": path}, retries=RETRIES, timeout=60.0)
+        if len(r.content) > max_bytes:
+            raise ClockError(f"{path} is {len(r.content)} B, more than {max_bytes}")
+        return r.content
+
     def upload_firmware(self, image: bytes) -> None:
         """POST an app image to /update; the clock reboots ~1 s after the 200."""
         if not image or len(image) > OTA_MAX:
@@ -175,8 +184,8 @@ class ClockApi:
             except ClockError:
                 h = None
             up = h.get("uptime") if isinstance(h, dict) else None
-            if isinstance(up, (int, float)) and not isinstance(up, bool):
-                if clock() - up > booted_before:
-                    return h
+            if (isinstance(h, dict) and isinstance(up, (int, float)) and not isinstance(up, bool)
+                    and clock() - up > booted_before):
+                return h
             self._sleep(2.0)
         raise ClockError("the clock did not come back after the update")

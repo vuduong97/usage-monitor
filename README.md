@@ -83,8 +83,9 @@ Bấm biểu tượng → **Cài đặt…** để mở cửa sổ cài đặt (
 trang web của đồng hồ):
 
 - **Hiển thị**: độ sáng, xoay màn hình, màn hình chính, hoạt hình Clawd, múi giờ, chế độ đêm.
-- **Usage**: chọn kiểu màn hình usage ("Hiện tại" hoặc "Nhịp & dự báo"), xem trước bằng dữ
-  liệu mẫu. Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
+- **Usage**: chọn kiểu màn hình usage, xem trước bằng mức dùng thật của bạn, có Clawd chuyển
+  động như trên đồng hồ (bản không kèm firmware vẽ gần đúng, lấy hình Clawd từ chính đồng hồ
+  của bạn và giữ trong `~/.config/claude-usage-monitor/clawd.pak`). Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
 - **Wi‑Fi**: các mạng đồng hồ nhớ (tối đa 4, theo thứ tự ưu tiên), tìm mạng quanh đồng hồ,
   tên đồng hồ. Lưu Wi‑Fi thì đồng hồ khởi động lại.
 - **Cập nhật**: cập nhật firmware đi kèm app, sao lưu / khôi phục, khởi động lại, xoá cài đặt.

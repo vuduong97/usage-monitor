@@ -6,7 +6,10 @@
 // marker on the bar, forecast line), 2 hero (one big 5-hour number), 3 rings
 // (two concentric rings, clock in the middle), 4 gauges (two 270 degree
 // gauges), 5 pixel (20-block bars, Clawd strolling the floor). System fonts
-// stand in for the clock's own; the mascot is the app's clock icon.
+// stand in for the clock's own. Clawd is the real sprite when the app could read
+// /clawd.pak off the user's clock (settings_api.clawd_pak, setPak below), played
+// like ClawdMascot / ClawdWalker in the firmware's ClawdAnim.cpp; without it, the
+// app's clock icon.
 'use strict';
 const PV = (() => {
   const C = { bg:'#000', panel:'#1f1f1e', text:'#faf9f5', dim:'#b0aea5', accent:'#d97757',
@@ -65,20 +68,165 @@ const PV = (() => {
     const f = Math.round(w * Math.max(0, Math.min(100, pct)) / 100);
     if (f > 0) rr(c, x, y, Math.max(f, h), h, h / 2, col);
   }
+  // ---- Clawd from the clock's own clawd.pak ----------------------------------------------
+  // Format: firmware/tools/clawd_assets.js (clawd-home); reader: ClawdPack.cpp. The players
+  // follow ClawdAnim.cpp (ClawdPlayer, ClawdMascot at usage-rate group 0, ClawdWalker): when
+  // the firmware's timings or acts change, change them here too.
+  const MAS = { gx0:15, gy0:16, gw:28, gh:21, actLoopMs:2500, stillMs:4000, acts:['pointing', 'waving'] };
+  const WLK = { standMs:1200, x0:4, x1:W - 4, feet:234 };
+  function parsePak(b64) {
+    try {
+      const bin = atob(b64), u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      const dv = new DataView(u.buffer);
+      if (bin.slice(0, 4) !== 'CLWD' || dv.getUint16(4, true) !== 1) return null;
+      const anims = [];
+      for (let i = 0, n = dv.getUint16(6, true); i < n; i++) {
+        const d = 12 + 72 * i;
+        let name = '';
+        for (let k = 0; k < 15 && u[d + k]; k++) name += String.fromCharCode(u[d + k]);
+        const pal = [];
+        for (let k = 0; k < 16; k++) {
+          const v = dv.getUint16(d + 28 + 2 * k, true);
+          pal.push(`rgb(${((v >> 11) & 31) * 255 / 31 | 0},${((v >> 5) & 63) * 255 / 63 | 0},${(v & 31) * 255 / 31 | 0})`);
+        }
+        anims.push({ name, w:u[d + 16], h:u[d + 17], ox:u[d + 18], oy:u[d + 19], frameCount:dv.getUint16(d + 20, true),
+                     loopStart:dv.getUint16(d + 22, true), loopEnd:dv.getUint16(d + 24, true),
+                     frameBytes:dv.getUint16(d + 26, true), pal, framesOff:dv.getUint32(d + 60, true),
+                     holdsOff:dv.getUint32(d + 64, true) });
+      }
+      const end = Math.max(...anims.map(a => Math.max(a.framesOff + a.frameCount * a.frameBytes, a.holdsOff + 2 * a.frameCount)));
+      if (!anims.length || end > u.length) return null;
+      return { u, dv, anims, find: name => anims.findIndex(a => a.name === name) };
+    } catch (e) { return null; }
+  }
+  function cellOf(pak, a, frame, x, y) {               // clawdFrameCell
+    if (x < 0 || y < 0 || x >= a.w || y >= a.h) return 0;
+    const i = y * a.w + x, b = pak.u[a.framesOff + frame * a.frameBytes + (i >> 1)];
+    return i & 1 ? b & 15 : b >> 4;
+  }
+  function holdOf(pak, a, frame) { return pak.dv.getUint16(a.holdsOff + 2 * frame, true) || 100; }
+  // ClawdPlayer: intro -> loop -> outro. step() advances at most one frame, on its due time.
+  function player(pak) {
+    const p = { a:null, frame:0, frameStart:0, hold:100, loopEntered:0, inLoop:false, loopRelease:false, holding:false };
+    p.start = (i, now) => {
+      p.a = pak.anims[Math.max(0, i)]; p.frame = 0; p.frameStart = now; p.loopEntered = now;
+      p.inLoop = false; p.loopRelease = false; p.holding = false; p.hold = holdOf(pak, p.a, 0);
+    };
+    p.step = (now, releaseAfter) => {
+      if (p.holding) return null;
+      const due = p.frameStart + p.hold;
+      if (now < due) return null;
+      if (releaseAfter && p.inLoop && !p.loopRelease && due - p.loopEntered >= releaseAfter) p.loopRelease = true;
+      const fromLoop = p.inLoop, a = p.a;
+      let next = p.frame + 1, completed = false;
+      if (p.frame === a.loopEnd && !p.loopRelease) next = a.loopStart;
+      if (next >= a.frameCount) { completed = true; next = 0; p.loopRelease = false; }
+      p.frame = next; p.frameStart = due; p.hold = holdOf(pak, a, next);
+      const nowIn = next >= a.loopStart && next <= a.loopEnd;
+      if (nowIn && !fromLoop) p.loopEntered = due;
+      p.inLoop = nowIn;
+      return { completed, fromLoop, at:due };
+    };
+    return p;
+  }
+  function mascotSprite(pak) {                          // ClawdMascot, rate group 0
+    const walk = pak.find('walking'), p = player(pak);
+    const m = { last:null, acting:false, stillSince:0, actIdx:0 };
+    const rest = t => { p.start(walk, t); p.holding = true; m.acting = false; m.stillSince = t; };
+    m.update = now => {
+      if (m.last === null || now < m.last) rest(now);
+      m.last = now;
+      for (let guard = 0; guard < 200; guard++) {
+        if (!m.acting) {
+          if (now - m.stillSince < MAS.stillMs) return;
+          const t = m.stillSince + MAS.stillMs, idx = pak.find(MAS.acts[m.actIdx++ % MAS.acts.length]);
+          if (idx < 0) { m.stillSince = t; return; }
+          p.start(idx, t); m.acting = true;
+          continue;
+        }
+        const r = p.step(now, MAS.actLoopMs);
+        if (!r) return;
+        if (r.completed) rest(r.at);
+      }
+    };
+    m.draw = (c, x, y) => {
+      const a = p.a;
+      for (let gy = 0; gy < MAS.gh; gy++)
+        for (let gx = 0; gx < MAS.gw; gx++) {
+          const v = cellOf(pak, a, p.frame, MAS.gx0 + gx - a.ox, MAS.gy0 + gy - a.oy);
+          if (v) { c.fillStyle = a.pal[v]; c.fillRect(x + gx * 2, y + gy * 2, 2, 2); }
+        }
+    };
+    return m;
+  }
+  const crabCells = (f, fromLoop) => (f === 1 ? (fromLoop ? 1 : 0) : (f === 4 || f === 5 || f === 8) ? 1 : 0);
+  function walkerSprite(pak) {                          // ClawdWalker, rate group 0
+    const idx = pak.find('crab walking'), p = player(pak);
+    const w = { last:null, x:WLK.x0, dir:0, face:1, target:WLK.x0, standSince:0 };
+    const reset = t => { p.start(idx, t); p.holding = true; w.x = WLK.x0; w.dir = 0; w.face = 1; w.standSince = t; };
+    w.update = now => {
+      if (idx < 0) return;
+      if (w.last === null || now < w.last) reset(now);
+      w.last = now;
+      for (let guard = 0; guard < 200; guard++) {
+        if (p.holding) {
+          if (now - w.standSince < WLK.standMs) return;
+          const t = w.standSince + WLK.standMs, far = WLK.x1 - p.a.w * 2;
+          w.target = w.x - WLK.x0 < (far - WLK.x0) / 2 ? far : WLK.x0;
+          if (w.target === w.x) { w.standSince = t; continue; }
+          w.dir = w.face = w.target > w.x ? 1 : -1;
+          p.frame = 0; p.frameStart = t; p.hold = holdOf(pak, p.a, 0);
+          p.holding = false; p.loopRelease = false; p.inLoop = false;
+        }
+        const r = p.step(now, 0);
+        if (!r) return;
+        if (r.completed) { p.holding = true; w.standSince = r.at; continue; }
+        if (w.dir && p.inLoop) {
+          w.x += w.dir * crabCells(p.frame, r.fromLoop) * 2;
+          if ((w.dir > 0 && w.x >= w.target) || (w.dir < 0 && w.x <= w.target)) { w.x = w.target; w.dir = 0; p.loopRelease = true; }
+        }
+      }
+    };
+    w.draw = c => {
+      if (idx < 0) return;
+      const a = p.a, top = WLK.feet - a.h * 2;
+      for (let gy = 0; gy < a.h; gy++)
+        for (let gx = 0; gx < a.w; gx++) {
+          const v = cellOf(pak, a, p.frame, w.face < 0 ? a.w - 1 - gx : gx, gy);
+          if (v) { c.fillStyle = a.pal[v]; c.fillRect(w.x + gx * 2, top + gy * 2, 2, 2); }
+        }
+    };
+    return w;
+  }
+  let sprite = null;                                    // { mascot, walker } once setPak got a pack
+  function setPak(b64) {
+    const pak = typeof b64 === 'string' ? parsePak(b64) : null;
+    if (pak && pak.find('walking') >= 0) sprite = { mascot:mascotSprite(pak), walker:walkerSprite(pak) };
+    return Boolean(sprite);
+  }
+  const hasPak = () => Boolean(sprite);
+  // Clawd in the corner window (56 x 42 at x, y, the firmware's place), or the app icon.
+  function clawd(c, x, y, now) {
+    if (!sprite) { mascot(c, x + 8, y + 2); return; }
+    sprite.mascot.update(now);
+    sprite.mascot.draw(c, x, y);
+  }
+
   function mascot(c, x, y) {          // the app icon: orange square, white clock face
     rr(c, x, y, 34, 34, 8, C.accent);
     c.strokeStyle = '#fff'; c.lineWidth = 2.4; c.lineCap = 'round';
     c.beginPath(); c.arc(x + 17, y + 17, 9, 0, Math.PI * 2); c.stroke();
     c.beginPath(); c.moveTo(x + 17, y + 17); c.lineTo(x + 17, y + 11); c.moveTo(x + 17, y + 17); c.lineTo(x + 21, y + 19); c.stroke();
   }
-  function header(c, d) {
-    mascot(c, 14, 4);
+  function header(c, d, now) {
+    clawd(c, 6, 2, now);
     const x = Math.max(64, W / 2 + 8 - tw(c, d.clock, F.t34) / 2);
     tx(c, d.clock, x, 2, F.t34, C.text);
   }
   const SPIN = ['·', '✻', '✽', '✶', '✳', '✢'];
   function classic(c, d, now) {
-    header(c, d);
+    header(c, d, now);
     const card = (y, label, pct, reset) => {
       rr(c, 8, y, 224, 74, 8, C.panel);
       const pw = tw(c, label, F.s14) + 16;
@@ -93,8 +241,8 @@ const PV = (() => {
     const ph = Math.floor(now / 160) % SPIN.length;
     tx(c, `${SPIN[ph]} Clauding…`, W / 2, H - 30, F.m16, C.accent, 'center');
   }
-  function paced(c, d) {
-    header(c, d);
+  function paced(c, d, now) {
+    header(c, d, now);
     const card = (y, label, pct, reset, win) => {
       rr(c, 8, y, 224, 92, 8, C.panel);
       const num = `${pct}%`;
@@ -116,8 +264,8 @@ const PV = (() => {
   const spanTxt = m => (m < 0 ? '---' : fmtReset(m));
   const pctI = p => Math.round(Math.max(0, p));
   const clampT = t => Math.min(1, Math.max(0, t));
-  function hero(c, d) {
-    mascot(c, 14, 4);
+  function hero(c, d, now) {
+    clawd(c, 6, 2, now);
     tx(c, d.clock, 232, 2, F.t34, C.text, 'right');
     tx(c, '5-HOUR', 12, 50, F.s14, C.dim);
     const rst = `resets ${spanTxt(d.sr)}`;
@@ -150,7 +298,7 @@ const PV = (() => {
     const x = cx + r * Math.sin(a * Math.PI / 180), y = cy - r * Math.cos(a * Math.PI / 180);
     c.fillStyle = col; c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.fill();
   }
-  function rings(c, d) {
+  function rings(c, d, now) {
     const CX = 120, CY = 120, v = p => Math.min(100, Math.max(0, p));
     arc(c, CX, CY, 110, 12, 0, 359.9, C.track);
     arc(c, CX, CY, 110, 12, 0, 3.6 * v(d.s), pctColor(d.s));
@@ -159,7 +307,7 @@ const PV = (() => {
     // the dots sit on the ring's centre line (outer radius minus half the stroke)
     dot(c, CX, CY, 104, 360 * pace(d.s, d.sr, WIN_S).t, C.text);
     dot(c, CX, CY, 90, 360 * pace(d.w, d.wr, WIN_W).t, C.text);
-    mascot(c, 103, 40);
+    clawd(c, 92, 36, now);
     tx(c, d.clock, CX, 80, F.t34, C.text, 'center');
     tx(c, `${pctI(d.s)}%`, CX - 8, 126, F.s24, pctColor(d.s), 'right');
     tx(c, `${pctI(d.w)}%`, CX + 8, 126, F.s24, pctColor(d.w));
@@ -169,7 +317,7 @@ const PV = (() => {
     tx(c, `resets ${spanTxt(d.sr)}`, CX, 176, F.s14, C.dim, 'center');
   }
   function gauges(c, d, now) {
-    mascot(c, 14, 4);
+    clawd(c, 6, 2, now);
     const x0 = Math.max(64, W / 2 + 8 - tw(c, d.clock, F.t34) / 2);
     tx(c, d.clock, x0, 2, F.t34, C.text);
     const card = (x, label, pct, reset) => {
@@ -198,7 +346,8 @@ const PV = (() => {
     row(52, '5H', d.s, d.sr);
     row(124, '7D', d.w, d.wr);
     for (let x = 4; x < W - 4; x += 4) { c.fillStyle = C.track; c.fillRect(x, 234, 2, 2); }
-    // Clawd strolls to the right edge and back, a bit faster the higher the usage rate
+    if (sprite) { sprite.walker.update(now); sprite.walker.draw(c); return; }
+    // Without the pack the icon strolls to the right edge and back, faster the higher the usage
     const span = W - 8 - 34, speed = 0.02 + 0.06 * clampT(d.s / 100);
     const u = (now * speed) % (2 * span), x = 4 + (u < span ? u : 2 * span - u);
     mascot(c, Math.round(x), 234 - 34 - (Math.floor(now / 160) % 2));
@@ -211,8 +360,8 @@ const PV = (() => {
     { id:4, name:'Đồng hồ đôi', desc:'Hai mặt đồng hồ tròn cạnh nhau.', draw:gauges },
     { id:5, name:'Pixel retro', desc:'Thanh 20 ô kiểu game, Clawd đi dạo bên dưới.', draw:pixel },
   ];
-  function waiting(c) {
-    mascot(c, 103, 70);
+  function waiting(c, now) {
+    clawd(c, 92, 66, now);
     tx(c, 'Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u usage', W / 2, 130, F.s14, C.dim, 'center');
     tx(c, 'App s\u1ebd g\u1eedi sau v\u00e0i gi\u00e2y', W / 2, 152, F.s14, C.dim, 'center');
   }
@@ -220,8 +369,8 @@ const PV = (() => {
     const c = canvas.getContext('2d');
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.fillStyle = C.bg; c.fillRect(0, 0, W, H);
-    if (!d) { waiting(c); return; }
+    if (!d) { waiting(c, now); return; }
     (LAYOUTS[layout] || LAYOUTS[0]).draw(c, d, now);
   }
-  return { LAYOUTS, paint, fromPayload };
+  return { LAYOUTS, paint, fromPayload, setPak, hasPak };
 })();

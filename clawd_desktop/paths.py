@@ -13,6 +13,7 @@ CLOCK_FILE = CONFIG_DIR / "clock.json"       # the remembered clock
 PREFS_FILE = CONFIG_DIR / "desktop.json"     # app preferences (first run, toggles)
 PAYLOAD_FILE = CONFIG_DIR / "usage_payload.json"   # the last usage payload sent to the clock
 LOG_FILE = CONFIG_DIR / "clawd-desktop.log"
+PAK_FILE = CONFIG_DIR / "clawd.pak"           # the clock's Clawd sprites, read from the clock (preview)
 HOOK_SCRIPT = CONFIG_DIR / "clawd-event.sh"  # copied here so app updates never break hooks
 LOG_MAX = 1_000_000
 

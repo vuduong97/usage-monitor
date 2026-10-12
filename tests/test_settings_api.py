@@ -212,7 +212,8 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
     public = [n for n in dir(b) if not n.startswith("_")]
     assert public == sorted(["state", "login", "preview", "save", "scan", "reboot", "factory_reset",
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
-                             "set_hooks", "open_log", "open_web", "set_clock", "usage_preview"])
+                             "set_hooks", "open_log", "open_web", "set_clock", "usage_preview",
+                             "clawd_pak"])
 
 
 def test_main_screen_is_handed_to_the_engine():

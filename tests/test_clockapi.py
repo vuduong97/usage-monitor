@@ -51,6 +51,8 @@ class FakeClock:
                 return httpx.Response(200, json={"ok": True})
             if p == "/api/export":
                 return httpx.Response(200, json={"wifi": [{"ssid": "Home", "pass": "x"}]})
+            if p == "/api/fs/get" and req.url.params.get("path") == "/clawd.pak":
+                return httpx.Response(200, content=b"CLWD" + bytes(96))
             return httpx.Response(404)
         return httpx.MockTransport(handler)
 
@@ -142,3 +144,16 @@ def test_wait_back_needs_a_boot_after_the_upload():
     ticks = []
     h = c.wait_back(t[0] - 10, deadline=10, clock=lambda: t[0], tick=lambda: ticks.append(1))
     assert h["uptime"] == 3 and ticks
+
+
+def test_get_file_reads_one_file_signed_and_minds_its_size():
+    fake = FakeClock(password="pw")
+    a = api(fake, auth=("admin", "pw"))
+    assert a.get_file("/clawd.pak", 1000) == b"CLWD" + bytes(96)
+    assert fake.calls[-1] == ("GET", "/api/fs/get", True)
+    with pytest.raises(ca.ClockError):
+        a.get_file("/clawd.pak", 50)                       # bigger than allowed
+    with pytest.raises(ca.ClockError):
+        a.get_file("/nope", 1000)                          # 404
+    with pytest.raises(ca.AuthNeeded):
+        api(FakeClock(password="pw")).get_file("/clawd.pak", 1000)
