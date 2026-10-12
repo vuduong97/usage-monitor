@@ -2,11 +2,7 @@
 #include "Platform.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-#if defined(SMALLTV_CLAWD)
 #include "webui_clawd.h"   // same page minus the compiled-out feature tabs
-#else
-#include "webui.h"
-#endif
 #include "Net.h"
 #include "Gfx.h"
 #include "OtaUpdate.h"
