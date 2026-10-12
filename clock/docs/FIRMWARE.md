@@ -21,7 +21,7 @@ so a port stays possible, but nothing compiles them.
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.
   - On the Auto screen the splash means no fresh data, so it captions the clock's IP in a 24 px band at the bottom: the way to reach a clock the desktop app cannot find. Every animation ends by grid row 47 of 60, so the band never covers one. A splash picked on purpose (Screen: Clawd) stays full height.
 
-- **Usage layouts** (`usage.layout`): 0 classic (above); 1 pace: two taller cards with a pace pill (Under/On/Over pace, Just reset), a white time marker on each bar and a forecast line ("Out at ~14:41", "Lasts until reset"); 2 hero: the 5-hour window as one big Styrene 48 number with the pace pill, a marker bar and the forecast, weekly as a strip underneath; 3 rings: 5-hour on the outer ring, weekly inside, a white dot on each ring where the window's time has got to, the clock and both numbers in the middle (the corner Clawd moves to the centre); 4 gauges: two 270-degree gauges side by side, spinner line kept; 5 pixel: 20-block bars (5% each), a mono clock, and Clawd strolling along a dotted floor, faster at a higher usage rate. Layouts 1, 2, 3 and 5 show only an alert on the status line. Enterprise accounts always draw classic. A value this build cannot draw is stored as sent and draws classic, so a later image can pick it up. The arc layouts (3, 4) use `ClawdArc` in ClawdDraw: whole-degree sin/cos from a 91-entry table, no libm trig. A payload that changes none of what layouts 2-5 show repaints nothing.
+- **Style packs:** the usage screen can instead be drawn from a style pack installed by the desktop app (`POST /api/style`), switched at once without a reboot: Game Boy, Synthwave, Newspaper, Blueprint, Pastel, 1-bit. Alerts and Enterprise accounts still use the classic screen. Format, storage and endpoints: `docs/STYLE_PACK.md`. The old usage layouts (pace, hero, rings, gauges, pixel) were removed; `usage.layout` is kept in the config but ignored.
 
 The web UI's Clawd tab has two settings:
 - **Screen:** Auto (usage while data is live, splash otherwise), Usage, or Clawd.
@@ -124,7 +124,8 @@ The Clawd desktop app finds the clock over mDNS (`_clawd._tcp`, TXT `id`, `ver`,
 - `heap`, `maxblk`, `minHeap`, `minMaxblk`, `frag`
 - `uptime`, `reset`, `version`, `variant` (`esp8266-clawd`, which the app matches on)
 - `fwSeq` (`CLAWD_FW_SEQ` in `config.h`): bump it by hand for every image the desktop app should install; the app only pushes its bundled image to a clawd clock with a lower number (missing = 0), so it never downgrades
-- `layouts`: bitmask of the usage layouts this image draws (`CLAWD_LAYOUTS`, one bit per layout: 0 classic, 1 pace, 2 hero, 3 rings, 4 gauges, 5 pixel); the desktop app offers a layout the clock lacks only when its bundled image has the bit
+- `layouts`: bitmask of the compiled-in usage layouts (`CLAWD_LAYOUTS`); only classic (1) since style packs replaced the others
+- `styleApi`, `style`, `styleFrameUs`, `styleFrameMaxUs`: the style pack API this image draws, the pack shown (`""` = classic) and its animation repaint times (`docs/STYLE_PACK.md`)
 - `pak` (animations loaded; 0 means `/clawd.pak` is missing), `splash`, `anim`
 - `desk` (animations in `/desk.pak`), `onDesk`, `fsTotal`, `fsUsed`
 - `contFree`: the least free `loop()` stack seen so far (of 4 KB)
@@ -149,6 +150,9 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `ClawdAnim.*` | Splash player: player, splash with walkers and rate groups, corner mascot, mini. |
 | `ClawdRate.*` | Usage-rate groups (idle, normal, active, heavy). |
 | `ClawdUi.*` | Screens, views, alert and status line; the desk player (sequences, pass-end switching, timing stats). |
+| `StylePack.*` | Style pack interpreter: validates a pack, reads it in place through the flash cache, paints it and repaints only what its animation tracks change (`docs/STYLE_PACK.md`). |
+| `StyleStore.*` | `/style.pak` on LittleFS and its mirror in the free sketch flash after the image (device only); re-mirrored at boot after an OTA. |
+| `tools/style/` | Style pack compiler (`build.js`, `style_pack.js`) and the six pack sources (`packs/*.js`); writes `styles/*.pak` + `index.json`. |
 | `DeskPack.*` | `/desk.pak` reader, CLDK v2 and v3. 1:1 240 px frames as row deltas (skip / literal / run ops, 16 colours per animation), streamed in 128 B reads and pushed as row spans. v3 stores each delta as raw DEFLATE (512 B window), inflated through static uzlib state and a 512 B ring (`uzlib/`, vendored from the Arduino core, zlib licence); identical deltas are stored once. Ops in `tools/desk/desk_codec.js`, container in `tools/desk/desk_pak.js`. |
 | `tools/desk_check/run.sh [pak]` | Host build of `DeskPack.cpp`: decodes every frame of `build/desk/desk.pak` (v2 or v3) and checks it against the encoder's `desk.crc.json`. |
 | `gfx_trim.py`, `gfx_check.py` | Pre/post build scripts. Arduino_GFX 1.6.9 (pinned) links `writeYCbCrPixels` through the vtable, and with it ~6.8 KB of YCbCr tables in DRAM that nothing here uses. `gfx_trim.py` compiles that body out under `CLAWD_NO_YCBCR`; `gfx_check.py` fails the build if the tables are back in the ELF (for example after a library bump). |
@@ -157,4 +161,4 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `tools/gzip_webui.py` | Writes `src/webui.h` (gzip) from `src/webui.html`, the single web UI source. |
 | `tests/host/run.sh` | Host test: applies a config with dead keys through `Settings.cpp` and the save/load path, and compares with `fixtures/expected.json`. |
 
-Build (`pio run -e clawd`): static RAM 43,412 B (53.0%), image 500,896 B. That leaves about 23 KB of the 524,288 B clawd → clawd OTA budget: check the size before adding features (`tools/flash.sh` refuses larger images).
+Build (`pio run -e clawd`, style packs): BUILDLINE

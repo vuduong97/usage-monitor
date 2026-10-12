@@ -85,7 +85,8 @@ the app only sends the newer names when every clock reports `desk` ≥ 31.
 `version`, `uptime`, `heap`, `pak` (screens in `/clawd.pak`, 0 = missing),
 `desk` (animations in `/desk.pak`, 0 = missing), `anim`, `deskAnim` (the desk
 animation on screen now, a variant too; only firmware that understands `v` has it),
-`reset`, `crash`.
+`reset`, `crash`, `styleApi` and `style` (the style pack API the clock draws, and
+the pack it shows: `""` = the classic screen).
 
 The app reads it every 5 s. When `uptime` shows the clock restarted, it
 sends the last `/api/usage` payload and the current `/api/state` again at
@@ -100,6 +101,12 @@ provisioning script and the clock's own web page, never by the desktop app.
 `apSsid`, `apPass`, `auth`), `POST /api/reboot`, `GET /api/fs/list`,
 `GET /api/fs/get?path=`, `POST /api/fs/put`, `POST /api/fs/rm`,
 `POST /api/clawdpak`, `POST /api/deskpak`, `POST /update` (firmware).
+
+The settings window of the desktop app also uses `/api/config`, `/update` and the
+usage screen's style pack: `POST /api/style` (multipart field `file`, a pack from
+`firmware/styles/`) shows it at once, `DELETE /api/style` goes back to the classic
+screen, `GET /api/style` (no login) says which one is installed. See
+`docs/STYLE_PACK.md`.
 
 ## Setup mode
 

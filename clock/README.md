@@ -18,6 +18,7 @@ tools/stock_fs.sh   back up / delete / restore the stock firmware's files on the
 PROTOCOL.md      HTTP + mDNS contract with the desktop app (identical copy in both repos)
 docs/FIRMWARE.md flash layout, OTA budget, endpoints, /api/heap, code map
 docs/BEHAVIOUR.md what the clock shows under the app (layers, holds, pet moments)
+docs/STYLE_PACK.md usage screen style packs: format, storage, /api/style, writing one
 ```
 
 ## Build
