@@ -37,7 +37,8 @@ const BUILTIN = [
   { key: 't34', id: 3, file: 'font_tiempos_34.c', chars: cps('Usage0123456789: APM') },
 ];
 const FONT_FILES = {
-  s14: 'font_styrene_14.c', s24: 'font_styrene_24.c', s48: 'font_styrene_48.c',
+  s12: 'font_styrene_12.c', s14: 'font_styrene_14.c', s16: 'font_styrene_16.c', s20: 'font_styrene_20.c',
+  s24: 'font_styrene_24.c', s28: 'font_styrene_28.c', s48: 'font_styrene_48.c',
   t34: 'font_tiempos_34.c', t56: 'font_tiempos_56.c', m18: 'font_mono_18.c', m32: 'font_mono_32.c',
 };
 

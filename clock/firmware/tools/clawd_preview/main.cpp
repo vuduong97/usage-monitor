@@ -221,10 +221,31 @@ static int checkStyles(const char* dir) {
   int bad = 0;
   const char* sdir = getenv("CLAWD_STYLE_DIR");
   if (!sdir) { printf("styles: CLAWD_STYLE_DIR not set, skipped\n"); return 0; }
-  static const char* const IDS[] = {"gameboy", "synth", "paper", "blueprint", "pastel", "onebit"};
+  // the packs: every id in index.json, in its order
+  static char ids[64][16];
+  int count = 0;
+  {
+    char path[512];
+    snprintf(path, sizeof(path), "%s/index.json", sdir);
+    std::vector<uint8_t> js = readFile(path);
+    js.push_back(0);
+    for (const char* q = (const char*)js.data(); count < 64 && (q = strstr(q, "\"id\""));) {
+      q = strchr(q + 4, '"');
+      if (!q) break;
+      const char* e = strchr(++q, '"');
+      if (!e) break;
+      snprintf(ids[count++], sizeof(ids[0]), "%.*s", (int)(e - q), q);
+      q = e + 1;
+    }
+    CHECK(count > 0, "%s: no packs", path);
+  }
+  const char* only = getenv("CLAWD_STYLE_ONLY");   // one pack id: just its shots
   static const char* const STATES[] = {"normal", "hot", "fresh", "stale"};
-  static std::vector<uint8_t> packs[6];
-  for (int p = 0; p < 6; p++) {
+  static std::vector<uint8_t> packs[64];
+  const char* IDS[64];
+  for (int p = 0; p < count; p++) IDS[p] = ids[p];
+  for (int p = 0; p < count; p++) {
+    if (only && *only && strcmp(only, IDS[p])) continue;
     char path[512], n[64];
     snprintf(path, sizeof(path), "%s/%s.pak", sdir, IDS[p]);
     packs[p] = readFile(path);
@@ -232,6 +253,7 @@ static int checkStyles(const char* dir) {
     const char* why = styleValidate(pk.data(), (uint32_t)pk.size());
     CHECK(!why, "%s: %s", path, why ? why : "");
     if (why || !styleAttach(pk.data(), (uint32_t)pk.size())) { bad++; continue; }
+    double paintUs = 0;            // the slowest state's full paint on this machine (best of 15)
     for (int k = 0; k < 4; k++) {
       if (k < 3) {
         clawdUiPayload(styleState(k));
@@ -241,6 +263,14 @@ static int checkStyles(const char* dir) {
       }
       snprintf(n, sizeof(n), "30-%s-%d-%s", IDS[p], k, STATES[k]);
       shot(dir, n);
+      double best = 1e18;
+      for (int i = 0; i < 15; i++) {
+        const double t0 = hostUs();
+        stylePaint(g_now);
+        const double dt = hostUs() - t0;
+        if (dt < best) best = dt;
+      }
+      if (best > paintUs) paintUs = best;
     }
     // animation: 3 s at 10 ms steps, host time per frame that repainted something
     clawdUiPayload(styleState(1));
@@ -259,8 +289,12 @@ static int checkStyles(const char* dir) {
       (void)lastFrame;
     }
     const StyleInfo* info = styleInfo();
-    printf("style %-9s %5u B  '%s'  anim frames %d in 3 s, host avg %.0f us, worst %.0f us\n", IDS[p],
-           (unsigned)pk.size(), info ? info->name : "?", frames, frames ? total / frames : 0.0, worst);
+    // ~clock: a fit of the six original packs' paints measured on the clock (80 MHz,
+    // 2026-10-12) against this preview's numbers: 43 ms + 1.54 ms per host us
+    // (within ~12 ms for all six). A rough guide for the 500 ms budget, not a measurement.
+    printf("style %-9s %5u B  '%s'  anim frames %d in 3 s, host avg %.0f us, worst %.0f us, paint %.0f us (~clock %.0f ms)\n",
+           IDS[p], (unsigned)pk.size(), info ? info->name : "?", frames, frames ? total / frames : 0.0, worst, paintUs,
+           43 + 1.54 * paintUs);
     // an alert brings the classic screen back; clearing it returns to the pack
     ClawdData al = styleState(0);
     strcpy(al.alertMsg, "Claude needs your permission to run: npm test");
@@ -286,6 +320,7 @@ static int checkStyles(const char* dir) {
 
   // guards: a flipped byte, a future API, a truncated pack
   std::vector<uint8_t> pk = packs[0];
+  if (only && *only) pk.clear();
   if (!pk.empty()) {
     pk[pk.size() / 2] ^= 0x40;
     CHECK(styleValidate(pk.data(), (uint32_t)pk.size()), "a corrupt pack validated");
@@ -347,6 +382,7 @@ int main(int argc, char** argv) {
   g_layout = CLAWD_LAYOUT_CLASSIC;
 
   const int styleBad = checkStyles(dir);
+  if (getenv("CLAWD_STYLES_ONLY")) return styleBad ? 1 : 0;   // the style-pack loop only
 
   // mascot acts over time
   for (int i = 0; i < 4; i++) {
