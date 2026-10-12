@@ -1,37 +1,19 @@
 #include "UsageClient.h"
-#include "Platform.h"
+#include <Arduino.h>
 #include <ArduinoJson.h>
 #include <math.h>
 #include "ClawdUi.h"
 
 static UsageData g_usage;
-static uint32_t  g_nextPollMs = 0;
-static bool      g_inited = false;
-static bool      g_pushed = false;      // a daemon has pushed /api/usage or /api/state
-static uint32_t  g_lastPushMs = 0;
-
-// The pull GET blocks loop() (and so the animations and the web server) for up
-// to httpTimeout when the URL is dead, e.g. an old daemon address left in the
-// settings: an 8 s freeze every poll. While a daemon pushes, pulling adds
-// nothing, so it is skipped. Clawd.app pushes usage every 60 s and the screen
-// state every 20 s while it is up.
-#define PUSH_QUIET_MS (5UL * 60UL * 1000UL)
-#define FIRST_PULL_DELAY_MS 30000UL   // a booted clock gets its first push within ~10 s
-
-static void notePush() {
-  g_pushed = true;
-  g_lastPushMs = millis();
-}
 
 // ---------------------------------------------------------------------------
+// Push only: Clawd.app POSTs /api/usage (every 60 s) and /api/state (every
+// 20 s). The old pull mode (the clock GETting a Usage URL) is gone: it blocked
+// loop() for the whole HTTP timeout when the URL was dead.
 void usageInit(const Settings& s) {
   (void)s;
   g_usage.clear();
-  g_nextPollMs = millis() + (g_inited ? 0UL : FIRST_PULL_DELAY_MS);
-  g_inited = true;
 }
-
-void usageForceRefresh() { g_nextPollMs = millis(); }
 
 const UsageData& usageGet() { return g_usage; }
 
@@ -99,21 +81,12 @@ static bool applyUsageDoc(UsageData& d, JsonDocument& doc) {
   return true;
 }
 
-static bool parseUsage(UsageData& d, Stream& stream) {
-  JsonDocument filter; usageFilter(filter);
-  JsonDocument doc;
-  if (deserializeJson(doc, stream, DeserializationOption::Filter(filter))) return false;
-  return applyUsageDoc(d, doc);
-}
-
 // Pushed payload (POST /api/usage): same contract, parsed from a String body.
 bool usageApply(const String& body) {
   JsonDocument filter; usageFilter(filter);
   JsonDocument doc;
   if (deserializeJson(doc, body, DeserializationOption::Filter(filter))) return false;
-  if (!applyUsageDoc(g_usage, doc)) return false;
-  notePush();
-  return true;
+  return applyUsageDoc(g_usage, doc);
 }
 
 // Pushed screen state (POST /api/state), clawd-home daemon:
@@ -160,46 +133,5 @@ bool usageApplyState(const String& body) {
   s.dim = doc["dim"].is<int>() ? (int16_t)constrain(doc["dim"].as<int>(), -1, 100) : (int16_t)-1;
   s.ttlSec = (uint16_t)constrain(doc["ttl"] | 60, 1, 3600);
   clawdUiState(s);
-  notePush();
   return true;
-}
-
-// ---- one HTTP(S) GET + parse (mirrors StockClient::fetchUrl) ----------------
-static bool fetchUsage(const Settings& s) {
-  const String& url = s.usage.usageUrl;
-  if (url.length() < 8) return false;
-  bool https = url.startsWith("https://");
-
-  std::unique_ptr<NetClient> client;
-  if (https) {
-    return false;   // no TLS in the Clawd build: use http:// or push mode
-    if (ESP.getFreeHeap() < 20000) return false;   // too little heap for TLS (incl. the 9 KB thunk); skip, don't crash
-    client.reset(platformMakeSecureClient(2048));   // LAN / self-hosted endpoint
-  } else {
-    client.reset(new WiFiClient());
-  }
-
-  HTTPClient http;
-  http.setTimeout(s.httpTimeout);
-  http.setReuse(false);
-  if (!http.begin(*client, url)) return false;
-  http.addHeader("Accept", "application/json");
-
-  int code = http.GET();
-  if (code != HTTP_CODE_OK) { http.end(); return false; }
-
-  bool ok = parseUsage(g_usage, http.getStream());
-  http.end();
-  return ok;
-}
-
-// ---------------------------------------------------------------------------
-void usageService(const Settings& s) {
-  if (!g_inited) usageInit(s);
-  if ((int32_t)(millis() - g_nextPollMs) < 0) return;
-
-  const bool pushing = g_pushed && millis() - g_lastPushMs < PUSH_QUIET_MS;
-  if (!pushing && !fetchUsage(s)) g_usage.error = true;   // keep stale data, flag the error
-
-  g_nextPollMs = millis() + (uint32_t)s.usage.pollSec * 1000UL;
 }

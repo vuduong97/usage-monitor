@@ -51,15 +51,12 @@ void UsageMode::begin(const Settings& s) {
 
 void UsageMode::invalidate(const Settings& s) {
   usageInit(s);
-  usageForceRefresh();
   ensureClawd();
   clawdUiInvalidate();
 }
 
 void UsageMode::service(const Settings& s) {
-  // Pull mode: poll the usage server when a Usage URL is set. Push mode (the original firmware's
-  // daemon with http_targets): leave it blank and the daemon POSTs /api/usage.
-  if (s.usage.usageUrl.length() >= 8) usageService(s);
+  // Usage and state arrive pushed (POST /api/usage, /api/state: WebPortal.cpp).
   ensureClawd();
   // The IP for the waiting splash's caption; a String per call, so not every loop.
   static uint32_t addrAt = 0;

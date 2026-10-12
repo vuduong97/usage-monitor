@@ -146,10 +146,6 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
   </div>
   <div class="card"><h2>Claude usage</h2>
    <p class="req"><b>This screen needs the Clawd desktop app on your computer.</b> The clock cannot read your Claude usage on its own: the app reads it and pushes it here (it finds the clock by itself over mDNS). Without it this screen only shows the idle animation.</p>
-   <label>Usage URL <span class="muted">(optional)</span></label>
-   <input id="usageUrl" type="url" placeholder="http://192.168.1.10:8787/">
-   <label>Refresh data (s)</label><input id="usagePollSec" type="number" min="10" max="3600">
-   <small class="hint"><b>Push (normal):</b> leave the URL blank; the desktop app posts the usage to the clock. <b>Pull:</b> set the URL to a server that returns the usage JSON and the clock polls it.</small>
   </div>
  </section>
 
@@ -269,8 +265,6 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  sv('nightStart',ck.nightStart||'22:00'); sv('nightEnd',ck.nightEnd||'07:00');
  sv('nightLevel',ck.nightLevel!=null?ck.nightLevel:0); $('nlVal')&&($('nlVal').textContent=(ck.nightLevel!=null?ck.nightLevel:0));
  // usage slice
- sv('usageUrl',u.usageUrl);
- sv('usagePollSec',u.pollSec);
  var _as=$('usageAnim');
  if(_as&&c.clawdAnims){while(_as.options.length>1)_as.remove(1);
   c.clawdAnims.forEach(function(n,i){var o=document.createElement('option');o.value=i;o.textContent=n;_as.appendChild(o);});}
@@ -304,8 +298,7 @@ function collect(){
  if(gc('apOpen')) o.apPass='';
  else { var _ap=gv('apPass'); if(_ap) o.apPass=_ap; }
  // usage slice
- o.usage={usageUrl:gv('usageUrl'), pollSec:parseInt(gv('usagePollSec'))||0,
-  screen:parseInt(gv('usageScreen'))||0, anim:parseInt(gv('usageAnim'))};
+ o.usage={screen:parseInt(gv('usageScreen'))||0, anim:parseInt(gv('usageAnim'))};
  if(o.usage&&isNaN(o.usage.anim))o.usage.anim=-1;
  // clock slice
  if($('tz')){var _tzn=gv('tz'); var _tzp=(_tzn in TZMAP)?TZMAP[_tzn]:((C.clock&&C.clock.tz===_tzn&&C.clock.tzPosix)?C.clock.tzPosix:'UTC0');

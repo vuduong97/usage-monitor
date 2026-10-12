@@ -19,7 +19,7 @@
 // Bumped by hand whenever a build adds something the desktop app gates on
 // (usage layouts, endpoints). The app only pushes its bundled image to a clock
 // with a lower number, so it never downgrades one. 0 = before this field.
-#define CLAWD_FW_SEQ 3
+#define CLAWD_FW_SEQ 4
 
 // ---------------------------------------------------------------------------
 // Display wiring + panel quirks — board-specific, pulled from the right header.
@@ -79,9 +79,7 @@
 #define DEFAULT_AP_SSID      "Clawd-Setup"
 #define DEFAULT_AP_PASS      ""              // empty => open AP
 #define DEFAULT_HOSTNAME     "clawd"
-#define DEFAULT_POLL_SEC      120            // usage pull period (when a Usage URL is set)
 #define DEFAULT_BRIGHTNESS    90             // 0..100 %
-#define DEFAULT_HTTP_TIMEOUT  8000           // ms per request
 
 // --- Panel colour correction (device-wide) ---
 // Panels differ between (and within) the clock variants: white balance drifts

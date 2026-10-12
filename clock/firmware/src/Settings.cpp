@@ -9,24 +9,19 @@ static const char* CONFIG_PATH = "/config.json";
 // Usage slice
 // ===========================================================================
 void UsageSettings::setDefaults() {
-  usageUrl = "";
-  pollSec = DEFAULT_POLL_SEC;
   screen = 0;
   anim = -1;
   layout = 0;
 }
 
 void UsageSettings::toJson(JsonObject o) const {
-  o["usageUrl"] = usageUrl;
-  o["pollSec"]  = pollSec;
   o["screen"]   = screen;
   o["anim"]     = anim;
   o["layout"]   = layout;
 }
 
 void UsageSettings::fromJson(JsonObjectConst o) {
-  if (o["usageUrl"].is<const char*>()) usageUrl = o["usageUrl"].as<String>();
-  if (o["pollSec"].is<int>())          pollSec = constrain((int)o["pollSec"], 10, 3600);
+  // usageUrl / pollSec (the old pull mode) are dropped on the next save.
   if (o["screen"].is<int>())           screen = (uint8_t)constrain((int)o["screen"], 0, 2);
   // Upper bound is the animation table size; ClawdUi falls back to 0 past it.
   if (o["anim"].is<int>())             anim = (int8_t)constrain((int)o["anim"], -1, 63);
@@ -157,8 +152,6 @@ void Settings::setDefaults() {
   // mDNS out of the box. A hostname saved in config.json overrides this.
   hostname = String(DEFAULT_HOSTNAME) + "-" + String(platformChipId() & 0xFFFF, HEX);
 
-  httpTimeout = DEFAULT_HTTP_TIMEOUT;
-
   brightness = DEFAULT_BRIGHTNESS;
   autoBrightness = false;
   backlightInverted = TFT_BL_DEFAULT_INVERTED;
@@ -230,8 +223,7 @@ void settingsToJson(const Settings& s, JsonObject root, bool includeSecrets) {
   root["apPassSet"]  = s.apPass.length() > 0;
   if (includeSecrets) root["apPass"] = s.apPass;
 
-  // Shared HTTP/display
-  root["httpTimeout"]       = s.httpTimeout;
+  // Display
   root["brightness"]        = s.brightness;
   root["autoBrightness"]    = s.autoBrightness;
   root["backlightInverted"] = s.backlightInverted;
@@ -276,7 +268,6 @@ void settingsApplyJson(Settings& s, JsonObjectConst root) {
   // AP password: apply as-is when present (empty allowed => open AP).
   if (root["apPass"].is<const char*>()) s.apPass = root["apPass"].as<String>();
 
-  if (root["httpTimeout"].is<int>())        s.httpTimeout = constrain((int)root["httpTimeout"], 1000, 20000);
   if (root["brightness"].is<int>())         s.brightness = constrain((int)root["brightness"], 0, 100);
   if (root["autoBrightness"].is<bool>())    s.autoBrightness = root["autoBrightness"];
   if (root["backlightInverted"].is<bool>()) s.backlightInverted = root["backlightInverted"];

@@ -20,14 +20,11 @@
   "apSsid": "MyClock-Setup",
   "apPassSet": true,
   "apPass": "ap-secret-123",
-  "httpTimeout": 9000,
   "brightness": 63,
   "autoBrightness": true,
   "backlightInverted": false,
   "rotation": 3,
   "usage": {
-    "usageUrl": "http://10.1.2.3:8787/",
-    "pollSec": 45,
     "screen": 2,
     "anim": -1,
     "layout": 1

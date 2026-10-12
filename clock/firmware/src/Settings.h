@@ -18,8 +18,6 @@ struct WifiCred {
 
 // ---- Claude usage feature slice -------------------------------------------
 struct UsageSettings {
-  String   usageUrl;      // daemon HTTP endpoint, e.g. http://192.168.1.10:8787/
-  uint16_t pollSec;       // refresh period
   uint8_t  screen;        // Clawd screen: 0 auto, 1 usage, 2 splash (CLAWD_SCREEN_*)
   int8_t   anim;          // splash animation: -1 = by usage rate, else index
   uint8_t  layout;        // usage screen layout: CLAWD_LAYOUT_* (0 classic, 1 pace)
@@ -85,8 +83,7 @@ struct Settings {
   String apPass;        // empty => open network
   String hostname;      // mDNS name
 
-  // --- Shared HTTP / display ---
-  uint16_t httpTimeout; // ms
+  // --- Display ---
   uint8_t  brightness;        // 0..100 %
   bool     autoBrightness;    // use LDR on A0
   bool     backlightInverted; // active-low backlight
