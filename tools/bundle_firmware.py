@@ -30,6 +30,7 @@ def from_source(src: Path) -> tuple[int, int]:
     if not m:
         raise ValueError("no CLAWD_FW_SEQ in src/config.h")
     ui = (src / "src" / "features" / "clawd" / "ClawdUi.h").read_text()
+    ui = re.sub(r"\\\r?\n", " ", ui)          # a #define may continue over several lines
     enum = {k: int(v) for k, v in re.findall(r"(CLAWD_LAYOUT_[A-Z]+)\s*=\s*(\d+)", ui)}
     d = re.search(r"#define\s+CLAWD_LAYOUTS\s+(.+)", ui)
     if not d or not enum:

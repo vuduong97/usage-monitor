@@ -1,15 +1,19 @@
 // Canvas mock of the clock's usage screens (240x240), sample data only.
-// Mirrors the firmware layouts in smalltv/src/features/clawd/ClawdUi.cpp:
-// 0 = classic (two cards + status line), 1 = pace (taller cards, pace pill,
-// time marker on the bar, forecast line). System fonts stand in for the
-// clock's own; the mascot is the app's clock icon.
+// Mirrors the firmware layouts in clawd-home/firmware/src/features/clawd/ClawdUi.cpp:
+// 0 classic (two cards + status line), 1 pace (taller cards, pace pill, time
+// marker on the bar, forecast line), 2 hero (one big 5-hour number), 3 rings
+// (two concentric rings, clock in the middle), 4 gauges (two 270 degree
+// gauges), 5 pixel (20-block bars, Clawd strolling the floor). System fonts
+// stand in for the clock's own; the mascot is the app's clock icon.
 'use strict';
 const PV = (() => {
   const C = { bg:'#000', panel:'#1f1f1e', text:'#faf9f5', dim:'#b0aea5', accent:'#d97757',
               green:'#788c5d', amber:'#d97757', red:'#c0392b', track:'#2a2a28' };
   const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
   const F = { s14:`14px ${SANS}`, s24:`500 24px ${SANS}`, t34:'34px "New York", "Iowan Old Style", Georgia, serif',
-              m16:'16px ui-monospace, Menlo, Consolas, monospace' };
+              m16:'16px ui-monospace, Menlo, Consolas, monospace',
+              s48:`500 48px ${SANS}`, m18:'18px ui-monospace, Menlo, Consolas, monospace',
+              m32:'32px ui-monospace, Menlo, Consolas, monospace' };
   const W = 240, H = 240, WIN_S = 300, WIN_W = 10080;
   const SAMPLES = {
     normal: { s:42, sr:134, w:67, wr:3960, clock:'14:05' },
@@ -99,9 +103,103 @@ const PV = (() => {
     card(44, '5-hour', d.s, d.sr, WIN_S);
     card(142, 'weekly', d.w, d.wr, WIN_W);
   }
+  const spanTxt = m => (m < 0 ? '---' : fmtReset(m));
+  const pctI = p => Math.round(Math.max(0, p));
+  const clampT = t => Math.min(1, Math.max(0, t));
+  function hero(c, d) {
+    mascot(c, 14, 4);
+    tx(c, d.clock, 232, 2, F.t34, C.text, 'right');
+    tx(c, '5-HOUR', 12, 50, F.s14, C.dim);
+    const rst = `resets ${spanTxt(d.sr)}`;
+    tx(c, rst, 228, 50, F.s14, C.dim, 'right');
+    const num = String(pctI(d.s)), p = pace(d.s, d.sr, WIN_S);
+    tx(c, num, 10, 62, F.s48, C.text);
+    tx(c, '%', 14 + tw(c, num, F.s48), 90, F.s24, C.text);
+    const pw = tw(c, p.label, F.s14) + 26, px = 228 - pw;
+    rr(c, px, 96, pw, 20, 99, C.track);
+    rr(c, px + 8, 103, 6, 6, 3, p.color);
+    tx(c, p.label, px + 18, 99, F.s14, C.text);
+    bar(c, 12, 132, 216, 14, d.s, pctColor(d.s));
+    rr(c, 12 + Math.round(216 * p.t) - 1, 127, 2, 24, 1, C.text);
+    const f = forecast(d.s, d.sr, WIN_S, d.clock);
+    tx(c, f.text, 12, 156, F.s14, f.color);
+    rr(c, 8, 184, 224, 48, 8, C.panel);
+    tx(c, 'Weekly', 18, 192, F.s14, C.dim);
+    tx(c, spanTxt(d.wr), 26 + tw(c, 'Weekly', F.s14), 192, F.s14, C.dim);
+    tx(c, `${pctI(d.w)}%`, 222, 187, F.s24, C.text, 'right');
+    bar(c, 18, 216, 204, 6, d.w, pctColor(d.w));
+  }
+  // angles in degrees, 0 = 12 o'clock, clockwise; r is the outer radius
+  function arc(c, cx, cy, r, lw, a0, sweep, col) {
+    if (sweep <= 0) return;
+    const rad = a => (a - 90) * Math.PI / 180;
+    c.strokeStyle = col; c.lineWidth = lw; c.lineCap = 'round';
+    c.beginPath(); c.arc(cx, cy, r - lw / 2, rad(a0), rad(a0 + sweep)); c.stroke();
+  }
+  function dot(c, cx, cy, r, a, col) {
+    const x = cx + r * Math.sin(a * Math.PI / 180), y = cy - r * Math.cos(a * Math.PI / 180);
+    c.fillStyle = col; c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.fill();
+  }
+  function rings(c, d) {
+    const CX = 120, CY = 120, v = p => Math.min(100, Math.max(0, p));
+    arc(c, CX, CY, 110, 12, 0, 359.9, C.track);
+    arc(c, CX, CY, 110, 12, 0, 3.6 * v(d.s), pctColor(d.s));
+    arc(c, CX, CY, 94, 8, 0, 359.9, C.track);
+    arc(c, CX, CY, 94, 8, 0, 3.6 * v(d.w), pctColor(d.w));
+    // the dots sit on the ring's centre line (outer radius minus half the stroke)
+    dot(c, CX, CY, 104, 360 * pace(d.s, d.sr, WIN_S).t, C.text);
+    dot(c, CX, CY, 90, 360 * pace(d.w, d.wr, WIN_W).t, C.text);
+    mascot(c, 103, 40);
+    tx(c, d.clock, CX, 80, F.t34, C.text, 'center');
+    tx(c, `${pctI(d.s)}%`, CX - 8, 126, F.s24, pctColor(d.s), 'right');
+    tx(c, `${pctI(d.w)}%`, CX + 8, 126, F.s24, pctColor(d.w));
+    rr(c, CX - 1, 130, 2, 16, 1, C.track);
+    tx(c, '5-hour', CX - 8, 152, F.s14, C.dim, 'right');
+    tx(c, 'weekly', CX + 8, 152, F.s14, C.dim);
+    tx(c, `resets ${spanTxt(d.sr)}`, CX, 176, F.s14, C.dim, 'center');
+  }
+  function gauges(c, d, now) {
+    mascot(c, 14, 4);
+    const x0 = Math.max(64, W / 2 + 8 - tw(c, d.clock, F.t34) / 2);
+    tx(c, d.clock, x0, 2, F.t34, C.text);
+    const card = (x, label, pct, reset) => {
+      const cx = x + 54, cy = 102, v = Math.min(100, Math.max(0, pct));
+      rr(c, x, 46, 108, 156, 10, C.panel);
+      arc(c, cx, cy, 40, 8, 225, 270, C.track);
+      arc(c, cx, cy, 40, 8, 225, 2.7 * v, pctColor(v));
+      tx(c, `${pctI(pct)}%`, cx, 91, F.s24, C.text, 'center');
+      tx(c, label, cx, 150, F.s14, C.text, 'center');
+      tx(c, spanTxt(reset), cx, 172, F.s14, C.dim, 'center');
+    };
+    card(8, 'Current', d.s, d.sr);
+    card(124, 'Weekly', d.w, d.wr);
+    const ph = Math.floor(now / 160) % SPIN.length;
+    tx(c, `${SPIN[ph]} Clauding…`, W / 2, H - 30, F.m16, C.accent, 'center');
+  }
+  function pixel(c, d, now) {
+    tx(c, d.clock, W / 2, 4, F.m32, C.text, 'center');
+    const row = (y, label, pct, reset) => {
+      tx(c, label, 11, y, F.m18, C.dim);
+      tx(c, `${pctI(pct)}%`, 229, y, F.m18, C.text, 'right');
+      const lit = Math.round(Math.min(100, Math.max(0, pct)) / 5), col = pctColor(pct);
+      for (let i = 0; i < 20; i++) rr(c, 11 + i * 11, y + 24, 9, 18, 0, i < lit ? col : C.track);
+      tx(c, `rst ${spanTxt(reset).replace(/ /g, '')}`, 11, y + 48, F.m18, C.dim);
+    };
+    row(52, '5H', d.s, d.sr);
+    row(124, '7D', d.w, d.wr);
+    for (let x = 4; x < W - 4; x += 4) { c.fillStyle = C.track; c.fillRect(x, 234, 2, 2); }
+    // Clawd strolls to the right edge and back, a bit faster the higher the usage rate
+    const span = W - 8 - 34, speed = 0.02 + 0.06 * clampT(d.s / 100);
+    const u = (now * speed) % (2 * span), x = 4 + (u < span ? u : 2 * span - u);
+    mascot(c, Math.round(x), 234 - 34 - (Math.floor(now / 160) % 2));
+  }
   const LAYOUTS = [
     { id:0, name:'Hiện tại', desc:'Hai thẻ Current / Weekly và dòng trạng thái.', draw:classic },
     { id:1, name:'Nhịp & dự báo', desc:'Cho biết đang dùng nhanh hay chậm, và lúc nào hết.', draw:paced },
+    { id:2, name:'Tiêu điểm', desc:'Một số lớn cho phiên 5 giờ, tuần nằm gọn bên dưới.', draw:hero },
+    { id:3, name:'Vòng đôi', desc:'Hai vòng lồng nhau, đồng hồ nằm giữa.', draw:rings },
+    { id:4, name:'Đồng hồ đôi', desc:'Hai mặt đồng hồ tròn cạnh nhau.', draw:gauges },
+    { id:5, name:'Pixel retro', desc:'Thanh 20 ô kiểu game, Clawd đi dạo bên dưới.', draw:pixel },
   ];
   function paint(canvas, layout, sample, now) {
     const c = canvas.getContext('2d');

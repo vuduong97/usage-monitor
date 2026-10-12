@@ -153,7 +153,7 @@ class SettingsApi:
     def _fw_info(self) -> dict:
         h = self._heap
         return {"update": firmware.update_state(h, self._bundle),
-                "layouts": [firmware.layout_state(i, h, self._bundle) for i in range(2)],
+                "layouts": [firmware.layout_state(i, h, self._bundle) for i in range(firmware.LAYOUT_COUNT)],
                 "seq": firmware.clock_seq(h), "bundle": self._bundle_info()}
 
     def _app_info(self) -> dict:

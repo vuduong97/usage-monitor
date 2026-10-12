@@ -76,6 +76,9 @@ def clock_seq(heap: dict) -> int:
     return s if isinstance(s, int) and not isinstance(s, bool) else 0
 
 
+LAYOUT_COUNT = 6          # usage layouts the app knows (preview.js PV.LAYOUTS has the same list)
+
+
 def clock_layouts(heap: dict) -> int:
     v = heap.get("layouts")
     return v if isinstance(v, int) and not isinstance(v, bool) else 1   # classic only

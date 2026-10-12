@@ -43,6 +43,9 @@ def test_update_and_layout_states(tmp_path):
     assert fw.layout_state(1, OLD, b) == "update"
     assert fw.layout_state(1, NEW, b) == "ready"
     assert fw.layout_state(2, OLD, b) == "unavailable"
+    full = make_bundle(tmp_path, seq=2, layouts=63)
+    assert [fw.layout_state(i, OLD, full) for i in range(6)] == ["ready"] + ["update"] * 5
+    assert [fw.layout_state(i, NEW, full) for i in range(6)] == ["ready", "ready"] + ["update"] * 4   # seq 1 < 2
     assert fw.layout_state(1, OLD, None) == "unavailable"
 
 

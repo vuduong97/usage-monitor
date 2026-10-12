@@ -116,7 +116,7 @@ def test_clean_drops_unknown_keys_and_checks_values():
 def test_state_and_a_one_post_save(tmp_path):
     b, made, _k, _n = bridge(tmp_path)
     s = b.state()
-    assert s["ok"] and s["fw"]["layouts"] == ["ready", "ready"] and s["app"]["clock"] == "http://10.0.0.5"
+    assert s["ok"] and s["fw"]["layouts"] == ["ready", "ready"] + ["unavailable"] * 4 and s["app"]["clock"] == "http://10.0.0.5"
     assert b.preview(edited())["changes"] == {}
     r = b.save(edited(brightness=60, usage={"layout": 1}, auth={"enabled": True}))
     assert r["ok"] and r["sent"] == {"brightness": 60, "usage": {"layout": 1}} and not r["reboot"]
@@ -142,7 +142,7 @@ def test_bad_input_is_refused_before_the_clock(tmp_path):
 def test_a_layout_the_clock_cannot_draw_is_not_saved(tmp_path):
     b, made, _k, _n = bridge(tmp_path, heap=OLD_HEAP)
     s = b.state()
-    assert s["fw"]["layouts"] == ["ready", "unavailable"]                 # no bundle in this test
+    assert s["fw"]["layouts"] == ["ready"] + ["unavailable"] * 5          # no bundle in this test
     assert b.save(edited(usage={"layout": 1}))["code"] == "bad" and made[0].saved == []
 
 
@@ -186,7 +186,7 @@ def test_update_job_installs_then_saves_the_layout(tmp_path, monkeypatch):
     monkeypatch.setattr(sa.ota, "SETTLE", 0)
     b, made, _k, _n = bridge(tmp_path, heap=OLD_HEAP, bundle=bundle)
     s = b.state()
-    assert s["fw"]["update"] == "available" and s["fw"]["layouts"] == ["ready", "update"]
+    assert s["fw"]["update"] == "available" and s["fw"]["layouts"] == ["ready", "update"] + ["unavailable"] * 4
     assert b.update(edited(usage={"layout": 1}), 1)["ok"]
     for _ in range(300):
         if not b.job()["running"]:
@@ -224,3 +224,12 @@ def test_main_screen_is_handed_to_the_engine():
     assert seen == [0]                                    # what the clock has now
     s.save({"usage": {"screen": 1}})
     assert seen[-1] == 1
+
+
+def test_all_six_layouts_are_listed_and_a_full_clock_draws_them(tmp_path):
+    full = {**NEW_HEAP, "fwSeq": 2, "layouts": 63}
+    b, made, _k, _n = bridge(tmp_path, heap=full)
+    assert b.state()["fw"]["layouts"] == ["ready"] * 6
+    for i in range(2, 6):
+        assert b.save(edited(usage={"layout": i}))["ok"]
+    assert b.save(edited(usage={"layout": 6}))["code"] == "bad"     # still not a layout the app knows
