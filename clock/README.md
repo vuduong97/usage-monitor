@@ -13,6 +13,7 @@ clawdmeter/      git subtree: Clawdmeter (macOS daemon in clawdmeter/daemon/)
 smalltv/         git subtree: smalltv-mod fork running the Clawdmeter UI (env smalltv_clawd)
 tools/desk/      clawd-on-desk SVG -> build/desk/desk.pak (gitignored)
 tools/stock_fs.sh  back up / delete / restore the stock firmware's files on the clock
+tools/provision.sh stock clock -> clawd clock ready to gift (see "Clocks for friends")
 integrations/
   claude/        Claude Code hook (clawd-event.sh) + settings.json merge installer
   pi/            pi extension (clawd-home.ts) + symlink installer
@@ -106,6 +107,31 @@ Restore them before flashing the stock firmware (see `smalltv/CLAWDMETER.md`).
 Config (`~/.config/claude-usage-monitor/config`, all optional): `events = off`,
 `event_port`, `quiet_start = 23:00`, `quiet_end = 07:00`, `quiet_dim = 15`,
 `away_after = 300`, `milestone_turns = 10`, `idle_linger = 300` (0: straight back to usage).
+
+## Clocks for friends
+
+Friends do not get this repo. They get a clock flashed here and the desktop app
+from the public repo **clawd-desktop** (`../clawd-desktop`: tray app for Mac and
+Windows, finds the clock over mDNS `_clawdmeter._tcp` or a LAN scan, installs the
+Claude Code hooks itself). Both sides follow `PROTOCOL.md` (identical copy in both
+repos). The app replaces the LaunchAgent daemon on this Mac too: never run both,
+they fight over the clock.
+
+Per clock (stock JUZIPi SD Pro, firmware SDPro 1.0.x):
+
+```sh
+cd smalltv && pio run -e smalltv_clawd && cd ..   # firmware.bin (<= 520 KB)
+# join the stock clock to the bench WiFi by hand, read its IP off the screen, then:
+CLAWD_BENCH_SSID=... CLAWD_BENCH_PASS=... tools/provision.sh <clock-ip>
+tools/provision.sh <clock-ip> --dry-run           # what it would do, changes nothing
+```
+
+It flashes clawd through the stock OTA page, moves the stock files off with
+`stock_fs.sh` (backup per clock in `.stock-backup/provision/`), uploads `desk.pak`,
+names the clock `clawd-<chip id>`, sets a random setup-WiFi password and web login,
+forgets the bench WiFi and prints the card for the box (also in
+`.stock-backup/provision/cards.tsv`). Rerun after a failure: it skips finished steps.
+It stops if the stock OTA page is not the one SDPro 1.0.6 has.
 
 ## clawd
 
