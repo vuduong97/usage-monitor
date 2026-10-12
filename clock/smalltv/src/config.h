@@ -35,13 +35,10 @@
 #elif defined(SMALLTV_ESP32_PRO)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32-pro.bin"
   #define FW_VARIANT   "esp32-pro"
-#elif defined(SMALLTV_ESP32_WG)
-  #define UPDATE_ASSET "smalltv-mod-firmware-esp32-wg.bin"
-  #define FW_VARIANT   "esp32-wg"
 #elif defined(SMALLTV_ESP32)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32.bin"
   #define FW_VARIANT   "esp32"
-#elif defined(SMALLTV_CLAWD)
+#else
   // Private Clawdmeter fork: upstream releases would overwrite the Clawd UI, so
   // the GitHub self-updater is disabled (OtaUpdate.cpp). Update via /update.
   #define UPDATE_ASSET "smalltv-clawdmeter-firmware.bin"
@@ -50,12 +47,6 @@
   // on (usage layouts, endpoints). The app only pushes its bundled image to a
   // clock with a lower number, so it never downgrades one. 0 = before this field.
   #define CLAWD_FW_SEQ 1
-#elif defined(SMALLTV_LEAN)
-  #define UPDATE_ASSET "smalltv-mod-firmware-lean.bin"
-  #define FW_VARIANT   "esp8266-lean"
-#else
-  #define UPDATE_ASSET "smalltv-mod-firmware.bin"
-  #define FW_VARIANT   "esp8266"
 #endif
 #define GH_API_HOST   "api.github.com"
 #define DAEMON_URL    "https://github.com/giovi321/clawdmeter-daemon"
@@ -234,21 +225,6 @@
 // omits that feature's module from the registry and its web UI section.
 // (WITH_RADAR ships off until the radar module lands.)
 // ---------------------------------------------------------------------------
-#ifndef WITH_TICKER
-#define WITH_TICKER 1
-#endif
-#ifndef WITH_USAGE
-#define WITH_USAGE 1
-#endif
-#ifndef WITH_RADAR
-#define WITH_RADAR 1
-#endif
-#ifndef WITH_NOTIFY
-#define WITH_NOTIFY 1
-#endif
-#ifndef WITH_HA
-#define WITH_HA 1
-#endif
 
 // Claude usage mode: once data stops arriving for this long (PC asleep, daemon
 // stopped, network down) the screen switches from the stats to the idle mascot
@@ -405,6 +381,3 @@
 // Theme packages are supported on every display target except the lean
 // ESP8266 image, which opts out explicitly (see [env:smalltv_lean] in
 // platformio.ini) to keep the heap headroom it exists to protect.
-#ifndef WITH_THEME
-#define WITH_THEME 1
-#endif

@@ -8,29 +8,14 @@
 #include "OtaUpdate.h"
 #include "StockClient.h"
 #include "UsageClient.h"
-#if WITH_USAGE
 #include "ClawdAnim.h"
 #include "ClawdPack.h"
 #include "DeskPack.h"
 #include "ClawdUi.h"
-#endif
-#if WITH_RADAR
-#include "RadarClient.h"
-#endif
-#if WITH_NOTIFY
-#include "NotifyMode.h"
-#endif
 #include "Clock.h"
 #include "WgClient.h"
-#if WITH_THEME
-#include "features/theme/ThemeWeb.h"
-#endif
 #include "SettingsTransaction.h"
 #include "CrashLog.h"
-#if WITH_HA
-#include "HaScreens.h"
-#include "MqttClient.h"
-#endif
 
 // Defined in main.cpp — re-init every mode + force a repaint after a config change.
 extern void appInvalidate();
@@ -92,12 +77,11 @@ static void handleGetConfig() {
   settingsToJson(*S, root, /*includeSecrets=*/false);
   // Which features are compiled in (so a lean build hides the tabs it dropped).
   JsonObject feat = root["features"].to<JsonObject>();
-  feat["ticker"] = (bool)WITH_TICKER;
-  feat["usage"]  = (bool)WITH_USAGE;
-  feat["radar"]  = (bool)WITH_RADAR;
-  feat["ha"]     = (bool)WITH_HA;
-  feat["theme"]  = (bool)WITH_THEME;
-#if WITH_USAGE
+  feat["ticker"] = false;
+  feat["usage"]  = true;
+  feat["radar"]  = false;
+  feat["ha"]     = false;
+  feat["theme"]  = false;
   // Clawd animation names, in index order, for the Usage tab's picker.
   JsonArray anims = root["clawdAnims"].to<JsonArray>();
   for (int i = 0; i < clawdAnimCount(); i++) {
@@ -105,14 +89,9 @@ static void handleGetConfig() {
     clawdAnimName(i, name, sizeof(name));
     anims.add(String(name));
   }
-#endif
   // WireGuard is a per-chip decision rather than a per-feature one: it is
   // compiled only where the image has room for it (the ESP32-C2 build).
-#if defined(SMALLTV_WIREGUARD)
-  feat["wireguard"] = true;
-#else
   feat["wireguard"] = false;
-#endif
   // Which chip this build runs on (the UI warns about per-chip limitations).
 #if defined(SMALLTV_ESP32C2)
   root["chip"] = "esp32c2";
@@ -151,43 +130,7 @@ static void handleStatus() {
   o["clockFresh"] = clockTrusted();       // last NTP sync within the trust window
   wgStatusJson(o["wg"].to<JsonObject>()); // tunnel state (compiledIn=false where it isn't built)
 
-#if WITH_TICKER
-  JsonArray arr = o["tickers"].to<JsonArray>();
-  for (uint8_t i = 0; i < stocksCount(); i++) {
-    const StockData& d = stockAt(i);
-    JsonObject t = arr.add<JsonObject>();
-    t["symbol"] = d.symbol;
-    t["valid"] = d.valid;
-    t["error"] = d.error;
-    if (d.error) t["retryIn"] = stockRetryInSec(i);   // seconds to the next attempt
-    if (d.valid) {
-      t["price"] = d.price;
-      float chg, pct;
-      bool onRange = false;
-      if (stockDisplayChange(d, S->ticker, chg, pct, &onRange)) {
-        t["changePct"] = pct;                       // as displayed on the device
-        t["basis"] = onRange ? "range" : "day";     // which basis that was
-      }
-    }
-  }
-#endif
 
-#if WITH_RADAR
-  // An empty scope has several possible causes and the screen shows the same
-  // thing for all of them, so report the last poll's actual outcome.
-  {
-    JsonObject r = o["radar"].to<JsonObject>();
-    r["count"] = radarCount();          // aircraft currently plotted
-    r["error"] = radarError();
-    r["stage"] = radarStageName();      // why the last poll produced what it did
-    r["seenAc"] = radarSeenAc();        // aircraft in the last parsed response
-    if (radarLastHttp()) r["http"] = radarLastHttp();   // <0 = HTTPClient internal error
-    if (radarTlsRx())    r["tlsRx"] = radarTlsRx();     // negotiated BearSSL rx buffer
-    if (radarLastTryMs()) r["triedAgo"] = (millis() - radarLastTryMs()) / 1000;
-    if (radarLastOkMs())  r["okAgo"]    = (millis() - radarLastOkMs()) / 1000;
-    if (radarLastUrl().length()) r["url"] = radarLastUrl();
-  }
-#endif
 
   sendJson(doc);
 }
@@ -328,42 +271,9 @@ static void handleImport() {
 
 static void handleRefresh() {
   if (!requireAuth()) return;
-#if WITH_TICKER
-  stocksForceRefresh();
-#endif
   server.send(200, "application/json", "{\"ok\":true}");
 }
 
-#if WITH_HA
-// Purge every HA screen: empties the local store + deletes /ha_screens.json,
-// then deletes the broker's retained copies by publishing an empty retained
-// payload per known slot — the same delete the MQTT contract defines for a
-// zero-length payload. haScreensClearAll() sets the renderer dirty flag, so
-// the HA mode repaints on its next tick without an explicit appInvalidate().
-// Slots whose retained messages exist only on the broker (the device was
-// offline when the screen was deleted) are unknowable from here and survive;
-// "broker" in the reply tells the UI whether the broker side was purged at all.
-static void handleHaClear() {
-  if (!requireAuth()) return;
-  char names[HA_MAX_SCREENS][HA_SLOT_LEN];
-  uint8_t n = haScreensClearAll(names, HA_MAX_SCREENS);
-  bool broker = mqttConnected();
-  if (broker) {
-    for (uint8_t i = 0; i < n; i++) {
-      char topic[128];   // slot is <= 24 chars; hostname is a bounded String, but
-                         // the compiler can't prove it — keep the buffer generous
-      snprintf(topic, sizeof(topic), "smalltv/%s/screen/%s",
-               S->hostname.c_str(), names[i]);
-      if (!mqttPublish(topic, "", /*retained=*/true)) broker = false;
-    }
-  }
-  JsonDocument res;
-  res["ok"] = true;
-  res["cleared"] = n;
-  res["broker"] = broker;   // false: local purge done, broker copies may remain
-  sendJson(res);
-}
-#endif
 
 // Check the newest GitHub release against the running version.
 static void handleCheckUpdate() {
@@ -392,14 +302,10 @@ static void handleSelfUpdate() {
 // reach it (Wi-Fi client isolation). Body is the {s,sr,w,wr,st,ok} contract.
 static void handleUsagePush() {
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
-#if WITH_USAGE
   bool ok = usageApply(server.arg("plain"));
   // Each push is a full JSON parse + possibly a full repaint: worth tracking.
   uint32_t h = ESP.getFreeHeap();
   if (h < g_minHeap) g_minHeap = h;
-#else
-  bool ok = false;
-#endif
   server.send(ok ? 200 : 400, "application/json",
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
@@ -409,13 +315,9 @@ static void handleUsagePush() {
 // it every few seconds and it can only change what the clock shows, for ttl.
 static void handleStatePush() {
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
-#if WITH_USAGE
   bool ok = usageApplyState(server.arg("plain"));
   uint32_t h = ESP.getFreeHeap();
   if (h < g_minHeap) g_minHeap = h;
-#else
-  bool ok = false;
-#endif
   server.send(ok ? 200 : 400, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
 
@@ -444,10 +346,7 @@ static void handleHeap() {
   if (crashLogLast().length()) o["crash"] = crashLogLast();   // last crash since power on
   o["version"] = FW_VERSION;
   o["variant"] = FW_VARIANT;
-#if defined(SMALLTV_CLAWD)
   o["fwSeq"] = CLAWD_FW_SEQ;          // the desktop app never pushes an image with a lower one
-#endif
-#if WITH_USAGE
   o["layouts"] = CLAWD_LAYOUTS;        // usage screen layouts this build draws (bitmask)
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
@@ -466,7 +365,6 @@ static void handleHeap() {
     d["drawMax"] = ds.drawMax;
     d["lateP95"] = ds.lateP95;
   }
-#endif
 #if defined(SMALLTV_ESP8266)
   {
     FSInfo fi;
@@ -476,7 +374,6 @@ static void handleHeap() {
   sendJson(doc);
 }
 
-#if WITH_USAGE
 // Replace the Clawd animation pack (/clawd.pak, tools/clawd_assets.js). The
 // pack normally goes on through the stock firmware's /upload before this image
 // is flashed; this is the in-place way to update it. Staged to a temp file so
@@ -665,7 +562,6 @@ static void handleFsRm() {
   sendJson(doc, ok ? 200 : 404);
 }
 #endif
-#endif
 
 // Attention overlay. Every field is optional and falls back to the preset named
 // by "type" (itself defaulting to "info"), so the smallest useful request is
@@ -676,49 +572,6 @@ static void handleFsRm() {
 // daemon's usage push, whatever fires these is a script of your own and can
 // send credentials, and taking over the whole screen is not something to leave
 // open on a device you deliberately locked.
-#if WITH_NOTIFY
-static void handleNotify() {
-  if (!requireAuth()) return;
-  if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
-  JsonDocument doc;
-  if (deserializeJson(doc, server.arg("plain"))) {
-    server.send(400, "text/plain", "bad json");
-    return;
-  }
-  // "state" is what the endpoint shipped with, before types existed. It named
-  // the same two things "type" now does, so it is read as an alias rather than
-  // a second field: scripts written against the old API keep working untouched.
-  const char* type = doc["type"];
-  if (!type) type = doc["state"];
-
-  NotifyRequest r;
-  r.type  = type;
-  r.title = doc["title"];
-  r.label = doc["label"];
-  r.anim  = doc["anim"];
-  r.color = doc["color"];
-  r.ttlSec = doc["ttl"] | (uint32_t)0;              // 0 -> the preset's own hold
-  r.prio   = doc["priority"] | (int)-1;             // <0 -> the preset's own priority
-
-  // A full queue answers 429, not 400: it is the one failure worth retrying, and
-  // a script cannot back off sensibly if it looks the same as a typo in "type".
-  switch (g_notifyMode.request(r)) {
-    case NOTIFY_REJECTED:
-      server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad request\"}");
-      return;
-    case NOTIFY_QUEUE_FULL:
-      server.send(429, "application/json", "{\"ok\":false,\"error\":\"queue full\"}");
-      return;
-    case NOTIFY_ACCEPTED:
-      break;
-  }
-
-  char body[48];
-  snprintf(body, sizeof(body), "{\"ok\":true,\"queued\":%u}",
-           (unsigned)g_notifyMode.queued());
-  server.send(200, "application/json", body);
-}
-#endif
 
 // ---- OTA ------------------------------------------------------------------
 static void handleUpdateDone() {
@@ -744,14 +597,10 @@ static void handleUpdateUpload() {
 #if defined(SMALLTV_ESP8266)
     WiFiUDP::stopAll();   // free UDP sockets so the OTA has max contiguous flash/heap
 #endif
-#if defined(SMALLTV_CLAWD)
     // The whole free slot: Updater::begin already refuses an image that would
     // overlap the running one. The usual extra 4 KB slack made a ~520 KB image
     // unable to replace itself in the 4m3m 1 MB sketch area.
     uint32_t maxSpace = ESP.getFreeSketchSpace() & 0xFFFFF000;
-#else
-    uint32_t maxSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-#endif
     if (!Update.begin(maxSpace)) Update.printError(Serial);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (Update.write(up.buf, up.currentSize) != up.currentSize) Update.printError(Serial);
@@ -782,9 +631,6 @@ void webPortalBegin(Settings& settings) {
   // (success reboots into the new image before we ever get here).
   g_updateMsg = otaTakeBootResult();
 
-#if WITH_THEME
-  themeWebBegin(server, settings, requireAuth);
-#endif
   server.on("/", HTTP_GET, handleRoot);
   server.on("/api/config", HTTP_GET, handleGetConfig);
   server.on("/api/config", HTTP_POST, handlePostConfig);
@@ -799,7 +645,6 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/selfupdate", HTTP_POST, handleSelfUpdate);
   server.on("/api/usage", HTTP_POST, handleUsagePush);   // daemon pushes usage here
   server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
-#if WITH_USAGE
   server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
   server.on("/api/deskpak", HTTP_POST, handleDeskPakDone, handleDeskPakUpload);
 #if defined(SMALLTV_ESP8266)
@@ -810,13 +655,6 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/fs/rm", HTTP_POST, handleFsRm);
 #endif
   server.on("/api/state", HTTP_POST, handleStatePush);    // daemon pushes screen state here
-#endif
-#if WITH_HA
-  server.on("/api/ha/clear", HTTP_POST, handleHaClear);  // purge HA screens (device + broker retained)
-#endif
-#if WITH_NOTIFY
-  server.on("/api/notify", HTTP_POST, handleNotify);     // full-screen attention overlay
-#endif
   server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
 
   // Common captive-portal probe endpoints

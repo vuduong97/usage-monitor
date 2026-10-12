@@ -466,23 +466,17 @@ void Settings::setDefaults() {
 
 // ---------------------------------------------------------------------------
 bool settingsBegin() {
-#if defined(SMALLTV_CLAWD) && defined(ESP8266)
+#if defined(ESP8266)
   // The ESP8266 core formats on a failed mount unless told not to.
   LittleFSConfig cfg;
   cfg.setAutoFormat(false);
   LittleFS.setConfig(cfg);
 #endif
   if (LittleFS.begin()) return true;
-#if defined(SMALLTV_CLAWD)
   // Never format here: this build shares the clock's stock filesystem (its web
   // UI, icons and fonts, which exist nowhere else) so the stock firmware can be
   // flashed back. Run on defaults instead.
   return false;
-#else
-  // First boot on a fresh chip: format then mount.
-  if (LittleFS.format() && LittleFS.begin()) return true;
-  return false;
-#endif
 }
 
 bool loadSettings(Settings& s) {
@@ -556,19 +550,9 @@ void settingsToJson(const Settings& s, JsonObject root, bool includeSecrets) {
   root["rotation"]          = s.rotation;
 
   // Feature slices
-#if !defined(SMALLTV_CLAWD)   // Clawdmeter build: these features are compiled out
-  s.ticker.toJson(root["ticker"].to<JsonObject>());
-#endif
   s.usage.toJson(root["usage"].to<JsonObject>());
-#if !defined(SMALLTV_CLAWD)
-  s.radar.toJson(root["radar"].to<JsonObject>());
-  s.ha.toJson(root["ha"].to<JsonObject>(), includeSecrets);
-#endif
   s.clock.toJson(root["clock"].to<JsonObject>());
   s.display.toJson(root["display"].to<JsonObject>());
-#if !defined(SMALLTV_CLAWD)
-  s.wg.toJson(root["wg"].to<JsonObject>(), includeSecrets);
-#endif
   s.auth.toJson(root["auth"].to<JsonObject>(), includeSecrets);
 }
 
@@ -648,22 +632,10 @@ void settingsApplyJson(Settings& s, JsonObjectConst root) {
   // Feature slices: prefer the nested object; fall back to the top level so a
   // legacy flat config.json (or a legacy POST) still applies. The old shared
   // "pollSec" thus seeds both ticker and usage cadence on first upgrade.
-#if !defined(SMALLTV_CLAWD)
-  JsonObjectConst t = root["ticker"].is<JsonObjectConst>() ? root["ticker"].as<JsonObjectConst>() : root;
-  s.ticker.fromJson(t);
-#endif
   JsonObjectConst u = root["usage"].is<JsonObjectConst>() ? root["usage"].as<JsonObjectConst>() : root;
   s.usage.fromJson(u);
   // Radar has no legacy flat layout; only apply when its nested object is present.
-#if !defined(SMALLTV_CLAWD)
-  if (root["radar"].is<JsonObjectConst>()) s.radar.fromJson(root["radar"].as<JsonObjectConst>());
-  // HA has no legacy flat layout either; only apply when its object is present.
-  if (root["ha"].is<JsonObjectConst>()) s.ha.fromJson(root["ha"].as<JsonObjectConst>());
-#endif
   if (root["clock"].is<JsonObjectConst>()) s.clock.fromJson(root["clock"].as<JsonObjectConst>());
   if (root["display"].is<JsonObjectConst>()) s.display.fromJson(root["display"].as<JsonObjectConst>());
-#if !defined(SMALLTV_CLAWD)
-  if (root["wg"].is<JsonObjectConst>()) s.wg.fromJson(root["wg"].as<JsonObjectConst>());
-#endif
   if (root["auth"].is<JsonObjectConst>()) s.auth.fromJson(root["auth"].as<JsonObjectConst>());
 }

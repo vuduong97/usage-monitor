@@ -20,49 +20,15 @@
 #include "Clock.h"
 #include "WgClient.h"
 #include "CrashLog.h"
-#if WITH_THEME
-#include "features/theme/ThemeMode.h"
-#endif
-#if WITH_NOTIFY
-#include "NotifyMode.h"
-#endif
 
-#if WITH_TICKER
-#include "TickerMode.h"
-#endif
-#if WITH_USAGE
 #include "UsageMode.h"
-#endif
-#if defined(SMALLTV_CLAWD)
 #include "ClawdUi.h"
-#endif
-#if WITH_RADAR
-#include "RadarMode.h"
-#endif
-#if WITH_HA
-#include "HaMode.h"
-#include "MqttClient.h"
-#endif
 
 // ---- mode registry --------------------------------------------------------
 // The compiled-in features, in display order. main.cpp holds no per-feature
 // state of its own — each mode owns its fetch/render/dirty tracking.
 static DisplayMode* kModes[] = {
-#if WITH_TICKER
-  &g_tickerMode,
-#endif
-#if WITH_USAGE
   &g_usageMode,
-#endif
-#if WITH_RADAR
-  &g_radarMode,
-#endif
-#if WITH_HA
-  &g_haMode,
-#endif
-#if WITH_THEME
-  &g_themeMode,
-#endif
 };
 static const size_t kModeCount = sizeof(kModes) / sizeof(kModes[0]);
 
@@ -77,9 +43,6 @@ static bool carouselHas(const Settings& s, const DisplayMode* m) {
     case MODE_STOCKS: return s.carouselTicker;
     case MODE_USAGE:  return s.carouselUsage;
     case MODE_RADAR:  return s.carouselRadar;
-#if WITH_HA
-    case MODE_HA:     return s.carouselHa;
-#endif
     case MODE_THEME:  return false; // explicitly selected, not in the existing carousel
     default:          return true;
   }
@@ -129,10 +92,8 @@ static uint8_t  g_ldrCache   = DEFAULT_BRIGHTNESS;   // last LDR reading (2 s ca
 static uint8_t appBaseBrightness();
 static uint8_t appEffectiveBrightness() {
   uint8_t b = appBaseBrightness();
-#if defined(SMALLTV_CLAWD)
   const int cap = clawdUiDim();       // daemon's quiet-hours cap (POST /api/state)
   if (cap >= 0 && cap < b) b = (uint8_t)cap;
-#endif
   return b;
 }
 static uint8_t appBaseBrightness() {
@@ -239,9 +200,6 @@ void setup() {
   Serial.println("[boot] web");
   webPortalBegin(g_settings);
 
-#if WITH_HA
-  mqttBegin(g_settings);   // arms the client; the connect itself runs from loop()
-#endif
 
   Serial.println("[boot] modes");
   for (size_t i = 0; i < kModeCount; i++) kModes[i]->begin(g_settings);
@@ -300,12 +258,6 @@ void loop() {
     return;  // crashed last boot: web UI stays up for OTA recovery, no rendering
   }
 
-#if WITH_HA
-  // After the safe-mode return on purpose: a fault in here (e.g. a malformed
-  // retained screen that re-arrives on every connect) must not boot-loop the
-  // device past its own recovery page. Self-gates on WiFi STA + broker config.
-  mqttLoop();
-#endif
 
   if (netMode() == NET_AP) {
     delay(5);
@@ -323,22 +275,7 @@ void loop() {
   // resumes on the same feature with the same remaining slice. heldMs() spans
   // the whole run rather than the last request in it, so a queue that chained
   // four overlays credits back all four.
-#if WITH_NOTIFY
-  static bool wasNotifying = false;
-  if (g_notifyMode.active()) {
-    wasNotifying = true;
-    g_notifyMode.service(g_settings);
-    delay(5);
-    return;
-  }
-  bool restore = wasNotifying;
-  if (wasNotifying) {
-    wasNotifying = false;
-    if (g_carSwitch) g_carSwitch += g_notifyMode.heldMs();
-  }
-#else
   const bool restore = false;
-#endif
 
   DisplayMode* m = activeMode(g_settings);
   if (m) {
