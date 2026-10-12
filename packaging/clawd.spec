@@ -74,6 +74,6 @@ if sys.platform == "darwin":
             "NSHighResolutionCapable": True,
             "NSLocalNetworkUsageDescription":
                 "Clawd tìm đồng hồ Clawd trong mạng WiFi nhà bạn để hiển thị mức dùng Claude.",
-            "NSBonjourServices": ["_clawdmeter._tcp"],
+            "NSBonjourServices": ["_clawd._tcp"],
         },
     )

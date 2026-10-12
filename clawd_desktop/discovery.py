@@ -7,7 +7,7 @@ Order of preference, re-evaluated every couple of seconds:
 2. The remembered clock (clock.json), looked up by its mDNS name, so a new IP
    from the router is followed automatically. Its last known address is tried
    right away at startup, before mDNS has answered (the ESP8266 takes ~6 s).
-3. The first clock that answers mDNS (`_clawdmeter._tcp`, advertised by the
+3. The first clock that answers mDNS (`_clawd._tcp`, advertised by the
    firmware with TXT id=<hostname> ver=<version>). It becomes the remembered one.
 4. When mDNS stays silent (mesh routers and guest networks often drop
    multicast), a scan of the local /24 for a host whose `GET /api/heap` looks
@@ -32,7 +32,7 @@ from typing import Callable, Iterable
 
 import httpx
 
-SERVICE = "_clawdmeter._tcp.local."
+SERVICE = "_clawd._tcp.local."
 FAIL_LIMIT = 3            # consecutive failed pushes before a clock is dropped
 BAD_HOLD = 60.0           # seconds a dropped clock is ignored before it is retried
 SCAN_AFTER = 15.0         # seconds without any clock before the LAN scan starts
@@ -118,7 +118,7 @@ class ClockStore:
 # mDNS (zeroconf, in its own threads)
 # =============================================================================
 class MdnsBrowser:
-    """Keeps a live set of `_clawdmeter._tcp` instance names; resolves on demand."""
+    """Keeps a live set of `_clawd._tcp` instance names; resolves on demand."""
 
     def __init__(self) -> None:
         self._names: set[str] = set()

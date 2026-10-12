@@ -1,4 +1,4 @@
-"""Where the app keeps its files. Shared with the Clawdmeter daemon's config dir,
+"""Where the app keeps its files. Shared with the older usage daemon's config dir,
 so an existing `~/.config/claude-usage-monitor/config` keeps working."""
 from __future__ import annotations
 

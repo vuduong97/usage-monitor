@@ -335,7 +335,7 @@ $('facOk').addEventListener('click', async () => {
   const v = $('facInput').value.trim().toUpperCase();
   if (v !== 'XOA') { $('facInput').focus(); return; }
   $('factoryVeil').classList.remove('on');
-  await simple(() => api.factory_reset('XOA'), 'Đã xoá. Đồng hồ khởi động lại ở chế độ cài đặt (điểm phát SmallTV-Setup).');
+  await simple(() => api.factory_reset('XOA'), 'Đã xoá. Đồng hồ khởi động lại ở chế độ cài đặt (điểm phát Clawd-Setup).');
 });
 
 // ---------- app tab ----------

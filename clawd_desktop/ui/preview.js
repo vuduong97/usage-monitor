@@ -1,5 +1,5 @@
 // Canvas mock of the clock's usage screens (240x240), sample data only.
-// Mirrors the firmware layouts in smalltv/src/features/clawd/ClawdUi.cpp:
+// Mirrors the firmware layouts in firmware/src/features/clawd/ClawdUi.cpp:
 // 0 = classic (two cards + status line), 1 = pace (taller cards, pace pill,
 // time marker on the bar, forecast line). System fonts stand in for the
 // clock's own; the mascot is the app's clock icon.

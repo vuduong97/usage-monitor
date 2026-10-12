@@ -6,7 +6,7 @@ from clawd_desktop import autostart, icons, tray
 from clawd_desktop.discovery import Clock
 
 NOW = 1_800_000_000.0
-A = Clock(host="10.0.0.7", name="clawdmeter")
+A = Clock(host="10.0.0.7", name="clawd")
 
 
 def snap(**kw):
@@ -19,7 +19,7 @@ def snap(**kw):
 def test_connected_with_usage_detail():
     s, head, detail = tray.status(snap(clock=A, last_ok=NOW - 10, payload={"s": 42, "w": 17, "ok": True},
                                        payload_at=NOW - 10), NOW)
-    assert s == "ok" and head == "Đã kết nối: clawdmeter (10.0.0.7)"
+    assert s == "ok" and head == "Đã kết nối: clawd (10.0.0.7)"
     assert detail.startswith("Cập nhật ") and detail.endswith("Phiên 42% · Tuần 17%")
 
 

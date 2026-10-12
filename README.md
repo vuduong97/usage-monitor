@@ -132,7 +132,7 @@ uv run --python 3.12 python -m clawd_desktop          # chạy tray từ mã ngu
 uv run --python 3.12 python -m clawd_desktop run      # chạy không giao diện, log ra terminal
 uv run --python 3.12 python -m clawd_desktop find     # liệt kê đồng hồ trong mạng
 uv run --python 3.12 python -m clawd_desktop settings # mở cửa sổ cài đặt (đồng hồ đã nhớ)
-python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/smalltv   # kèm firmware…
+python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/firmware   # kèm firmware…
 CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
 sh packaging/build_mac.sh                             # build Clawd.app + .dmg (trên Mac)
 ./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows)
@@ -146,9 +146,9 @@ Cấu trúc:
 
 ```
 clawd_desktop/
-  usage.py       đọc token Claude Code, hỏi mức dùng, gửi lên đồng hồ (từ Clawdmeter)
+  usage.py       đọc token Claude Code, hỏi mức dùng, gửi lên đồng hồ (từ daemon cũ)
   events.py      nhận hook Claude Code / pi, quyết định Clawd làm gì (POST /api/state)
-  discovery.py   tìm đồng hồ: mDNS _clawdmeter._tcp, quét mạng /24, địa chỉ nhập tay
+  discovery.py   tìm đồng hồ: mDNS _clawd._tcp, quét mạng /24, địa chỉ nhập tay
   engine.py      chạy tất cả trong một luồng nền, báo trạng thái cho tray
   tray.py        biểu tượng + menu tiếng Việt
   settings_app.py  cửa sổ cài đặt (pywebview, tiến trình riêng), trang ở ui/
@@ -163,7 +163,7 @@ PROTOCOL.md      giao thức giữa máy tính và đồng hồ
 ```
 
 Tuỳ chọn nâng cao nằm trong `~/.config/claude-usage-monitor/config` (dạng `khoá = giá trị`),
-dùng chung với daemon Clawdmeter: `http_targets = 192.168.1.48` để chỉ định đồng hồ cố định,
+dùng chung với daemon cũ: `http_targets = 192.168.1.48` để chỉ định đồng hồ cố định,
 `config_dirs = ~/.claude, ~/.claude-work` cho nhiều tài khoản, `events = off` để tắt phần
 hoạt hình, `event_port = 47913`.
 

@@ -6,8 +6,8 @@ ESP32 "Clawdmeter" peripheral over a custom GATT service. Uses
 bleak (CoreBluetooth backend on macOS).
 
 The same payload can also be pushed over WiFi: every `http_targets` entry in
-the config gets an HTTP POST of the JSON (e.g. a SmallTV running the
-smalltv-clawdmeter firmware, which has no Bluetooth). One poll feeds every
+the config gets an HTTP POST of the JSON (e.g. a Clawd clock running the
+Clawd firmware, which has no Bluetooth). One poll feeds every
 destination, so adding a WiFi screen does not add API calls.
 """
 
@@ -442,7 +442,7 @@ def read_onoff_setting(name: str, default: str = "off") -> str:
 def normalize_http_target(raw: str) -> str | None:
     """Turn an `http_targets` entry into a push URL, or None if unusable.
 
-    A bare host or IP (`192.168.0.125`, `smalltv.local:80`) becomes
+    A bare host or IP (`192.168.0.125`, `clawd.local:80`) becomes
     `http://<host>/api/usage`; a full URL keeps its own path.
     """
     raw = raw.strip()

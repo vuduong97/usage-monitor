@@ -2,8 +2,8 @@
 """Put a clawd firmware build inside the app (clawd_desktop/firmware/, git-ignored:
 the firmware is private and never goes in this repo).
 
-  python tools/bundle_firmware.py ../clawd-home/smalltv/.pio/build/smalltv_clawd/firmware.bin \
-      --src ../clawd-home/smalltv --commit c2da6b4
+  python tools/bundle_firmware.py ../clawd-home/firmware/.pio/build/clawd/firmware.bin \
+      --src ../clawd-home/firmware --commit c2da6b4
   CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
 
 fwSeq and layouts must be what that image reports in /api/heap: --src reads
@@ -43,7 +43,7 @@ def from_source(src: Path) -> tuple[int, int]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("image", type=Path)
-    ap.add_argument("--src", type=Path, help="the smalltv source dir the image was built from")
+    ap.add_argument("--src", type=Path, help="the firmware source dir the image was built from")
     ap.add_argument("--seq", type=int)
     ap.add_argument("--layouts", type=int)
     ap.add_argument("--commit", default="")

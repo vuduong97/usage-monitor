@@ -3,7 +3,7 @@
 Everything the clock's full-screen Clawd shows is decided here, on the Mac,
 so it can be tested and changed without reflashing. The clock only plays a
 named animation from /desk.pak with an optional text line, countdown and
-brightness cap (POST /api/state, see smalltv UsageClient.cpp).
+brightness cap (POST /api/state, see the firmware's UsageClient.cpp).
 
 Sources, all on 127.0.0.1 (EventServer):
   POST /hook/claude  raw Claude Code hook payload (integrations/claude)

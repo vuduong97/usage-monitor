@@ -1,4 +1,4 @@
-"""The settings window: `Clawd settings [--clock http://10.0.0.5] [--key clawdmeter]`.
+"""The settings window: `Clawd settings [--clock http://10.0.0.5] [--key clawd]`.
 
 Its own process (pywebview needs the main thread, which pystray already owns
 in the tray process), started by the tray's "Cài đặt…" item, so it costs

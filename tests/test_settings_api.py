@@ -10,7 +10,7 @@ from clawd_desktop import firmware as fw, settings_api as sa
 from clawd_desktop.clockapi import AuthNeeded, ClockError
 from clawd_desktop.discovery import ClockStore
 
-CFG = {"hostname": "clawdmeter", "wifi": [{"ssid": "Home", "passSet": True}, {"ssid": "Phone", "passSet": True}],
+CFG = {"hostname": "clawd", "wifi": [{"ssid": "Home", "passSet": True}, {"ssid": "Phone", "passSet": True}],
        "brightness": 45, "autoBrightness": False, "rotation": 0, "mode": "usage",
        "usage": {"usageUrl": "", "pollSec": 60, "screen": 0, "anim": 9, "layout": 0},
        "clock": {"tz": "", "tzPosix": "UTC0", "nightEnabled": False, "nightStart": "22:00", "nightEnd": "07:00",
@@ -87,7 +87,7 @@ def bridge(tmp_path, heap=None, password=None, bundle=None):
         return a
     keys = Keys()
     notes = []
-    b = sa.SettingsApi("http://10.0.0.5", "clawdmeter", notify=notes.append, api_factory=factory,
+    b = sa.SettingsApi("http://10.0.0.5", "clawd", notify=notes.append, api_factory=factory,
                        bundle=bundle, store=ClockStore(tmp_path / "clock.json"), keychain=keys)
     return b, made, keys, notes
 
@@ -151,7 +151,7 @@ def test_login_keeps_the_password_in_the_keychain(tmp_path):
     assert b.state()["code"] == "auth"
     assert b.login("wrong")["code"] == "auth" and keys.d == {}
     r = b.login("s3cret")
-    assert r["ok"] and r["saved"] and keys.d == {"clawdmeter": ("admin", "s3cret")}
+    assert r["ok"] and r["saved"] and keys.d == {"clawd": ("admin", "s3cret")}
     assert "s3cret" not in json.dumps(r)                                   # never handed back to the page
 
 

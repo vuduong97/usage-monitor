@@ -7,7 +7,7 @@ import pytest
 from clawd_desktop import clockapi as ca
 
 BASE = "http://10.0.0.5"
-CHALLENGE = 'Digest realm="smalltv", nonce="n0nce", qop="auth", algorithm=MD5, opaque="op"'
+CHALLENGE = 'Digest realm="clawd", nonce="n0nce", qop="auth", algorithm=MD5, opaque="op"'
 
 
 class FakeClock:

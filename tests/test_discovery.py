@@ -9,11 +9,11 @@ from clawd_desktop.discovery import Clock, ClockFinder, ClockStore
 
 class FakeBrowser:
     def __init__(self, clocks=()):
-        self.clocks = {f"{c.name}._clawdmeter._tcp.local.": c for c in clocks}
+        self.clocks = {f"{c.name}._clawd._tcp.local.": c for c in clocks}
         self.changed = 0
 
     def set(self, *clocks):
-        self.clocks = {f"{c.name}._clawdmeter._tcp.local.": c for c in clocks}
+        self.clocks = {f"{c.name}._clawd._tcp.local.": c for c in clocks}
         self.changed += 1
 
     def start(self):
@@ -56,7 +56,7 @@ def step(f):
     asyncio.run(f.step())
 
 
-A = Clock(host="10.0.0.7", name="clawdmeter", version="2.16.0")
+A = Clock(host="10.0.0.7", name="clawd", version="2.16.0")
 
 
 def test_first_mdns_clock_is_used_and_remembered(tmp_path):
@@ -64,14 +64,14 @@ def test_first_mdns_clock_is_used_and_remembered(tmp_path):
     assert f.targets() == []
     step(f)
     assert f.targets() == ["http://10.0.0.7/api/usage"]
-    assert store.load() == {"name": "clawdmeter", "host": "10.0.0.7", "port": 80, "version": "2.16.0"}
+    assert store.load() == {"name": "clawd", "host": "10.0.0.7", "port": 80, "version": "2.16.0"}
     assert calls == []
 
 
 def test_saved_clock_is_tried_at_once_then_follows_its_new_address(tmp_path):
-    f, store, _now, _ = make(tmp_path, saved={"name": "clawdmeter", "host": "192.168.1.48", "port": 80})
+    f, store, _now, _ = make(tmp_path, saved={"name": "clawd", "host": "192.168.1.48", "port": 80})
     assert f.targets() == ["http://192.168.1.48/api/usage"]      # before mDNS answers
-    f.browser.set(Clock(host="192.168.1.48", name="clawdmeter"))
+    f.browser.set(Clock(host="192.168.1.48", name="clawd"))
     step(f)
     assert f.targets() == ["http://192.168.1.48/api/usage"]
     assert store.load()["host"] == "192.168.1.48"
@@ -79,7 +79,7 @@ def test_saved_clock_is_tried_at_once_then_follows_its_new_address(tmp_path):
 
 def test_remembered_clock_wins_over_another_one(tmp_path):
     other = Clock(host="10.0.0.9", name="aaa-neighbour")
-    f, _store, _now, _ = make(tmp_path, clocks=[other, A], saved={"name": "clawdmeter", "host": "1.2.3.4"})
+    f, _store, _now, _ = make(tmp_path, clocks=[other, A], saved={"name": "clawd", "host": "1.2.3.4"})
     step(f)
     assert f.targets() == ["http://10.0.0.7/api/usage"]
 
@@ -128,7 +128,7 @@ def test_scanned_clock_takes_its_mdns_name_later(tmp_path):
     assert f.current.source == "scan"
     f.browser.set(A)
     step(f)
-    assert f.current == A and store.load()["name"] == "clawdmeter"
+    assert f.current == A and store.load()["name"] == "clawd"
 
 
 def test_manual_address_and_forget(tmp_path):

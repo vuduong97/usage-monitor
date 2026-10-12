@@ -10,7 +10,7 @@ BANNED = [
     (re.compile(r"(^|/)clawd_fonts?(/|$)", re.I), "Clawd fonts"),
     (re.compile(r"(^|/)(clawd-on-desk|desk_assets|assets/clawd)(/|$)", re.I), "Clawd artwork"),
     (re.compile(r"(^|/)\.stock-backup(/|$)"), "stock clock backup"),
-    (re.compile(r"(^|/)(smalltv|firmware)(/|$)", re.I), "firmware source"),
+    (re.compile(r"(^|/)(firmware)(/|$)", re.I), "firmware source"),
 ]
 MAX_BYTES = 512_000   # nothing in this repo should be big; a large blob is probably art
 

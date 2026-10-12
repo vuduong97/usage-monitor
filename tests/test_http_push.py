@@ -35,7 +35,7 @@ def _recording_transport(status=200):
 def test_normalize_http_target():
     n = d.normalize_http_target
     assert n("192.168.0.125") == "http://192.168.0.125/api/usage"
-    assert n(" smalltv.local:8080 ") == "http://smalltv.local:8080/api/usage"
+    assert n(" clawd.local:8080 ") == "http://clawd.local:8080/api/usage"
     assert n("http://10.0.0.5/") == "http://10.0.0.5/api/usage"
     assert n("http://10.0.0.5/custom/push") == "http://10.0.0.5/custom/push"
     assert n("") is None

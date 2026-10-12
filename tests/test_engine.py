@@ -40,7 +40,7 @@ def test_tracking_sinks_report_each_push():
 
 def test_engine_pushes_usage_to_the_found_clock(tmp_path, monkeypatch):
     store = ClockStore(tmp_path / "clock.json")
-    store.save({"host": "10.0.0.7", "name": "clawdmeter"})
+    store.save({"host": "10.0.0.7", "name": "clawd"})
     finder = ClockFinder(store, browser=NoBrowser())
     e = eng.Engine(finder)
     monkeypatch.setattr(usage, "read_onoff_setting", lambda name, default="off": "off" if name == "events" else default)
@@ -71,7 +71,7 @@ def test_engine_pushes_usage_to_the_found_clock(tmp_path, monkeypatch):
     assert pushed and pushed[0][0] == ["http://10.0.0.7/api/usage"]
     snap = e.snapshot()
     assert snap["payload"]["s"] == 42 and snap["token"] is True and snap["last_ok"]
-    assert snap["clock"] == Clock(host="10.0.0.7", name="clawdmeter", source="saved")
+    assert snap["clock"] == Clock(host="10.0.0.7", name="clawd", source="saved")
 
 
 def test_no_token_payload_marks_token_missing(tmp_path):
@@ -98,12 +98,12 @@ def test_daemon_running_checks_the_state_endpoint(monkeypatch):
 def test_a_settings_pause_empties_the_targets(tmp_path):
     from clawd_desktop import pause
     store = ClockStore(tmp_path / "clock.json")
-    store.save({"host": "10.0.0.7", "name": "clawdmeter"})
+    store.save({"host": "10.0.0.7", "name": "clawd"})
     now = [1000.0]
     p = tmp_path / "pause.json"
     e = eng.Engine(ClockFinder(store, browser=NoBrowser()),
                    pause=pause.PauseReader(p, now=lambda: now[0]))
-    e.finder.current = Clock(host="10.0.0.7", name="clawdmeter", source="saved")
+    e.finder.current = Clock(host="10.0.0.7", name="clawd", source="saved")
     assert e.targets() == ["http://10.0.0.7/api/usage"]
     pause.hold(60, "firmware update", path=p, now=lambda: now[0])
     assert e.targets() == [] and e.snapshot()["paused"] == "firmware update"
