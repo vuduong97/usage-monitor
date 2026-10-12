@@ -1,0 +1,28 @@
+{
+  "id": "bb370314b",
+  "name": "Harness http server",
+  "command": "cd /tmp/clawd-harness && python3 -m http.server 8765 --bind 127.0.0.1",
+  "status": "killed",
+  "outputPath": ".pi/tasks/01a12f9e-221d-703c-a324-547ffa4beefc-36028/bb370314b.output",
+  "cwd": "/Users/thienvu/Downloads/code/clawd-desktop",
+  "startTime": 1791801667998,
+  "endTime": 1791801956343,
+  "exitCode": null,
+  "signal": "SIGTERM",
+  "pid": 42185,
+  "bytesWritten": 1327,
+  "isAgent": false,
+  "surviveReload": false,
+  "notified": false,
+  "notifyOnCompletion": false,
+  "triggerOnCompletion": false,
+  "timeoutSeconds": 3600,
+  "shellPolicy": {
+    "policy": "inherit",
+    "executable": "/bin/zsh",
+    "argvPrefix": [
+      "-c"
+    ],
+    "dialect": "posix"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "b9b69b91b",
+  "name": "Build Clawd.app private",
+  "command": "cd /Users/thienvu/Downloads/code/clawd-desktop && CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh 2>&1 | tail -15 && ls -la dist/Clawd.app/Contents/Resources/clawd_desktop/renderer dist/Clawd.app/Contents/Resources/clawd_desktop/firmware 2>&1 | head; find dist/Clawd.app -name preview.json -exec cat {} \\;",
+  "status": "completed",
+  "outputPath": ".pi/tasks/01a12f9e-221d-703c-a324-547ffa4beefc-36028/b9b69b91b.output",
+  "cwd": "/Users/thienvu/Downloads/code/clawd-desktop",
+  "startTime": 1791802355817,
+  "endTime": 1791802389994,
+  "exitCode": 0,
+  "signal": null,
+  "pid": 3319,
+  "bytesWritten": 1047,
+  "isAgent": false,
+  "surviveReload": false,
+  "notified": true,
+  "notifyOnCompletion": true,
+  "triggerOnCompletion": true,
+  "timeoutSeconds": 1200,
+  "shellPolicy": {
+    "policy": "inherit",
+    "executable": "/bin/zsh",
+    "argvPrefix": [
+      "-c"
+    ],
+    "dialect": "posix"
+  }
+}

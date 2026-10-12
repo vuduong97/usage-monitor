@@ -1,0 +1,28 @@
+{
+  "id": "bb6ce074c",
+  "name": "Build clawd firmware",
+  "command": "cd /Users/thienvu/Downloads/code/clawd-home/firmware && pio run -e clawd 2>&1 | tail -15 && ls -l .pio/build/clawd/firmware.bin",
+  "status": "completed",
+  "outputPath": ".pi/tasks/01a12f9e-221d-703c-a324-547ffa4beefc-36028/bb6ce074c.output",
+  "cwd": "/Users/thienvu/Downloads/code/clawd-desktop",
+  "startTime": 1791800951891,
+  "endTime": 1791800955080,
+  "exitCode": 0,
+  "signal": null,
+  "pid": 77486,
+  "bytesWritten": 1111,
+  "isAgent": false,
+  "surviveReload": false,
+  "notified": true,
+  "notifyOnCompletion": true,
+  "triggerOnCompletion": true,
+  "timeoutSeconds": 900,
+  "shellPolicy": {
+    "policy": "inherit",
+    "executable": "/bin/zsh",
+    "argvPrefix": [
+      "-c"
+    ],
+    "dialect": "posix"
+  }
+}

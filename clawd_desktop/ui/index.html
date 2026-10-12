@@ -1,230 +1,988 @@
 <!doctype html>
 <html lang="vi">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; connect-src 'none'">
-<title>Clawd · Cài đặt</title>
-<style>
-  :root { --bg:#141413; --panel:#1a1a19; --card:#1f1f1e; --line:#2a2a28; --line2:#2f2f2c; --text:#faf9f5; --dim:#b0aea5;
-          --mute:#77756d; --acc:#d97757; --ok:#9bb07a; --okbg:#2a3324; --okfg:#c6d6ab; --warnbg:#3a2a22; --warnfg:#e8a688; --bad:#e5786d;
-          --serif: "New York", "Iowan Old Style", Georgia, serif; --mono: ui-monospace, Menlo, Consolas, monospace; }
-  * { box-sizing:border-box; }
-  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow:hidden; user-select:none; -webkit-user-select:none; }
-  input, select, textarea { user-select:text; -webkit-user-select:text; }
-  svg.i { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
-  button { font:inherit; }
-  :focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
-  .app { height:100%; display:grid; grid-template-rows:auto 1fr auto; }
-  header { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--line); }
-  .tabs { display:flex; gap:2px; }
-  .tabs button { background:none; border:0; padding:5px 12px; border-radius:7px; color:var(--dim); font-size:13px; cursor:pointer; display:flex; gap:6px; align-items:center; }
-  .tabs button:hover { color:var(--text); }
-  .tabs button[aria-selected=true] { background:var(--line); color:var(--text); }
-  .conn { margin-left:auto; font-size:12px; color:var(--dim); display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--mute); flex:none; }
-  .dot.ok { background:var(--ok); box-shadow:0 0 8px var(--ok); } .dot.bad { background:var(--bad); } .dot.busy { background:#e0b04a; }
-  .split { display:grid; grid-template-columns:296px 1fr; min-height:0; }
-  .left { border-right:1px solid var(--line); padding:20px 18px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:radial-gradient(circle at 50% 32%, #231d19, var(--bg) 70%); }
-  .device { width:252px; background:#e9e5dc; border-radius:16px; padding:14px 14px 30px; box-shadow:inset 0 -6px 0 #d4cfc3, 0 18px 40px rgba(0,0,0,.5); position:relative; }
-  .device::after { content:"Clawd"; position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:10px; color:#8a857a; letter-spacing:.2em; }
-  .device .scr { width:224px; height:224px; background:#000; border-radius:4px; overflow:hidden; }
-  .device canvas, .device img { width:224px; height:224px; display:block; transition:transform .3s, filter .2s; }
-  .left .seg button { font-size:11px; white-space:nowrap; padding:5px 2px; }
-  .right { padding:18px 24px 24px; overflow:auto; }
-  h2 { font:400 19px/1.25 var(--serif); margin:0 0 4px; }
-  .sub { color:var(--dim); font-size:12px; margin:0 0 12px; }
-  .f { display:grid; grid-template-columns:140px 1fr; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid #222220; }
-  .f > span:first-child { color:var(--dim); font-size:13px; }
-  .f small { display:block; color:var(--mute); font-size:11px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  input[type=range] { accent-color:var(--acc); width:100%; cursor:pointer; }
-  input[type=text], input[type=password], input[type=time], select { background:var(--card); color:var(--text); border:1px solid var(--line2); border-radius:7px; padding:5px 8px; font:inherit; font-size:13px; min-width:0; }
-  input[type=time] { color-scheme:dark; }
-  select { cursor:pointer; }
-  .seg { display:flex; background:var(--card); border-radius:9px; padding:3px; gap:2px; border:1px solid var(--line); }
-  .seg button { flex:1; background:none; border:0; text-align:center; font-size:12px; padding:5px 6px; border-radius:6px; color:var(--dim); cursor:pointer; }
-  .seg button[aria-checked=true] { background:var(--acc); color:var(--bg); }
-  .sw { width:38px; height:22px; border-radius:99px; background:#55534d; position:relative; cursor:pointer; border:0; flex:none; transition:background .2s; }
-  .sw::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .2s; box-shadow:0 1px 2px rgba(0,0,0,.3); }
-  .sw[aria-checked=true] { background:var(--acc); } .sw[aria-checked=true]::after { transform:translateX(16px); }
-  .sw:disabled { opacity:.4; cursor:default; }
-  .btn { background:var(--acc); color:var(--bg); border:0; border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; white-space:nowrap; display:inline-flex; gap:6px; align-items:center; }
-  .btn:disabled { opacity:.45; cursor:default; }
-  .ghost { background:transparent; color:var(--dim); border:1px solid var(--line2); }
-  .ghost:hover:not(:disabled) { color:var(--text); border-color:#55534d; }
-  .danger { background:transparent; color:var(--bad); border:1px solid #5a2f2a; }
-  .small { padding:4px 10px; font-size:12px; }
-  .chip { font-size:10px; padding:1px 8px; border-radius:99px; align-self:flex-start; }
-  .chip.ok { background:var(--okbg); color:var(--okfg); } .chip.fw { background:var(--warnbg); color:var(--warnfg); } .chip.no { background:var(--line); color:var(--mute); }
-  .gal { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:560px; }
-  .gal button { all:unset; box-sizing:border-box; cursor:pointer; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:6px; }
-  .gal button:hover { border-color:#55534d; }
-  .gal button:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
-  .gal button[aria-checked=true] { border-color:var(--acc); background:#2a1f1a; }
-  .gal button[aria-disabled=true] { opacity:.45; cursor:default; }
-  /* height:auto: an <img>'s height="240" attribute is a CSS height and would beat aspect-ratio */
-  .gal .thumb { width:100%; height:auto; aspect-ratio:1; border-radius:6px; background:#000; display:block; }
-  .gal .n { font-size:12px; line-height:1.3; }
-  .nets { display:flex; flex-direction:column; gap:8px; margin:6px 0 10px; }
-  .net { display:grid; grid-template-columns:22px 1fr 170px auto; gap:8px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
-  .net .pri { font:11px var(--mono); color:var(--mute); text-align:center; }
-  .net .ss { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .net .ss small { display:block; color:var(--mute); font-size:11px; }
-  .net .acts { display:flex; gap:2px; }
-  .ib { background:none; border:0; color:var(--dim); cursor:pointer; padding:4px; border-radius:6px; display:grid; place-items:center; }
-  .ib:hover:not(:disabled) { background:var(--line); color:var(--text); } .ib:disabled { opacity:.3; cursor:default; }
-  .scan { display:flex; flex-direction:column; gap:2px; max-height:170px; overflow:auto; margin-top:8px; }
-  .scan button { all:unset; display:flex; justify-content:space-between; gap:10px; padding:6px 10px; border-radius:7px; cursor:pointer; font-size:13px; }
-  .scan button:hover, .scan button:focus-visible { background:var(--card); }
-  .scan small { color:var(--mute); }
-  .box { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; }
-  .box h3 { margin:0 0 4px; font-size:14px; font-weight:500; display:flex; gap:8px; align-items:center; }
-  .box p { margin:0 0 10px; color:var(--dim); font-size:12px; }
-  .steps { display:flex; gap:6px; margin:10px 0 4px; }
-  .steps span { flex:1; height:4px; border-radius:4px; background:var(--line); }
-  .steps span.on { background:var(--acc); } .steps span.done { background:var(--ok); }
-  .kv { display:grid; grid-template-columns:130px 1fr; gap:4px 10px; font-size:12px; }
-  .kv span:nth-child(odd) { color:var(--dim); } .kv span:nth-child(even) { font-family:var(--mono); }
-  footer { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 24px; border-top:1px solid var(--line); background:var(--panel); font-size:12px; color:var(--dim); min-height:52px; }
-  footer .msg { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  footer .msg.err { color:var(--bad); } footer .msg.good { color:var(--okfg); }
-  .veil { position:fixed; inset:0; background:rgba(10,10,9,.72); display:none; place-items:center; z-index:5; }
-  .veil.on { display:grid; }
-  .dlg { width:360px; background:var(--card); border:1px solid var(--line2); border-radius:14px; padding:20px; box-shadow:0 30px 70px rgba(0,0,0,.6); }
-  .dlg h3 { margin:0 0 6px; font:400 18px var(--serif); }
-  .dlg p { margin:0 0 12px; color:var(--dim); font-size:13px; }
-  .dlg input { width:100%; margin-bottom:12px; }
-  .dlg .row { justify-content:flex-end; }
-  .hide { display:none !important; }
-  .note { font-size:12px; color:var(--dim); margin:8px 0 0; }
-  .warn { color:var(--warnfg); }
-  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
-</style>
-</head>
-<body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
-  <symbol id="gauge" viewBox="0 0 24 24"><path d="M12 14l4-4M3.3 19a10 10 0 1 1 17.4 0"/></symbol>
-  <symbol id="wifi" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r=".8"/></symbol>
-  <symbol id="dl" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
-  <symbol id="app" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></symbol>
-  <symbol id="up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
-  <symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
-  <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
-</svg>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; connect-src 'none'"
+    />
+    <title>Clawd · Cài đặt</title>
+    <style>
+      :root {
+        --bg: #141413;
+        --panel: #1a1a19;
+        --card: #1f1f1e;
+        --line: #2a2a28;
+        --line2: #2f2f2c;
+        --text: #faf9f5;
+        --dim: #b0aea5;
+        --mute: #77756d;
+        --acc: #d97757;
+        --ok: #9bb07a;
+        --okbg: #2a3324;
+        --okfg: #c6d6ab;
+        --warnbg: #3a2a22;
+        --warnfg: #e8a688;
+        --bad: #e5786d;
+        --serif: "New York", "Iowan Old Style", Georgia, serif;
+        --mono: ui-monospace, Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          system-ui,
+          sans-serif;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      input,
+      select,
+      textarea {
+        user-select: text;
+        -webkit-user-select: text;
+      }
+      svg.i {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+      button {
+        font: inherit;
+      }
+      :focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 2px;
+      }
+      .app {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .tabs {
+        display: flex;
+        gap: 2px;
+      }
+      .tabs button {
+        background: none;
+        border: 0;
+        padding: 5px 12px;
+        border-radius: 7px;
+        color: var(--dim);
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .tabs button:hover {
+        color: var(--text);
+      }
+      .tabs button[aria-selected="true"] {
+        background: var(--line);
+        color: var(--text);
+      }
+      .conn {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--dim);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--mute);
+        flex: none;
+      }
+      .dot.ok {
+        background: var(--ok);
+        box-shadow: 0 0 8px var(--ok);
+      }
+      .dot.bad {
+        background: var(--bad);
+      }
+      .dot.busy {
+        background: #e0b04a;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 296px 1fr;
+        min-height: 0;
+      }
+      .left {
+        border-right: 1px solid var(--line);
+        padding: 20px 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: radial-gradient(circle at 50% 32%, #231d19, var(--bg) 70%);
+      }
+      .device {
+        width: 252px;
+        background: #e9e5dc;
+        border-radius: 16px;
+        padding: 14px 14px 30px;
+        box-shadow:
+          inset 0 -6px 0 #d4cfc3,
+          0 18px 40px rgba(0, 0, 0, 0.5);
+        position: relative;
+      }
+      .device::after {
+        content: "Clawd";
+        position: absolute;
+        bottom: 8px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 10px;
+        color: #8a857a;
+        letter-spacing: 0.2em;
+      }
+      .device .scr {
+        width: 224px;
+        height: 224px;
+        background: #000;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .device canvas,
+      .device img {
+        width: 224px;
+        height: 224px;
+        display: block;
+        transition:
+          transform 0.3s,
+          filter 0.2s;
+      }
+      .left .seg button {
+        font-size: 11px;
+        white-space: nowrap;
+        padding: 5px 2px;
+      }
+      .right {
+        padding: 18px 24px 24px;
+        overflow: auto;
+      }
+      h2 {
+        font: 400 19px/1.25 var(--serif);
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: var(--dim);
+        font-size: 12px;
+        margin: 0 0 12px;
+      }
+      .f {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px solid #222220;
+      }
+      .f > span:first-child {
+        color: var(--dim);
+        font-size: 13px;
+      }
+      .f small {
+        display: block;
+        color: var(--mute);
+        font-size: 11px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      input[type="range"] {
+        accent-color: var(--acc);
+        width: 100%;
+        cursor: pointer;
+      }
+      input[type="text"],
+      input[type="password"],
+      input[type="time"],
+      select {
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--line2);
+        border-radius: 7px;
+        padding: 5px 8px;
+        font: inherit;
+        font-size: 13px;
+        min-width: 0;
+      }
+      input[type="time"] {
+        color-scheme: dark;
+      }
+      select {
+        cursor: pointer;
+      }
+      .seg {
+        display: flex;
+        background: var(--card);
+        border-radius: 9px;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid var(--line);
+      }
+      .seg button {
+        flex: 1;
+        background: none;
+        border: 0;
+        text-align: center;
+        font-size: 12px;
+        padding: 5px 6px;
+        border-radius: 6px;
+        color: var(--dim);
+        cursor: pointer;
+      }
+      .seg button[aria-checked="true"] {
+        background: var(--acc);
+        color: var(--bg);
+      }
+      .sw {
+        width: 38px;
+        height: 22px;
+        border-radius: 99px;
+        background: #55534d;
+        position: relative;
+        cursor: pointer;
+        border: 0;
+        flex: none;
+        transition: background 0.2s;
+      }
+      .sw::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
+      .sw[aria-checked="true"] {
+        background: var(--acc);
+      }
+      .sw[aria-checked="true"]::after {
+        transform: translateX(16px);
+      }
+      .sw:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .btn {
+        background: var(--acc);
+        color: var(--bg);
+        border: 0;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .ghost {
+        background: transparent;
+        color: var(--dim);
+        border: 1px solid var(--line2);
+      }
+      .ghost:hover:not(:disabled) {
+        color: var(--text);
+        border-color: #55534d;
+      }
+      .danger {
+        background: transparent;
+        color: var(--bad);
+        border: 1px solid #5a2f2a;
+      }
+      .small {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+      .chip {
+        font-size: 10px;
+        padding: 1px 8px;
+        border-radius: 99px;
+        align-self: flex-start;
+      }
+      .chip.ok {
+        background: var(--okbg);
+        color: var(--okfg);
+      }
+      .chip.fw {
+        background: var(--warnbg);
+        color: var(--warnfg);
+      }
+      .chip.no {
+        background: var(--line);
+        color: var(--mute);
+      }
+      .gal {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        max-width: 560px;
+      }
+      .gal button {
+        all: unset;
+        box-sizing: border-box;
+        cursor: pointer;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .gal button:hover {
+        border-color: #55534d;
+      }
+      .gal button:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 2px;
+      }
+      .gal button[aria-checked="true"] {
+        border-color: var(--acc);
+        background: #2a1f1a;
+      }
+      .gal button[aria-disabled="true"] {
+        opacity: 0.45;
+        cursor: default;
+      }
+      /* height:auto: an <img>'s height="240" attribute is a CSS height and would beat aspect-ratio */
+      .gal .thumb {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        border-radius: 6px;
+        background: #000;
+        display: block;
+      }
+      .gal .n {
+        font-size: 12px;
+        line-height: 1.3;
+      }
+      .nets {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 6px 0 10px;
+      }
+      .net {
+        display: grid;
+        grid-template-columns: 22px 1fr 170px auto;
+        gap: 8px;
+        align-items: center;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 10px;
+      }
+      .net .pri {
+        font: 11px var(--mono);
+        color: var(--mute);
+        text-align: center;
+      }
+      .net .ss {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .net .ss small {
+        display: block;
+        color: var(--mute);
+        font-size: 11px;
+      }
+      .net .acts {
+        display: flex;
+        gap: 2px;
+      }
+      .ib {
+        background: none;
+        border: 0;
+        color: var(--dim);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+      }
+      .ib:hover:not(:disabled) {
+        background: var(--line);
+        color: var(--text);
+      }
+      .ib:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .scan {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 170px;
+        overflow: auto;
+        margin-top: 8px;
+      }
+      .scan button {
+        all: unset;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 10px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .scan button:hover,
+      .scan button:focus-visible {
+        background: var(--card);
+      }
+      .scan small {
+        color: var(--mute);
+      }
+      .box {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .box h3 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .box p {
+        margin: 0 0 10px;
+        color: var(--dim);
+        font-size: 12px;
+      }
+      .steps {
+        display: flex;
+        gap: 6px;
+        margin: 10px 0 4px;
+      }
+      .steps span {
+        flex: 1;
+        height: 4px;
+        border-radius: 4px;
+        background: var(--line);
+      }
+      .steps span.on {
+        background: var(--acc);
+      }
+      .steps span.done {
+        background: var(--ok);
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 4px 10px;
+        font-size: 12px;
+      }
+      .kv span:nth-child(odd) {
+        color: var(--dim);
+      }
+      .kv span:nth-child(even) {
+        font-family: var(--mono);
+      }
+      footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 24px;
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+        font-size: 12px;
+        color: var(--dim);
+        min-height: 52px;
+      }
+      footer .msg {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      footer .msg.err {
+        color: var(--bad);
+      }
+      footer .msg.good {
+        color: var(--okfg);
+      }
+      .veil {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 9, 0.72);
+        display: none;
+        place-items: center;
+        z-index: 5;
+      }
+      .veil.on {
+        display: grid;
+      }
+      .dlg {
+        width: 360px;
+        background: var(--card);
+        border: 1px solid var(--line2);
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+      }
+      .dlg h3 {
+        margin: 0 0 6px;
+        font: 400 18px var(--serif);
+      }
+      .dlg p {
+        margin: 0 0 12px;
+        color: var(--dim);
+        font-size: 13px;
+      }
+      .dlg input {
+        width: 100%;
+        margin-bottom: 12px;
+      }
+      .dlg .row {
+        justify-content: flex-end;
+      }
+      .hide {
+        display: none !important;
+      }
+      .note {
+        font-size: 12px;
+        color: var(--dim);
+        margin: 8px 0 0;
+      }
+      .warn {
+        color: var(--warnfg);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path
+          d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+        />
+      </symbol>
+      <symbol id="gauge" viewBox="0 0 24 24">
+        <path d="M12 14l4-4M3.3 19a10 10 0 1 1 17.4 0" />
+      </symbol>
+      <symbol id="wifi" viewBox="0 0 24 24">
+        <path
+          d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 20 0"
+        />
+        <circle cx="12" cy="19.5" r=".8" />
+      </symbol>
+      <symbol id="dl" viewBox="0 0 24 24">
+        <path d="M12 3v12M7 10l5 5 5-5M4 21h16" />
+      </symbol>
+      <symbol id="app" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="14" rx="2" />
+        <path d="M8 21h8M12 18v3" />
+      </symbol>
+      <symbol id="up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></symbol>
+      <symbol id="x" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </symbol>
+      <symbol id="lock" viewBox="0 0 24 24">
+        <rect x="5" y="11" width="14" height="10" rx="2" />
+        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </symbol>
+    </svg>
 
-<div class="app">
-  <header>
-    <nav class="tabs" role="tablist" id="tabs">
-      <button role="tab" data-tab="display" aria-selected="true"><svg class="i"><use href="#sun"/></svg>Hiển thị</button>
-      <button role="tab" data-tab="usage"><svg class="i"><use href="#gauge"/></svg>Usage</button>
-      <button role="tab" data-tab="wifi"><svg class="i"><use href="#wifi"/></svg>Wi‑Fi</button>
-      <button role="tab" data-tab="update"><svg class="i"><use href="#dl"/></svg>Cập nhật</button>
-      <button role="tab" data-tab="app"><svg class="i"><use href="#app"/></svg>App</button>
-    </nav>
-    <div class="conn"><i class="dot busy" id="connDot"></i><span id="connText">Đang kết nối…</span></div>
-  </header>
+    <div class="app">
+      <header>
+        <nav class="tabs" role="tablist" id="tabs">
+          <button role="tab" data-tab="display" aria-selected="true">
+            <svg class="i"><use href="#sun" /></svg>Hiển thị
+          </button>
+          <button role="tab" data-tab="usage">
+            <svg class="i"><use href="#gauge" /></svg>Usage
+          </button>
+          <button role="tab" data-tab="wifi">
+            <svg class="i"><use href="#wifi" /></svg>Wi‑Fi
+          </button>
+          <button role="tab" data-tab="update">
+            <svg class="i"><use href="#dl" /></svg>Cập nhật
+          </button>
+          <button role="tab" data-tab="app">
+            <svg class="i"><use href="#app" /></svg>App
+          </button>
+        </nav>
+        <div class="conn">
+          <i class="dot busy" id="connDot"></i
+          ><span id="connText">Đang kết nối…</span>
+        </div>
+      </header>
 
-  <div class="split">
-    <div class="left">
-      <div class="device" id="device"><div class="scr"><img id="shot" class="hide" width="240" height="240" alt="Màn hình đồng hồ, vẽ bằng chính firmware"><canvas id="big" width="240" height="240" aria-label="Xem trước màn hình đồng hồ (gần đúng)"></canvas></div></div>
+      <div class="split">
+        <div class="left">
+          <div class="device" id="device">
+            <div class="scr">
+              <img
+                id="shot"
+                class="hide"
+                width="240"
+                height="240"
+                alt="Màn hình đồng hồ, vẽ bằng chính firmware"
+              /><canvas
+                id="big"
+                width="240"
+                height="240"
+                aria-label="Xem trước màn hình đồng hồ (gần đúng)"
+              ></canvas>
+            </div>
+          </div>
+        </div>
+
+        <main class="right" id="panes">
+          <!-- DISPLAY -->
+          <section data-pane="display">
+            <h2>Hiển thị &amp; Clawd</h2>
+            <p class="sub">
+              Đổi xong bấm “Lưu vào đồng hồ”: mọi thay đổi đi trong một lần gửi.
+            </p>
+            <div class="f">
+              <span>Độ sáng</span>
+              <div class="row" style="flex-wrap: nowrap">
+                <input
+                  id="brightness"
+                  type="range"
+                  min="0"
+                  max="100"
+                  aria-label="Độ sáng"
+                /><span
+                  id="brightVal"
+                  style="
+                    width: 38px;
+                    text-align: right;
+                    font-size: 12px;
+                    color: var(--dim);
+                  "
+                ></span>
+              </div>
+            </div>
+            <div class="f">
+              <span>Xoay màn hình</span>
+              <div
+                class="seg"
+                id="rotation"
+                role="radiogroup"
+                aria-label="Xoay màn hình"
+              >
+                <button role="radio" data-v="0">0°</button
+                ><button role="radio" data-v="1">90°</button
+                ><button role="radio" data-v="2">180°</button
+                ><button role="radio" data-v="3">270°</button>
+              </div>
+            </div>
+            <div class="f">
+              <span>Màn hình chính</span>
+              <div
+                class="seg"
+                id="screen"
+                role="radiogroup"
+                aria-label="Màn hình chính"
+              >
+                <button role="radio" data-v="0">Tự động</button
+                ><button role="radio" data-v="1">Usage</button>
+              </div>
+            </div>
+            <div class="f">
+              <span>Múi giờ</span
+              ><select id="tz" aria-label="Múi giờ"></select>
+            </div>
+            <div class="f">
+              <span>Chế độ đêm<small>Giảm độ sáng theo giờ</small></span
+              ><button
+                class="sw"
+                role="switch"
+                id="nightEnabled"
+                aria-label="Chế độ đêm"
+              ></button>
+            </div>
+            <div class="f hide" id="nightRow">
+              <span>Giờ đêm</span>
+              <div class="row">
+                <input id="nightStart" type="time" aria-label="Bắt đầu" /><span
+                  style="color: var(--dim)"
+                  >→</span
+                ><input id="nightEnd" type="time" aria-label="Kết thúc" /><span
+                  style="color: var(--dim); font-size: 12px"
+                  >sáng</span
+                ><input
+                  id="nightLevel"
+                  type="range"
+                  min="0"
+                  max="100"
+                  style="width: 90px"
+                  aria-label="Độ sáng ban đêm"
+                /><span
+                  id="nightVal"
+                  style="font-size: 12px; color: var(--dim)"
+                ></span>
+              </div>
+            </div>
+          </section>
+
+          <!-- USAGE -->
+          <section data-pane="usage" class="hide">
+            <h2>Màn hình Usage</h2>
+            <p class="sub">Chọn kiểu màn hình usage.</p>
+            <div
+              class="gal"
+              id="gal"
+              role="radiogroup"
+              aria-label="Kiểu màn hình usage"
+            ></div>
+            <p class="note" id="galNote"></p>
+          </section>
+
+          <!-- WIFI -->
+          <section data-pane="wifi" class="hide">
+            <h2>Wi‑Fi &amp; mạng</h2>
+            <p class="sub">
+              Đồng hồ thử các mạng theo thứ tự từ trên xuống. Lưu Wi‑Fi sẽ khởi
+              động lại đồng hồ.
+            </p>
+            <div class="nets" id="nets"></div>
+            <div class="row">
+              <button class="btn ghost small" id="scanBtn">
+                <svg class="i"><use href="#wifi" /></svg>Tìm mạng quanh đồng hồ</button
+              ><span class="note" id="scanNote" style="margin: 0"></span>
+            </div>
+            <div class="scan" id="scanList"></div>
+            <div class="f" style="margin-top: 14px">
+              <span
+                >Tên đồng hồ<small
+                  >Địa chỉ <span id="hostHint"></span>.local</small
+                ></span
+              ><input
+                id="hostname"
+                type="text"
+                maxlength="32"
+                spellcheck="false"
+                aria-label="Tên đồng hồ"
+              />
+            </div>
+          </section>
+
+          <!-- UPDATE -->
+          <section data-pane="update" class="hide">
+            <h2>Cập nhật &amp; bảo trì</h2>
+            <p class="sub">Firmware đi kèm app. Không cần tải gì từ mạng.</p>
+            <div class="box">
+              <h3>Firmware</h3>
+              <div class="kv" id="fwKv"></div>
+              <p id="fwText" style="margin: 10px 0"></p>
+              <div class="steps hide" id="steps">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <p id="fwStep" class="hide" style="margin: 6px 0 10px"></p>
+              <button class="btn" id="fwBtn" disabled>Cập nhật firmware</button>
+            </div>
+            <div class="box">
+              <h3>Sao lưu</h3>
+              <p>Bản sao lưu chứa cả mật khẩu Wi‑Fi: cất ở nơi an toàn.</p>
+              <div class="row">
+                <button class="btn ghost small" id="exportBtn">
+                  Lưu bản sao lưu…</button
+                ><button class="btn ghost small" id="importBtn">
+                  Khôi phục từ file…
+                </button>
+              </div>
+            </div>
+            <div class="box">
+              <h3>Khởi động lại / xoá cài đặt</h3>
+              <p>
+                Xoá cài đặt đưa đồng hồ về trạng thái mới: mất Wi‑Fi, phải cài
+                lại qua điểm phát “Clawd-Setup”.
+              </p>
+              <div class="row">
+                <button class="btn ghost small" id="rebootBtn">
+                  Khởi động lại</button
+                ><button class="btn danger small" id="factoryBtn">
+                  Xoá toàn bộ cài đặt…
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- APP -->
+          <section data-pane="app" class="hide">
+            <h2>App Clawd</h2>
+            <p class="sub">
+              Các tuỳ chọn của app trên máy tính này (không gửi xuống đồng hồ).
+            </p>
+            <div class="f">
+              <span>Mở cùng máy tính</span
+              ><button
+                class="sw"
+                role="switch"
+                id="autostart"
+                aria-label="Mở cùng máy tính"
+              ></button>
+            </div>
+            <div class="f">
+              <span>Clawd phản ứng<small>khi bạn dùng Claude Code</small></span
+              ><button
+                class="sw"
+                role="switch"
+                id="hooks"
+                aria-label="Clawd phản ứng khi dùng Claude Code"
+              ></button>
+            </div>
+            <div class="f">
+              <span>Đồng hồ</span>
+              <div class="row">
+                <span id="clockAddr" style="font: 12px var(--mono)"></span
+                ><button class="btn ghost small" id="rescanBtn">Tìm lại</button>
+              </div>
+            </div>
+            <div class="f">
+              <span>Nhập địa chỉ<small>Khi không tự tìm thấy</small></span>
+              <div class="row" style="flex-wrap: nowrap">
+                <input
+                  id="manualHost"
+                  type="text"
+                  placeholder="192.168.1.48"
+                  spellcheck="false"
+                  aria-label="Địa chỉ đồng hồ"
+                  style="flex: 1"
+                /><button class="btn ghost small" id="manualBtn">Dùng</button>
+              </div>
+            </div>
+            <div class="f">
+              <span>Khác</span>
+              <div class="row">
+                <button class="btn ghost small" id="logBtn">Mở nhật ký</button
+                ><button class="btn ghost small" id="webBtn">
+                  Mở trang cài đặt trên đồng hồ
+                </button>
+              </div>
+            </div>
+            <p class="note" id="appVer"></p>
+          </section>
+        </main>
+      </div>
+
+      <footer>
+        <span class="msg" id="msg">Đang đọc cài đặt từ đồng hồ…</span>
+        <span class="row" style="flex-wrap: nowrap"
+          ><button class="btn ghost" id="undoBtn" disabled>Hoàn tác</button
+          ><button class="btn" id="saveBtn" disabled>
+            Lưu vào đồng hồ
+          </button></span
+        >
+      </footer>
     </div>
 
-    <main class="right" id="panes">
-      <!-- DISPLAY -->
-      <section data-pane="display">
-        <h2>Hiển thị &amp; Clawd</h2>
-        <p class="sub">Đổi xong bấm “Lưu vào đồng hồ”: mọi thay đổi đi trong một lần gửi.</p>
-        <div class="f"><span>Độ sáng</span><div class="row" style="flex-wrap:nowrap"><input id="brightness" type="range" min="0" max="100" aria-label="Độ sáng"><span id="brightVal" style="width:38px;text-align:right;font-size:12px;color:var(--dim)"></span></div></div>
-        <div class="f"><span>Xoay màn hình</span><div class="seg" id="rotation" role="radiogroup" aria-label="Xoay màn hình"><button role="radio" data-v="0">0°</button><button role="radio" data-v="1">90°</button><button role="radio" data-v="2">180°</button><button role="radio" data-v="3">270°</button></div></div>
-        <div class="f"><span>Màn hình chính</span><div class="seg" id="screen" role="radiogroup" aria-label="Màn hình chính"><button role="radio" data-v="0">Tự động</button><button role="radio" data-v="1">Usage</button></div></div>
-        <div class="f"><span>Múi giờ</span><select id="tz" aria-label="Múi giờ"></select></div>
-        <div class="f"><span>Chế độ đêm<small>Giảm độ sáng theo giờ</small></span><button class="sw" role="switch" id="nightEnabled" aria-label="Chế độ đêm"></button></div>
-        <div class="f hide" id="nightRow"><span>Giờ đêm</span><div class="row"><input id="nightStart" type="time" aria-label="Bắt đầu"><span style="color:var(--dim)">→</span><input id="nightEnd" type="time" aria-label="Kết thúc"><span style="color:var(--dim);font-size:12px">sáng</span><input id="nightLevel" type="range" min="0" max="100" style="width:90px" aria-label="Độ sáng ban đêm"><span id="nightVal" style="font-size:12px;color:var(--dim)"></span></div></div>
-      </section>
-
-      <!-- USAGE -->
-      <section data-pane="usage" class="hide">
-        <h2>Màn hình Usage</h2>
-        <p class="sub">Chọn kiểu màn hình usage. Hình xem trước dùng số usage thật của bạn.</p>
-        <div class="gal" id="gal" role="radiogroup" aria-label="Kiểu màn hình usage"></div>
-        <p class="note" id="galNote"></p>
-      </section>
-
-      <!-- WIFI -->
-      <section data-pane="wifi" class="hide">
-        <h2>Wi‑Fi &amp; mạng</h2>
-        <p class="sub">Đồng hồ thử các mạng theo thứ tự từ trên xuống. Lưu Wi‑Fi sẽ khởi động lại đồng hồ.</p>
-        <div class="nets" id="nets"></div>
-        <div class="row"><button class="btn ghost small" id="scanBtn"><svg class="i"><use href="#wifi"/></svg>Tìm mạng quanh đồng hồ</button><span class="note" id="scanNote" style="margin:0"></span></div>
-        <div class="scan" id="scanList"></div>
-        <div class="f" style="margin-top:14px"><span>Tên đồng hồ<small>Địa chỉ <span id="hostHint"></span>.local</small></span><input id="hostname" type="text" maxlength="32" spellcheck="false" aria-label="Tên đồng hồ"></div>
-      </section>
-
-      <!-- UPDATE -->
-      <section data-pane="update" class="hide">
-        <h2>Cập nhật &amp; bảo trì</h2>
-        <p class="sub">Firmware đi kèm app. Không cần tải gì từ mạng.</p>
-        <div class="box">
-          <h3>Firmware</h3>
-          <div class="kv" id="fwKv"></div>
-          <p id="fwText" style="margin:10px 0"></p>
-          <div class="steps hide" id="steps"><span></span><span></span><span></span><span></span></div>
-          <p id="fwStep" class="hide" style="margin:6px 0 10px"></p>
-          <button class="btn" id="fwBtn" disabled>Cập nhật firmware</button>
+    <div
+      class="veil"
+      id="authVeil"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="authTitle"
+    >
+      <div class="dlg">
+        <h3 id="authTitle">
+          <svg class="i"><use href="#lock" /></svg> Mật khẩu đồng hồ
+        </h3>
+        <p>
+          Đồng hồ này có mật khẩu trang cài đặt (in trên thẻ đi kèm). Nhập một
+          lần, app sẽ nhớ trong Keychain của máy.
+        </p>
+        <input
+          id="authPass"
+          type="password"
+          autocomplete="off"
+          aria-label="Mật khẩu"
+        />
+        <p id="authErr" class="warn hide" style="margin-top: -6px"></p>
+        <div class="row">
+          <button class="btn" id="authBtn">Đăng nhập</button>
         </div>
-        <div class="box">
-          <h3>Sao lưu</h3>
-          <p>Bản sao lưu chứa cả mật khẩu Wi‑Fi: cất ở nơi an toàn.</p>
-          <div class="row"><button class="btn ghost small" id="exportBtn">Lưu bản sao lưu…</button><button class="btn ghost small" id="importBtn">Khôi phục từ file…</button></div>
+      </div>
+    </div>
+
+    <div
+      class="veil"
+      id="factoryVeil"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="facTitle"
+    >
+      <div class="dlg">
+        <h3 id="facTitle">Xoá toàn bộ cài đặt?</h3>
+        <p>
+          Đồng hồ sẽ quên Wi‑Fi và mọi tuỳ chọn, rồi khởi động lại ở chế độ cài
+          đặt. Gõ <b>XOA</b> để xác nhận.
+        </p>
+        <input
+          id="facInput"
+          type="text"
+          autocomplete="off"
+          aria-label="Gõ XOA"
+        />
+        <div class="row">
+          <button class="btn ghost" id="facCancel">Thôi</button
+          ><button class="btn danger" id="facOk">Xoá</button>
         </div>
-        <div class="box">
-          <h3>Khởi động lại / xoá cài đặt</h3>
-          <p>Xoá cài đặt đưa đồng hồ về trạng thái mới: mất Wi‑Fi, phải cài lại qua điểm phát “Clawd-Setup”.</p>
-          <div class="row"><button class="btn ghost small" id="rebootBtn">Khởi động lại</button><button class="btn danger small" id="factoryBtn">Xoá toàn bộ cài đặt…</button></div>
-        </div>
-      </section>
+      </div>
+    </div>
 
-      <!-- APP -->
-      <section data-pane="app" class="hide">
-        <h2>App Clawd</h2>
-        <p class="sub">Các tuỳ chọn của app trên máy tính này (không gửi xuống đồng hồ).</p>
-        <div class="f"><span>Mở cùng máy tính</span><button class="sw" role="switch" id="autostart" aria-label="Mở cùng máy tính"></button></div>
-        <div class="f"><span>Clawd phản ứng<small>khi bạn dùng Claude Code</small></span><button class="sw" role="switch" id="hooks" aria-label="Clawd phản ứng khi dùng Claude Code"></button></div>
-        <div class="f"><span>Đồng hồ</span><div class="row"><span id="clockAddr" style="font:12px var(--mono)"></span><button class="btn ghost small" id="rescanBtn">Tìm lại</button></div></div>
-        <div class="f"><span>Nhập địa chỉ<small>Khi không tự tìm thấy</small></span><div class="row" style="flex-wrap:nowrap"><input id="manualHost" type="text" placeholder="192.168.1.48" spellcheck="false" aria-label="Địa chỉ đồng hồ" style="flex:1"><button class="btn ghost small" id="manualBtn">Dùng</button></div></div>
-        <div class="f"><span>Khác</span><div class="row"><button class="btn ghost small" id="logBtn">Mở nhật ký</button><button class="btn ghost small" id="webBtn">Mở trang cài đặt trên đồng hồ</button></div></div>
-        <p class="note" id="appVer"></p>
-      </section>
-    </main>
-  </div>
-
-  <footer>
-    <span class="msg" id="msg">Đang đọc cài đặt từ đồng hồ…</span>
-    <span class="row" style="flex-wrap:nowrap"><button class="btn ghost" id="undoBtn" disabled>Hoàn tác</button><button class="btn" id="saveBtn" disabled>Lưu vào đồng hồ</button></span>
-  </footer>
-</div>
-
-<div class="veil" id="authVeil" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-  <div class="dlg">
-    <h3 id="authTitle"><svg class="i"><use href="#lock"/></svg> Mật khẩu đồng hồ</h3>
-    <p>Đồng hồ này có mật khẩu trang cài đặt (in trên thẻ đi kèm). Nhập một lần, app sẽ nhớ trong Keychain của máy.</p>
-    <input id="authPass" type="password" autocomplete="off" aria-label="Mật khẩu">
-    <p id="authErr" class="warn hide" style="margin-top:-6px"></p>
-    <div class="row"><button class="btn" id="authBtn">Đăng nhập</button></div>
-  </div>
-</div>
-
-<div class="veil" id="factoryVeil" role="dialog" aria-modal="true" aria-labelledby="facTitle">
-  <div class="dlg">
-    <h3 id="facTitle">Xoá toàn bộ cài đặt?</h3>
-    <p>Đồng hồ sẽ quên Wi‑Fi và mọi tuỳ chọn, rồi khởi động lại ở chế độ cài đặt. Gõ <b>XOA</b> để xác nhận.</p>
-    <input id="facInput" type="text" autocomplete="off" aria-label="Gõ XOA">
-    <div class="row"><button class="btn ghost" id="facCancel">Thôi</button><button class="btn danger" id="facOk">Xoá</button></div>
-  </div>
-</div>
-
-<script src="preview.js"></script>
-<script src="app.js"></script>
-</body>
+    <script src="preview.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>

@@ -1,0 +1,16 @@
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [======    ]  58.9% (used 48220 bytes from 81920 bytes)
+Flash: [=====     ]  48.8% (used 510099 bytes from 1044464 bytes)
+Building .pio/build/clawd/firmware.bin
+/Users/thienvu/.platformio/packages/framework-arduinoespressif8266/tools/elf2bin.py:54: SyntaxWarning: invalid escape sequence '\s'
+  words = re.split('\s+', line)
+/Users/thienvu/.platformio/packages/framework-arduinoespressif8266/tools/elf2bin.py:73: SyntaxWarning: invalid escape sequence '\s'
+  words = re.split('\s+', line)
+Creating BIN file ".pio/build/clawd/firmware.bin" using "/Users/thienvu/.platformio/packages/framework-arduinoespressif8266/bootloaders/eboot/eboot.elf" and ".pio/build/clawd/firmware.elf"
+========================= [SUCCESS] Took 2.92 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+clawd          SUCCESS   00:00:02.918
+========================= 1 succeeded in 00:00:02.918 =========================
+-rw-r--r--@ 1 thienvu  staff  514256 Oct 12 17:29 .pio/build/clawd/firmware.bin

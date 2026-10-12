@@ -230,13 +230,13 @@ function renderGallery() {
       g.append(b);
     });
   }
-  const cur = activeStyle();
   [...g.children].forEach(b => {
     const id = b.dataset.id, st = styleState(id), chip = b.querySelector('.chip');
     b.setAttribute('aria-checked', String(Boolean(edit) && style === id));
     b.setAttribute('aria-disabled', String(st === 'unavailable'));
-    chip.className = 'chip ' + (st === 'ready' ? 'ok' : st === 'update' ? 'fw' : 'no');
-    chip.textContent = id === cur && st === 'ready' ? 'Đang dùng' : st === 'ready' ? 'Có sẵn' : st === 'update' ? 'Cần cập nhật firmware' : 'Không hỗ trợ';
+    // only flag packs that need something; the selected frame already shows the choice
+    chip.className = 'chip ' + (st === 'ready' ? 'hide' : st === 'update' ? 'fw' : 'no');
+    chip.textContent = st === 'ready' ? '' : st === 'update' ? 'Cần cập nhật firmware' : 'Không hỗ trợ';
   });
   const need = edit && styleState(style) === 'update';
   const ent = live.payload && live.payload.acct === 'ent' && style !== 'classic';

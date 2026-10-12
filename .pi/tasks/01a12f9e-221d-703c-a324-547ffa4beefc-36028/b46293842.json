@@ -1,0 +1,28 @@
+{
+  "id": "b46293842",
+  "name": "Rebuild Clawd.app e028e62",
+  "command": "cd /Users/thienvu/Downloads/code/clawd-desktop && CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh 2>&1 | tail -4 && grep -c '_follow_store' dist/Clawd.app/Contents/Resources/clawd_desktop/settings_api.py 2>/dev/null; find dist/Clawd.app -name 'settings_api*' | head -3",
+  "status": "completed",
+  "outputPath": ".pi/tasks/01a12f9e-221d-703c-a324-547ffa4beefc-36028/b46293842.output",
+  "cwd": "/Users/thienvu/Downloads/code/clawd-desktop",
+  "startTime": 1791809424027,
+  "endTime": 1791809442370,
+  "exitCode": 0,
+  "signal": null,
+  "pid": 20590,
+  "bytesWritten": 285,
+  "isAgent": false,
+  "surviveReload": false,
+  "notified": true,
+  "notifyOnCompletion": true,
+  "triggerOnCompletion": true,
+  "timeoutSeconds": 1200,
+  "shellPolicy": {
+    "policy": "inherit",
+    "executable": "/bin/zsh",
+    "argvPrefix": [
+      "-c"
+    ],
+    "dialect": "posix"
+  }
+}

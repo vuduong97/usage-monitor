@@ -1,0 +1,28 @@
+{
+  "id": "b40ba6e12",
+  "name": "Build Clawd.app dmg",
+  "command": "cd /Users/thienvu/Downloads/code/clawd-desktop && CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh 2>&1 | tail -30",
+  "status": "completed",
+  "outputPath": ".pi/tasks/01a12f77-1477-703c-a324-547c5195fc40-36028/b40ba6e12.output",
+  "cwd": "/Users/thienvu/Downloads/code/clawd-desktop",
+  "startTime": 1791800009729,
+  "endTime": 1791800025024,
+  "exitCode": 0,
+  "signal": null,
+  "pid": 92042,
+  "bytesWritten": 411,
+  "isAgent": false,
+  "surviveReload": false,
+  "notified": true,
+  "notifyOnCompletion": true,
+  "triggerOnCompletion": true,
+  "timeoutSeconds": 1200,
+  "shellPolicy": {
+    "policy": "inherit",
+    "executable": "/bin/zsh",
+    "argvPrefix": [
+      "-c"
+    ],
+    "dialect": "posix"
+  }
+}

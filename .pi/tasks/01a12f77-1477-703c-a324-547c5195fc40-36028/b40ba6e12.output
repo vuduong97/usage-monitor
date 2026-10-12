@@ -1,0 +1,6 @@
+icons in /Users/thienvu/Downloads/code/clawd-desktop/build/icons
+6474 WARNING: Library Iphlpapi required via ctypes not found
+bundling clock firmware from /Users/thienvu/Downloads/code/clawd-desktop/clawd_desktop/firmware
+bundling the clock-screen renderer from /Users/thienvu/Downloads/code/clawd-desktop/clawd_desktop/renderer
+dist/Clawd.app: replacing existing signature
+built dist/Clawd-0.1.0-mac-arm64.dmg
