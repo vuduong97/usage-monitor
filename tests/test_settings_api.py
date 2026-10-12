@@ -212,7 +212,7 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
     public = [n for n in dir(b) if not n.startswith("_")]
     assert public == sorted(["state", "login", "preview", "save", "scan", "reboot", "factory_reset",
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
-                             "set_hooks", "open_log", "open_web", "set_clock"])
+                             "set_hooks", "open_log", "open_web", "set_clock", "usage_preview"])
 
 
 def test_main_screen_is_handed_to_the_engine():
@@ -233,3 +233,17 @@ def test_all_six_layouts_are_listed_and_a_full_clock_draws_them(tmp_path):
     for i in range(2, 6):
         assert b.save(edited(usage={"layout": i}))["ok"]
     assert b.save(edited(usage={"layout": 6}))["code"] == "bad"     # still not a layout the app knows
+
+
+def test_a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save(tmp_path):
+    """The page no longer offers the Clawd main screen (2): it shows Auto for such a clock,
+    and that is one real change, so Save writes 0 (and only then; opening writes nothing)."""
+    b, made, _k, _n = bridge(tmp_path)
+    made[0].cfg["usage"]["screen"] = 2
+    b.state()
+    assert made[0].saved == []                                    # opening the window changed nothing
+    view = sa._clock_view(b._cfg)
+    assert view["usage"]["screen"] == 2                           # the page compares against the real value
+    r = b.save(edited(usage={"screen": 0}))
+    assert r["ok"] and r["sent"] == {"usage": {"screen": 0}}
+    assert made[0].saved == [{"usage": {"screen": 0}}]

@@ -4,7 +4,12 @@ const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const svgIcon = id => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i');
   const u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#' + id); s.append(u); return s; };
-const clone = o => JSON.parse(JSON.stringify(o));
+// Deep copy of plain data (the settings are JSON from Python); no parsing, so nothing to throw.
+function clone(o) {
+  if (Array.isArray(o)) return o.map(clone);
+  if (o && typeof o === 'object') return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, clone(v)]));
+  return o;
+}
 
 // IANA -> POSIX TZ (same table as the clock's web page, plus Vietnam).
 const TZMAP = {
@@ -35,7 +40,8 @@ let api = null;
 let S = null;          // last state from Python
 let orig = null;       // the clock's settings, in the shape we save
 let edit = null;       // what the user has now
-let tab = 'display', sample = 'normal';
+let tab = 'display';
+let live = { exact: false, frames: {}, payload: null, sentAt: null, now: 0 };   // api.usage_preview()
 let busy = false;      // a request or the firmware update is running
 
 // ---------- helpers ----------
@@ -50,6 +56,10 @@ function view(cfg) {   // the editable part of /api/config (settings_api._clock_
              nightStart: k.nightStart || '22:00', nightEnd: k.nightEnd || '07:00', nightLevel: k.nightLevel ?? 0 },
   };
 }
+// What the window shows for a clock: the "Clawd" main screen (2) is gone from the page, so a
+// clock still set to it reads as Auto. `orig` keeps the real value, so that is one unsaved
+// change and Save writes 0.
+function mkEdit(o) { const e = clone(o); if (e.usage.screen === 2) e.usage.screen = 0; return e; }
 function diff(a, b) {  // same rule as clockapi.config_diff
   const out = {};
   for (const k of Object.keys(b)) {
@@ -76,6 +86,7 @@ function showTab(t) {
   tab = t;
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('[data-pane]').forEach(p => p.classList.toggle('hide', p.dataset.pane !== t));
+  if (t === 'usage') refreshLive();
 }
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
 $('tabs').addEventListener('keydown', e => {
@@ -87,22 +98,54 @@ $('tabs').addEventListener('keydown', e => {
 // ---------- preview ----------
 let lastPaint = 0;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// The page shows the frame the clock's own renderer drew (Python: usage_preview). Without that
+// renderer (public build, or one built from another firmware) it draws its own approximation
+// of the same screen, from the same real usage.
+function ago(sec) {
+  if (sec < 90) return 'vừa xong';
+  if (sec < 3600) return Math.round(sec / 60) + ' phút trước';
+  if (sec < 86400) return Math.round(sec / 3600) + ' giờ trước';
+  return Math.round(sec / 86400) + ' ngày trước';
+}
+function setShot(img, url) { if (img.dataset.url !== url) { img.dataset.url = url; img.src = url; } }
 function paintPreview(now) {
   const layout = edit ? edit.usage.layout : 0;
-  PV.paint($('big'), layout, sample, reduce ? 0 : now);
-  const cv = $('big');
+  const cv = $('big'), img = $('shot'), t = reduce ? 0 : now;
+  const url = live.exact ? live.frames[String(layout)] : null;
+  const data = PV.fromPayload(live.payload);
+  img.classList.toggle('hide', !url);
+  cv.classList.toggle('hide', Boolean(url));
+  if (url) setShot(img, url); else PV.paint(cv, layout, data, t);
   const br = edit ? edit.brightness : 70;
-  cv.style.filter = `brightness(${(0.25 + br / 100 * 0.85).toFixed(2)})`;
-  cv.style.transform = `rotate(${(edit ? edit.rotation : 0) * 90}deg)`;
-  $('prevLabel').textContent = `Xem trước · ${PV.LAYOUTS[layout] ? PV.LAYOUTS[layout].name : 'Hiện tại'} · dữ liệu mẫu`;
-  if (tab === 'usage') document.querySelectorAll('#gal canvas').forEach((c, i) => PV.paint(c, i, sample, reduce ? 0 : now));
+  for (const e of [cv, img]) {
+    e.style.filter = `brightness(${(0.25 + br / 100 * 0.85).toFixed(2)})`;
+    e.style.transform = `rotate(${(edit ? edit.rotation : 0) * 90}deg)`;
+  }
+  const name = PV.LAYOUTS[layout] ? PV.LAYOUTS[layout].name : 'Hiện tại';
+  const how = url ? 'vẽ bằng firmware' : 'gần đúng';
+  const when = live.sentAt ? `Usage ${ago(Math.max(0, live.now - live.sentAt))}` : 'chưa có usage thật';
+  $('prevLabel').textContent = `Xem trước · ${name} · ${how} · ${when}`;
+  [...$('gal').children].forEach((b, i) => {          // one button per layout: its canvas and its image
+    const u = live.exact ? live.frames[String(i)] : null;
+    const c = b.querySelector('canvas.thumb'), im = b.querySelector('img.thumb');
+    im.classList.toggle('hide', !u);
+    c.classList.toggle('hide', Boolean(u));
+    if (u) setShot(im, u); else if (tab === 'usage') PV.paint(c, i, data, t);
+  });
 }
+async function refreshLive() {
+  if (!api || document.hidden) return;
+  try {
+    const r = await api.usage_preview();
+    if (r && r.ok) live = r;
+  } catch (err) { console.warn('usage_preview failed; keeping the last frame', err); }
+  paintPreview(performance.now());
+}
+setInterval(refreshLive, 20000);
 function loop(now) {
   if (!document.hidden && now - lastPaint > (reduce ? 1000 : 160)) { lastPaint = now; paintPreview(now); }
   requestAnimationFrame(loop);
 }
-$('sample').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
-  sample = b.dataset.s; $('sample').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b))); paintPreview(performance.now()); });
 
 // ---------- render from state ----------
 function renderAll() {
@@ -125,11 +168,6 @@ function renderDisplay() {
   if (!edit) return;
   $('brightness').value = edit.brightness; $('brightVal').textContent = edit.brightness + '%';
   setSeg('rotation', edit.rotation); setSeg('screen', edit.usage.screen);
-  const sel = $('anim'); sel.replaceChildren();
-  const add = (v, t) => { const o = el('option', null, t); o.value = String(v); sel.append(o); };
-  add(-1, 'Theo mức dùng (đổi mỗi 20 giây)');
-  ((S && S.config && S.config.clawdAnims) || []).forEach((n, i) => add(i, n));
-  sel.value = String(edit.usage.anim);
   const tz = $('tz'); tz.replaceChildren();
   const zones = Object.keys(TZMAP).sort((a, b) => a === 'UTC' ? -1 : b === 'UTC' ? 1 : a.localeCompare(b));
   if (edit.clock.tz && !(edit.clock.tz in TZMAP)) zones.unshift(edit.clock.tz);
@@ -145,8 +183,9 @@ function renderGallery() {
   if (!g.children.length) {
     PV.LAYOUTS.forEach(L => {
       const b = el('button'); b.setAttribute('role', 'radio'); b.dataset.id = String(L.id);
-      const cv = el('canvas'); cv.width = 240; cv.height = 240;
-      b.append(cv, el('span', 'n', L.name), el('span', 'd', L.desc), el('span', 'chip'));
+      const cv = el('canvas', 'thumb'); cv.width = 240; cv.height = 240;
+      const im = el('img', 'thumb hide'); im.width = 240; im.height = 240; im.alt = '';
+      b.append(cv, im, el('span', 'n', L.name), el('span', 'd', L.desc), el('span', 'chip'));
       g.append(b);
     });
   }
@@ -229,7 +268,6 @@ function on(id, ev, fn) { $(id).addEventListener(ev, e => { if (edit) { fn(e); r
 on('brightness', 'input', e => { edit.brightness = +e.target.value; $('brightVal').textContent = edit.brightness + '%'; paintPreview(performance.now()); });
 on('rotation', 'click', e => { const b = e.target.closest('button'); if (b) { edit.rotation = +b.dataset.v; setSeg('rotation', edit.rotation); paintPreview(performance.now()); } });
 on('screen', 'click', e => { const b = e.target.closest('button'); if (b) { edit.usage.screen = +b.dataset.v; setSeg('screen', edit.usage.screen); } });
-on('anim', 'change', e => { edit.usage.anim = +e.target.value; });
 on('tz', 'change', e => { const z = e.target.value; edit.clock.tz = z === 'UTC' ? '' : z;
   edit.clock.tzPosix = TZMAP[z] || (S.config.clock && S.config.clock.tz === z ? S.config.clock.tzPosix : 'UTC0'); });
 on('nightEnabled', 'click', () => { edit.clock.nightEnabled = !edit.clock.nightEnabled; setSw('nightEnabled', edit.clock.nightEnabled); $('nightRow').classList.toggle('hide', !edit.clock.nightEnabled); });
@@ -273,7 +311,7 @@ $('scanBtn').addEventListener('click', async () => {
 });
 
 // ---------- save / undo ----------
-$('undoBtn').addEventListener('click', () => { if (orig) { edit = clone(orig); renderAll(); } });
+$('undoBtn').addEventListener('click', () => { if (orig) { edit = mkEdit(orig); renderAll(); } });
 $('saveBtn').addEventListener('click', async () => {
   if (!S || !S.ok) { return load(); }
   const e = editForSave();
@@ -284,12 +322,12 @@ $('saveBtn').addEventListener('click', async () => {
   if (!r.ok) { renderBar(); if (r.code === 'auth') return askAuth(); return msg(r.error, 'err'); }
   if (r.reboot) {
     msg('Đã lưu. Đồng hồ đang khởi động lại để vào mạng mới…', 'good');
-    orig = clone(edit); orig.wifi = orig.wifi.map(w => ({ ssid: w.ssid })); edit = clone(orig); renderAll();
+    orig = clone(edit); orig.wifi = orig.wifi.map(w => ({ ssid: w.ssid })); edit = mkEdit(orig); renderAll();
     msg('Đã lưu. Đồng hồ đang khởi động lại để vào mạng mới…', 'good');
     setTimeout(load, 20000);
     return;
   }
-  S.config = r.config; orig = view(r.config); edit = clone(orig); renderAll();
+  S.config = r.config; orig = view(r.config); edit = mkEdit(orig); renderAll();
   msg(`Đã lưu ${leaves(r.sent)} thay đổi.`, 'good');
 });
 
@@ -366,12 +404,12 @@ document.addEventListener('keydown', e => {
 // ---------- load ----------
 function apply(r) {
   S = r;
-  if (r.ok) { orig = view(r.config); edit = clone(orig); msg('Không có thay đổi chưa lưu.'); }
+  if (r.ok) { orig = view(r.config); edit = mkEdit(orig); msg('Không có thay đổi chưa lưu.'); }
   else if (r.code === 'auth') { askAuth(); msg(r.error, 'err'); }
   else { msg(r.error, 'err'); if (r.code === 'noclock') showTab('app'); }
   renderAll();
 }
 async function load() { msg('Đang đọc cài đặt từ đồng hồ…'); apply(await api.state()); }
 
-window.addEventListener('pywebviewready', () => { api = window.pywebview.api; load(); });
+window.addEventListener('pywebviewready', () => { api = window.pywebview.api; load(); refreshLive(); });
 requestAnimationFrame(loop);

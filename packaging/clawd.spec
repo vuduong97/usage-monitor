@@ -20,6 +20,14 @@ FIRMWARE = ROOT / "clawd_desktop" / "firmware"
 if os.environ.get("CLAWD_PRIVATE_FIRMWARE") == "1" and (FIRMWARE / "firmware.json").is_file():
     datas.append((str(FIRMWARE), "clawd_desktop/firmware"))
     print(f"bundling clock firmware from {FIRMWARE}")
+    # The clock-screen renderer (tools/build_preview.py) is compiled from the same private
+    # firmware, so it rides on the same opt-in.
+    PREVIEW = ROOT / "clawd_desktop" / "renderer"
+    if (PREVIEW / "preview.json").is_file():
+        datas.append((str(PREVIEW), "clawd_desktop/renderer"))
+        print(f"bundling the clock-screen renderer from {PREVIEW}")
+    else:
+        print("no clock-screen renderer built (tools/build_preview.py); the preview will be approximate")
 else:
     print("no clock firmware bundled (CLAWD_PRIVATE_FIRMWARE=1 + tools/bundle_firmware.py); "
           "the Update tab will say so")

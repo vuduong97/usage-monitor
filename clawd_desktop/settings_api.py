@@ -15,12 +15,14 @@ import contextlib
 import copy
 import json
 import re
+import subprocess
 import threading
 import time
 import webbrowser
 from pathlib import Path
 from typing import Any, Callable
 
+import clawd_desktop.preview as pv
 from clawd_desktop import __version__, autostart, creds, firmware, hooks, ota, paths
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
 from clawd_desktop.discovery import ClockStore, manual_clock
@@ -126,7 +128,14 @@ class SettingsApi:
                  bundle: firmware.Bundle | None = None,
                  store: ClockStore | None = None,
                  keychain=creds,
-                 remember_screen: Callable[[int], None] = paths.set_clock_screen) -> None:
+                 remember_screen: Callable[[int], None] = paths.set_clock_screen,
+                 renderer: pv.Renderer | None = None,
+                 payload_source: Callable[[], tuple[dict, float] | None] = paths.usage_payload,
+                 now: Callable[[], float] = time.time) -> None:
+        self._renderer = renderer              # draws the clock's screen (None: the page approximates)
+        self._payload_source = payload_source  # the last usage payload the engine sent
+        self._now = now
+        self._frames = pv.FrameCache()
         self._remember_screen = remember_screen  # tell the engine the main screen
         self._notify = notify                  # tell the tray (rescan, set host, refresh)
         self._factory = api_factory
@@ -199,6 +208,42 @@ class SettingsApi:
         saved = self._keychain.put(self._key, user, password)
         return {**self.state(), "saved": saved}
 
+    def usage_preview(self, layouts: Any = None) -> dict:
+        """The clock's usage screen for each layout, with the usage the app last sent it.
+
+        {"ok": true, "exact": true, "frames": {"0": "data:image/bmp;..."}, "sentAt": <epoch>|null}
+        when the clock's own renderer is built into the app; with `exact` false there are
+        no frames and the page draws its approximation from `payload` (None: no data yet).
+        """
+        if (not isinstance(layouts, list) or not layouts
+                or not all(isinstance(i, int) and not isinstance(i, bool) and 0 <= i < firmware.LAYOUT_COUNT
+                           for i in layouts)):
+            layouts = list(range(firmware.LAYOUT_COUNT))
+        stored = self._payload_source()
+        payload, sent_at = stored if stored else (None, None)
+        now = self._now()
+        live = pv.live_payload(payload, now)
+        out: dict = {"ok": True, "exact": False, "payload": live, "sentAt": sent_at, "now": now}
+        r = self._renderer
+        if r is None:
+            return out
+        frames: dict[str, str] = {}
+        for i in dict.fromkeys(layouts):
+            if not r.layouts >> i & 1:
+                continue
+            key = pv.frame_key(i, live, int(now // 60))
+            url = self._frames.get(key)
+            if url is None:
+                try:
+                    url = pv.bmp_data_url(r.draw(i, live))
+                except (OSError, ValueError, subprocess.SubprocessError) as e:
+                    print(f"[settings] preview renderer failed: {e}", flush=True)
+                    return out                 # the page falls back to its canvas
+                self._frames.put(key, url)
+            frames[str(i)] = url
+        out.update(exact=True, frames=frames)
+        return out
+
     # ---- saving --------------------------------------------------------------------
     def _diff(self, edited: Any) -> dict:
         return config_diff(_clock_view(self._cfg), clean(edited))
@@ -225,10 +270,8 @@ class SettingsApi:
         except ClockError as e:
             return _err(e)
         if not r.get("reboot"):
-            try:
+            with contextlib.suppress(ClockError):
                 self._cfg = self._api.config()
-            except ClockError:
-                pass
         screen = changes.get("usage", {}).get("screen")
         if screen is not None:
             self._mirror_screen({"usage": {"screen": screen}})
@@ -323,13 +366,14 @@ class SettingsApi:
     def _run_update(self, changes: dict, layout: int | None) -> None:
         def step(s: str) -> None:
             self._job["step"] = s
+        bundle = self._bundle                  # update() only starts this thread with one
         try:
-            heap = ota.install_then_save(self._api, self._bundle, changes, need_layout=layout, progress=step)
+            if bundle is None:
+                raise ValueError("no bundled firmware")
+            heap = ota.install_then_save(self._api, bundle, changes, need_layout=layout, progress=step)
             self._heap = heap
-            try:
+            with contextlib.suppress(ClockError):
                 self._cfg = self._api.config()
-            except ClockError:
-                pass
             self._mirror_screen(self._cfg)
             self._job.update(done=True)
         except (ClockError, ValueError, OSError) as e:

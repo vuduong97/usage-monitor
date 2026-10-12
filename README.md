@@ -133,6 +133,7 @@ uv run --python 3.12 python -m clawd_desktop run      # chạy không giao diệ
 uv run --python 3.12 python -m clawd_desktop find     # liệt kê đồng hồ trong mạng
 uv run --python 3.12 python -m clawd_desktop settings # mở cửa sổ cài đặt (đồng hồ đã nhớ)
 python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/firmware   # kèm firmware…
+python tools/build_preview.py --src ../clawd-home/firmware   # bộ vẽ màn hình đồng hồ cho cửa sổ Cài đặt (cần c++)
 CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
 sh packaging/build_mac.sh                             # build Clawd.app + .dmg (trên Mac)
 ./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows)

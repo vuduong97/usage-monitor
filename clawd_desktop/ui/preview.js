@@ -1,4 +1,6 @@
-// Canvas mock of the clock's usage screens (240x240), sample data only.
+// Approximate canvas drawing of the clock's usage screens (240x240), from the real usage
+// payload. The settings window shows the clock's own render when the app has it
+// (preview.py); this is the fallback when it does not, so it is labelled "gần đúng".
 // Mirrors the firmware layouts in clawd-home/firmware/src/features/clawd/ClawdUi.cpp:
 // 0 classic (two cards + status line), 1 pace (taller cards, pace pill, time
 // marker on the bar, forecast line), 2 hero (one big 5-hour number), 3 rings
@@ -15,13 +17,21 @@ const PV = (() => {
               s48:`500 48px ${SANS}`, m18:'18px ui-monospace, Menlo, Consolas, monospace',
               m32:'32px ui-monospace, Menlo, Consolas, monospace' };
   const W = 240, H = 240, WIN_S = 300, WIN_W = 10080;
-  const SAMPLES = {
-    normal: { s:42, sr:134, w:67, wr:3960, clock:'14:05' },
-    hot:    { s:88, sr:38,  w:93, wr:540,  clock:'14:05' },
-    fresh:  { s:4,  sr:291, w:18, wr:8200, clock:'09:12' },
-  };
+  // The usage payload the app sends the clock ({s, sr, w, wr, t, tf, ok}) as the drawers read it.
+  // null when there is nothing to show (no payload yet, or the "no data" beat).
+  function fromPayload(p) {
+    if (!p || p.ok === false || typeof p.s !== 'number') return null;
+    const n = (v, dflt) => (typeof v === 'number' && isFinite(v) ? v : dflt);
+    let clock = '';
+    if (typeof p.t === 'number') {                // local wall-clock seconds: read the UTC fields
+      const d = new Date(p.t * 1000), h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2, '0');
+      clock = p.tf === 12 ? `${h % 12 || 12}:${m} ${h < 12 ? 'AM' : 'PM'}` : `${String(h).padStart(2, '0')}:${m}`;
+    }
+    return { s: n(p.s, 0), sr: Math.round(n(p.sr, -1)), w: n(p.w, 0), wr: Math.round(n(p.wr, -1)), clock };
+  }
   const pctColor = p => p >= 80 ? C.red : p >= 50 ? C.amber : C.green;
   function fmtReset(m) {
+    if (m < 0) return '---';
     if (m < 60) return `${m}m`;
     if (m < 1440) return `${Math.floor(m / 60)}h ${m % 60}m`;
     return `${Math.floor(m / 1440)}d ${Math.floor((m % 1440) / 60)}h`;
@@ -201,11 +211,17 @@ const PV = (() => {
     { id:4, name:'Đồng hồ đôi', desc:'Hai mặt đồng hồ tròn cạnh nhau.', draw:gauges },
     { id:5, name:'Pixel retro', desc:'Thanh 20 ô kiểu game, Clawd đi dạo bên dưới.', draw:pixel },
   ];
-  function paint(canvas, layout, sample, now) {
+  function waiting(c) {
+    mascot(c, 103, 70);
+    tx(c, 'Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u usage', W / 2, 130, F.s14, C.dim, 'center');
+    tx(c, 'App s\u1ebd g\u1eedi sau v\u00e0i gi\u00e2y', W / 2, 152, F.s14, C.dim, 'center');
+  }
+  function paint(canvas, layout, d, now) {
     const c = canvas.getContext('2d');
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.fillStyle = C.bg; c.fillRect(0, 0, W, H);
-    (LAYOUTS[layout] || LAYOUTS[0]).draw(c, SAMPLES[sample] || SAMPLES.normal, now);
+    if (!d) { waiting(c); return; }
+    (LAYOUTS[layout] || LAYOUTS[0]).draw(c, d, now);
   }
-  return { LAYOUTS, paint };
+  return { LAYOUTS, paint, fromPayload };
 })();

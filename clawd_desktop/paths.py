@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from pathlib import Path
 
 CONFIG_DIR = Path.home() / ".config" / "claude-usage-monitor"
 CONFIG_FILE = CONFIG_DIR / "config"          # optional key = value overrides (see README)
 CLOCK_FILE = CONFIG_DIR / "clock.json"       # the remembered clock
 PREFS_FILE = CONFIG_DIR / "desktop.json"     # app preferences (first run, toggles)
+PAYLOAD_FILE = CONFIG_DIR / "usage_payload.json"   # the last usage payload sent to the clock
 LOG_FILE = CONFIG_DIR / "clawd-desktop.log"
 HOOK_SCRIPT = CONFIG_DIR / "clawd-event.sh"  # copied here so app updates never break hooks
 LOG_MAX = 1_000_000
@@ -50,6 +52,35 @@ def set_clock_screen(screen: int) -> None:
     if prefs.get("clock_screen") != screen:
         prefs["clock_screen"] = screen
         save_prefs(prefs)
+
+
+# The keys the clock's /api/usage reads for its usage screen. Alerts (m, x) and the
+# beep (b) are one-shot and never stored: the settings preview must not replay them.
+PAYLOAD_KEYS = ("s", "sr", "w", "wr", "st", "ok", "acct", "tp", "rd", "t", "tf")
+
+
+def set_usage_payload(payload: dict, now: float | None = None, path: Path | None = None) -> None:
+    """Keep the last usage payload the engine delivered, for the settings window
+    (its own process) to draw the clock's screen from. Atomic, like the prefs."""
+    path = path or PAYLOAD_FILE
+    data = {"at": time.time() if now is None else now,
+            "payload": {k: payload[k] for k in PAYLOAD_KEYS if k in payload}}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data))
+    tmp.replace(path)
+
+
+def usage_payload(path: Path | None = None) -> tuple[dict, float] | None:
+    """(payload, time it was sent) or None when the engine has not sent one yet."""
+    try:
+        data = json.loads((path or PAYLOAD_FILE).read_text())
+        payload, at = data["payload"], data["at"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if not isinstance(payload, dict) or isinstance(at, bool) or not isinstance(at, (int, float)):
+        return None
+    return payload, float(at)
 
 
 class RotatingLog:

@@ -82,6 +82,10 @@ class Engine:
     # ---- the async side ------------------------------------------------------
     def _on_payload(self, p: dict) -> None:
         self.payload, self.payload_at = p, time.time()
+        try:
+            paths.set_usage_payload(p, self.payload_at)   # the settings window draws the clock from it
+        except OSError as e:
+            log(f"Could not keep the usage payload for the settings window: {e}")
         if p.get("ok") is False:
             self.token = False
         elif "s" in p or "w" in p:

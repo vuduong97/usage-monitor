@@ -19,7 +19,7 @@ import threading
 import time
 from pathlib import Path
 
-from clawd_desktop import APP_NAME, firmware, paths
+from clawd_desktop import APP_NAME, firmware, paths, preview
 from clawd_desktop.settings_api import SettingsApi
 
 UI_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)) / "clawd_desktop" / "ui"
@@ -65,7 +65,10 @@ def main(clock: str, key: str, piped: bool) -> int:
     import webview
 
     chan = Channel(pipe_out, piped)
-    api = SettingsApi(clock, key, notify=chan.send, bundle=firmware.load_bundle())
+    bundle = firmware.load_bundle()
+    renderer = preview.load_renderer(firmware_commit=bundle.commit if bundle else "")
+    log("preview: " + (f"firmware renderer {renderer.commit or '?'}" if renderer else "no renderer, approximate canvas"))
+    api = SettingsApi(clock, key, notify=chan.send, bundle=bundle, renderer=renderer)
     win = webview.create_window(
         f"{APP_NAME} · Cài đặt", url=str(UI_DIR / "index.html"), js_api=api,
         width=WIDTH, height=HEIGHT, min_size=(720, 540), background_color="#141413",

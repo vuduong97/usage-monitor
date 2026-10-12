@@ -19,3 +19,10 @@ def _private_prefs_file(tmp_path, monkeypatch):
     """Same for the app preferences (desktop.json)."""
     from clawd_desktop import paths
     monkeypatch.setattr(paths, "PREFS_FILE", tmp_path / "desktop.json")
+
+
+@pytest.fixture(autouse=True)
+def _private_payload_file(tmp_path, monkeypatch):
+    """And the last usage payload the settings window draws the clock from."""
+    from clawd_desktop import paths
+    monkeypatch.setattr(paths, "PAYLOAD_FILE", tmp_path / "usage_payload.json")

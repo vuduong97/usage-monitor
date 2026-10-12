@@ -7,3 +7,4 @@ dist/
 *.spec.bak
 .DS_Store
 clawd_desktop/firmware/
+clawd_desktop/renderer/

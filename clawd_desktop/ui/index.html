@@ -30,7 +30,7 @@
   .device { width:220px; background:#e9e5dc; border-radius:16px; padding:14px 14px 30px; box-shadow:inset 0 -6px 0 #d4cfc3, 0 18px 40px rgba(0,0,0,.5); position:relative; }
   .device::after { content:"Clawd"; position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:10px; color:#8a857a; letter-spacing:.2em; }
   .device .scr { width:192px; height:192px; background:#000; border-radius:4px; overflow:hidden; }
-  .device canvas { width:192px; height:192px; display:block; transition:transform .3s, filter .2s; }
+  .device canvas, .device img { width:192px; height:192px; display:block; transition:transform .3s, filter .2s; }
   .left .seg button { font-size:11px; white-space:nowrap; padding:5px 2px; }
   .meta { font:11px/1.7 var(--mono); color:var(--dim); text-align:center; }
   .right { padding:18px 24px 24px; overflow:auto; }
@@ -65,7 +65,7 @@
   .gal button:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
   .gal button[aria-checked=true] { border-color:var(--acc); background:#2a1f1a; }
   .gal button[aria-disabled=true] { opacity:.45; cursor:default; }
-  .gal canvas { width:100%; aspect-ratio:1; border-radius:6px; background:#000; display:block; }
+  .gal .thumb { width:100%; aspect-ratio:1; border-radius:6px; background:#000; display:block; }
   .gal .n { font-size:12px; line-height:1.3; }
   .gal .d { font-size:11px; color:var(--dim); line-height:1.35; }
   .nets { display:flex; flex-direction:column; gap:8px; margin:6px 0 10px; }
@@ -131,10 +131,7 @@
   <div class="split">
     <div class="left">
       <div class="live" id="prevLabel">Xem trước</div>
-      <div class="device"><div class="scr"><canvas id="big" width="240" height="240" aria-label="Xem trước màn hình đồng hồ (dữ liệu mẫu)"></canvas></div></div>
-      <div class="seg" id="sample" role="radiogroup" aria-label="Thử với dữ liệu mẫu" style="width:100%">
-        <button role="radio" data-s="normal" aria-checked="true">Bình thường</button><button role="radio" data-s="hot">Dùng nhiều</button><button role="radio" data-s="fresh">Mới reset</button>
-      </div>
+      <div class="device"><div class="scr"><img id="shot" class="hide" width="240" height="240" alt="Màn hình đồng hồ, vẽ bằng chính firmware"><canvas id="big" width="240" height="240" aria-label="Xem trước màn hình đồng hồ (gần đúng)"></canvas></div></div>
       <div class="meta" id="meta"></div>
     </div>
 
@@ -145,8 +142,7 @@
         <p class="sub">Đổi xong bấm “Lưu vào đồng hồ”: mọi thay đổi đi trong một lần gửi.</p>
         <div class="f"><span>Độ sáng</span><div class="row" style="flex-wrap:nowrap"><input id="brightness" type="range" min="0" max="100" aria-label="Độ sáng"><span id="brightVal" style="width:38px;text-align:right;font-size:12px;color:var(--dim)"></span></div></div>
         <div class="f"><span>Xoay màn hình</span><div class="seg" id="rotation" role="radiogroup" aria-label="Xoay màn hình"><button role="radio" data-v="0">0°</button><button role="radio" data-v="1">90°</button><button role="radio" data-v="2">180°</button><button role="radio" data-v="3">270°</button></div></div>
-        <div class="f"><span>Màn hình chính</span><div class="seg" id="screen" role="radiogroup" aria-label="Màn hình chính"><button role="radio" data-v="0">Tự động</button><button role="radio" data-v="1">Usage</button><button role="radio" data-v="2">Clawd</button></div></div>
-        <div class="f"><span>Hoạt hình Clawd<small>Khi màn hình đang hiện Clawd</small></span><select id="anim" aria-label="Hoạt hình Clawd"></select></div>
+        <div class="f"><span>Màn hình chính</span><div class="seg" id="screen" role="radiogroup" aria-label="Màn hình chính"><button role="radio" data-v="0">Tự động</button><button role="radio" data-v="1">Usage</button></div></div>
         <div class="f"><span>Múi giờ</span><select id="tz" aria-label="Múi giờ"></select></div>
         <div class="f"><span>Chế độ đêm<small>Giảm độ sáng theo giờ</small></span><button class="sw" role="switch" id="nightEnabled" aria-label="Chế độ đêm"></button></div>
         <div class="f hide" id="nightRow"><span>Giờ đêm</span><div class="row"><input id="nightStart" type="time" aria-label="Bắt đầu"><span style="color:var(--dim)">→</span><input id="nightEnd" type="time" aria-label="Kết thúc"><span style="color:var(--dim);font-size:12px">sáng</span><input id="nightLevel" type="range" min="0" max="100" style="width:90px" aria-label="Độ sáng ban đêm"><span id="nightVal" style="font-size:12px;color:var(--dim)"></span></div></div>
@@ -155,7 +151,7 @@
       <!-- USAGE -->
       <section data-pane="usage" class="hide">
         <h2>Màn hình Usage</h2>
-        <p class="sub">Chọn kiểu màn hình usage. Hình bên trái dùng dữ liệu mẫu.</p>
+        <p class="sub">Chọn kiểu màn hình usage. Hình xem trước dùng số usage thật của bạn.</p>
         <div class="gal" id="gal" role="radiogroup" aria-label="Kiểu màn hình usage"></div>
         <p class="note" id="galNote"></p>
       </section>
