@@ -20,6 +20,7 @@
 extern void appInvalidate();
 extern const char* appResetReason();   // last reset reason (diagnostics)
 extern uint32_t appLoopMaxMs();        // longest loop() pass, last 1-2 min
+extern uint32_t appLoopPartMs(int i);  // the same for net (0), web (1), screen (2)
 extern void appApplyBrightness();   // main.cpp: re-resolve effective brightness now
 
 static WebServerClass server(80);
@@ -270,6 +271,8 @@ static void handleHeap() {
 #endif
   o["uptime"] = millis() / 1000;
   o["loopMaxMs"] = appLoopMaxMs();     // > ~100 ms: something blocked the animations
+  JsonArray parts = o["loopPartsMs"].to<JsonArray>();   // which part: net, web, screen
+  for (int i = 0; i < 3; i++) parts.add(appLoopPartMs(i));
   o["reset"] = appResetReason();
   if (crashLogLast().length()) o["crash"] = crashLogLast();   // last crash since power on
   o["version"] = FW_VERSION;
@@ -280,11 +283,14 @@ static void handleHeap() {
   o["style"] = styleInfo() ? styleInfo()->id : "";   // installed pack, "" = classic screen
   o["styleFrameUs"] = styleLastFrameUs();            // last animation repaint (decode + SPI)
   o["styleFrameMaxUs"] = styleMaxFrameUs();
+  o["stylePaintUs"] = styleLastPaintUs();            // last full-screen paint
+  o["stylePaintMaxUs"] = styleMaxPaintUs();
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();
   o["desk"] = deskPackCount();          // 0 = /desk.pak missing or invalid
   o["onDesk"] = clawdUiOnDesk();
+  o["onStyle"] = clawdUiOnStyle();
   o["deskAnim"] = clawdUiDeskAnimName();   // what the desk player shows now (variants too)
   {   // desk player: decode + SPI time per frame and lateness, last 128 frames (us)
     ClawdDeskStats ds;
@@ -417,6 +423,7 @@ static void handleStyleUpload() {
       (!S->auth.enabled || !S->auth.pass.length() ||
        server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str()))) {
     LittleFS.remove(STYLE_TMP_PATH);
+    styleLog("upload start heap=%u", (unsigned)ESP.getFreeHeap());
 #if defined(CLAWD_ESP8266)
     // Short of room: drop the stored copy first. The screen keeps drawing the
     // old pack from its flash mirror until the new one is in.
@@ -433,6 +440,7 @@ static void handleStyleUpload() {
 }
 static void handleStyleDone() {
   if (!requireAuth()) return;
+  styleLog("upload done failed=%d bytes=%u heap=%u", g_pakFailed, (unsigned)server.upload().totalSize, (unsigned)ESP.getFreeHeap());
   const char* why = g_pakFailed ? "upload failed: too big, or no room on the clock" : styleStoreInstall();
   if (g_pakFailed) LittleFS.remove(STYLE_TMP_PATH);
   JsonDocument doc;
@@ -440,6 +448,7 @@ static void handleStyleDone() {
   if (why) doc["error"] = why;
   styleJson(doc["style"].to<JsonObject>());
   sendJson(doc, why ? 400 : 200);
+  styleLog("answered heap=%u", (unsigned)ESP.getFreeHeap());
 }
 static void handleStyleClear() {
   if (!requireAuth()) return;

@@ -125,7 +125,8 @@ The Clawd desktop app finds the clock over mDNS (`_clawd._tcp`, TXT `id`, `ver`,
 - `uptime`, `reset`, `version`, `variant` (`esp8266-clawd`, which the app matches on)
 - `fwSeq` (`CLAWD_FW_SEQ` in `config.h`): bump it by hand for every image the desktop app should install; the app only pushes its bundled image to a clawd clock with a lower number (missing = 0), so it never downgrades
 - `layouts`: bitmask of the compiled-in usage layouts (`CLAWD_LAYOUTS`); only classic (1) since style packs replaced the others
-- `styleApi`, `style`, `styleFrameUs`, `styleFrameMaxUs`: the style pack API this image draws, the pack shown (`""` = classic) and its animation repaint times (`docs/STYLE_PACK.md`)
+- `styleApi`, `style`, `onStyle`, `styleFrameUs`, `styleFrameMaxUs`, `stylePaintUs`, `stylePaintMaxUs`: the style pack API this image draws, the pack installed (`""` = classic), whether it is on screen now, and its animation and full-screen paint times (`docs/STYLE_PACK.md`)
+- `loopMaxMs`: the longest `loop()` pass over the last 1–2 minutes; `loopPartsMs` splits it into `[net, web, screen]`. A style install shows ~1–2 s in web: the upload, the slot copy and the LittleFS rename all run inside the request handler
 - `pak` (animations loaded; 0 means `/clawd.pak` is missing), `splash`, `anim`
 - `desk` (animations in `/desk.pak`), `onDesk`, `fsTotal`, `fsUsed`
 - `contFree`: the least free `loop()` stack seen so far (of 4 KB)
@@ -161,4 +162,4 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `tools/gzip_webui.py` | Writes `src/webui.h` (gzip) from `src/webui.html`, the single web UI source. |
 | `tests/host/run.sh` | Host test: applies a config with dead keys through `Settings.cpp` and the save/load path, and compares with `fixtures/expected.json`. |
 
-Build (`pio run -e clawd`, style packs): BUILDLINE
+Build (`pio run -e clawd`, style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).

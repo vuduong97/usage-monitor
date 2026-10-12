@@ -266,11 +266,13 @@ static int checkStyles(const char* dir) {
     strcpy(al.alertMsg, "Claude needs your permission to run: npm test");
     clawdUiPayload(al);
     run(800, CLAWD_SCREEN_USAGE, -1);
+    CHECK(!clawdUiOnStyle(), "%s: an alert left the pack on screen", IDS[p]);
     if (p == 0) shot(dir, "32-style-alert");
     ClawdData cl = styleState(0);
     cl.alertClear = true;
     clawdUiPayload(cl);
     run(800, CLAWD_SCREEN_USAGE, -1);
+    CHECK(clawdUiOnStyle(), "%s: the pack did not come back after the alert", IDS[p]);
     if (p == 0) shot(dir, "32-style-alert-cleared");
   }
   // Enterprise keeps the classic cards
@@ -279,6 +281,7 @@ static int checkStyles(const char* dir) {
   strcpy(ent.resetDate, "Nov 1");
   clawdUiPayload(ent);
   run(800, CLAWD_SCREEN_AUTO, -1);
+  CHECK(!clawdUiOnStyle(), "an Enterprise account got the pack");
   shot(dir, "32-style-enterprise");
 
   // guards: a flipped byte, a future API, a truncated pack

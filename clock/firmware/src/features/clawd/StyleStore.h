@@ -21,4 +21,8 @@ void        styleStoreClear();       // back to the classic screen, pack deleted
 void        styleStoreSuspend();     // an OTA is about to write over the slot
 void        styleStoreResume();      // the OTA failed: use the pack again
 uint32_t    styleStoreSlotBytes();   // room in the slot (0: none)
-const char* styleStoreError();       // why the last boot/install left no style, or ""
+const char* styleStoreError();
+
+// Debug trail for pack installs: one line per step appended to /style.log (kept
+// under 4 KB), read with /api/fs/get?path=/style.log. Survives a power cycle.
+void styleLog(const char* fmt, ...) __attribute__((format(printf, 1, 2)));       // why the last boot/install left no style, or ""

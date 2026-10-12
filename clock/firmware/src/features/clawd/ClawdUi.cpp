@@ -742,6 +742,7 @@ bool clawdUiSpriteBox(int& x, int& y, int& w, int& h) {
   return true;
 }
 bool clawdUiOnDesk() { return g_view == VIEW_DESK; }
+bool clawdUiOnStyle() { return g_view == VIEW_STYLE; }
 
 const char* clawdUiAnimName() {
   static char name[16];
@@ -795,7 +796,7 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   // An installed style pack draws the usage screen, live or stale. An alert keeps
   // the classic screen (its line and the waving mascot), and so does an
   // Enterprise account (spending / period cards).
-  if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !(g_received && g_data.enterprise))
+  if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !g_alert && !(g_received && g_data.enterprise))
     want = VIEW_STYLE;
   if (styleGeneration() != g_styleGen) {   // a pack was installed or removed
     g_styleGen = styleGeneration();

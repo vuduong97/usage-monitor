@@ -57,3 +57,10 @@ void     styleAnimate(uint32_t nowMs);       // only what animation steps change
 // Diagnostics for /api/heap: the last animation repaint and the slowest since attach (us).
 uint32_t styleLastFrameUs();
 uint32_t styleMaxFrameUs();
+uint32_t styleLastPaintUs();                 // the last full paint, and the slowest since attach
+uint32_t styleMaxPaintUs();
+
+// Called with true before the pack draws and false after. StyleStore keeps it in
+// RTC memory, so a boot after a crash in the middle of a paint drops the pack
+// instead of crashing on it again. Weak no-op elsewhere.
+void styleDrawing(bool on);

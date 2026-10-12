@@ -35,6 +35,24 @@ Six packs ship with the firmware source: `gameboy`, `synth`, `paper`, `blueprint
 - `style`: the id of the pack shown, or `""` for classic.
 - `styleFrameUs` and `styleFrameMaxUs`: the last animation repaint and the slowest
   since the pack was attached, in µs. This covers decode and SPI.
+- `stylePaintUs` and `stylePaintMaxUs`: the same for a full-screen paint (on a new
+  payload, a new minute, or coming back from the desk view).
+- `onStyle`: the usage screen on the panel is the pack's (false on the desk view,
+  during an alert, for Enterprise, or with no pack).
+
+Measured on the clock (2026-10-12, 80 MHz, 20+ installs in a row):
+
+| Pack | Full paint | Slowest animation repaint |
+|---|---|---|
+| gameboy | 196–218 ms | 36 ms |
+| synth | 255–276 ms | 96 ms |
+| paper | 203–221 ms | (no animation) |
+| blueprint | 440–446 ms | (no animation) |
+| pastel | 222 ms | 29 ms |
+| onebit | 166 ms | 25 ms |
+
+An install takes 1–2 s from `curl` to the pack on screen (upload, slot copy ~0.6 s,
+paint). `minHeap` stayed ≥ 23,040 B.
 
 ```sh
 curl -u admin:<pass> -F "file=@firmware/styles/synth.pak" http://<clock>/api/style
@@ -61,6 +79,16 @@ How the two copies are kept in step:
   CRC fails, the file is copied into the slot again. The app does not have to
   reinstall a pack after an update.
 - **Failed OTA:** the slot is re-checked (`styleStoreResume`).
+- **Crash while drawing:** the pack marks a word in RTC memory while it paints. If
+  the clock then resets on an exception or a watchdog, the next boot deletes
+  `/style.pak` and shows the classic screen, with `error` in `/api/style` saying
+  so. A crash in a pack cannot boot-loop the clock. (A power cut clears the mark.)
+- **Debug trail:** `/style.log` (newest ~2–4 KB, read it with
+  `GET /api/fs/get?path=/style.log`) gets one line per install step (upload,
+  erase, write, validate, attach, rename), one per boot, one per WiFi status
+  change, and a heartbeat every 30 s while WiFi is down. It survives a power
+  cycle, so after a clock drops off the network it shows whether the CPU still
+  ran.
 - **When flash is written:** only when a pack is installed, or at the first boot
   after a firmware update.
 - **Install:** the upload goes to `/style.pak.tmp`. Its magic, API, size and CRC

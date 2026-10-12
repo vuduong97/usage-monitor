@@ -75,7 +75,8 @@ static uint16_t g_val[SRC_COUNT];            // 0..1000 per source
 static char     g_tok[TOKEN_COUNT][TOKEN_LEN];
 
 static uint8_t  g_last[STYLE_MAX_ANIMATED];  // step each animated op was last drawn at
-static uint32_t g_frameUs = 0, g_frameMaxUs = 0;
+static uint32_t g_frameUs = 0, g_frameMaxUs = 0, g_paintUs = 0, g_paintMaxUs = 0;
+__attribute__((weak)) void styleDrawing(bool) {}
 
 void styleSetBuiltinFonts(const ClawdFont* const* fonts, uint8_t count) {
   g_builtin = fonts;
@@ -186,7 +187,7 @@ bool styleAttach(const uint8_t* base, uint32_t size) {
   g_info.api = g_h.api;
   g_info.light = g_h.flags & 1;
   memset(g_last, 0xFF, sizeof(g_last));
-  g_frameUs = g_frameMaxUs = 0;
+  g_frameUs = g_frameMaxUs = g_paintUs = g_paintMaxUs = 0;
   g_base = base;
   g_gen++;
   return true;
@@ -201,6 +202,8 @@ const StyleInfo* styleInfo() { return g_base ? &g_info : nullptr; }
 uint32_t styleGeneration() { return g_gen; }
 uint32_t styleLastFrameUs() { return g_frameUs; }
 uint32_t styleMaxFrameUs() { return g_frameMaxUs; }
+uint32_t styleLastPaintUs() { return g_paintUs; }
+uint32_t styleMaxPaintUs() { return g_paintMaxUs; }
 
 // ---- data ------------------------------------------------------------------------
 static float clamp100(float v) { return v < 0 ? 0 : (v > 100 ? 100 : v); }
@@ -609,7 +612,12 @@ static void renderRegion(int x, int y, int w, int h, uint32_t now) {
 
 void stylePaint(uint32_t now) {
   if (!g_base) return;
+  const uint32_t t0 = clawdMicros();
+  styleDrawing(true);
   renderRegion(0, 0, CLAWD_W, CLAWD_H, now);
+  styleDrawing(false);
+  g_paintUs = clawdMicros() - t0;
+  if (g_paintUs > g_paintMaxUs) g_paintMaxUs = g_paintUs;
   uint16_t k = 0;
   for (uint16_t i = 0; i < g_h.opCount && k < STYLE_MAX_ANIMATED; i++) {
     Op o;
@@ -675,7 +683,9 @@ void styleAnimate(uint32_t now) {
   }
   if (!n) return;
   const uint32_t t0 = clawdMicros();
+  styleDrawing(true);
   for (int i = 0; i < n; i++) renderRegion(dirty[i].x0, dirty[i].y0, dirty[i].x1 - dirty[i].x0, dirty[i].y1 - dirty[i].y0, now);
+  styleDrawing(false);
   g_frameUs = clawdMicros() - t0;
   if (g_frameUs > g_frameMaxUs) g_frameMaxUs = g_frameUs;
 }

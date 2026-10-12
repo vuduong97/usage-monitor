@@ -77,6 +77,7 @@ void clawdUiPayload(const ClawdData& d);     // a payload landed (POST /api/usag
 void clawdUiState(const ClawdState& s);      // a state landed (POST /api/state)
 int  clawdUiDim();                           // active brightness cap, or -1
 bool clawdUiOnDesk();
+bool clawdUiOnStyle();   // the usage screen is drawn by the style pack
 // screen: CLAWD_SCREEN_*; fixedAnim: -1 = by usage rate, else an animation index;
 // layout: CLAWD_LAYOUT_* for the usage screen.
 void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout = CLAWD_LAYOUT_CLASSIC);

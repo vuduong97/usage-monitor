@@ -18,6 +18,7 @@
 #include "CrashLog.h"
 #include "UsageMode.h"
 #include "ClawdUi.h"
+#include "features/clawd/StyleStore.h"
 
 // ---- mode -------------------------------------------------------------------
 // The one compiled-in feature owns its fetch/render/dirty tracking; main.cpp
@@ -149,6 +150,15 @@ void setup() {
 // that blocks here freezes the animations and the web server alike.
 static uint32_t g_loopMaxCur = 0, g_loopMaxPrev = 0, g_loopWinStart = 0, g_loopLast = 0;
 uint32_t appLoopMaxMs() { return g_loopMaxCur > g_loopMaxPrev ? g_loopMaxCur : g_loopMaxPrev; }
+// The same window per part of loop(), so a long pass can be pinned on the network,
+// the web server or the screen: [0] net, [1] web, [2] screen.
+static uint32_t g_partCur[3], g_partPrev[3];
+uint32_t appLoopPartMs(int i) { return g_partCur[i] > g_partPrev[i] ? g_partCur[i] : g_partPrev[i]; }
+static inline void partEnd(int i, uint32_t& t) {
+  const uint32_t now = millis();
+  if (now - t > g_partCur[i]) g_partCur[i] = now - t;
+  t = now;
+}
 
 static void loopProfile() {
   const uint32_t now = millis();
@@ -161,13 +171,32 @@ static void loopProfile() {
     g_loopWinStart = now;
     g_loopMaxPrev = g_loopMaxCur;
     g_loopMaxCur = 0;
+    for (int i = 0; i < 3; i++) { g_partPrev[i] = g_partCur[i]; g_partCur[i] = 0; }
   }
 }
 
 void loop() {
   loopProfile();
+#if defined(CLAWD_ESP8266)
+  {   // debug trail: WiFi changes, and a heartbeat while it is down
+    static int lastSt = -1;
+    static uint32_t lastBeat = 0;
+    const int st = (int)WiFi.status();
+    if (st != lastSt) {
+      styleLog("wifi %d -> %d heap=%u", lastSt, st, (unsigned)ESP.getFreeHeap());
+      lastSt = st;
+      lastBeat = millis();
+    } else if (st != WL_CONNECTED && millis() - lastBeat > 30000) {
+      lastBeat = millis();
+      styleLog("alive wifi=%d heap=%u", st, (unsigned)ESP.getFreeHeap());
+    }
+  }
+#endif
+  uint32_t partT = millis();
   netLoop();
+  partEnd(0, partT);
   webPortalLoop();
+  partEnd(1, partT);
 
   if (webPortalRebootDue()) {
     delay(120);
@@ -192,7 +221,9 @@ void loop() {
   clockService(g_settings);
   appApplyBrightness();
 
+  partT = millis();
   kMode->service(g_settings);
+  partEnd(2, partT);
 
   delay(5);
 }
