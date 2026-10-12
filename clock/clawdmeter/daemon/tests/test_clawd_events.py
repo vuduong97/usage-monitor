@@ -6,6 +6,7 @@ Run: python -m pytest daemon/tests/test_clawd_events.py -q
 """
 import asyncio
 import json
+import random
 import time
 
 import httpx
@@ -65,7 +66,7 @@ def test_priority_attention_over_error_over_subagents():
     t.ingest(claude("SubagentStop"), T0 + 12)
     t.ingest(claude("SubagentStop"), T0 + 12)
     v = t.view(T0 + 12)          # s1 failed a tool: its debugging shows through, counted
-    assert (v.anim, v.text, v.variants) == ("typing", "Debugger (2)", ("debugger",))
+    assert (v.anim, v.text, v.variants) == ("debugger", "Debugging (2)", ())
     t.ingest(claude("PreToolUse", sid="s2", tool_name="Edit"), T0 + 13)
     v = t.view(T0 + 13)
     assert (v.anim, v.text) == ("headphones", "2 agents")
@@ -294,11 +295,8 @@ def test_pet_falls_asleep_and_wakes_with_greeting(tmp_path):
     p.observe(T0, 10, None)
     assert p.moment(T0) is None and p.continuous(T0) is None
     p.observe(T0 + 1, 301, None)
-    # one sequence the clock plays through: yawn -> doze -> collapse -> sleeping (loops)
-    assert p.moment(T0 + 1) is None
-    v = p.continuous(T0 + 1)
-    assert (v.anim, v.names, v.rep, v.urgent) == ("sleeping", ev.SLEEP_CHAIN, False, False)
-    assert p.continuous(T0 + 90) == v                  # unchanged: the clock keeps its place
+    # away: no endless sleep, the usage screens (with the usual idle picks)
+    assert p.moment(T0 + 1) is None and p.continuous(T0 + 90) is None
     p.observe(T0 + 100, 2, None)
     assert p.continuous(T0 + 100) is None
     v = p.moment(T0 + 100)
@@ -435,7 +433,7 @@ def test_pet_layers_below_agent_and_dim_always():
     b.pet.observe(T0, 900, None)
     b.pet.moments.clear()
     d = b.desired(T0)
-    assert (d["a"], d["dim"]) == ("sleeping", 15)
+    assert (d["a"], d["dim"]) == ("", 15)              # away: usage screens, dimmed at night
     b.tracker.ingest(claude("UserPromptSubmit"), T0)
     d = b.desired(T0)
     assert (d["a"], d["dim"]) == ("thinking", 15)
@@ -457,14 +455,16 @@ def test_wire_and_state_url():
 
 
 @pytest.mark.parametrize("steps,anim,text,variants", [
-    ([("PreToolUse", "Bash", None)], "typing", "Running", ("building", "carrying", "typing boss")),
-    ([("PreToolUse", "Edit", None)], "typing", "Editing", ("building", "carrying", "typing boss")),
+    ([("PreToolUse", "Bash", None)], "typing", "Running", ("typing boss",)),
+    ([("PreToolUse", "Edit", None)], "typing", "Editing", ("typing boss",)),
+    ([("PreToolUse", "memory_write", None)], "typing", "Working", ("building", "carrying",
+                                                                   "typing boss")),
     ([("PreToolUse", "Read", None)], "reading", "Reading", ()),        # reading is short: none
     ([("PreToolUse", "Grep", None)], "reading", "Searching", ()),
-    ([("PreToolUse", "Bash", {"command": "pytest -q"})], "debugger", "Testing", ("typing", "building")),
-    ([("PreToolUse", "Edit", None)] * ev.EDIT_STREAK, "typing boss", "Editing", ("typing", "building")),
-    ([("PostToolUseFailure", "Bash", None), ("PreToolUse", "Read", None)], "reading", "Debugger",
-     ("debugger",)),
+    ([("PreToolUse", "Bash", {"command": "pytest -q"})], "debugger", "Testing", ()),
+    ([("PreToolUse", "Edit", None)] * ev.EDIT_STREAK, "typing boss", "Editing", ("typing",)),
+    ([("PostToolUseFailure", "Bash", None), ("PreToolUse", "Read", None)], "debugger", "Debugging",
+     ()),
 ])
 def test_long_agent_animations_carry_same_meaning_variants(steps, anim, text, variants):
     t = ev.Tracker()
@@ -485,26 +485,25 @@ def test_thinking_ultrathink_and_wizard_variants():
     assert t.view(T0 + ev.ULTRATHINK_AFTER).variants == ("thinking",)
     t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + ev.WIZARD_AFTER)
     v = t.view(T0 + ev.WIZARD_AFTER)
-    assert (v.anim, v.variants) == ("wizard", ("typing", "building", "carrying"))
+    assert (v.anim, v.text, v.variants) == ("wizard", "Long task", ("typing", "building", "carrying"))
 
 
 def test_the_state_carries_variants_and_a_variant_change_is_pushed():
     b = brain_at()
     b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0)
     d = b.desired(T0)
-    assert (d["a"], d["v"]) == ("typing", ["building", "carrying", "typing boss"])
-    b.tracker.sessions["claude:s1"].debugging = True                  # same animation, new mix
+    assert (d["a"], d["v"]) == ("typing", ["typing boss"])
+    b.tracker.sessions["claude:s1"].action = ""                      # same animation, new mix
     d2 = b.desired(T0 + 0.5)
-    assert (d2["a"], d2["v"], d2["txt"]) == ("typing", ["debugger"], "Debugger")
+    assert (d2["a"], d2["v"], d2["txt"]) == ("typing", ["building", "carrying", "typing boss"],
+                                            "Working")
     assert ev.StatePusher.key(d) != ev.StatePusher.key(d2)
-    assert b.desired(T0 + 0.5)["v"] == ["debugger"]
 
 
 def test_read_pet_config_and_port(monkeypatch):
     vals = {"quiet_start": "22:30", "quiet_end": "6:45", "quiet_dim": "200",
             "away_after": "5", "milestone_turns": "x", "event_port": "5000", "idle_linger": "60"}
-    c = ev.read_pet_config(vals.get)
-    assert c.idle_linger == 60
+    c = ev.read_pet_config(vals.get)                   # idle_linger: gone, ignored
     assert (c.quiet_start, c.quiet_end, c.quiet_dim, c.away_after, c.milestone) == \
         (22 * 60 + 30, 6 * 60 + 45, 100, 30, 10)
     monkeypatch.delenv("CLAWD_EVENT_PORT", raising=False)
@@ -543,12 +542,9 @@ def test_pusher_sends_on_change_resends_and_clears():
     now[0] += ev.RESEND_EVERY
     assert _run(p.step()) and rec.bodies[-1]["a"] == "typing"   # keep-alive
     b.tracker.ingest(claude("SessionEnd"), now[0])
-    # after agent activity: the idle rotation for idle_linger, then the usage screens
-    assert _run(p.step()) and rec.bodies[-1] == \
-        {"a": list(ev.IDLE_ROTATION), "ttl": 60, "rep": True}
-    now[0] += b.pet.cfg.idle_linger
+    # after agent activity: straight back to the usage screens
     assert _run(p.step()) and rec.bodies[-1] == {"a": "", "ttl": 60}
-    assert len(rec.bodies) == 5
+    assert len(rec.bodies) == 4
 
 
 def test_pusher_retries_after_failed_delivery_and_no_targets():
@@ -715,10 +711,10 @@ def test_debug_turns_from_the_prompt_or_the_skill_show_the_debugger():
     t = ev.Tracker()
     t.ingest(claude("UserPromptSubmit", prompt="s\u1eeda l\u1ed7i flash.sh"), T0)
     assert t.view(T0).anim == "thinking"
-    for k, (tool, anim) in enumerate((("Bash", "typing"), ("Read", "reading"), ("Edit", "typing"))):
+    for k, tool in enumerate(("Bash", "Read", "Edit")):
         t.ingest(claude("PreToolUse", tool_name=tool), T0 + 1 + k)
-        v = t.view(T0 + 1 + k)                                 # the action's animation wins,
-        assert (v.anim, v.text, v.variants) == (anim, "Debugger", ("debugger",))  # debugger mixed in
+        v = t.view(T0 + 1 + k)                                 # whatever the tool: the debugger,
+        assert (v.anim, v.text, v.variants) == ("debugger", "Debugging", ())  # and it says so
         t.ingest(claude("PostToolUse", tool_name=tool), T0 + 1.5 + k)
     t.ingest(claude("PreToolUse", tool_name="Bash", tool_input={"command": "pytest"}), T0 + 5)
     v = t.view(T0 + 5)
@@ -732,7 +728,7 @@ def test_debug_turns_from_the_prompt_or_the_skill_show_the_debugger():
     t.ingest(claude("PreToolUse", tool_name="Skill", tool_input={"skill": "ak:debug"}), T0 + 62)
     t.ingest(claude("PostToolUse", tool_name="Skill"), T0 + 62.5)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 63)
-    assert t.view(T0 + 63).text == "Debugger"                # loading the skill starts one
+    assert t.view(T0 + 63).text == "Debugging"               # loading the skill starts one
     u = ev.Tracker()                                         # pi sends only the verdict
     u.ingest(ev.pi_event({"ev": "prompt", "sid": "p", "debug": True}), T0)
     u.ingest(ev.pi_event({"ev": "tool", "sid": "p", "tool": "edit"}), T0 + 1)
@@ -756,7 +752,7 @@ def test_many_agents_let_the_latest_sessions_reading_debugger_ultrathink_through
     t.ingest(claude("PostToolUseFailure", sid="c", tool_name="Edit"), T0 + 4.3)
     t.ingest(claude("PreToolUse", sid="c", tool_name="Edit"), T0 + 4.3 + ev.ERROR_SHOW)
     v = t.view(T0 + 4.3 + ev.ERROR_SHOW)
-    assert (v.anim, v.text) == ("typing", "Debugger (3)")
+    assert (v.anim, v.text) == ("debugger", "Debugging (3)")
     t.ingest(claude("SessionEnd", sid="c"), T0 + 10)
     t.ingest(claude("Stop", sid="a"), T0 + 10)
     t.ingest(claude("UserPromptSubmit", sid="a"), T0 + 11)
@@ -791,11 +787,11 @@ def test_running_tests_and_fixing_after_a_failure_show_the_debugger():
     assert t.view(T0 + 2).anim == "error"
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 10)
     v = t.view(T0 + 10)
-    assert (v.anim, v.text) == ("typing", "Debugger")        # rest of the turn after an error
+    assert (v.anim, v.text) == ("debugger", "Debugging")     # rest of the turn after an error
     t.ingest(claude("Stop"), T0 + 11)
     t.ingest(claude("UserPromptSubmit"), T0 + 20)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 21)
-    assert t.view(T0 + 21).text == "Debugger"                # and the turn right after
+    assert t.view(T0 + 21).text == "Debugging"               # and the turn right after
     t.ingest(claude("Stop"), T0 + 22)
     t.ingest(claude("UserPromptSubmit"), T0 + 30)
     t.ingest(claude("PreToolUse", tool_name="Edit"), T0 + 31)
@@ -834,7 +830,7 @@ def test_edit_streak_types_like_a_boss_and_long_turns_cast_wizard():
     assert t.view(T0 + 10).anim == "typing"                  # the streak broke
     t.ingest(claude("PreToolUse", tool_name="Bash"), T0 + ev.WIZARD_AFTER)
     v = t.view(T0 + ev.WIZARD_AFTER)
-    assert (v.anim, v.text) == ("wizard", "Running")
+    assert (v.anim, v.text) == ("wizard", "Long task")      # the text follows the animation
     t.ingest(claude("PreToolUse", tool_name="Grep"), T0 + ev.WIZARD_AFTER + 1)
     assert t.view(T0 + ev.WIZARD_AFTER + 1).anim == "reading"   # reading beats wizard
 
@@ -846,7 +842,7 @@ def test_min_display_holds_agent_animations_but_not_against_a_poke():
     b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0 + 1)
     b.tracker.sessions["claude:s1"].error_until = 0           # error over early
     assert b.desired(T0 + 1)["a"] == "error"                  # held for minDisplay.error
-    assert b.desired(T0 + 5)["txt"] == "Debugger"
+    assert b.desired(T0 + 5)["txt"] == "Debugging"
     b.pokes.handle({"cmd": "poke"}, T0 + 5.2)
     d = b.desired(T0 + 5.2)
     assert (d["a"], d["u"]) == ("react left", True)           # a poke never waits
@@ -867,16 +863,117 @@ def test_pokes_alternate_and_three_quick_ones_annoy():
     assert p.moment(T0 + 102 + ev.ANNOYED_SECS + 0.1) is None
 
 
-def test_idle_rotation_lingers_after_agent_activity_then_usage():
-    b = brain_at()
+def idle_brain(seed=1):
+    return ev.Brain(ev.Pet(localtime=local(14), rng=random.Random(seed)))
+
+
+def run_idle(b, start, secs, step=0.5):
+    """[(t, anim, seq)] every time desired() changes over `secs` seconds."""
+    out, last, t = [], None, start
+    while t < start + secs:
+        d = b.desired(t)
+        k = (d["a"], tuple(d["seq"]))
+        if k != last:
+            out.append((t, d["a"], tuple(d["seq"])))
+            last = k
+        t += step
+    return out
+
+
+def test_idle_picks_slip_in_between_usage_screens():
+    assert {n for p in ev.IDLE_PICKS for n in p} <= set(ev.PASS_SECS)
+    tied = {"reading", "thinking", "ultrathink", "typing", "typing boss", "building", "wizard",
+            "debugger", "headphones", "juggling", "carrying", "sweeping", "error", "dizzy",
+            "notification", "happy", "react left", "react right", "annoyed"}
+    assert not tied & {n for p in ev.IDLE_PICKS for n in p}
+    b = idle_brain()
+    b.pet.desk_new = True
+    changes = run_idle(b, T0, 3 * 3600)
+    assert changes[0][1] == ""                            # starts on the usage screens
+    picks = [(t, a, seq) for t, a, seq in changes if a]
+    assert len(picks) >= 25
+    for (t0, a, seq), (t1, a1, _) in zip(changes, changes[1:]):
+        if a:                                             # one pass, then usage again
+            names = seq or (a,)
+            assert a1 == "" and abs((t1 - t0) - sum(ev.PASS_SECS[n] for n in names)) <= 0.5
+        else:                                             # a gap of 3-6 minutes
+            assert ev.IDLE_GAP[0] - 0.5 <= t1 - t0 <= ev.IDLE_GAP[1] + 0.5
+    names = [seq or (a,) for _, a, seq in picks]
+    assert all(x != y for x, y in zip(names, names[1:]))   # never the same pick twice in a row
+    assert set(names) == set(ev.IDLE_PICKS)
+    assert ("yawn", "sleeping", "wake") in names
+
+
+def test_idle_picks_skip_new_animations_on_an_older_desk_pak():
+    b = idle_brain(2)
+    picks = {seq or (a,) for _, a, seq in run_idle(b, T0, 3 * 3600) if a}
+    assert picks and not any(ev.IDLE_PICKS_NEW.intersection(p) for p in picks)
+
+
+def test_done_then_usage_and_agent_activity_restarts_the_gap():
+    b = idle_brain()
     b.tracker.ingest(claude("UserPromptSubmit"), T0)
     b.tracker.ingest(claude("Stop"), T0 + 5)
-    assert b.desired(T0 + 6)["a"] == "happy"                  # minDisplay.happy from T0 + 6
-    d = b.desired(T0 + 6 + ev.min_display("happy"))
-    assert (d["a"], d["seq"], d["rep"]) == ("idle", list(ev.IDLE_ROTATION), True)
-    assert b.desired(T0 + 5 + b.pet.cfg.idle_linger + 1)["a"] == ""
-    b.pet.observe(T0 + 6, 900, None)                          # away wins over the rotation
-    assert b.desired(T0 + 30)["seq"] == list(ev.SLEEP_CHAIN)
+    assert b.desired(T0 + 6)["a"] == "happy"
+    assert b.desired(T0 + 5 + ev.DONE_SHOW - 0.1)["a"] == "happy"
+    free = T0 + 5 + ev.DONE_SHOW + 0.1
+    first = free
+    while not b.desired(first)["a"]:                    # usage screens until the first pick
+        first += 0.5
+    assert free + ev.IDLE_GAP[0] - 0.5 <= first <= free + ev.IDLE_GAP[1] + 0.5
+    # an agent turn during a pick cancels it; the next pick waits a full gap again
+    assert b.desired(first + 0.5)["a"]
+    b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), first + 1)
+    assert b.desired(first + 1)["a"] == "typing"
+    b.tracker.ingest(claude("SessionEnd"), first + 2)
+    assert b.pet.pick is None
+    assert b.desired(first + 2 + ev.MIN_DISPLAY_WORKING)["a"] == ""
+    assert b.pet.next_pick >= first + 2 + ev.IDLE_GAP[0]
+
+
+def test_away_keeps_usage_and_picks_then_wakes_on_return():
+    b = idle_brain()
+    b.pet.observe(T0, 900, None)
+    changes = run_idle(b, T0, 1800)
+    assert all(a != "sleeping" or seq for _, a, seq in changes)   # sleeping only inside the chain
+    assert sum(1 for _, a, _ in changes if a) >= 4
+    t = T0 + 1800
+    b.pet.observe(t, 1, None)
+    d = b.desired(t)
+    assert (d["seq"], d["txt"], d["u"]) == (["wake", "happy"], "Welcome back!", True)
+    assert b.pet.pick is None
+
+
+def test_probe_desk_turns_new_picks_on_and_keeps_them_without_answer():
+    b = idle_brain()
+    answers = [{"desk": 31}, {"desk": 30}]
+
+    def handler(req):
+        assert str(req.url) == "http://clock/api/heap"
+        if not answers:
+            return httpx.Response(503)
+        return httpx.Response(200, json=answers.pop(0))
+    p = ev.StatePusher(b, lambda: ["http://clock/api/usage"], httpx.MockTransport(handler),
+                       idle=lambda: None, clock=lambda: T0)
+    _run(p.probe_desk())
+    assert b.pet.desk_new is True
+    _run(p.probe_desk())
+    assert b.pet.desk_new is False
+    b.pet.desk_new = True
+    _run(p.probe_desk())                                  # no answer: unchanged
+    assert b.pet.desk_new is True
+
+
+def test_pusher_wakes_up_right_when_an_idle_pick_ends():
+    b = idle_brain()
+    p = ev.StatePusher(b, lambda: [], idle=lambda: None, clock=lambda: T0)
+    assert p._wait_for(T0) == 1.0
+    b.pet.desk_new = True
+    b.pet.next_pick = T0
+    assert b.desired(T0)["a"]
+    ends = b.pet.pick_ends()
+    assert p._wait_for(ends - 0.3) == pytest.approx(0.3)
+    assert p._wait_for(ends + 1) == 0.05
 
 
 def test_every_variant_is_an_animation_in_the_desk_pak():
@@ -884,6 +981,9 @@ def test_every_variant_is_an_animation_in_the_desk_pak():
     import re
     anims = pathlib.Path(__file__).resolve().parents[3] / "tools" / "desk" / "desk_anims.js"
     names = set(re.findall(r"name:\s*'([^']+)'", anims.read_text()))
-    used = {n for vs in ev.VARIANTS.values() for n in vs} | set(ev.VARIANTS) | set(ev.DEBUG_VARIANTS)
+    used = {n for vs in ev.VARIANTS.values() for n in vs} | set(ev.VARIANTS) | set(ev.WORKING_VARIANTS)
     assert used <= names, used - names
-    assert all(1 <= len(vs) <= 3 for vs in ev.VARIANTS.values())   # the clock keeps 3
+    assert all(1 <= len(vs) <= 3 for vs in (*ev.VARIANTS.values(), ev.WORKING_VARIANTS))  # the clock keeps 3
+    idle = {n for p in ev.IDLE_PICKS for n in p}
+    assert idle <= names, idle - names
+    assert len(names) >= ev.DESK_NEW_MIN                  # the pak that has every idle pick
