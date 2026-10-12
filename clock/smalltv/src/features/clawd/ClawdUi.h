@@ -34,10 +34,18 @@ struct ClawdData {
 // The last one then loops, or with `repeat` the whole list cycles (idle
 // rotation). A different sequence takes over at the end of the current pass
 // (at most DESK_SWITCH_WAIT_MS later), or at once when `urgent`.
+//
+// A single looping animation can carry up to CLAWD_VAR_MAX same-meaning
+// variants: it plays CLAWD_VAR_EVERY passes, then one variant picked at
+// random (never the previous one when there are two or more), then itself again.
 #define CLAWD_SEQ_MAX 4
+#define CLAWD_VAR_MAX 3
+#define CLAWD_VAR_EVERY 3
 struct ClawdState {
   char    anim[CLAWD_SEQ_MAX][16]; // desk.pak animation names, animCount = 0: no desk view
   uint8_t animCount;
+  char    var[CLAWD_VAR_MAX][16];  // variants of anim[0] (one animation, no repeat only)
+  uint8_t varCount;
   bool    repeat;            // cycle the whole sequence instead of looping the last
   bool    urgent;            // replace what plays now instead of at its pass end
   char    text[96];          // ASCII line under the animation, "" = none
@@ -74,3 +82,4 @@ struct ClawdDeskStats {
   uint32_t total;            // frames drawn since boot
 };
 void clawdUiDeskStats(ClawdDeskStats& out);
+const char* clawdUiDeskAnimName();          // the desk animation on screen ("" if none)

@@ -104,6 +104,9 @@ bool usageApply(const String& body) {
 //   { "a":["yawn","doze","collapse","sleeping"] }   { "a":["idle","look"], "rep":1 }
 //   a   = desk.pak animation or a sequence of up to 4 (each plays one pass, the
 //         last loops; rep = cycle them all), "" / absent = back to the usage screens
+//   v   = up to 3 same-meaning variants of a single looping a (no rep): a plays
+//         3 passes, then one variant at random, then a again; older firmware
+//         ignores it   { "a":"typing", "v":["building","carrying","typing boss"] }
 //   u   = urgent: replace what plays now instead of at the end of its pass
 //   txt = ASCII line under it      cd  = countdown seconds appended as MM:SS
 //   dim = 0..100 brightness cap    ttl = seconds the state lives (resent ~20 s)
@@ -125,6 +128,15 @@ bool usageApplyState(const String& body) {
     s.animCount = 1;
   }
   s.repeat = doc["rep"] | false;
+  JsonVariant v = doc["v"];
+  if (v.is<JsonArray>()) {
+    for (JsonVariant x : v.as<JsonArray>()) {
+      if (s.varCount >= CLAWD_VAR_MAX) break;
+      const char* n = x | "";
+      if (!n[0]) continue;
+      strlcpy(s.var[s.varCount++], n, sizeof(s.var[0]));
+    }
+  }
   s.urgent = doc["u"] | false;
   strlcpy(s.text, doc["txt"] | "", sizeof(s.text));
   s.countdownSec = doc["cd"] | 0L;

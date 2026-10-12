@@ -80,6 +80,8 @@ struct DeskSeq {
   char    names[CLAWD_SEQ_MAX][16];
   uint8_t n = 0;
   bool    repeat = false;
+  char    vars[CLAWD_VAR_MAX][16];    // variants of names[0] (deskHasVars)
+  uint8_t nv = 0;
 };
 static DeskSeq   g_deskWant;              // what the daemon asked for
 static bool      g_deskSwitch = false;    // g_deskWant waits for the current pass to end
@@ -97,6 +99,9 @@ struct DeskPlayer {
   uint32_t due = 0;             // when the next frame is due
   bool     held = false;        // a one-shot reached its end and holds it
   int      shift = 0, limit = CLAWD_H;   // scene lift and the first row it may not touch
+  uint8_t  passes = 0;          // passes of names[0] since it (re)started
+  int8_t   var = -1;            // the variant on screen, -1: names[0]
+  int8_t   lastVar = -1;        // the variant played last (not picked twice in a row)
 };
 static DeskPlayer g_desk;
 
@@ -396,7 +401,7 @@ static void deskClearExcept(const DeskRect& r, const DeskRect& keep) {
 // old picture and only the part of `old` outside the new crop is blacked out,
 // so a switch never flashes black (the panel has no framebuffer to hide it).
 static void deskStartItem(uint32_t now, const DeskRect& old) {
-  int idx = deskPackFind(g_desk.seq.names[g_desk.item]);
+  int idx = deskPackFind(g_desk.var >= 0 ? g_desk.seq.vars[g_desk.var] : g_desk.seq.names[g_desk.item]);
   if (idx < 0 && deskPackCount() > 0) idx = 0;        // unknown name: still show Clawd
   g_desk.index = (idx >= 0 && deskPackAnim(idx, g_desk.a)) ? (int16_t)idx : (int16_t)-1;
   g_desk.frame = 0;
@@ -413,14 +418,39 @@ static void deskStartItem(uint32_t now, const DeskRect& old) {
 static void deskAdopt(uint32_t now, const DeskRect& old) {
   g_desk.seq = g_deskWant;
   g_desk.item = 0;
+  g_desk.passes = 0;
+  g_desk.var = -1;
   g_deskSwitch = g_deskSwitchNow = false;
   deskStartItem(now, old);
 }
 
-// One step past the last frame: next item, loop back, or hold.
+// Variants only mix into a single looping animation.
+static bool deskHasVars(const DeskSeq& q) { return q.nv && q.n == 1 && !q.repeat; }
+
+// A variant index at random, never the last one when there is a choice.
+static int8_t deskPickVar(uint8_t nv, int8_t last) {
+  if (nv < 2 || last < 0 || last >= nv) return (int8_t)clawdRandom(nv);
+  const int8_t r = (int8_t)clawdRandom(nv - 1u);
+  return r < last ? r : (int8_t)(r + 1);
+}
+
+// One step past the last frame: next item, a variant and back, loop back, or hold.
 static void deskPassEnd(uint32_t now, uint32_t late) {
   if (g_deskSwitch) { deskAdopt(now, deskCrop()); return; }
   const DeskSeq& q = g_desk.seq;
+  if (deskHasVars(q)) {
+    if (g_desk.var >= 0) {                     // a variant's one pass: back to the animation
+      g_desk.var = -1;
+      g_desk.passes = 0;
+      deskStartItem(now, deskCrop());
+      return;
+    }
+    if (++g_desk.passes >= CLAWD_VAR_EVERY) {
+      g_desk.var = g_desk.lastVar = deskPickVar(q.nv, g_desk.lastVar);
+      deskStartItem(now, deskCrop());
+      return;
+    }
+  }
   if (g_desk.item + 1 < q.n || (q.repeat && q.n > 1)) {
     const DeskRect old = deskCrop();
     g_desk.item = (uint8_t)((g_desk.item + 1) % q.n);
@@ -593,9 +623,11 @@ void clawdUiPayload(const ClawdData& d) {
 }
 
 static bool deskSeqEqual(const DeskSeq& a, const DeskSeq& b) {
-  if (a.n != b.n || a.repeat != b.repeat) return false;
+  if (a.n != b.n || a.repeat != b.repeat || a.nv != b.nv) return false;
   for (uint8_t i = 0; i < a.n; i++)
     if (strcmp(a.names[i], b.names[i]) != 0) return false;
+  for (uint8_t i = 0; i < a.nv; i++)
+    if (strcmp(a.vars[i], b.vars[i]) != 0) return false;
   return true;
 }
 
@@ -612,6 +644,11 @@ void clawdUiState(const ClawdState& s) {
     want.n = (uint8_t)(i + 1);
   }
   want.repeat = s.repeat;
+  for (uint8_t i = 0; i < s.varCount && i < CLAWD_VAR_MAX; i++) {
+    strncpy(want.vars[i], s.var[i], sizeof(want.vars[i]) - 1);
+    want.vars[i][sizeof(want.vars[i]) - 1] = 0;
+    want.nv = (uint8_t)(i + 1);
+  }
   const bool wasLive = deskLive(now);
   if (!wasLive || g_desk.index < 0) {
     g_deskWant = want;
@@ -677,6 +714,11 @@ void clawdUiDeskStats(ClawdDeskStats& o) {
   o.drawMax = percentile(g_drawSamples, g_statN, 100);
   o.lateP95 = percentile(g_lateSamples, g_statN, 95);
   o.total = g_statTotal;
+}
+
+const char* clawdUiDeskAnimName() {
+  if (g_view != VIEW_DESK || g_desk.index < 0) return "";
+  return g_desk.var >= 0 ? g_desk.seq.vars[g_desk.var] : g_desk.seq.names[g_desk.item];
 }
 
 void clawdUiService(uint8_t screen, int8_t fixedAnim) {

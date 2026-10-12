@@ -451,6 +451,7 @@ static void handleHeap() {
   o["anim"] = clawdUiAnimName();
   o["desk"] = deskPackCount();          // 0 = /desk.pak missing or invalid
   o["onDesk"] = clawdUiOnDesk();
+  o["deskAnim"] = clawdUiDeskAnimName();   // what the desk player shows now (variants too)
   {   // desk player: decode + SPI time per frame and lateness, last 128 frames (us)
     ClawdDeskStats ds;
     clawdUiDeskStats(ds);

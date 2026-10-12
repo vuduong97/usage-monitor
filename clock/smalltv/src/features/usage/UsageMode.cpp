@@ -9,6 +9,8 @@ UsageMode g_usageMode;
 
 uint32_t clawdNow() { return millis(); }
 uint32_t clawdMicros() { return micros(); }
+// Arduino's random() reads the hardware RNG (RANDOM_REG32) until randomSeed() is called.
+uint32_t clawdRandom(uint32_t n) { return (uint32_t)random((long)n); }
 
 // The panel as a ClawdSurface. Composed bands are pushed in one SPI burst
 // each; the Display tab's colour correction (gfxTint) is applied on the way

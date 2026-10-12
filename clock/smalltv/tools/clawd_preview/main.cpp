@@ -11,6 +11,7 @@
 static uint32_t g_now = 1000;
 uint32_t clawdNow() { return g_now; }
 uint32_t clawdMicros() { return g_now * 1000u; }
+uint32_t clawdRandom(uint32_t n) { return (uint32_t)rand() % n; }   // srand(1): repeatable runs
 
 static uint16_t fb[CLAWD_W * CLAWD_H];
 static long g_pushed = 0;
@@ -68,6 +69,86 @@ static ClawdData base() {
   d.clockEpoch = 1760191500;   // 14:05 UTC
   d.clockFmt = 24;
   return d;
+}
+
+static ClawdState deskState(const char* const* anims, int n, const char* const* vars, int nv) {
+  ClawdState s;
+  memset(&s, 0, sizeof(s));
+  for (int i = 0; i < n; i++) strncpy(s.anim[s.animCount++], anims[i], sizeof(s.anim[0]) - 1);
+  for (int i = 0; i < nv; i++) strncpy(s.var[s.varCount++], vars[i], sizeof(s.var[0]) - 1);
+  s.urgent = true;
+  s.dim = -1;
+  s.ttlSec = 3600;
+  return s;
+}
+
+// Play until the desk animation on screen changes (or `maxMs` passes); the time it took.
+static uint32_t untilChange(uint32_t maxMs) {
+  char was[16];
+  strncpy(was, clawdUiDeskAnimName(), sizeof(was));
+  uint32_t t = 0;
+  while (t < maxMs && strcmp(was, clawdUiDeskAnimName()) == 0) { run(10, CLAWD_SCREEN_AUTO, -1); t += 10; }
+  return t;
+}
+
+#define CHECK(c, ...) do { if (!(c)) { printf("FAIL: " __VA_ARGS__); printf("\n"); bad++; } } while (0)
+
+// Variants (`v`): the animation plays CLAWD_VAR_EVERY passes, then one variant at
+// random (never the same one twice in a row), then the animation again; without
+// `v` it just loops, and a change of `v` alone is taken over.
+static int checkVariants() {
+  int bad = 0;
+  srand(1);
+  clawdUiPayload(base());
+  static const char* const typing[] = {"typing"};
+  static const char* const typingHappy[] = {"typing", "happy"};
+  static const char* const vars[] = {"building", "carrying", "typing boss"};
+
+  clawdUiState(deskState(typingHappy, 2, nullptr, 0));      // one pass of typing, then happy
+  run(20, CLAWD_SCREEN_AUTO, -1);
+  const uint32_t pass = untilChange(60000);
+  CHECK(!strcmp(clawdUiDeskAnimName(), "happy"), "typing,happy ends in %s", clawdUiDeskAnimName());
+  printf("variants: one typing pass = %u ms\n", (unsigned)pass);
+
+  clawdUiState(deskState(typing, 1, nullptr, 0));           // no v: typing only, like before
+  run(20, CLAWD_SCREEN_AUTO, -1);
+  CHECK(untilChange(pass * 8) >= pass * 8, "typing without v changed to %s", clawdUiDeskAnimName());
+
+  clawdUiState(deskState(typing, 1, vars, 3));              // same a, new v: taken over
+  run(20, CLAWD_SCREEN_AUTO, -1);
+  int seen[3] = {0, 0, 0}, last = -1;
+  for (int cycle = 0; cycle < 20; cycle++) {
+    CHECK(!strcmp(clawdUiDeskAnimName(), "typing"), "cycle %d starts on %s", cycle, clawdUiDeskAnimName());
+    const uint32_t primary = untilChange(pass * 8);
+    // cycle 0 may start just after the previous pass ended (the switch waits for it)
+    // (10 ms loop steps: each pass measures within a step or two)
+    if (cycle > 0) CHECK(primary + 50 >= pass * CLAWD_VAR_EVERY && primary <= pass * CLAWD_VAR_EVERY + 50,
+                         "cycle %d: typing for %u ms, want %u", cycle, (unsigned)primary,
+                         (unsigned)(pass * CLAWD_VAR_EVERY));
+    int v = -1;
+    for (int i = 0; i < 3; i++) if (!strcmp(clawdUiDeskAnimName(), vars[i])) v = i;
+    CHECK(v >= 0, "cycle %d: variant %s is not in v", cycle, clawdUiDeskAnimName());
+    if (v < 0) break;
+    CHECK(v != last, "cycle %d: %s twice in a row", cycle, vars[v]);
+    seen[v]++;
+    last = v;
+    printf("variants: cycle %2d typing %5u ms -> %s\n", cycle, (unsigned)primary, vars[v]);
+    untilChange(30000);                                     // the variant's one pass
+  }
+  CHECK(seen[0] && seen[1] && seen[2], "variants seen %d/%d/%d", seen[0], seen[1], seen[2]);
+
+  static const char* const idleLook[] = {"idle", "look"};
+  ClawdState rep = deskState(idleLook, 2, vars, 3);         // v only mixes into one looping animation
+  rep.repeat = true;
+  clawdUiState(rep);
+  run(20, CLAWD_SCREEN_AUTO, -1);
+  for (int i = 0; i < 6; i++) {
+    untilChange(30000);
+    const char* n = clawdUiDeskAnimName();
+    CHECK(!strcmp(n, "idle") || !strcmp(n, "look"), "rep sequence played %s", n);
+  }
+  printf("variants: %s\n", bad ? "FAILED" : "ok");
+  return bad;
 }
 
 int main(int argc, char** argv) {
@@ -175,6 +256,7 @@ int main(int argc, char** argv) {
     clawdUiDeskStats(ds);
     printf("desk frames drawn: %u\n", (unsigned)ds.total);
   }
+  const int bad = checkVariants();
   printf("pixels pushed: %ld\n", g_pushed);
-  return 0;
+  return bad ? 1 : 0;
 }

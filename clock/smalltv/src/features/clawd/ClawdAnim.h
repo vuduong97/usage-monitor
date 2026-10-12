@@ -119,3 +119,4 @@ class ClawdMini {
 
 uint32_t clawdNow();   // millis(); supplied by the platform (device or preview)
 uint32_t clawdMicros(); // micros(), for the desk player's timing stats
+uint32_t clawdRandom(uint32_t n); // 0..n-1 (n > 0), for the desk player's variant picks

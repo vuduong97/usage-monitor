@@ -56,6 +56,7 @@ Reply: `200 {"ok":true}`, or `400` for a malformed body.
 {"a":"typing","txt":"Editing","dim":30,"ttl":60}
 {"a":["yawn","doze","collapse","sleeping"]}
 {"a":["react left","react right"],"rep":true,"u":true,"txt":"Which framework?"}
+{"a":"typing","v":["building","carrying","typing boss"],"txt":"Running"}
 {"a":""}
 ```
 
@@ -63,6 +64,7 @@ Reply: `200 {"ok":true}`, or `400` for a malformed body.
 | --- | --- |
 | `a` | animation name, or a list of up to 4 (each plays one pass, the last loops). Empty or missing = back to the usage screens |
 | `rep` | cycle the whole list instead of looping the last one |
+| `v` | up to 3 same-meaning variants of a single looping `a` (no `rep`): `a` plays 3 passes, then one variant picked at random (never the previous one), then `a` again. Clocks without it ignore `v` and just loop `a` |
 | `u` | urgent: switch now instead of at the end of the current pass |
 | `txt` | one line of ASCII text under the animation (the font has no accents) |
 | `cd` | countdown seconds, shown as `MM:SS` after the text |
@@ -79,7 +81,9 @@ An unknown name is ignored by the clock.
 ### `GET /api/heap`: health
 
 `version`, `uptime`, `heap`, `pak` (screens in `/clawd.pak`, 0 = missing),
-`desk` (animations in `/desk.pak`, 0 = missing), `anim`, `reset`, `crash`.
+`desk` (animations in `/desk.pak`, 0 = missing), `anim`, `deskAnim` (the desk
+animation on screen now, a variant too; only firmware that understands `v` has it),
+`reset`, `crash`.
 
 The app reads it every 5 s. When `uptime` shows the clock restarted, it
 sends the last `/api/usage` payload and the current `/api/state` again at
