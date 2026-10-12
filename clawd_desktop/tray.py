@@ -169,6 +169,7 @@ class Tray:
                 M("Nhập địa chỉ đồng hồ…", self.manual),
                 M("Mở trang cài đặt đồng hồ", self.open_clock,
                   visible=lambda _i: self.engine.snapshot().get("clock") is not None),
+                M("Mở nhật ký", lambda: open_path(str(paths.LOG_FILE))),
                 pystray.Menu.SEPARATOR,
                 M(f"Thoát {APP_NAME} (v{__version__})", self.quit),
             ))

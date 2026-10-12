@@ -79,17 +79,31 @@ Chấm nhỏ trên biểu tượng cho biết tình trạng:
 
 Trong vòng 1–2 phút, đồng hồ hiện mức dùng Claude của bạn. Ứng dụng tự mở cùng máy tính.
 
-Menu của biểu tượng:
+Bấm biểu tượng → **Cài đặt…** để mở cửa sổ cài đặt (mọi thứ ở một chỗ, không cần mở
+trang web của đồng hồ):
 
-- **Mở cùng máy tính**: bật/tắt tự chạy khi đăng nhập.
-- **Clawd phản ứng khi dùng Claude Code**: bật/tắt để chú cua nhảy theo Claude Code.
-  Ứng dụng thêm vài dòng "hook" vào `~/.claude/settings.json` (có sao lưu file cũ),
-  tắt đi là gỡ đúng các dòng đó.
+- **Hiển thị**: độ sáng, xoay màn hình, màn hình chính, hoạt hình Clawd, múi giờ, chế độ đêm.
+- **Usage**: chọn kiểu màn hình usage ("Hiện tại" hoặc "Nhịp & dự báo"), xem trước bằng dữ
+  liệu mẫu. Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
+- **Wi‑Fi**: các mạng đồng hồ nhớ (tối đa 4, theo thứ tự ưu tiên), tìm mạng quanh đồng hồ,
+  tên đồng hồ. Lưu Wi‑Fi thì đồng hồ khởi động lại.
+- **Cập nhật**: cập nhật firmware đi kèm app, sao lưu / khôi phục, khởi động lại, xoá cài đặt.
+- **App**: mở cùng máy tính, Clawd phản ứng khi dùng Claude Code (thêm vài dòng "hook"
+  vào `~/.claude/settings.json`, có sao lưu file cũ, tắt đi là gỡ đúng các dòng đó), chọn
+  đồng hồ, mở nhật ký.
+
+Đổi xong bấm **Lưu vào đồng hồ**: app gửi một lần, chỉ những gì đã đổi. Nếu đồng hồ có mật
+khẩu trang cài đặt (in trên thẻ đi kèm), app hỏi một lần rồi nhớ trong Keychain (Mac) /
+Credential Manager (Windows).
+
+Menu còn mấy lối tắt dùng được cả khi cửa sổ cài đặt không mở được:
+
 - **Tìm lại đồng hồ**: dò lại từ đầu (sau khi đổi router, đổi WiFi...).
 - **Nhập địa chỉ đồng hồ…**: nếu mạng nhà bạn chặn việc dò tìm, nhập IP mà đồng hồ hiện
   lúc khởi động (ví dụ `192.168.1.48`).
-- **Mở trang cài đặt đồng hồ**: trang web của đồng hồ (đổi WiFi, độ sáng...).
-- **Mở nhật ký**: file ghi lại mọi việc ứng dụng làm, gửi cho người tặng đồng hồ nếu có lỗi.
+- **Mở trang cài đặt đồng hồ**: trang web của đồng hồ (vẫn dùng được như trước).
+- **Mở nhật ký**: file ghi lại mọi việc ứng dụng làm (`~/.config/claude-usage-monitor/clawd-desktop.log`),
+  gửi cho người tặng đồng hồ nếu có lỗi.
 
 ## Gặp vấn đề
 
@@ -117,6 +131,9 @@ uv run --python 3.12 --group dev python -m pytest     # chạy test
 uv run --python 3.12 python -m clawd_desktop          # chạy tray từ mã nguồn
 uv run --python 3.12 python -m clawd_desktop run      # chạy không giao diện, log ra terminal
 uv run --python 3.12 python -m clawd_desktop find     # liệt kê đồng hồ trong mạng
+uv run --python 3.12 python -m clawd_desktop settings # mở cửa sổ cài đặt (đồng hồ đã nhớ)
+python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/smalltv   # kèm firmware…
+CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
 sh packaging/build_mac.sh                             # build Clawd.app + .dmg (trên Mac)
 ./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows)
 ```
@@ -134,6 +151,10 @@ clawd_desktop/
   discovery.py   tìm đồng hồ: mDNS _clawdmeter._tcp, quét mạng /24, địa chỉ nhập tay
   engine.py      chạy tất cả trong một luồng nền, báo trạng thái cho tray
   tray.py        biểu tượng + menu tiếng Việt
+  settings_app.py  cửa sổ cài đặt (pywebview, tiến trình riêng), trang ở ui/
+  settings_api.py  những gì trang được gọi xuống Python (kiểm tra mọi giá trị)
+  clockapi.py    API cài đặt của đồng hồ (/api/config, /update, digest auth)
+  firmware.py, ota.py   firmware đi kèm app và cách cài (tạm dừng gửi qua pause.py)
   hooks.py       thêm/gỡ hook Claude Code trong settings.json
   autostart.py   LaunchAgent (Mac) / HKCU Run (Windows)
 integrations/    extension pi và lệnh `clawd` (tuỳ chọn, cho người dùng nâng cao)
@@ -147,4 +168,6 @@ dùng chung với daemon Clawdmeter: `http_targets = 192.168.1.48` để chỉ �
 hoạt hình, `event_port = 47913`.
 
 Repo này **không chứa** firmware, font hay hình Clawd của đồng hồ (`tools/check_public.py`
-chặn trong CI). Xem `NOTICE`.
+chặn trong CI). Xem `NOTICE`. Firmware chỉ vào bản build khi chạy `tools/bundle_firmware.py`
+(thư mục `clawd_desktop/firmware/` bị git bỏ qua); bản build như vậy chứa firmware riêng tư,
+nên chỉ phát cho người dùng đồng hồ Clawd, đừng đính vào GitHub Release công khai.

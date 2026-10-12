@@ -151,7 +151,7 @@ function renderGallery() {
       g.append(b);
     });
   }
-  const cur = S && S.config && S.config.usage ? S.config.usage.layout : 0;
+  const cur = (S && S.config && S.config.usage && S.config.usage.layout) || 0;   // old firmware has no field: classic
   [...g.children].forEach((b, i) => {
     const st = layoutState(i), chip = b.querySelector('.chip');
     b.setAttribute('aria-checked', String(edit && edit.usage.layout === i));

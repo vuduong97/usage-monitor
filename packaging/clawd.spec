@@ -1,5 +1,6 @@
 # PyInstaller spec: `pyinstaller packaging/clawd.spec` from the repo root.
 # macOS -> dist/Clawd.app (menu-bar only, no Dock icon); Windows -> dist/Clawd/Clawd.exe
+import os
 import sys
 from pathlib import Path
 
@@ -11,14 +12,17 @@ from clawd_desktop import __version__  # noqa: E402
 
 ICONS = ROOT / "build" / "icons"
 hidden = collect_submodules("zeroconf") + collect_submodules("clawd_desktop")
-# The settings window: its page, and the clock firmware if tools/bundle_firmware.py put one there.
+# The settings window: its page, and the clock firmware if tools/bundle_firmware.py put one
+# there AND the build asks for it. The firmware is private: a build with it is for clock
+# owners only, never a public GitHub Release, so it takes an explicit opt-in.
 datas = [(str(ROOT / "clawd_desktop" / "ui"), "clawd_desktop/ui")]
 FIRMWARE = ROOT / "clawd_desktop" / "firmware"
-if (FIRMWARE / "firmware.json").is_file():
+if os.environ.get("CLAWD_PRIVATE_FIRMWARE") == "1" and (FIRMWARE / "firmware.json").is_file():
     datas.append((str(FIRMWARE), "clawd_desktop/firmware"))
     print(f"bundling clock firmware from {FIRMWARE}")
 else:
-    print("no clock firmware bundled (tools/bundle_firmware.py); the Update tab will say so")
+    print("no clock firmware bundled (CLAWD_PRIVATE_FIRMWARE=1 + tools/bundle_firmware.py); "
+          "the Update tab will say so")
 if sys.platform == "darwin":
     hidden += ["pystray._darwin", "PyObjCTools.AppHelper", "webview.platforms.cocoa", "keyring.backends.macOS"]
     icon = str(ICONS / "clawd.icns")
