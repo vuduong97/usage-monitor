@@ -1,0 +1,53 @@
+{
+  "api": 1,
+  "styles": [
+    {
+      "id": "gameboy",
+      "name": "Game Boy",
+      "file": "gameboy.pak",
+      "size": 5692,
+      "crc": "9bebfda9",
+      "light": false
+    },
+    {
+      "id": "synth",
+      "name": "Synthwave",
+      "file": "synth.pak",
+      "size": 16460,
+      "crc": "e0692e17",
+      "light": false
+    },
+    {
+      "id": "paper",
+      "name": "Newspaper",
+      "file": "paper.pak",
+      "size": 8628,
+      "crc": "5fd9d93e",
+      "light": true
+    },
+    {
+      "id": "blueprint",
+      "name": "Blueprint",
+      "file": "blueprint.pak",
+      "size": 2720,
+      "crc": "d347c39c",
+      "light": false
+    },
+    {
+      "id": "pastel",
+      "name": "Pastel",
+      "file": "pastel.pak",
+      "size": 9924,
+      "crc": "84551193",
+      "light": true
+    },
+    {
+      "id": "onebit",
+      "name": "1-bit",
+      "file": "onebit.pak",
+      "size": 4736,
+      "crc": "dea6c56f",
+      "light": true
+    }
+  ]
+}

@@ -10,6 +10,8 @@
 #include "ClawdPack.h"
 #include "DeskPack.h"
 #include "ClawdUi.h"
+#include "StylePack.h"
+#include "StyleStore.h"
 #include "Clock.h"
 #include "SettingsTransaction.h"
 #include "CrashLog.h"
@@ -274,6 +276,10 @@ static void handleHeap() {
   o["variant"] = FW_VARIANT;
   o["fwSeq"] = CLAWD_FW_SEQ;          // the desktop app never pushes an image with a lower one
   o["layouts"] = CLAWD_LAYOUTS;        // usage screen layouts this build draws (bitmask)
+  o["styleApi"] = STYLE_API;           // style packs this build can draw (docs/STYLE_PACK.md)
+  o["style"] = styleInfo() ? styleInfo()->id : "";   // installed pack, "" = classic screen
+  o["styleFrameUs"] = styleLastFrameUs();            // last animation repaint (decode + SPI)
+  o["styleFrameMaxUs"] = styleMaxFrameUs();
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();
@@ -378,6 +384,66 @@ static void handleDeskPakDone() {
   doc["ok"] = ok;
   doc["anims"] = deskPackCount();
   sendJson(doc, ok ? 200 : 500);
+}
+
+// Style packs (docs/STYLE_PACK.md). The desktop app keeps every pack and sends
+// only the one in use; the clock switches to it at once, no reboot.
+//   curl -F "file=@styles/synth.pak" http://<ip>/api/style    install and show it
+//   curl -X DELETE http://<ip>/api/style                       back to the classic screen
+//   curl http://<ip>/api/style                                 what is installed (open)
+static void styleJson(JsonObject o) {
+  const StyleInfo* i = styleInfo();
+  o["api"] = STYLE_API;
+  o["active"] = i != nullptr;
+  o["slot"] = styleStoreSlotBytes();
+  if (styleStoreError()[0]) o["error"] = styleStoreError();
+  if (!i) return;
+  char crc[9];
+  snprintf(crc, sizeof(crc), "%08x", (unsigned)i->crc);
+  o["id"] = i->id;
+  o["name"] = i->name;
+  o["size"] = i->size;
+  o["crc"] = crc;
+}
+static void handleStyleGet() {
+  JsonDocument doc;
+  styleJson(doc.to<JsonObject>());
+  sendJson(doc);
+}
+static void handleStyleUpload() {
+  g_pakTmp = STYLE_TMP_PATH;
+  HTTPUpload& up = server.upload();
+  if (up.status == UPLOAD_FILE_START &&
+      (!S->auth.enabled || !S->auth.pass.length() ||
+       server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str()))) {
+    LittleFS.remove(STYLE_TMP_PATH);
+#if defined(CLAWD_ESP8266)
+    // Short of room: drop the stored copy first. The screen keeps drawing the
+    // old pack from its flash mirror until the new one is in.
+    FSInfo fi;
+    if (LittleFS.info(fi) && fi.totalBytes - fi.usedBytes < 2u * STYLE_MAX_BYTES) LittleFS.remove(STYLE_PACK_PATH);
+#endif
+  }
+  pakUpload();
+  if (up.totalSize > STYLE_MAX_BYTES) g_pakFailed = true;
+}
+static void handleStyleDone() {
+  if (!requireAuth()) return;
+  const char* why = g_pakFailed ? "upload" : styleStoreInstall();
+  if (g_pakFailed) LittleFS.remove(STYLE_TMP_PATH);
+  JsonDocument doc;
+  doc["ok"] = why == nullptr;
+  if (why) doc["error"] = why;
+  styleJson(doc["style"].to<JsonObject>());
+  sendJson(doc, why ? 400 : 200);
+}
+static void handleStyleClear() {
+  if (!requireAuth()) return;
+  styleStoreClear();
+  JsonDocument doc;
+  doc["ok"] = true;
+  styleJson(doc["style"].to<JsonObject>());
+  sendJson(doc);
 }
 
 #if defined(CLAWD_ESP8266)
@@ -506,6 +572,7 @@ static void handleUpdateDone() {
   server.sendHeader("Connection", "close");
   server.send(ok ? 200 : 500, "text/plain", ok ? "OK" : platformUpdateError().c_str());
   if (ok) scheduleReboot(1200);
+  else styleStoreResume();            // the image did not take: the style slot is ours again
 }
 
 // The upload callback runs while the body streams in, ahead of
@@ -523,6 +590,7 @@ static void handleUpdateUpload() {
 #if defined(CLAWD_ESP8266)
     WiFiUDP::stopAll();   // free UDP sockets so the OTA has max contiguous flash/heap
 #endif
+    styleStoreSuspend();  // the new image is staged over the style pack's flash mirror
     // The whole free slot: Updater::begin already refuses an image that would
     // overlap the running one. The usual extra 4 KB slack made a ~520 KB image
     // unable to replace itself in the 4m3m 1 MB sketch area.
@@ -566,6 +634,9 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
   server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
   server.on("/api/deskpak", HTTP_POST, handleDeskPakDone, handleDeskPakUpload);
+  server.on("/api/style", HTTP_GET, handleStyleGet);
+  server.on("/api/style", HTTP_POST, handleStyleDone, handleStyleUpload);
+  server.on("/api/style", HTTP_DELETE, handleStyleClear);
 #if defined(CLAWD_ESP8266)
   server.on("/api/fs/list", HTTP_GET, handleFsList);
   server.on("/api/fs/get", HTTP_GET, handleFsGet);

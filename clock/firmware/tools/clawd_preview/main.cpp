@@ -7,6 +7,9 @@
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
 #include "ClawdUi.h"
+#include "StylePack.h"
+#include <chrono>
+#include <vector>
 
 static uint32_t g_now = 1000;
 uint32_t clawdNow() { return g_now; }
@@ -185,6 +188,118 @@ static int checkVariants() {
   return bad;
 }
 
+// ---- style packs ---------------------------------------------------------------------
+static std::vector<uint8_t> readFile(const char* path) {
+  std::vector<uint8_t> v;
+  FILE* f = fopen(path, "rb");
+  if (!f) return v;
+  uint8_t buf[4096];
+  for (size_t n; (n = fread(buf, 1, sizeof(buf), f)) > 0;) v.insert(v.end(), buf, buf + n);
+  fclose(f);
+  return v;
+}
+
+static double hostUs() {
+  using namespace std::chrono;
+  return (double)duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count() / 1000.0;
+}
+
+// The four states of the design sheet (design/usage-screen-preview): Monday 14:05.
+static ClawdData styleState(int k) {
+  ClawdData d = base();
+  d.clockEpoch = 1760364300;                        // Mon 14:05 (local wall clock)
+  if (k == 1) { d.sessionPct = 88; d.sessionResetMin = 38; d.weeklyPct = 93; d.weeklyResetMin = 540; }
+  if (k == 2) { d.sessionPct = 4; d.sessionResetMin = 291; d.weeklyPct = 18; d.weeklyResetMin = 8200; d.clockEpoch = 1760346720; }
+  if (k == 0) { d.weeklyResetMin = 3960; }
+  return d;
+}
+
+// Every pack in $CLAWD_STYLE_DIR: the four states, a stretch of animation (frame
+// timing on this machine), the fallbacks (alert, Enterprise -> classic) and the
+// guards (a corrupt or future pack is refused).
+static int checkStyles(const char* dir) {
+  int bad = 0;
+  const char* sdir = getenv("CLAWD_STYLE_DIR");
+  if (!sdir) { printf("styles: CLAWD_STYLE_DIR not set, skipped\n"); return 0; }
+  static const char* const IDS[] = {"gameboy", "synth", "paper", "blueprint", "pastel", "onebit"};
+  static const char* const STATES[] = {"normal", "hot", "fresh", "stale"};
+  static std::vector<uint8_t> packs[6];
+  for (int p = 0; p < 6; p++) {
+    char path[512], n[64];
+    snprintf(path, sizeof(path), "%s/%s.pak", sdir, IDS[p]);
+    packs[p] = readFile(path);
+    std::vector<uint8_t>& pk = packs[p];
+    const char* why = styleValidate(pk.data(), (uint32_t)pk.size());
+    CHECK(!why, "%s: %s", path, why ? why : "");
+    if (why || !styleAttach(pk.data(), (uint32_t)pk.size())) { bad++; continue; }
+    for (int k = 0; k < 4; k++) {
+      if (k < 3) {
+        clawdUiPayload(styleState(k));
+        run(600, CLAWD_SCREEN_USAGE, -1);
+      } else {
+        run(CLAWD_DATA_FRESH_MS + 1000, CLAWD_SCREEN_USAGE, -1);   // the data goes stale
+      }
+      snprintf(n, sizeof(n), "30-%s-%d-%s", IDS[p], k, STATES[k]);
+      shot(dir, n);
+    }
+    // animation: 3 s at 10 ms steps, host time per frame that repainted something
+    clawdUiPayload(styleState(1));
+    run(600, CLAWD_SCREEN_USAGE, -1);
+    double worst = 0, total = 0;
+    int frames = 0;
+    uint32_t lastFrame = styleLastFrameUs();
+    for (int t = 0; t < 300; t++) {
+      g_now += 10;
+      const long before = g_pushed;
+      const double t0 = hostUs();
+      clawdUiService(CLAWD_SCREEN_USAGE, -1, g_layout);
+      const double dt = hostUs() - t0;
+      if (g_pushed != before) { frames++; total += dt; if (dt > worst) worst = dt; }
+      if (t % 25 == 0 && p == 1) { snprintf(n, sizeof(n), "31-%s-anim-%02d", IDS[p], t / 25); shot(dir, n); }
+      (void)lastFrame;
+    }
+    const StyleInfo* info = styleInfo();
+    printf("style %-9s %5u B  '%s'  anim frames %d in 3 s, host avg %.0f us, worst %.0f us\n", IDS[p],
+           (unsigned)pk.size(), info ? info->name : "?", frames, frames ? total / frames : 0.0, worst);
+    // an alert brings the classic screen back; clearing it returns to the pack
+    ClawdData al = styleState(0);
+    strcpy(al.alertMsg, "Claude needs your permission to run: npm test");
+    clawdUiPayload(al);
+    run(800, CLAWD_SCREEN_USAGE, -1);
+    if (p == 0) shot(dir, "32-style-alert");
+    ClawdData cl = styleState(0);
+    cl.alertClear = true;
+    clawdUiPayload(cl);
+    run(800, CLAWD_SCREEN_USAGE, -1);
+    if (p == 0) shot(dir, "32-style-alert-cleared");
+  }
+  // Enterprise keeps the classic cards
+  ClawdData ent = base();
+  ent.enterprise = true; ent.sessionPct = 38; ent.timePct = 61;
+  strcpy(ent.resetDate, "Nov 1");
+  clawdUiPayload(ent);
+  run(800, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "32-style-enterprise");
+
+  // guards: a flipped byte, a future API, a truncated pack
+  std::vector<uint8_t> pk = packs[0];
+  if (!pk.empty()) {
+    pk[pk.size() / 2] ^= 0x40;
+    CHECK(styleValidate(pk.data(), (uint32_t)pk.size()), "a corrupt pack validated");
+    CHECK(!styleAttach(pk.data(), (uint32_t)pk.size()) && !styleActive(), "a corrupt pack attached");
+    pk = packs[0];
+    pk[4] = STYLE_API + 1;
+    CHECK(styleValidate(pk.data(), (uint32_t)pk.size()), "a future-API pack validated");
+    CHECK(styleValidate(packs[0].data(), (uint32_t)packs[0].size() - 4), "a truncated pack validated");
+  }
+  styleDetach();
+  clawdUiPayload(base());
+  run(800, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "33-style-removed");
+  printf("styles: %s\n", bad ? "FAILED" : "ok");
+  return bad;
+}
+
 int main(int argc, char** argv) {
   const char* dir = argc > 1 ? argv[1] : ".";
   MemSurface surf;
@@ -223,91 +338,12 @@ int main(int argc, char** argv) {
   run(1000, CLAWD_SCREEN_AUTO, -1);
   shot(dir, "06-alert-cleared");
 
-  // pace layout (usage.layout = 1): normal, heavy use, just reset, an alert over it
-  g_layout = CLAWD_LAYOUT_PACE;
-  clawdUiPayload(base());
-  run(1000, CLAWD_SCREEN_AUTO, -1);
-  shot(dir, "06a-pace");
-  ClawdData h = base();
-  h.sessionPct = 88; h.sessionResetMin = 38; h.weeklyPct = 93; h.weeklyResetMin = 540;
-  clawdUiPayload(h);
-  run(1000, CLAWD_SCREEN_AUTO, -1);
-  shot(dir, "06b-pace-hot");
-  ClawdData fr = base();
-  fr.sessionPct = 4; fr.sessionResetMin = 291; fr.weeklyPct = 18; fr.weeklyResetMin = 8200;
-  clawdUiPayload(fr);
-  run(1000, CLAWD_SCREEN_AUTO, -1);
-  shot(dir, "06c-pace-fresh");
-  ClawdData pa = base();
-  strcpy(pa.alertMsg, "Claude needs your permission to run: npm test");
-  clawdUiPayload(pa);
-  run(1500, CLAWD_SCREEN_AUTO, -1);
-  shot(dir, "06d-pace-alert");
-  ClawdData pc = base();
-  pc.alertClear = true;
-  clawdUiPayload(pc);
-  run(1000, CLAWD_SCREEN_AUTO, -1);
-  shot(dir, "06e-pace-alert-cleared");
   g_layout = 9;                      // a layout this build lacks: classic
   run(1000, CLAWD_SCREEN_AUTO, -1);
   shot(dir, "06f-unknown-layout");
   g_layout = CLAWD_LAYOUT_CLASSIC;
 
-  // the four newer layouts: normal, heavy use, just reset, an alert over it and its end,
-  // an Enterprise payload (falls back to classic), and the idle screen (classic chrome)
-  {
-    static const struct { uint8_t id; const char* name; } NEW_LAYOUTS[] = {
-        {CLAWD_LAYOUT_HERO, "hero"}, {CLAWD_LAYOUT_RINGS, "rings"},
-        {CLAWD_LAYOUT_GAUGES, "gauges"}, {CLAWD_LAYOUT_PIXEL, "pixel"}};
-    for (const auto& L : NEW_LAYOUTS) {
-      char n[48];
-      g_layout = L.id;
-      clawdUiPayload(base());
-      run(3000, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-normal", L.name); shot(dir, n);
-      ClawdData hot = base();
-      hot.sessionPct = 88; hot.sessionResetMin = 38; hot.weeklyPct = 93; hot.weeklyResetMin = 540;
-      clawdUiPayload(hot);
-      run(3000, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-hot", L.name); shot(dir, n);
-      ClawdData fresh = base();
-      fresh.sessionPct = 4; fresh.sessionResetMin = 291; fresh.weeklyPct = 18; fresh.weeklyResetMin = 8200;
-      clawdUiPayload(fresh);
-      run(3000, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-fresh", L.name); shot(dir, n);
-      ClawdData full = base();
-      full.sessionPct = 100; full.sessionResetMin = 5; full.weeklyPct = 100; full.weeklyResetMin = 60;
-      clawdUiPayload(full);
-      run(3000, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-full", L.name); shot(dir, n);
-      ClawdData al = base();
-      strcpy(al.alertMsg, "Claude needs your permission to run: npm test");
-      clawdUiPayload(al);
-      run(1500, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-alert", L.name); shot(dir, n);
-      ClawdData cl = base();
-      cl.alertClear = true;
-      clawdUiPayload(cl);
-      run(3000, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-alert-cleared", L.name); shot(dir, n);
-      ClawdData ent = base();
-      ent.enterprise = true; ent.sessionPct = 38; ent.timePct = 61;
-      strcpy(ent.resetDate, "Nov 1");
-      clawdUiPayload(ent);
-      run(1500, CLAWD_SCREEN_AUTO, -1);
-      snprintf(n, sizeof(n), "20-%s-enterprise", L.name); shot(dir, n);
-    }
-    g_layout = CLAWD_LAYOUT_PIXEL;     // Clawd's stroll: a frame every 3 s over 30 s
-    clawdUiPayload(base());
-    for (int i = 0; i < 10; i++) {
-      run(3000, CLAWD_SCREEN_AUTO, -1);
-      char n[48];
-      snprintf(n, sizeof(n), "21-pixel-walk-%02d", i); shot(dir, n);
-    }
-    g_layout = CLAWD_LAYOUT_CLASSIC;
-    clawdUiPayload(base());
-    run(1000, CLAWD_SCREEN_AUTO, -1);
-  }
+  const int styleBad = checkStyles(dir);
 
   // mascot acts over time
   for (int i = 0; i < 4; i++) {
@@ -375,7 +411,7 @@ int main(int argc, char** argv) {
     clawdUiDeskStats(ds);
     printf("desk frames drawn: %u\n", (unsigned)ds.total);
   }
-  const int bad = checkVariants() + bandBad;
+  const int bad = checkVariants() + bandBad + styleBad;
   printf("pixels pushed: %ld\n", g_pushed);
   return bad ? 1 : 0;
 }

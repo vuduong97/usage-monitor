@@ -91,6 +91,12 @@ float clawdCos(int deg);
 
 int  clawdTextWidth(const ClawdFont& f, const char* s);   // px, kerning included
 
+// Building blocks for renderers that compose their own bands into clawdScratch()
+// (StylePack): blend one text run into band rows [by0, by1) of a region whose
+// columns are [rx, rx + rw) (row stride rw), and a rounded rect's AA coverage.
+void    clawdBlendText(const ClawdText& t, int rx, int rw, int by0, int by1);
+uint8_t clawdShapeCoverage(const ClawdShape& s, int px, int py);   // 0..255
+
 // 4 bpp cells -> panel. Renders the grid window [gx0, gx0+gw) x [gy0, gy0+gh)
 // with `cell` px per cell at screen (x0, y0). `cellAt` returns a palette index.
 // With `prev` (gw*gh nibbles), only grid rows that changed are pushed and

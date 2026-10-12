@@ -56,21 +56,16 @@ struct ClawdState {
 
 enum : uint8_t { CLAWD_SCREEN_AUTO = 0, CLAWD_SCREEN_USAGE = 1, CLAWD_SCREEN_SPLASH = 2 };
 
-// Usage screen layouts (Settings usage.layout). A value this build lacks draws
-// the classic one. CLAWD_LAYOUTS is the bitmask /api/heap reports, so the
-// desktop app only offers what the clock can draw.
+// Usage screen layouts (Settings usage.layout). This build draws only the
+// classic one; every other look is a style pack (StylePack.h) the desktop app
+// installs, so a stored value from an older build just draws the classic screen.
+// CLAWD_LAYOUTS is the bitmask /api/heap reports, so the app only offers what
+// the clock can draw.
 enum : uint8_t {
-  CLAWD_LAYOUT_CLASSIC = 0,   // two cards + spinner line
-  CLAWD_LAYOUT_PACE = 1,      // cards with pace pill, time marker and forecast
-  CLAWD_LAYOUT_HERO = 2,      // one big 5-hour number, weekly as a strip
-  CLAWD_LAYOUT_RINGS = 3,     // two concentric rings around the clock
-  CLAWD_LAYOUT_GAUGES = 4,    // two 270 degree gauges side by side
-  CLAWD_LAYOUT_PIXEL = 5      // 20-block bars, Clawd strolling along the floor
+  CLAWD_LAYOUT_CLASSIC = 0    // two cards + spinner line
 };
 // One bit per layout, spelled out: the desktop app's tools/bundle_firmware.py reads this line.
-#define CLAWD_LAYOUTS ((1u << CLAWD_LAYOUT_CLASSIC) | (1u << CLAWD_LAYOUT_PACE) | \
-                       (1u << CLAWD_LAYOUT_HERO) | (1u << CLAWD_LAYOUT_RINGS) | \
-                       (1u << CLAWD_LAYOUT_GAUGES) | (1u << CLAWD_LAYOUT_PIXEL))
+#define CLAWD_LAYOUTS (1u << CLAWD_LAYOUT_CLASSIC)
 
 #define CLAWD_DATA_FRESH_MS 90000UL   // usage counts as live within this window
 
@@ -87,8 +82,8 @@ bool clawdUiOnDesk();
 void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout = CLAWD_LAYOUT_CLASSIC);
 bool        clawdUiOnSplash();
 const char* clawdUiAnimName();               // what the splash is playing ("" if none)
-// Where the usage screen's Clawd moves (the corner mascot's window, or the pixel
-// layout's floor band); false when neither is up. The desktop preview cuts its
+// Where the usage screen's Clawd moves (the corner mascot's window); false when
+// it is not up (a style pack's screen animates as a whole). The desktop preview cuts its
 // looping clip on this box; the device never calls it (the linker drops it).
 bool clawdUiSpriteBox(int& x, int& y, int& w, int& h);
 

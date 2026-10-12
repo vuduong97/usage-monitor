@@ -111,9 +111,13 @@ static void blendText(const ClawdText& t, int rx, int rw, int by0, int by1) {
   });
 }
 
+void clawdBlendText(const ClawdText& t, int rx, int rw, int by0, int by1) {
+  if (t.font && t.s && t.s[0]) blendText(t, rx, rw, by0, by1);
+}
+
 // ---- shapes -----------------------------------------------------------------
 // Coverage (0..255) of pixel (px, py) by a rounded rect, anti-aliased corners.
-static uint8_t shapeCoverage(const ClawdShape& s, int px, int py) {
+uint8_t clawdShapeCoverage(const ClawdShape& s, int px, int py) {
   if (px < s.x || py < s.y || px >= s.x + s.w || py >= s.y + s.h) return 0;
   if (s.clipRight > 0 && px >= s.clipRight) return 0;
   int r = s.r;
@@ -235,7 +239,7 @@ void clawdRenderArcs(int x, int y, int w, int h, uint16_t bg,
       for (int c = 0; c < w; c++) {
         uint16_t px = bg;
         for (int k = 0; k < shapeCount; k++) {
-          uint8_t a = shapeCoverage(shapes[k], x + c, py);
+          uint8_t a = clawdShapeCoverage(shapes[k], x + c, py);
           if (a) px = clawdBlend(shapes[k].color, px, a);
         }
         for (int k = 0; k < arcCount; k++) {

@@ -111,30 +111,6 @@ class ClawdMascot {
   uint32_t stillSince_ = 0;
 };
 
-// Clawd strolling along a floor (the pixel usage layout): the crab-walk gait at
-// 2 px per cell, its steps locked to the feet like the splash's walkers. It stands
-// a moment, scuttles to the far end, stands, and comes back. A higher usage-rate
-// group shortens the frame holds, so heavy use makes it hurry. Only a window the
-// size of the sprite plus a 2-cell margin is repainted per step.
-class ClawdWalker {
- public:
-  void begin(int x0, int x1, int feetY);   // roams screen x in [x0, x1); feet end at row feetY
-  void reset();                            // standing at x0, repaint on next tick
-  void tick(int rateGroup);
-  void invalidate() { force_ = true; }
-  int  height() const { return player_.a.h * 2; }
-
- private:
-  void render();
-  static uint8_t cellAt(void* self, int gx, int gy);
-  ClawdPlayer player_;
-  uint16_t pal_[16];
-  int16_t  x0_ = 0, x1_ = 240, feet_ = 240, x_ = 0, target_ = 0;
-  int8_t   dir_ = 0, face_ = 1;
-  bool     force_ = true;
-  uint32_t standSince_ = 0;
-};
-
 class ClawdMini {
  public:
   void begin(const char* anim, int cx, int cy, int px);   // centred at (cx, cy), ~px wide

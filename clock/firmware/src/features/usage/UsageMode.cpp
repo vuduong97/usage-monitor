@@ -1,4 +1,5 @@
 #include "UsageMode.h"
+#include "StyleStore.h"
 #include <Arduino_GFX_Library.h>
 #include "Gfx.h"
 #include "UsageClient.h"
@@ -41,6 +42,7 @@ static void ensureClawd() {
   if (g_clawdReady) return;
   clawdSetSurface(&g_surface);
   clawdUiBegin();
+  styleStoreBegin();      // the installed style pack, mirrored into flash if an OTA moved it
   g_clawdReady = true;
 }
 

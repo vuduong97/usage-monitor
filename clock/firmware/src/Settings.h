@@ -20,7 +20,7 @@ struct WifiCred {
 struct UsageSettings {
   uint8_t  screen;        // Clawd screen: 0 auto, 1 usage, 2 splash (CLAWD_SCREEN_*)
   int8_t   anim;          // splash animation: -1 = by usage rate, else index
-  uint8_t  layout;        // usage screen layout: CLAWD_LAYOUT_* (0 classic, 1 pace)
+  uint8_t  layout;        // old usage layout setting, kept but ignored (style packs replaced it)
 
   void setDefaults();
   void toJson(JsonObject o) const;
