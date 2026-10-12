@@ -11,6 +11,7 @@ Every method returns a JSON-able dict: {"ok": true, ...} or
 """
 from __future__ import annotations
 
+import contextlib
 import copy
 import json
 import re
@@ -125,7 +126,9 @@ class SettingsApi:
                  api_factory: Callable[..., ClockApi] = ClockApi,
                  bundle: firmware.Bundle | None = None,
                  store: ClockStore | None = None,
-                 keychain=creds) -> None:
+                 keychain=creds,
+                 remember_screen: Callable[[int], None] = paths.set_clock_screen) -> None:
+        self._remember_screen = remember_screen  # tell the engine the main screen
         self._notify = notify                  # tell the tray (rescan, set host, refresh)
         self._factory = api_factory
         self._bundle = bundle
@@ -173,8 +176,17 @@ class SettingsApi:
         except ClockError as e:
             return {**_err(e), "heap": self._heap, "fw": self._fw_info(), "app": self._app_info()}
         self._cfg = cfg
+        self._mirror_screen(cfg)
         return {"ok": True, "heap": self._heap, "config": cfg, "fw": self._fw_info(),
                 "app": self._app_info()}
+
+    def _mirror_screen(self, cfg: dict) -> None:
+        """The engine stops pushing animations while the main screen is Usage; it
+        runs in another process, so hand it the value through the prefs file."""
+        s = (cfg.get("usage") or {}).get("screen")
+        if isinstance(s, int) and not isinstance(s, bool):
+            with contextlib.suppress(OSError):
+                self._remember_screen(s)
 
     def login(self, password: str, user: str = creds.DEFAULT_USER) -> dict:
         if not isinstance(password, str) or not password or not isinstance(user, str) or not user:
@@ -218,6 +230,9 @@ class SettingsApi:
                 self._cfg = self._api.config()
             except ClockError:
                 pass
+        screen = changes.get("usage", {}).get("screen")
+        if screen is not None:
+            self._mirror_screen({"usage": {"screen": screen}})
         return {"ok": True, "sent": changes, "reboot": bool(r.get("reboot")), "config": self._cfg}
 
     # ---- WiFi ------------------------------------------------------------------------
@@ -316,6 +331,7 @@ class SettingsApi:
                 self._cfg = self._api.config()
             except ClockError:
                 pass
+            self._mirror_screen(self._cfg)
             self._job.update(done=True)
         except (ClockError, ValueError, OSError) as e:
             self._job.update(error=_err(e)["error"] if isinstance(e, ClockError) else f"Lỗi: {e}")

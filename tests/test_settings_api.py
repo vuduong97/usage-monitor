@@ -213,3 +213,14 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
     assert public == sorted(["state", "login", "preview", "save", "scan", "reboot", "factory_reset",
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
                              "set_hooks", "open_log", "open_web", "set_clock"])
+
+
+def test_main_screen_is_handed_to_the_engine():
+    seen = []
+    api = FakeApi("http://c")
+    s = sa.SettingsApi("http://c", "k", api_factory=lambda *a, **k: api, remember_screen=seen.append,
+                       store=ClockStore(__import__("pathlib").Path("/nonexistent/x.json")))
+    s.state()
+    assert seen == [0]                                    # what the clock has now
+    s.save({"usage": {"screen": 1}})
+    assert seen[-1] == 1

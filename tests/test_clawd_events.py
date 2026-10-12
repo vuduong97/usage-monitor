@@ -995,3 +995,16 @@ def test_pusher_wakes_up_right_when_an_idle_pick_ends():
     ends = b.pet.pick_ends()
     assert p._wait_for(ends - 0.3) == pytest.approx(0.3)
     assert p._wait_for(ends + 1) == 0.05
+
+
+# ---- main screen = Usage ------------------------------------------------------------
+def test_usage_screen_blocks_animations_but_not_what_needs_you():
+    only = [True]
+    b = ev.Brain(ev.Pet(localtime=local(14)), usage_only=lambda: only[0])
+    b.tracker.ingest(claude("PreToolUse", tool_name="Bash"), T0)
+    assert b.desired(T0)["a"] == ""                       # agent working: stay on Usage
+    assert b.desired(T0 + 4000)["a"] == ""                # no idle pick either
+    b.pokes.handle({"cmd": "say", "text": "hi"}, T0 + 5)
+    assert b.desired(T0 + 5)["txt"] == "Hi"               # an explicit poke still shows
+    only[0] = False
+    assert b.desired(T0 + 6)["a"] != ""                   # Auto/Clawd: animations are back
