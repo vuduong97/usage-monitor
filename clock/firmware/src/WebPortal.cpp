@@ -424,12 +424,16 @@ static void handleStyleUpload() {
     if (LittleFS.info(fi) && fi.totalBytes - fi.usedBytes < 2u * STYLE_MAX_BYTES) LittleFS.remove(STYLE_PACK_PATH);
 #endif
   }
+  if (up.status == UPLOAD_FILE_WRITE && up.totalSize + up.currentSize > STYLE_MAX_BYTES) {
+    g_pakFailed = true;                   // too big for a pack: stop writing it
+    if (g_pakUpload) g_pakUpload.close();
+    return;
+  }
   pakUpload();
-  if (up.totalSize > STYLE_MAX_BYTES) g_pakFailed = true;
 }
 static void handleStyleDone() {
   if (!requireAuth()) return;
-  const char* why = g_pakFailed ? "upload" : styleStoreInstall();
+  const char* why = g_pakFailed ? "upload failed: too big, or no room on the clock" : styleStoreInstall();
   if (g_pakFailed) LittleFS.remove(STYLE_TMP_PATH);
   JsonDocument doc;
   doc["ok"] = why == nullptr;
@@ -602,6 +606,7 @@ static void handleUpdateUpload() {
     if (!Update.end(true)) Update.printError(Serial);
   } else if (up.status == UPLOAD_FILE_ABORTED) {
     Update.end();
+    styleStoreResume();   // no final handler runs after an abort
   }
   yield();
 }

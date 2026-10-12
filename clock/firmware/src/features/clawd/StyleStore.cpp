@@ -24,10 +24,37 @@ uint32_t styleStoreSlotBytes() {
 
 static const uint8_t* slot() { return reinterpret_cast<const uint8_t*>(FLASH_MAP_BASE + slotOffset()); }
 
+// Cheap checks on the file before the slot (and the pack on screen) is given up
+// for it: magic, API, size and the CRC, streamed. The full check runs on the
+// mapped copy (styleValidate) once it is in flash.
+static const char* precheck(File& f, uint32_t n) {
+  uint8_t head[16];
+  f.seek(0);
+  if (f.read(head, sizeof(head)) != (int)sizeof(head)) return "read";
+  if (memcmp(head, "CSTY", 4) != 0) return "magic";
+  if (head[4] != STYLE_API) return "api";
+  uint32_t size, crc;
+  memcpy(&size, head + 8, 4);
+  memcpy(&crc, head + 12, 4);
+  if (size != n) return "size";
+  uint8_t buf[128];
+  uint32_t c = 0;
+  for (uint32_t done = 16; done < n;) {
+    const uint32_t want = n - done < sizeof(buf) ? n - done : (uint32_t)sizeof(buf);
+    if (f.read(buf, want) != (int)want) return "read";
+    c = styleCrc32(buf, want, c);                 // pgm_read_byte reads RAM too on this core
+    done += want;
+    yield();
+  }
+  return c == crc ? nullptr : "crc";
+}
+
 // Copy file `f` into the slot and use it. nullptr when the mapped copy validates.
 static const char* mirror(File& f) {
   const uint32_t n = f.size();
   if (n < STYLE_HEADER_BYTES || n > styleStoreSlotBytes()) return "size";
+  const char* bad = precheck(f, n);
+  if (bad) return bad;
   styleDetach();                                  // never draw from a slot being rewritten
   const uint32_t off = slotOffset();
   const uint32_t sectors = (n + FLASH_SECTOR_SIZE - 1) / FLASH_SECTOR_SIZE;
@@ -79,7 +106,7 @@ const char* styleStoreInstall() {
   f.close();
   if (why) {
     LittleFS.remove(STYLE_TMP_PATH);
-    styleStoreBegin();                            // the previous pack, if it is still there
+    if (!styleActive()) styleStoreBegin();        // the slot was rewritten: the previous pack again
     return why;
   }
   LittleFS.remove(STYLE_PACK_PATH);
