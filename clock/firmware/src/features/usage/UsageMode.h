@@ -12,14 +12,9 @@
 
 class UsageMode : public DisplayMode {
  public:
-  const char* id() const override { return "usage"; }
-  uint8_t     modeConst() const override { return MODE_USAGE; }
-
   void begin(const Settings& s) override;
   void service(const Settings& s) override;
   void invalidate(const Settings& s) override;
-  // Another mode drew over the screen: repaint from cached data, no refetch.
-  void wake(const Settings& s) override;
 };
 
 extern UsageMode g_usageMode;

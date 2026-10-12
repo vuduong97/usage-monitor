@@ -13,7 +13,6 @@
 #include "Net.h"
 #include "Gfx.h"
 #include "WebPortal.h"
-#include "OtaUpdate.h"
 #include "Mode.h"
 #include "Clock.h"
 #include "CrashLog.h"
@@ -125,17 +124,6 @@ void setup() {
   // crash so a fault in here can't boot-loop before the web server starts (the
   // device then comes up in safe mode, OTA-recoverable, instead of needing UART).
   if (!g_safeMode) clockReapply(g_settings);
-
-  // A GitHub update queued from the web UI runs now, before the features claim
-  // the heap (the download needs a 16 KB TLS buffer that only fits at boot).
-  // On success it reboots into the new image; a no-op stub on the ESP32 targets.
-  if (otaBootRequested()) {
-    Serial.println("[boot] github update");
-    gfxBoot("SmallTV", "updating...");
-    otaBootUpdate(g_settings);
-    gfxBoot("SmallTV", "update failed");   // still here -> failed; details in the web UI
-    delay(1200);
-  }
 
   Serial.println("[boot] web");
   webPortalBegin(g_settings);

@@ -56,12 +56,6 @@ void UsageMode::invalidate(const Settings& s) {
   clawdUiInvalidate();
 }
 
-void UsageMode::wake(const Settings& s) {
-  (void)s;
-  ensureClawd();
-  clawdUiInvalidate();
-}
-
 void UsageMode::service(const Settings& s) {
   // Pull mode: poll the daemon when a Usage URL is set. Push mode (Clawdmeter's
   // daemon with http_targets): leave it blank and the daemon POSTs /api/usage.

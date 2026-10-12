@@ -2,10 +2,9 @@
 #include "Platform.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-#include "webui_clawd.h"   // same page minus the compiled-out feature tabs
+#include "webui.h"
 #include "Net.h"
 #include "Gfx.h"
-#include "OtaUpdate.h"
 #include "UsageClient.h"
 #include "ClawdAnim.h"
 #include "ClawdPack.h"
@@ -25,8 +24,6 @@ static WebServerClass server(80);
 static Settings*        S = nullptr;
 static bool             g_reboot = false;
 static uint32_t         g_rebootAt = 0;
-static bool             g_selfUpdate = false;   // GitHub self-update requested
-static String           g_updateMsg;            // last self-update status/error
 // Heap low-water marks since boot, sampled every loop (webPortalLoop) and
 // served by /api/heap for long-run stability checks.
 static uint32_t         g_minHeap = 0xFFFFFFFF;
@@ -73,13 +70,6 @@ static void handleGetConfig() {
   JsonDocument doc;
   JsonObject root = doc.to<JsonObject>();
   settingsToJson(*S, root, /*includeSecrets=*/false);
-  // Which features are compiled in (so a lean build hides the tabs it dropped).
-  JsonObject feat = root["features"].to<JsonObject>();
-  feat["ticker"] = false;
-  feat["usage"]  = true;
-  feat["radar"]  = false;
-  feat["ha"]     = false;
-  feat["theme"]  = false;
   // Clawd animation names, in index order, for the Usage tab's picker.
   JsonArray anims = root["clawdAnims"].to<JsonArray>();
   for (int i = 0; i < clawdAnimCount(); i++) {
@@ -87,9 +77,6 @@ static void handleGetConfig() {
     clawdAnimName(i, name, sizeof(name));
     anims.add(String(name));
   }
-  // WireGuard is a per-chip decision rather than a per-feature one: it is
-  // compiled only where the image has room for it (the ESP32-C2 build).
-  feat["wireguard"] = false;
   // Which chip this build runs on (the UI warns about per-chip limitations).
 #if defined(SMALLTV_ESP32C2)
   root["chip"] = "esp32c2";
@@ -107,9 +94,7 @@ static void handleStatus() {
   JsonObject o = doc.to<JsonObject>();
   o["fw"] = FW_NAME;
   o["version"] = FW_VERSION;
-  o["variant"] = FW_VARIANT;   // which release image this is, e.g. "esp8266-lean"
-  o["repo"] = REPO_URL;
-  if (g_updateMsg.length()) o["updateMsg"] = g_updateMsg;
+  o["variant"] = FW_VARIANT;
   o["mode"] = (netMode() == NET_AP) ? "ap" : "sta";
   o["connected"] = netConnected();
   o["ssid"] = netSSID();
@@ -126,7 +111,6 @@ static void handleStatus() {
   o["night"]     = clockNightActive();   // dimming now
   o["nightHeld"] = clockNightHeld();      // in the window but waiting for a fresh NTP sync
   o["clockFresh"] = clockTrusted();       // last NTP sync within the trust window
-  o["wg"]["compiledIn"] = false;   // no WireGuard in this firmware (the web UI still reads the key)
   sendJson(doc);
 }
 
@@ -238,35 +222,6 @@ static void handleImport() {
   }
   server.send(200, "application/json", "{\"ok\":true,\"reboot\":true}");
   scheduleReboot(800);
-}
-
-static void handleRefresh() {
-  if (!requireAuth()) return;
-  server.send(200, "application/json", "{\"ok\":true}");
-}
-
-
-// Check the newest GitHub release against the running version.
-static void handleCheckUpdate() {
-  if (!requireAuth()) return;
-  OtaLatest r = otaCheckLatest(*S);
-  JsonDocument doc;
-  JsonObject o = doc.to<JsonObject>();
-  o["current"] = FW_VERSION;
-  o["ok"] = r.ok;
-  o["latest"] = r.tag;
-  o["newer"] = r.newer;
-  if (!r.ok) o["error"] = r.error;
-  sendJson(doc);
-}
-
-// Trigger the self-update. The actual (blocking) download runs from the loop so
-// this response returns first; on success the device reboots into the new image.
-static void handleSelfUpdate() {
-  if (!requireAuth()) return;
-  g_selfUpdate = true;
-  g_updateMsg = "starting...";
-  server.send(200, "application/json", "{\"ok\":true}");
 }
 
 // Push endpoint: the daemon POSTs the usage payload here when the device can't
@@ -598,10 +553,6 @@ static void handleNotFound() {
 void webPortalBegin(Settings& settings) {
   S = &settings;
 
-  // If the last boot ran a queued GitHub update and failed, surface why
-  // (success reboots into the new image before we ever get here).
-  g_updateMsg = otaTakeBootResult();
-
   server.on("/", HTTP_GET, handleRoot);
   server.on("/api/config", HTTP_GET, handleGetConfig);
   server.on("/api/config", HTTP_POST, handlePostConfig);
@@ -609,11 +560,8 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/scan", HTTP_GET, handleScan);
   server.on("/api/reboot", HTTP_POST, handleReboot);
   server.on("/api/factory", HTTP_POST, handleFactory);
-  server.on("/api/refresh", HTTP_POST, handleRefresh);
   server.on("/api/export", HTTP_GET, handleExport);
   server.on("/api/import", HTTP_POST, handleImport);
-  server.on("/api/checkupdate", HTTP_GET, handleCheckUpdate);
-  server.on("/api/selfupdate", HTTP_POST, handleSelfUpdate);
   server.on("/api/usage", HTTP_POST, handleUsagePush);   // daemon pushes usage here
   server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
   server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
@@ -644,31 +592,6 @@ void webPortalLoop() {
     uint32_t h = ESP.getFreeHeap(), b = platformMaxFreeBlock();
     if (h < g_minHeap) g_minHeap = h;
     if (b < g_minMaxBlk) g_minMaxBlk = b;
-  }
-
-  // Run the GitHub self-update outside the request handler so the browser gets its
-  // response first.
-  if (g_selfUpdate) {
-    g_selfUpdate = false;
-#if defined(SMALLTV_ESP8266)
-    // RAM-tight chip: verify there is something to install, then queue the
-    // download for the next boot (otaBootUpdate in setup(), ~45 KB free) and
-    // reboot. A failure there lands back in g_updateMsg via otaTakeBootResult.
-    OtaLatest r = otaCheckLatest(*S);
-    if (!r.ok)         g_updateMsg = "check failed: " + r.error;
-    else if (!r.newer) g_updateMsg = "already up to date (" FW_VERSION ")";
-    else if (otaRequestBootUpdate(r.tag.c_str())) {
-      g_updateMsg = "updating...";
-      scheduleReboot(400);
-    } else {
-      g_updateMsg = F("could not queue update (storage error)");
-    }
-#else
-    // ESP32 targets: mbedTLS has the RAM to download in place; blocks while it
-    // runs and reboots into the new image on success.
-    String err = otaUpdateFromGitHub(*S);
-    g_updateMsg = err.length() ? err : "updating...";
-#endif
   }
 }
 

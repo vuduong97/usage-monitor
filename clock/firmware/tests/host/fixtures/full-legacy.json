@@ -1,0 +1,24 @@
+{
+  "hostname": "clawd-desk",
+  "wifi": [
+    {"ssid": "Office", "pass": "office-pass-1"},
+    {"ssid": "Home hotspot", "pass": "hotspot-pass"},
+    {"ssid": "Open cafe"}
+  ],
+  "apSsid": "MyClock-Setup", "apPass": "ap-secret-123",
+  "httpTimeout": 9000, "brightness": 63, "autoBrightness": true,
+  "backlightInverted": false, "rotation": 3,
+  "usage": {"usageUrl": "http://10.1.2.3:8787/", "pollSec": 45, "screen": 2, "anim": 7, "layout": 1},
+  "clock": {"tz": "Asia/Ho_Chi_Minh", "tzPosix": "<+07>-7", "nightEnabled": true,
+            "nightStart": "23:30", "nightEnd": "06:45", "nightLevel": 12},
+  "display": {"colorOrder": "bgr", "invert": true, "rGain": 90, "gGain": 110, "bGain": 100},
+  "auth": {"enabled": true, "user": "boss", "pass": "digest-pass"},
+
+  "mode": "radar", "themeId": "terminal", "carouselSec": 45,
+  "carouselTicker": false, "carouselUsage": true, "carouselRadar": false, "carouselHa": true,
+  "staSsid": "Office", "staPass": "office-pass-1",
+  "ticker": {"webhookUrl": "http://x", "range": "5d", "points": 30, "symbols": [{"symbol": "AAPL", "name": "Apple", "source": "yahoo", "qty": 3, "cost": 100}]},
+  "radar": {"lat": 10.8, "lon": 106.7, "rangeKm": 25, "airports": [{"icao": "VVTS", "lat": 10.8, "lon": 106.6}]},
+  "ha": {"brokerHost": "mqtt.local", "brokerPort": 1883, "brokerPass": "mq"},
+  "wg": {"enabled": true, "privateKey": "abc", "endpointHost": "vpn.example.com"}
+}
