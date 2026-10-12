@@ -22,6 +22,10 @@ The original smalltv-mod license text:
 
   0. You just DO WHAT THE FUCK YOU WANT TO.
 
+The desk pack inflater (firmware/src/features/clawd/uzlib/) is uzlib by
+Paul Sokolovsky, based on tinf by Joergen Ibsen, as shipped in the ESP8266
+Arduino core; zlib licence, full text in that directory's LICENSE.
+
 Artwork and fonts: the Clawd animations and the Styrene and Tiempos fonts belong
 to Anthropic, and the desk animations are rendered from clawd-on-desk art (All
 Rights Reserved, personal use only). None of it may be published, which is why

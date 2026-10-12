@@ -36,12 +36,14 @@ python3 tools/gzip_webui.py       # after editing src/webui.html
 
 ```sh
 cd tools/desk && npm install && cd ../..          # needs the clawd-on-desk checkout + Google Chrome
-CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js --verify   # -> build/desk/desk.pak
+CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js --verify   # -> build/desk/desk.pak (CLDK v3)
 #   --only NAME,...  --sheet (contact sheets + worst-frame PNGs)  --probe (timings only)
-curl -u admin:<pass> -F "file=@build/desk/desk.pak" http://<clock>/api/deskpak   # ~75 s
+curl -u admin:<pass> -F "file=@build/desk/desk.pak" http://<clock>/api/deskpak   # ~45 s
+node tools/desk/desk_repack.js     # an old v2 pack -> v3 in place (keeps desk.v2.pak), pixels unchanged
 ```
 
-`desk.pak` (2.8 MB) only fits because the stock firmware's own files (web UI,
+`desk.pak` (1.86 MB: 25 animations deflated per frame, the 6 busiest stored raw
+for draw speed; 2.85 MB as the old v2) only fits because the stock firmware's own files (web UI,
 icons, fonts, GIFs: 1.5 MB) were moved off the clock with `tools/stock_fs.sh`.
 Restore them before flashing the stock firmware (see `docs/FIRMWARE.md`).
 

@@ -41,14 +41,14 @@ The usual `4m1m` layout overlaps that region and would destroy it. So `clawd` ke
 
   | OTA path | Max new image | This image |
   |---|---|---|
-  | stock (488 KB) → clawd | 552,960 B | 499,760 B |
+  | stock (488 KB) → clawd | 552,960 B | 500,896 B |
   | clawd → stock (488,304 B) | 524,288 B | — |
-  | clawd → clawd | 524,288 B | 499,760 B |
+  | clawd → clawd | 524,288 B | 500,896 B |
 
   **Keep `firmware.bin` ≤ 520 KB**, or in-place self-updates stop fitting. All staging stays below `0x100000`, so no OTA path touches the filesystem.
 - What makes the image fit:
   - The animations are a file (`/clawd.pak`, 210 KB), not PROGMEM.
-  - There is no TLS and no GitHub self-update (update with `tools/flash.sh` or the System tab).
+  - There is no TLS, no HTTP client and no GitHub self-update (update with `tools/flash.sh` or the System tab). Usage only arrives by push (`POST /api/usage`); the old pull mode (Usage URL, poll interval) is gone, it blocked `loop()` for seconds.
   - The code carries no ticker, radar, Home Assistant, notify, theme, MQTT or WireGuard.
   - The web UI (`src/webui.html`, one source) and the settings JSON hold only what the clock uses.
 - Both firmwares use the same Arduino core: SDK `2.2.2-dev(38a443e)` and LittleFS disk format v2.0. So they read and write the shared filesystem safely.
@@ -56,7 +56,7 @@ The usual `4m1m` layout overlaps that region and would destroy it. So `clawd` ke
 
 ## Stock files moved to the Mac (2026-10-12)
 
-`/desk.pak` (2.8 MB, 30 full-screen animations) does not fit next to the stock files (1.5 MB), so they were backed up and deleted from the clock with `tools/stock_fs.sh` (repo root). It talks to auth-gated endpoints this firmware has for that (ESP8266 only):
+`/desk.pak` (2.8 MB as CLDK v2, 31 full-screen animations) did not fit next to the stock files (1.5 MB), so they were backed up and deleted from the clock with `tools/stock_fs.sh` (repo root). It talks to auth-gated endpoints this firmware has for that (ESP8266 only):
 
 | Endpoint | |
 |---|---|
@@ -133,6 +133,8 @@ The Clawd desktop app finds the clock over mDNS (`_clawd._tcp`, TXT `id`, `ver`,
 
 Measured on the device: `minHeap` stayed at 24,064 B or more through usage, Enterprise and alert payloads. With the desk view (2026-10-12, after a reboot): `minHeap` ≥ 22,568 B; draw p95 11 ms (`typing`) to 45 ms (`building`, the busiest), `lateP95` 5 ms.
 
+After the YCbCr trim, the pull-mode removal and the v3 desk pack (2026-10-12, 17 min soak with app pushes): `heap` ≈ 30,000 B, `minHeap` 28,168 B (was 21,480), `fsUsed` 2,105,344 of 3,121,152 B (was 3,096,576). Draw p95 unchanged from v2 within noise: `debugger` 17.5 ms, `typing boss` 19.5, `juggling` 16.1, `wizard` 26.7, `happy` 31.0, `building` 44 ms; `lateP95` 4–5 ms. Compressing those six too saves another 360 KB but costs ~6 µs per raw byte (`debugger` p95 24 ms, `typing boss` 28 ms), so `RAW_ANIMS` in `tools/desk/desk_pak.js` keeps them stored. IRAM for the inflater measured slower (cache pressure) and was dropped.
+
 ```sh
 while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.log   # 24 h soak
 ```
@@ -147,11 +149,12 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `ClawdAnim.*` | Splash player: player, splash with walkers and rate groups, corner mascot, mini. |
 | `ClawdRate.*` | Usage-rate groups (idle, normal, active, heavy). |
 | `ClawdUi.*` | Screens, views, alert and status line; the desk player (sequences, pass-end switching, timing stats). |
-| `DeskPack.*` | `/desk.pak` (CLDK v2) reader. 1:1 240 px frames as row deltas (skip / literal / run ops, 16 colours per animation), streamed in 128 B reads and pushed as row spans. Format notes in `tools/desk/desk_codec.js`. |
-| `tools/desk_check/run.sh` | Host build of `DeskPack.cpp`: decodes every frame of `build/desk/desk.pak` and checks it against the encoder's `desk.crc.json`. |
+| `DeskPack.*` | `/desk.pak` reader, CLDK v2 and v3. 1:1 240 px frames as row deltas (skip / literal / run ops, 16 colours per animation), streamed in 128 B reads and pushed as row spans. v3 stores each delta as raw DEFLATE (512 B window), inflated through static uzlib state and a 512 B ring (`uzlib/`, vendored from the Arduino core, zlib licence); identical deltas are stored once. Ops in `tools/desk/desk_codec.js`, container in `tools/desk/desk_pak.js`. |
+| `tools/desk_check/run.sh [pak]` | Host build of `DeskPack.cpp`: decodes every frame of `build/desk/desk.pak` (v2 or v3) and checks it against the encoder's `desk.crc.json`. |
+| `gfx_trim.py`, `gfx_check.py` | Pre/post build scripts. Arduino_GFX 1.6.9 (pinned) links `writeYCbCrPixels` through the vtable, and with it ~6.8 KB of YCbCr tables in DRAM that nothing here uses. `gfx_trim.py` compiles that body out under `CLAWD_NO_YCBCR`; `gfx_check.py` fails the build if the tables are back in the ELF (for example after a library bump). |
 | `features/usage/UsageMode.cpp` | Glue: Arduino_GFX surface plus ticking. |
 | `tools/clawd_preview/run.sh` | Desktop build of the same renderer. Writes PNGs of every screen and animation to `.pio/clawd_preview/`. |
 | `tools/gzip_webui.py` | Writes `src/webui.h` (gzip) from `src/webui.html`, the single web UI source. |
 | `tests/host/run.sh` | Host test: applies a config with dead keys through `Settings.cpp` and the save/load path, and compares with `fixtures/expected.json`. |
 
-Build (`pio run -e clawd`): static RAM 47,864 B (58.4%), image 499,760 B. That leaves about 24 KB of the 524,288 B clawd → clawd OTA budget: check the size before adding features (`tools/flash.sh` refuses larger images).
+Build (`pio run -e clawd`): static RAM 43,412 B (53.0%), image 500,896 B. That leaves about 23 KB of the 524,288 B clawd → clawd OTA budget: check the size before adding features (`tools/flash.sh` refuses larger images).
