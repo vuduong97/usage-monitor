@@ -48,6 +48,86 @@
       "size": 4736,
       "crc": "dea6c56f",
       "light": true
+    },
+    {
+      "id": "ambercrt",
+      "name": "Amber CRT",
+      "file": "ambercrt.pak",
+      "size": 7984,
+      "crc": "80be238e",
+      "light": false
+    },
+    {
+      "id": "vt100tui",
+      "name": "VT100",
+      "file": "vt100tui.pak",
+      "size": 5376,
+      "crc": "90a41099",
+      "light": false
+    },
+    {
+      "id": "mac84",
+      "name": "Macintosh",
+      "file": "mac84.pak",
+      "size": 18348,
+      "crc": "b404b393",
+      "light": true
+    },
+    {
+      "id": "win95",
+      "name": "Windows 95",
+      "file": "win95.pak",
+      "size": 13240,
+      "crc": "929a8b9e",
+      "light": false
+    },
+    {
+      "id": "biossetup",
+      "name": "BIOS Setup",
+      "file": "biossetup.pak",
+      "size": 7276,
+      "crc": "04e5c149",
+      "light": false
+    },
+    {
+      "id": "c64",
+      "name": "Commodore 64",
+      "file": "c64.pak",
+      "size": 5112,
+      "crc": "907cb7e3",
+      "light": false
+    },
+    {
+      "id": "zxspec",
+      "name": "ZX Spectrum",
+      "file": "zxspec.pak",
+      "size": 5900,
+      "crc": "3696248e",
+      "light": false
+    },
+    {
+      "id": "casiolcd",
+      "name": "Casio Watch",
+      "file": "casiolcd.pak",
+      "size": 7400,
+      "crc": "e211225e",
+      "light": false
+    },
+    {
+      "id": "calc",
+      "name": "Calculator",
+      "file": "calc.pak",
+      "size": 9120,
+      "crc": "504547a0",
+      "light": false
+    },
+    {
+      "id": "hifivfd",
+      "name": "Hi-fi VFD",
+      "file": "hifivfd.pak",
+      "size": 9660,
+      "crc": "d2f06d6a",
+      "light": false
     }
   ]
 }

@@ -12,7 +12,11 @@ const fs = require('fs');
 const path = require('path');
 const { Style, mix } = require('./style_pack');
 
-const ORDER = ['gameboy', 'synth', 'paper', 'blueprint', 'pastel', 'onebit'];
+const ORDER = [
+  'gameboy', 'synth', 'paper', 'blueprint', 'pastel', 'onebit',
+  // Batch A: retro computers & devices
+  'ambercrt', 'vt100tui', 'mac84', 'win95', 'biossetup', 'c64', 'zxspec', 'casiolcd', 'calc', 'hifivfd',
+];
 const MAX_PACK = 20 * 1024;
 
 function main() {
