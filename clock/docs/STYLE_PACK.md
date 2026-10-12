@@ -198,20 +198,27 @@ The preview also prints each pack's full paint time on the host, plus `~clock`.
 43 ms + 1.54 ms per host µs, within about 12 ms for all six. It is a guide for
 the 500 ms budget, not a measurement.
 
-Batch A on the host, 2026-10-13:
+Batch A, 2026-10-13. The host estimate is beside the clock's measurements, taken
+from `/api/heap` (`stylePaintMaxUs`, `styleFrameMaxUs`) over normal, hot and fresh
+payloads, 1 or 2 runs:
 
-| Pack | Size | Ops | ~clock full paint |
-|---|---|---|---|
-| ambercrt | 7,984 B | 126 | 226 ms |
-| vt100tui | 5,376 B | 68 | 197 ms |
-| mac84 | 18,348 B | 212 | 325 ms |
-| win95 | 13,240 B | 135 | 327 ms |
-| biossetup | 7,276 B | 71 | 221 ms |
-| c64 | 5,112 B | 62 | 218 ms |
-| zxspec | 5,900 B | 83 | 270 ms |
-| casiolcd | 7,400 B | 75 | 369 ms |
-| calc | 9,120 B | 57 | 222 ms |
-| hifivfd | 9,660 B | 137 | 319 ms |
+| Pack | Size | Ops | ~clock (host) | Full paint (clock) | Slowest animation repaint (clock) |
+|---|---|---|---|---|---|
+| ambercrt | 7,984 B | 126 | 226 ms | 266 ms | 12 ms |
+| vt100tui | 5,376 B | 68 | 197 ms | 216 ms | 22 ms |
+| mac84 | 18,348 B | 212 | 325 ms | 402 ms | 35 ms |
+| win95 | 13,240 B | 135 | 327 ms | 295 ms | 31 ms |
+| biossetup | 7,276 B | 71 | 221 ms | 235 ms | 29 ms |
+| c64 | 5,112 B | 62 | 218 ms | 213 ms | 12 ms |
+| zxspec | 5,900 B | 83 | 270 ms | 240 ms | 25 ms |
+| casiolcd | 7,400 B | 75 | 369 ms | 248 ms | 17 ms |
+| calc | 9,120 B | 57 | 222 ms | 206 ms | 25 ms |
+| hifivfd | 9,660 B | 137 | 319 ms | 373 ms | 51 ms |
+
+The estimate missed by up to 120 ms in both directions: mac84 (about 40 hatch line
+ops) and hifivfd ran slower than estimated, and casiolcd ran faster. Measure new
+packs on the clock. The `~clock` figure only says whether a pack is near the budget. Ten installs in a row
+left `minHeap` at 21,392 B, with no reset and no `error`.
 
 **Primitives:**
 - `rect`: optional radius and a `diag`/`cols`/`rows` pattern.
