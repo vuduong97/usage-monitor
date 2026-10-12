@@ -74,7 +74,6 @@ def _wifi(v):
 SCHEMA: dict[str, Any] = {
     "hostname": _str(32, HOSTNAME, 1),
     "brightness": _int(0, 100),
-    "autoBrightness": _bool,
     "rotation": _int(0, 3),
     "wifi": _wifi,
     "usage": {"screen": _int(0, 2), "anim": _int(-1, 63), "layout": _int(0, 15)},
@@ -153,7 +152,7 @@ class SettingsApi:
     def _fw_info(self) -> dict:
         h = self._heap
         return {"update": firmware.update_state(h, self._bundle),
-                "layouts": [firmware.layout_state(i, h, self._bundle) for i in range(2)],
+                "layouts": [firmware.layout_state(i, h, self._bundle) for i in range(firmware.LAYOUT_COUNT)],
                 "seq": firmware.clock_seq(h), "bundle": self._bundle_info()}
 
     def _app_info(self) -> dict:
