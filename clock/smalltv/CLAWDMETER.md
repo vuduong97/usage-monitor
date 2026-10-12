@@ -18,6 +18,8 @@ the Styrene/Tiempos fonts.
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.
   - On the Auto screen the splash means no fresh data, so it captions the clock's IP in a 24 px band at the bottom: the way to reach a clock the desktop app cannot find. Every animation ends by grid row 47 of 60, so the band never covers one. A splash picked on purpose (Screen: Clawd) stays full height.
 
+- **Usage layouts** (`usage.layout`): 0 classic (above); 1 pace: two taller cards with a pace pill (Under/On/Over pace, Just reset), a white time marker on each bar and a forecast line ("Out at ~14:41", "Lasts until reset"); the status line shows only an alert. Enterprise accounts always draw classic. A value this build cannot draw is stored as sent and draws classic, so a later image can pick it up.
+
 The web UI's Usage tab, Clawdmeter card, has two settings:
 - **Screen:** Auto (usage while data is live, splash otherwise), Usage, or Clawd.
 - **Animation:** by usage rate, or a fixed one.
@@ -120,7 +122,9 @@ ble = off                           # if there is no Bluetooth Clawdmeter
 
 `GET /api/heap` needs no auth and is read only. It returns these fields:
 - `heap`, `maxblk`, `minHeap`, `minMaxblk`, `frag`
-- `uptime`, `reset`, `version`
+- `uptime`, `reset`, `version`, `variant` (`esp8266-clawd` on this build)
+- `fwSeq` (`CLAWD_FW_SEQ` in `config.h`): bump it by hand for every image the desktop app should install; the app only pushes its bundled image to a clawd clock with a lower number (missing = 0), so it never downgrades
+- `layouts`: bitmask of the usage layouts this image draws (`CLAWD_LAYOUTS`, bit 0 classic, bit 1 pace); the desktop app offers a layout the clock lacks only when its bundled image has the bit
 - `pak` (animations loaded; 0 means `/clawd.pak` is missing), `splash`, `anim`
 - `desk` (animations in `/desk.pak`), `onDesk`, `fsTotal`, `fsUsed`
 - `contFree`: the least free `loop()` stack seen so far (of 4 KB)
