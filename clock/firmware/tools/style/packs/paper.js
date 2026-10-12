@@ -15,7 +15,6 @@ module.exports = {
     S.rect(10, 134, 132, 4, P.track, { r: 2 });
     S.rect(10, 134, 0, 4, P.ink, { r: 2, when: 'ok !hot', x1: ['s', 132], minW: 2, zeroOk: true });
     S.rect(10, 134, 0, 4, P.red, { r: 2, when: 'hot', x1: ['s', 132], minW: 2, zeroOk: true });
-    S.rect(9, 130, 2, 12, P.acc, { r: 1, when: 'ok', dx: ['ts', 132] });
 
     S.rect(152, 58, 1, 84, P.rule);
     S.mask('clawd', 164, 60, 2, '#d97757', { when: 'ok' });
