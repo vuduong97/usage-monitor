@@ -12,11 +12,15 @@ Sources, all on 127.0.0.1 (EventServer):
   GET  /state        what the clock should show now + live sessions (debug)
 
 Layers, highest first: poke moment > agent activity > focus timer > pet
-moment > pet away/sleep > idle rotation for a while after the last agent
-activity > nothing (the clock shows its usage screens).
+moment > idle pick > nothing (the clock shows its usage screens).
 
-A view can be a sequence the clock plays through on its own (the sleep chain
-yawn -> doze -> collapse -> sleeping, or the idle rotation): each animation
+When nothing else is up the clock shows usage, and every IDLE_GAP seconds
+(random) Clawd slips in one idle pick for one pass: an animation, or the
+yawn -> sleeping -> wake chain. That holds whether you are at the Mac or away;
+coming back plays wake + "Welcome back!" first. Anything above cancels the pick
+and starts a new gap, so the next pick comes IDLE_GAP after the screen frees up.
+
+A view can be a sequence the clock plays through on its own: each animation
 plays one full pass, the clock switches at pass ends, and only urgent views
 (needs you, errors, pokes, waking up) cut the current pass short.
 """
@@ -25,6 +29,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import random
 import re
 import subprocess
 import sys
@@ -40,6 +45,7 @@ import httpx
 EVENT_HOST = "127.0.0.1"
 EVENT_PORT = 47913
 STATE_PATH = "/api/state"
+HEAP_PATH = "/api/heap"
 STATE_TTL = 60            # seconds the clock keeps a state without a resend
 RESEND_EVERY = 20         # resend an unchanged live state this often
 PUSH_TIMEOUT = 1.5
@@ -53,7 +59,7 @@ TEXT_MAX = 90
 
 # Timings from clawd-on-desk's theme (themes/clawd/theme.json), in seconds.
 ERROR_SHOW = 5.0          # autoReturn.error
-DONE_SHOW = 4.0           # autoReturn.attention (the "Done!" happy)
+DONE_SHOW = 7.0           # the "Done!" happy, then the usage screens
 DIZZY_SHOW = 6.0          # autoReturn.dizzy
 MIN_DISPLAY = {"notification": 5.0, "question": 5.0, "error": 5.0, "dizzy": 5.0, "sweeping": 5.5, "happy": 4.0}
 MIN_DISPLAY_WORKING = 1.0  # minDisplay.working / .thinking: every other agent animation
@@ -68,8 +74,22 @@ WIZARD_AFTER = 1800       # a turn running this long: "wizard"
 DIZZY_ERRORS, DIZZY_WINDOW = 3, 120   # this many errors within the window: "dizzy"
 ANNOYED_POKES, ANNOYED_WINDOW = 3, 5  # this many pokes within the window: "annoyed"
 
-SLEEP_CHAIN = ("yawn", "doze", "collapse", "sleeping")
-IDLE_ROTATION = ("idle", "look", "bubble", "reading")
+# Idle picks: what Clawd slips in between the usage screens, one pass each, never
+# the same pick twice in a row. Nothing tied to an agent action (reading, typing...).
+IDLE_GAP = (180.0, 360.0)  # seconds of usage screens between two picks
+IDLE_PICKS = (("idle",), ("look",), ("bubble",), ("coffee hand",), ("shy",), ("outlaw",),
+              ("yawn", "sleeping", "wake"))
+# Picks only a newer desk.pak has (31+ animations, `desk` in /api/heap). An older
+# clock would play its first animation ("thinking") for a name it does not know.
+IDLE_PICKS_NEW = frozenset({"coffee hand", "shy", "outlaw"})
+DESK_NEW_MIN = 31
+DESK_PROBE_EVERY = 300     # re-read the clocks' animation count this often
+DESK_PROBE_TIMEOUT = 12.0  # the clock answers HTTP slowly for a while after boot
+# One pass of each idle animation on the clock (desk.pak: intro + one loop, or to
+# the end of a one-shot), seconds. The pick ends the state right then: the clock
+# drops a desk view at once, so a longer guess shows the start of a second pass.
+PASS_SECS = {"idle": 16.08, "look": 10.05, "bubble": 4.5, "coffee hand": 4.4, "shy": 3.21,
+             "outlaw": 16.0, "yawn": 7.0, "sleeping": 10.05, "wake": 1.5}
 
 # A shell command that runs a test suite (Bash / bash tool input).
 TEST_CMD = re.compile(
@@ -148,15 +168,17 @@ READING_ACTIONS = ("read", "search")   # the last tool read or searched: "readin
 SESSION_SHOWS_THROUGH = {"ultrathink", "debugger", "reading"}
 # Same-meaning variants of a long agent animation (the state's `v`): the clock plays
 # the animation 3 passes, then one variant picked at random, then the animation
-# again. Clocks with older firmware ignore `v` and only play the animation.
+# again, all under the same text. So a variant must show what the text says:
+# keyboard work stays at a keyboard. Clocks with older firmware ignore `v`.
 VARIANTS = {
-    "typing": ("building", "carrying", "typing boss"),
-    "typing boss": ("typing", "building"),
-    "wizard": ("typing", "building", "carrying"),
-    "debugger": ("typing", "building"),
+    "typing": ("typing boss",),
+    "typing boss": ("typing",),
+    "wizard": ("typing", "building", "carrying"),   # "Long task": any kind of work
     "ultrathink": ("thinking",),
 }
-DEBUG_VARIANTS = ("debugger",)   # a debugging turn: its action's animation, then this
+WORKING_VARIANTS = ("building", "carrying", "typing boss")  # a tool with no action: "Working"
+WIZARD_TEXT = "Long task"
+DEBUG_TEXT = "Debugging"
 TOOL_ACTIONS = {
     **dict.fromkeys(("bash", "bashoutput", "bg_run"), "run"),
     **dict.fromkeys(("read", "notebookread", "ls", "read_symbol", "read_enclosing"), "read"),
@@ -250,7 +272,6 @@ class Tracker:
     def __init__(self, on_turn: Callable[[float], None] | None = None) -> None:
         self.sessions: dict[str, Sess] = {}
         self.on_turn = on_turn
-        self.last_activity = 0.0       # last accepted event, for the pet's idle rotation
         self.errors: list[float] = []  # recent failures (dizzy)
         self.dizzy_until = 0.0
 
@@ -265,7 +286,6 @@ class Tracker:
         sid = str(ev.get("sid") or "")[:200]
         if kind not in EVENTS or not sid:
             return False
-        self.last_activity = now
         if kind == "end":
             return self.sessions.pop(sid, None) is not None
         s = self.sessions.get(sid)
@@ -407,14 +427,16 @@ class Tracker:
     def _session(s: Sess, now: float) -> View:
         """One thinking/working session: ultrathink > testing (debugger) >
         reading > typing boss > wizard > typing (thinking before its first tool).
-        A debugging turn keeps its action's animation, says "Debugger" and mixes
-        the debugger in as the variant."""
+        The text always says what the animation shows: a debugging turn is the
+        debugger ("Debugging"), a long turn the wizard ("Long task")."""
         if not s.running and now - s.quiet_since >= ULTRATHINK_AFTER:
             return View("ultrathink", "Thinking hard", "agent", variants=VARIANTS["ultrathink"])
         if s.state == "thinking":
             return View("thinking", "Thinking", "agent")
         if s.testing:
-            return View("debugger", "Testing", "agent", variants=VARIANTS["debugger"])
+            return View("debugger", "Testing", "agent")
+        if s.debugging:
+            return View("debugger", DEBUG_TEXT, "agent", debug=True)
         if s.action in READING_ACTIONS:
             anim = "reading"
         elif s.edits >= EDIT_STREAK:
@@ -423,9 +445,10 @@ class Tracker:
             anim = "wizard"
         else:
             anim = "typing"
-        if s.debugging:
-            return View(anim, "Debugger", "agent", variants=DEBUG_VARIANTS, debug=True)
-        return View(anim, ACTION_TEXT[s.action][0], "agent", variants=VARIANTS.get(anim, ()))
+        if anim == "wizard":
+            return View(anim, WIZARD_TEXT, "agent", variants=VARIANTS[anim])
+        variants = WORKING_VARIANTS if anim == "typing" and not s.action else VARIANTS.get(anim, ())
+        return View(anim, ACTION_TEXT[s.action][0], "agent", variants=variants)
 
     def snapshot(self, now: float) -> list[dict]:
         return [{"sid": s.sid, "src": s.src, "sub": s.sub, "state": s.state,
@@ -529,7 +552,6 @@ class PetConfig:
     yawn_from: int = 22 * 60
     yawn_every: int = 1800
     milestone: int = 10            # turns per day
-    idle_linger: int = 300         # idle rotation this long after the last agent activity
 
 
 def _in_window(minute: int, start: int, end: int) -> bool:
@@ -551,12 +573,18 @@ def _play(queue: list[Moment], now: float, layer: str) -> View | None:
 
 class Pet:
     def __init__(self, cfg: PetConfig | None = None, store: Path | None = None,
-                 localtime: Callable[[float], time.struct_time] = time.localtime) -> None:
+                 localtime: Callable[[float], time.struct_time] = time.localtime,
+                 rng: random.Random | None = None) -> None:
         self.cfg = cfg or PetConfig()
         self.store = store
         self.localtime = localtime
+        self.rng = rng or random.Random()
         self.moments: list[Moment] = []
         self.away = False
+        self.desk_new = False                  # every clock has the IDLE_PICKS_NEW animations
+        self.pick: Moment | None = None        # the idle pick on screen
+        self.next_pick = 0.0                   # when the next one starts (0: not scheduled)
+        self.last_pick: tuple[str, ...] = ()
         self.last_low = 0.0
         self.last_yawn = 0.0
         self.last_pct: float | None = None
@@ -602,7 +630,7 @@ class Pet:
         if idle_s is not None:
             away = idle_s >= c.away_after
             if away and not self.away:
-                self.away = True               # continuous(): the sleep chain
+                self.away = True               # only remembered for the greeting
                 self.moments = []
             elif not away and self.away:
                 self.away = False
@@ -648,12 +676,31 @@ class Pet:
     def moment(self, now: float) -> View | None:
         return _play(self.moments, now, "pet")
 
-    def continuous(self, now: float, last_activity: float = 0.0) -> View | None:
-        if self.away:
-            return View("sleeping", "", "pet", seq=SLEEP_CHAIN)
-        if last_activity and now - last_activity < self.cfg.idle_linger:
-            return View("idle", "", "pet", seq=IDLE_ROTATION, rep=True)
-        return None
+    def hold_off(self, now: float) -> None:
+        """Something else is on screen: drop the idle pick and start a new gap."""
+        self.pick = None
+        self.next_pick = now + self.rng.uniform(*IDLE_GAP)
+
+    def pick_ends(self) -> float | None:
+        return self.pick.start + self.pick.secs if self.pick else None
+
+    def continuous(self, now: float) -> View | None:
+        """The idle pick due now, or None (the usage screens)."""
+        if self.pick and now - self.pick.start >= self.pick.secs:
+            self.hold_off(now)
+        if not self.pick:
+            if not self.next_pick:
+                self.hold_off(now)
+            if now < self.next_pick:
+                return None
+            choices = [p for p in IDLE_PICKS if self.desk_new or not IDLE_PICKS_NEW.intersection(p)]
+            choices = [p for p in choices if p != self.last_pick] or choices
+            seq = self.rng.choice(choices)
+            self.last_pick = seq
+            self.pick = Moment(seq[0], "", sum(PASS_SECS[n] for n in seq), start=now,
+                               seq=seq if len(seq) > 1 else ())
+        m = self.pick
+        return View(m.anim, "", "idle", seq=m.seq)
 
     def dim(self, now: float) -> int:
         c = self.cfg
@@ -804,8 +851,12 @@ class Brain:
             v = replace(v, text="Focus") if v else View("reading", "Focus", "focus")
             cd = focus
         if v is None:
-            v = self.pet.moment(now) or self.pet.continuous(now, self.tracker.last_activity)
+            v = self.pet.moment(now)
+        if v is None:
+            v = self.pet.continuous(now)
         v = self._hold(v, now)
+        if v is not None and v.layer != "idle":
+            self.pet.hold_off(now)               # the next idle pick waits a full gap
         txt = v.text if v else ""
         txt = txt[:1].upper() + txt[1:]          # the clock text always starts with a capital
         return {"a": v.anim if v else "", "seq": list(v.names) if v else [],
@@ -818,6 +869,12 @@ def state_url(target: str) -> str:
     """An http_targets push URL (…/api/usage) -> that clock's /api/state URL."""
     parts = urllib.parse.urlsplit(target)
     return urllib.parse.urlunsplit((parts.scheme, parts.netloc, STATE_PATH, "", ""))
+
+
+def heap_url(target: str) -> str:
+    """An http_targets push URL (…/api/usage) -> that clock's /api/heap URL."""
+    parts = urllib.parse.urlsplit(target)
+    return urllib.parse.urlunsplit((parts.scheme, parts.netloc, HEAP_PATH, "", ""))
 
 
 def wire(d: dict) -> dict:
@@ -853,6 +910,43 @@ class StatePusher:
         self.last_sent = 0.0
         self._ok: dict[str, bool] = {}
         self._last_idle_check = -1e9
+        self._last_desk_probe = -1e9
+        self._desk_task: asyncio.Task | None = None
+
+    async def probe_desk(self) -> None:
+        """Read every clock's animation count (`desk` in /api/heap): the newer idle
+        picks only play when all the clocks that answer have them. No answer
+        keeps what was known."""
+        counts: list[int] = []
+        async with httpx.AsyncClient(timeout=DESK_PROBE_TIMEOUT, transport=self.transport) as http:
+            for t in self.targets():
+                try:
+                    r = await http.get(heap_url(t))
+                    n = r.json().get("desk") if r.status_code == 200 else None
+                except (httpx.HTTPError, ValueError, AttributeError):
+                    n = None
+                if isinstance(n, int) and not isinstance(n, bool):
+                    counts.append(n)
+        if counts:
+            new = min(counts) >= DESK_NEW_MIN
+            if new != self.brain.pet.desk_new:
+                log(f"Clock desk.pak has {min(counts)} animations: "
+                    + ("all idle picks on" if new else "newer idle picks off"))
+            self.brain.pet.desk_new = new
+
+    def _maybe_probe_desk(self, now: float) -> None:
+        if now - self._last_desk_probe < DESK_PROBE_EVERY:
+            return
+        if self._desk_task is not None and not self._desk_task.done():
+            return
+        self._last_desk_probe = now
+        self._desk_task = asyncio.create_task(self.probe_desk())
+
+    def _wait_for(self, now: float) -> float:
+        """How long the loop may sleep: at most 1 s, less when an idle pick ends
+        sooner (the clock drops it the moment the clear arrives)."""
+        ends = self.brain.pet.pick_ends()
+        return 1.0 if ends is None else max(0.05, min(1.0, ends - now))
 
     @staticmethod
     def key(d: dict) -> tuple:
@@ -900,11 +994,12 @@ class StatePusher:
     async def run(self, stop: asyncio.Event) -> None:
         while not stop.is_set():
             try:
+                self._maybe_probe_desk(self.clock())
                 await self.step()
             except Exception as e:      # keep the loop alive
                 log(f"State push cycle failed: {e!r}")
             try:
-                await asyncio.wait_for(self.brain.wake.wait(), timeout=1.0)
+                await asyncio.wait_for(self.brain.wake.wait(), timeout=self._wait_for(self.clock()))
                 await asyncio.sleep(COALESCE)
             except asyncio.TimeoutError:
                 pass
@@ -1025,5 +1120,4 @@ def read_pet_config(read_value: Callable[[str], str | None]) -> PetConfig:
     c.quiet_dim = max(0, min(100, num("quiet_dim", c.quiet_dim)))
     c.away_after = max(30, num("away_after", c.away_after))
     c.milestone = max(0, num("milestone_turns", c.milestone))
-    c.idle_linger = max(0, num("idle_linger", c.idle_linger))
     return c

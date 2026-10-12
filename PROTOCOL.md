@@ -54,9 +54,9 @@ Reply: `200 {"ok":true}`, or `400` for a malformed body.
 
 ```json
 {"a":"typing","txt":"Editing","dim":30,"ttl":60}
-{"a":["yawn","doze","collapse","sleeping"]}
+{"a":["yawn","sleeping","wake"]}
 {"a":["react left","react right"],"rep":true,"u":true,"txt":"Which framework?"}
-{"a":"typing","v":["building","carrying","typing boss"],"txt":"Running"}
+{"a":"typing","v":["building","carrying","typing boss"],"txt":"Working"}
 {"a":""}
 ```
 
@@ -71,12 +71,14 @@ Reply: `200 {"ok":true}`, or `400` for a malformed body.
 | `dim` | brightness cap 0–100 |
 | `ttl` | seconds the state lives (1–3600, default 60). Resend every ~20 s while it should stay |
 
-Animation names (firmware 2.16): `thinking`, `ultrathink`, `typing`, `typing boss`,
-`building`, `wizard`, `debugger`, `headphones`, `juggling`, `error`, `dizzy`,
-`happy`, `notification`, `sweeping`, `carrying`, `idle`, `look`, `bubble`,
-`reading`, `yawn`, `doze`, `collapse`, `sleeping`, `wake`, `low battery`,
-`double jump`, `heart eyes`, `react left`, `react right`, `annoyed`.
-An unknown name is ignored by the clock.
+Animation names (the desk.pak's own list, `desk` in `/api/heap` counts them): `thinking`,
+`ultrathink`, `typing`, `typing boss`, `building`, `wizard`, `debugger`, `headphones`,
+`juggling`, `error`, `dizzy`, `happy`, `notification`, `sweeping`, `carrying`, `reading`,
+`idle`, `look`, `bubble`, `coffee hand`, `shy`, `outlaw`, `yawn`, `sleeping`, `wake`,
+`low battery`, `double jump`, `heart eyes`, `react left`, `react right`, `annoyed` (31).
+The 30-animation pak before it had `doze` and `collapse` instead of `coffee hand`, `shy`
+and `outlaw`. A name the pak does not have plays its first animation (`thinking`), so
+the app only sends the newer names when every clock reports `desk` ≥ 31.
 
 ### `GET /api/heap`: health
 
