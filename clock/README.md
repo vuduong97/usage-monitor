@@ -145,9 +145,10 @@ clawd anims
 ## Firmware
 
 ```sh
-tools/flash.sh               # build + size check + OTA to /update + wait for the reboot (~35 s)
-tools/flash.sh --no-build    # re-flash the last build
-#  clock: CLAWD_CLOCK, else http_targets in ~/.config/claude-usage-monitor/config
+tools/flash.sh 10.97.44.122              # build + size check + OTA to /update + wait for the reboot (~35 s)
+tools/flash.sh --no-build 10.97.44.122   # re-flash the last build
+#  clock: the IP argument, else CLAWD_CLOCK, else http_targets in
+#  ~/.config/claude-usage-monitor/config, else 192.168.1.48
 #  web password (if enabled): CLAWD_AUTH=user:pass
 
 # by hand:

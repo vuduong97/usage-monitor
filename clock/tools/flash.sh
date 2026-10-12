@@ -1,11 +1,12 @@
 #!/bin/sh
 # flash.sh — build the clock firmware (env smalltv_clawd) and flash it over WiFi.
 #
-#   tools/flash.sh              build, check the size, upload to /update, wait for the reboot
-#   tools/flash.sh --no-build   upload the last build as is
+#   tools/flash.sh [ip]              build, check the size, upload to /update, wait for the reboot
+#   tools/flash.sh --no-build [ip]   upload the last build as is
 #
-# Clock address: $CLAWD_CLOCK, else the first http_targets entry in
-# ~/.config/claude-usage-monitor/config, else 192.168.1.48.
+# Clock address: the [ip] argument (IP, host name or http:// URL), else $CLAWD_CLOCK,
+# else the first http_targets entry in ~/.config/claude-usage-monitor/config,
+# else 192.168.1.48.
 # Web password (only if enabled on the clock): CLAWD_AUTH=user:pass (digest auth).
 set -eu
 
@@ -13,7 +14,20 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 FW="$ROOT/smalltv/.pio/build/smalltv_clawd/firmware.bin"
 MAX=524288   # clawd -> clawd OTA budget (smalltv/CLAWDMETER.md)
 
-clock=${CLAWD_CLOCK:-}
+build=1
+clock=
+for arg in "$@"; do
+  case $arg in
+    --no-build) build=0 ;;
+    -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "unknown option: $arg" >&2; exit 2 ;;
+    *)
+      [ -z "$clock" ] || { echo "only one clock address, got '$clock' and '$arg'" >&2; exit 2; }
+      clock=$arg ;;
+  esac
+done
+
+clock=${clock:-${CLAWD_CLOCK:-}}
 if [ -z "$clock" ] && [ -f "$HOME/.config/claude-usage-monitor/config" ]; then
   clock=$(sed -n 's/^[[:space:]]*http_targets[[:space:]]*=[[:space:]]*\([^,#[:space:]]*\).*/\1/p' \
     "$HOME/.config/claude-usage-monitor/config" | head -n 1)
@@ -21,14 +35,7 @@ fi
 clock=${clock:-192.168.1.48}
 case $clock in http://*|https://*) base=$clock ;; *) base="http://$clock" ;; esac
 
-build=1
-for arg in "$@"; do
-  case $arg in
-    --no-build) build=0 ;;
-    -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) echo "unknown option: $arg" >&2; exit 2 ;;
-  esac
-done
+echo "==> clock $base"
 
 if [ $build -eq 1 ]; then
   echo "==> build (pio run -e smalltv_clawd)"
