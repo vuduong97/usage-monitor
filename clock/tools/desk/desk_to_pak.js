@@ -93,7 +93,7 @@ function clipTiming(list, fps, maxMs) {
   return { introMs: intro, loopMs: Math.max(loop, step), once: false };
 }
 
-async function renderFrames(page, svgText, fps, maxMs) {
+async function renderFrames(page, svgText, fps, maxMs, smil = false) {
   const svg = svgText
     .replace(/<\?xml[^>]*>/, '')
     .replace(/<svg\b([^>]*?)\swidth="[^"]*"/, '<svg$1')
@@ -102,14 +102,32 @@ async function renderFrames(page, svgText, fps, maxMs) {
   await page.setContent(
     `<!doctype html><html><body style="margin:0;background:#000;overflow:hidden">${svg}</body></html>`,
     { waitUntil: 'load' });
-  const list = await page.evaluate(() => document.getAnimations().map((a) => {
-    a.pause();
-    const t = a.effect.getTiming(), c = a.effect.getComputedTiming();
-    const duration = Number(c.duration) || 0;
-    const alt = /alternate/.test(t.direction || '');
-    return { delay: t.delay || 0, duration, iterations: c.iterations,
-      period: alt ? 2 * duration : duration };
-  }).map((a) => ({ ...a, iterations: a.iterations === Infinity ? null : a.iterations })));
+  // CSS animations (document.getAnimations), plus with `smil` the SVG's own
+  // timeline (<animate>, <animateTransform>, ...: paused, stepped with
+  // setCurrentTime). Without it SMIL parts keep their running state, as in
+  // the renders the clock already has (typing boss's sparks and code glyphs).
+  const list = await page.evaluate((smil) => {
+    const css = document.getAnimations().map((a) => {
+      a.pause();
+      const t = a.effect.getTiming(), c = a.effect.getComputedTiming();
+      const duration = Number(c.duration) || 0;
+      const alt = /alternate/.test(t.direction || '');
+      return { delay: t.delay || 0, duration, iterations: c.iterations,
+        period: alt ? 2 * duration : duration };
+    });
+    if (!smil) return css.map((a) => ({ ...a, iterations: a.iterations === Infinity ? null : a.iterations }));
+    const root = document.querySelector('svg');
+    if (root && root.pauseAnimations) { root.pauseAnimations(); root.setCurrentTime(0); }
+    const timeline = [...document.querySelectorAll('animate, animateTransform, animateMotion, set')].map((el) => {
+      let duration = 0, delay = 0;
+      try { duration = el.getSimpleDuration() * 1000; } catch (e) { /* indefinite */ }
+      try { delay = el.getStartTime() * 1000; } catch (e) { delay = (parseFloat(el.getAttribute('begin')) || 0) * 1000; }
+      const rc = el.getAttribute('repeatCount'), rd = el.getAttribute('repeatDur');
+      const iterations = rc === 'indefinite' || rd === 'indefinite' ? Infinity : (parseFloat(rc) || 1);
+      return { delay, duration, iterations, period: duration };
+    });
+    return [...css, ...timeline].map((a) => ({ ...a, iterations: a.iterations === Infinity ? null : a.iterations }));
+  }, smil);
   for (const a of list) if (a.iterations === null) a.iterations = Infinity;
   const timing = clipTiming(list, fps, maxMs);
   const step = 1000 / fps;
@@ -118,7 +136,11 @@ async function renderFrames(page, svgText, fps, maxMs) {
   const frames = [];
   for (let i = 0; i < n; i++) {
     const t = i * step;
-    await page.evaluate((tt) => { for (const a of document.getAnimations()) a.currentTime = tt; }, t);
+    await page.evaluate((tt, smil) => {
+      for (const a of document.getAnimations()) a.currentTime = tt;
+      const root = document.querySelector('svg');
+      if (smil && root && root.setCurrentTime) root.setCurrentTime(tt / 1000);
+    }, t, smil);
     const buf = await page.screenshot({ type: 'png', clip: CLIP });
     frames.push(toPixels(PNG.sync.read(buf)));
   }
@@ -162,7 +184,8 @@ function readCache(file) {
 
 function cacheKey(def, svgText, fps, maxMs) {
   return crypto.createHash('sha1')
-    .update(JSON.stringify({ v: RENDER_VERSION, SIZE, PX_PER_UNIT, WINDOW, SS, fps, maxMs }))
+    .update(JSON.stringify({ v: RENDER_VERSION, SIZE, PX_PER_UNIT, WINDOW, SS, fps, maxMs,
+      ...(def.smil ? { smil: true } : {}) }))
     .update(svgText).digest('hex').slice(0, 16) + '-' + def.name.replace(/\s+/g, '-');
 }
 
@@ -179,7 +202,7 @@ async function renderCached(getPage, def, svgText) {
     }
     return { ...meta, frames };
   }
-  const r = await renderFrames(await getPage(), svgText, fps, maxMs);
+  const r = await renderFrames(await getPage(), svgText, fps, maxMs, !!def.smil);
   const meta = { count: r.frames.length, stepMs: r.stepMs, introMs: r.introMs, loopMs: r.loopMs,
     once: r.once, loopStart: r.loopStart };
   const m = Buffer.from(JSON.stringify(meta));
@@ -417,7 +440,7 @@ async function main() {
     for (const def of defs) {
       const text = fs.readFileSync(path.join(dir, def.svg), 'utf8');
       if (flag('--probe')) {
-        const r = await renderFrames(await getPage(), text, def.fps || FPS, def.maxMs || MAX_MS);
+        const r = await renderFrames(await getPage(), text, def.fps || FPS, def.maxMs || MAX_MS, !!def.smil);
         let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1, edge = 0;
         for (const f of r.frames) for (let i = 0; i < f.length; i++) if (f[i]) {
           const x = i % SIZE, y = (i / SIZE) | 0;

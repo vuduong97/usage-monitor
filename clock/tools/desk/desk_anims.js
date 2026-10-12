@@ -4,6 +4,7 @@
 // Every animation is rendered 1:1 on the 240x240 panel. Per animation:
 //   fps   frames per second (default FPS); slow loops can use less to save space
 //   maxMs cap on the rendered clip (default MAX_MS)
+//   smil  also step the SVG's own <animate> timeline (an SVG animated only that way)
 'use strict';
 
 module.exports = {
@@ -29,15 +30,16 @@ module.exports = {
     { name: 'notification', svg: 'clawd-notification.svg' },
     { name: 'sweeping',     svg: 'clawd-working-sweeping.svg', fps: 15 },
     { name: 'carrying',     svg: 'clawd-working-carrying.svg' },
-    // pet: idle rotation
+    { name: 'reading',      svg: 'clawd-idle-reading.svg' },
+    // pet: what the clock slips in between its usage screens when no agent runs
+    // (one pass each; yawn -> sleeping -> wake counts as one pick)
     { name: 'idle',         svg: 'clawd-idle-living.svg', fps: 15 },
     { name: 'look',         svg: 'clawd-idle-look.svg', fps: 15 },
     { name: 'bubble',       svg: 'clawd-idle-bubble.svg' },
-    { name: 'reading',      svg: 'clawd-idle-reading.svg' },
-    // pet: sleep chain
+    { name: 'coffee hand',  svg: 'clawd-coffee-hand.svg', fps: 12, smil: true },
+    { name: 'shy',          svg: 'clawd-aegyo-shy.svg', fps: 15 },
+    { name: 'outlaw',       svg: 'clawd-outlaw-bender.svg', fps: 8 },
     { name: 'yawn',         svg: 'clawd-idle-yawn.svg' },
-    { name: 'doze',         svg: 'clawd-idle-doze.svg', fps: 15 },
-    { name: 'collapse',     svg: 'clawd-collapse-sleep.svg', fps: 15 },
     { name: 'sleeping',     svg: 'clawd-sleeping.svg', fps: 15 },
     { name: 'wake',         svg: 'clawd-wake.svg' },
     // pet: moments + pokes
