@@ -10,6 +10,7 @@ import time
 import httpx
 
 from clawd_desktop import events, paths, usage
+from clawd_desktop.bootwatch import BootWatch
 from clawd_desktop.discovery import ClockFinder, ClockStore
 
 TOKEN_CHECK_EVERY = 60.0
@@ -92,6 +93,7 @@ class Engine:
                  asyncio.create_task(self._watch_token(stop))]
         server = None
         brain = None
+        pusher: events.StatePusher | None = None
         if usage.read_onoff_setting("events", default="on") == "on":
             pet = events.Pet(events.read_pet_config(usage.read_config_value),
                              store=usage.ATTENTION_DIR / "pet.json")
@@ -111,6 +113,14 @@ class Engine:
             if brain is not None:
                 brain.usage = p
         publisher.on_payload = on_payload
+
+        async def on_restart(url: str, uptime: int) -> bool:
+            # A restarted clock lost both the usage bars and Clawd's state.
+            if pusher is not None and brain is not None:
+                pusher.last_key = None
+                brain.wake.set()
+            return await publisher.resend(url)
+        tasks.append(asyncio.create_task(BootWatch(self.finder.targets, on_restart).run(stop)))
         try:
             await stop.wait()
         finally:

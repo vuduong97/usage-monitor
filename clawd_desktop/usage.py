@@ -74,6 +74,7 @@ DEFAULT_MAX_WRITE = 180
 # bound so an offline screen never stalls the BLE device sharing the poll.
 HTTP_PUSH_PATH = "/api/usage"
 HTTP_PUSH_TIMEOUT = 5.0
+RESEND_TIMEOUT = 15.0     # a clock that just booted answers HTTP slowly for a while
 
 API_URL = "https://api.anthropic.com/v1/messages"
 API_HEADERS_TEMPLATE = {
@@ -1128,10 +1129,11 @@ class HttpSinks:
         self._transport = transport
         self._ok: dict[str, bool] = {}
 
-    async def send(self, targets: list[str], payload: dict) -> bool:
+    async def send(self, targets: list[str], payload: dict,
+                   timeout: float = HTTP_PUSH_TIMEOUT) -> bool:
         """True if at least one target accepted the payload."""
         body = json.dumps(payload, separators=(",", ":"))
-        async with httpx.AsyncClient(timeout=HTTP_PUSH_TIMEOUT,
+        async with httpx.AsyncClient(timeout=timeout,
                                      transport=self._transport) as http:
             results = await asyncio.gather(
                 *(self._post(http, url, body) for url in targets))
@@ -1173,6 +1175,7 @@ class Publisher:
         self.clear_unsent = False
         self.quiet = False        # "no usable source" already logged
         self.on_payload: Callable[[dict], None] | None = None   # clawd-home pet sees usage
+        self.last_payload: dict | None = None   # last delivered payload, for resend()
 
     def attach_ble(self, session: Session) -> None:
         self.ble = session
@@ -1251,6 +1254,22 @@ class Publisher:
         if await self.send(out, ble, targets):
             self.last_poll = time.time()
             self.alert_unsent = self.clear_unsent = False
+            # One-shot extras (beep, alert line, clear) are not replayed.
+            self.last_payload = {k: v for k, v in out.items() if k not in ("b", "m", "x")}
+
+    async def resend(self, url: str) -> bool:
+        """Push the last delivered payload again to one clock that just restarted,
+        so it leaves its "no data" splash now instead of at the next poll. Never
+        calls the usage API; with nothing cached yet it asks for a poll instead
+        (which delivers it). False only when the clock did not take the data."""
+        if self.last_payload is None:
+            self.force = True
+            self.wake.set()
+            return True
+        out = dict(self.last_payload)
+        if "t" in out:
+            add_clock_fields(out)     # the cached wall-clock time is up to a poll old
+        return await self.http.send([url], out, timeout=RESEND_TIMEOUT)
 
     async def send(self, payload: dict, ble: Session | None, targets: list[str]) -> bool:
         delivered = False
