@@ -43,6 +43,17 @@ let edit = null;       // what the user has now
 let tab = 'display';
 let live = { exact: false, frames: {}, payload: null, sentAt: null, now: 0 };   // api.usage_preview()
 let busy = false;      // a request or the firmware update is running
+let style = 'classic'; // the usage screen style picked: 'classic' or a bundled pack id (/api/style)
+// Hover text for each style ("Hiện tại" is the classic screen; names on the clock stay English).
+const STYLE_DESC = {
+  classic:'Hai thẻ Current / Weekly và dòng trạng thái.',
+  gameboy:'Bốn tông xanh lá kiểu máy chơi game cầm tay.',
+  synth:'Mặt trời neon, lưới chạy về chân trời.',
+  paper:'Trang báo giấy, chữ có chân, tít in đậm.',
+  blueprint:'Bản vẽ kỹ thuật, nét trắng trên nền xanh.',
+  pastel:'Màu kẹo nhạt, Clawd nhún nhảy.',
+  onebit:'Đen trắng 1-bit, chữ gõ từng ký tự.',
+};
 
 // ---------- helpers ----------
 function view(cfg) {   // the editable part of /api/config (settings_api._clock_view)
@@ -57,9 +68,15 @@ function view(cfg) {   // the editable part of /api/config (settings_api._clock_
   };
 }
 // What the window shows for a clock: the "Clawd" main screen (2) is gone from the page, so a
-// clock still set to it reads as Auto. `orig` keeps the real value, so that is one unsaved
-// change and Save writes 0.
-function mkEdit(o) { const e = clone(o); if (e.usage.screen === 2) e.usage.screen = 0; return e; }
+// clock still set to it reads as Auto; so do the old usage layouts (1-5, replaced by style
+// packs) read as classic. `orig` keeps the real values, so each is one unsaved change and
+// Save writes 0.
+function mkEdit(o) {
+  const e = clone(o);
+  if (e.usage.screen === 2) e.usage.screen = 0;
+  e.usage.layout = 0;
+  return e;
+}
 function diff(a, b) {  // same rule as clockapi.config_diff
   const out = {};
   for (const k of Object.keys(b)) {
@@ -74,10 +91,20 @@ function leaves(o) { return Object.values(o).reduce((n, v) => n + (v && typeof v
 function wifiForSave(rows) { return rows.map(r => r.pass ? { ssid: r.ssid, pass: r.pass } : { ssid: r.ssid }); }
 function editForSave() { const e = clone(edit); e.wifi = wifiForSave(edit.wifi); return e; }
 function pending() { return orig ? diff(orig, editForSave()) : {}; }
+function activeStyle() { return (S && S.fw && S.fw.styles && S.fw.styles.active) || 'classic'; }
+function styleChanged() { return Boolean(orig) && style !== activeStyle(); }
+function styles() {    // the gallery: the classic screen, then the packs the app carries
+  const packs = (S && S.fw && S.fw.styles && S.fw.styles.packs) || [];
+  return [{ id:'classic', name:'Hiện tại', light:false }, ...packs];
+}
+function packOf(id) { return id === 'classic' ? null : styles().find(p => p.id === id) || null; }
 function msg(text, kind = '') { const m = $('msg'); m.textContent = text; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 function setSeg(id, v) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === String(v)))); }
 function setSw(id, on) { $(id).setAttribute('aria-checked', String(!!on)); }
-function layoutState(i) { return S && S.fw ? (S.fw.layouts[i] || 'unavailable') : (i === 0 ? 'ready' : 'unavailable'); }
+function styleState(id) {   // 'ready' | 'update' (needs the bundled firmware) | 'unavailable'
+  if (id === 'classic') return 'ready';
+  return (S && S.fw && S.fw.styles && S.fw.styles.state) || 'unavailable';
+}
 function kb(n) { return (n / 1024).toFixed(1) + ' KB'; }
 function uptime(s) { if (s < 3600) return Math.floor(s / 60) + ' phút'; if (s < 86400) return Math.floor(s / 3600) + ' giờ'; return Math.floor(s / 86400) + ' ngày'; }
 
@@ -110,28 +137,27 @@ function ago(sec) {
 }
 function setShot(img, url) { if (img.dataset.url !== url) { img.dataset.url = url; img.src = url; } }
 function paintPreview(now) {
-  const layout = edit ? edit.usage.layout : 0;
   const cv = $('big'), img = $('shot'), t = reduce ? 0 : now;
-  const url = live.exact ? live.frames[String(layout)] : null;
+  const url = live.exact ? live.frames[style] : null;
   const data = PV.fromPayload(live.payload);
   img.classList.toggle('hide', !url);
   cv.classList.toggle('hide', Boolean(url));
-  if (url) setShot(img, url); else PV.paint(cv, layout, data, t);
+  if (url) setShot(img, url); else PV.paint(cv, packOf(style), data, t);
   const br = edit ? edit.brightness : 70;
   for (const e of [cv, img]) {
     e.style.filter = `brightness(${(0.25 + br / 100 * 0.85).toFixed(2)})`;
     e.style.transform = `rotate(${(edit ? edit.rotation : 0) * 90}deg)`;
   }
-  const name = PV.LAYOUTS[layout] ? PV.LAYOUTS[layout].name : 'Hiện tại';
+  const name = (packOf(style) || { name:'Hiện tại' }).name;
   const how = url ? 'vẽ bằng firmware' : 'gần đúng';
   const when = live.sentAt ? `Usage ${ago(Math.max(0, live.now - live.sentAt))}` : 'chưa có usage thật';
   $('device').title = `${name} · ${how} · ${when}`;   // hover only: the pane shows just the clock
-  [...$('gal').children].forEach((b, i) => {          // one button per layout: its canvas and its image
-    const u = live.exact ? live.frames[String(i)] : null;
+  [...$('gal').children].forEach(b => {             // one button per style: its canvas and its image
+    const id = b.dataset.id, u = live.exact ? live.frames[id] : null;
     const c = b.querySelector('canvas.thumb'), im = b.querySelector('img.thumb');
     im.classList.toggle('hide', !u);
     c.classList.toggle('hide', Boolean(u));
-    if (u) setShot(im, u); else if (tab === 'usage') PV.paint(c, i, data, t);
+    if (u) setShot(im, u); else if (tab === 'usage') PV.paint(c, packOf(id), data, t);
   });
 }
 async function refreshLive() {
@@ -192,26 +218,30 @@ function renderDisplay() {
   $('nightLevel').value = edit.clock.nightLevel; $('nightVal').textContent = edit.clock.nightLevel + '%';
 }
 function renderGallery() {
-  const g = $('gal');
-  if (!g.children.length) {
-    PV.LAYOUTS.forEach(L => {
-      const b = el('button'); b.setAttribute('role', 'radio'); b.dataset.id = String(L.id);
+  const g = $('gal'), items = styles();
+  if (g.children.length !== items.length) {          // the packs come with the first state
+    g.replaceChildren();
+    items.forEach(L => {
+      const b = el('button'); b.setAttribute('role', 'radio'); b.dataset.id = L.id;
+      b.title = STYLE_DESC[L.id] || '';                // hover only, like the preview's details
       const cv = el('canvas', 'thumb'); cv.width = 240; cv.height = 240;
       const im = el('img', 'thumb hide'); im.width = 240; im.height = 240; im.alt = '';
       b.append(cv, im, el('span', 'n', L.name), el('span', 'chip'));
       g.append(b);
     });
   }
-  const cur = (S && S.config && S.config.usage && S.config.usage.layout) || 0;   // old firmware has no field: classic
-  [...g.children].forEach((b, i) => {
-    const st = layoutState(i), chip = b.querySelector('.chip');
-    b.setAttribute('aria-checked', String(edit && edit.usage.layout === i));
+  const cur = activeStyle();
+  [...g.children].forEach(b => {
+    const id = b.dataset.id, st = styleState(id), chip = b.querySelector('.chip');
+    b.setAttribute('aria-checked', String(Boolean(edit) && style === id));
     b.setAttribute('aria-disabled', String(st === 'unavailable'));
     chip.className = 'chip ' + (st === 'ready' ? 'ok' : st === 'update' ? 'fw' : 'no');
-    chip.textContent = i === cur && st === 'ready' ? 'Đang dùng' : st === 'ready' ? 'Có sẵn' : st === 'update' ? 'Cần cập nhật firmware' : 'Không hỗ trợ';
+    chip.textContent = id === cur && st === 'ready' ? 'Đang dùng' : st === 'ready' ? 'Có sẵn' : st === 'update' ? 'Cần cập nhật firmware' : 'Không hỗ trợ';
   });
-  const need = edit && layoutState(edit.usage.layout) === 'update';
-  $('galNote').textContent = need ? 'Kiểu này cần firmware mới. Bấm “Cập nhật & áp dụng”: app cài firmware đi kèm (khoảng 1 phút), rồi bật kiểu này.' : '';
+  const need = edit && styleState(style) === 'update';
+  const ent = live.payload && live.payload.acct === 'ent' && style !== 'classic';
+  $('galNote').textContent = need ? 'Kiểu này cần firmware mới. Bấm “Cập nhật & áp dụng”: app cài firmware đi kèm (khoảng 1 phút), rồi bật kiểu này.'
+    : ent ? 'Tài khoản Enterprise không có giới hạn 5 giờ / tuần nên đồng hồ vẫn hiện kiểu “Hiện tại”.' : '';
 }
 function renderWifi() {
   if (!edit) return;
@@ -245,7 +275,7 @@ function renderUpdate() {
   add('Đi kèm app', fw && fw.bundle ? `bản #${fw.bundle.seq}${fw.bundle.commit ? ' · ' + fw.bundle.commit : ''} · ${kb(fw.bundle.size)}` : 'không có');
   const st = fw ? fw.update : 'none';
   $('fwText').textContent = {
-    available: 'Có bản mới hơn đi kèm app: thêm kiểu màn hình “Nhịp & dự báo”. Cài mất khoảng 1 phút, cài đặt trên đồng hồ được giữ nguyên.',
+    available: 'Có bản mới hơn đi kèm app' + (fw && fw.styles && fw.styles.state === 'update' ? ': thêm các kiểu màn hình usage mới' : '') + '. Cài mất khoảng 1 phút, cài đặt trên đồng hồ được giữ nguyên.',
     current: 'Đồng hồ đang chạy bản mới nhất.',
     none: 'Bản app này không kèm firmware.',
     incompatible: 'Đồng hồ này không chạy firmware Clawd nên app không cập nhật được.',
@@ -267,14 +297,14 @@ function renderBar() {
     save.textContent = 'Thử lại'; save.disabled = busy || S?.code === 'noclock';
     return;
   }
-  const d = pending(), n = leaves(d);
-  const needFw = edit && layoutState(edit.usage.layout) === 'update';
+  const d = pending(), n = leaves(d) + (styleChanged() ? 1 : 0);
+  const needFw = edit && styleChanged() && styleState(style) === 'update';
   undo.disabled = busy || n === 0;
   save.disabled = busy || n === 0;
   save.textContent = needFw ? 'Cập nhật & áp dụng' : 'Lưu vào đồng hồ';
   if (busy) return;
   if (n === 0) msg('Không có thay đổi chưa lưu.');
-  else msg(`${n} thay đổi chưa lưu · gửi trong 1 lần` + (d.wifi || d.hostname ? ' · đồng hồ sẽ khởi động lại' : ''));
+  else msg(`${n} thay đổi chưa lưu` + (d.wifi || d.hostname ? ' · đồng hồ sẽ khởi động lại' : ''));
 }
 
 // ---------- inputs ----------
@@ -291,14 +321,14 @@ on('nightLevel', 'input', e => { edit.clock.nightLevel = +e.target.value; $('nig
 on('hostname', 'input', e => { edit.hostname = e.target.value.trim().toLowerCase(); $('hostHint').textContent = edit.hostname || 'clawd'; });
 $('gal').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !edit || b.getAttribute('aria-disabled') === 'true') return;
-  edit.usage.layout = +b.dataset.id; renderGallery(); renderBar(); paintPreview(performance.now());
+  style = b.dataset.id; renderGallery(); renderBar(); paintPreview(performance.now());
 });
 $('gal').addEventListener('keydown', e => {
   if (!edit || !['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
-  const n = PV.LAYOUTS.length, step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : n - 1;
-  let i = edit.usage.layout;
-  for (let k = 0; k < n; k++) { i = (i + step) % n; if (layoutState(i) !== 'unavailable') break; }
-  edit.usage.layout = i; renderGallery(); renderBar(); $('gal').children[i].focus(); e.preventDefault();
+  const ids = styles().map(L => L.id), n = ids.length, step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : n - 1;
+  let i = Math.max(0, ids.indexOf(style));
+  for (let k = 0; k < n; k++) { i = (i + step) % n; if (styleState(ids[i]) !== 'unavailable') break; }
+  style = ids[i]; renderGallery(); renderBar(); paintPreview(performance.now()); $('gal').children[i].focus(); e.preventDefault();
 });
 
 // ---------- WiFi scan ----------
@@ -325,29 +355,30 @@ $('scanBtn').addEventListener('click', async () => {
 });
 
 // ---------- save / undo ----------
-$('undoBtn').addEventListener('click', () => { if (orig) { edit = mkEdit(orig); renderAll(); } });
+$('undoBtn').addEventListener('click', () => { if (orig) { edit = mkEdit(orig); style = activeStyle(); renderAll(); } });
 $('saveBtn').addEventListener('click', async () => {
   if (!S || !S.ok) { return load(); }
   const e = editForSave();
-  if (layoutState(edit.usage.layout) === 'update') return startUpdate(e, edit.usage.layout);
+  const want = styleChanged() ? style : null;
+  if (want && styleState(want) === 'update') return startUpdate(e, want);
   busy = true; renderBar(); msg('Đang gửi…');
-  const r = await api.save(e);
+  const r = await api.save(e, want);
   busy = false;
   if (!r.ok) { renderBar(); if (r.code === 'auth') return askAuth(); return msg(r.error, 'err'); }
   if (r.reboot) {
     msg('Đã lưu. Đồng hồ đang khởi động lại để vào mạng mới…', 'good');
-    orig = clone(edit); orig.wifi = orig.wifi.map(w => ({ ssid: w.ssid })); edit = mkEdit(orig); renderAll();
+    S.fw = r.fw; orig = clone(edit); orig.wifi = orig.wifi.map(w => ({ ssid: w.ssid })); edit = mkEdit(orig); style = activeStyle(); renderAll();
     msg('Đã lưu. Đồng hồ đang khởi động lại để vào mạng mới…', 'good');
     setTimeout(load, 20000);
     return;
   }
-  S.config = r.config; orig = view(r.config); edit = mkEdit(orig); renderAll();
-  msg(`Đã lưu ${leaves(r.sent)} thay đổi.`, 'good');
+  S.config = r.config; S.fw = r.fw; orig = view(r.config); edit = mkEdit(orig); style = activeStyle(); renderAll();
+  msg(`Đã lưu ${leaves(r.sent) + (r.styleSent ? 1 : 0)} thay đổi.`, 'good');
 });
 
 // ---------- firmware ----------
-async function startUpdate(e, layout) {
-  const r = await api.update(e || null, layout ?? null);
+async function startUpdate(e, want) {
+  const r = await api.update(e || null, want ?? null);
   if (!r.ok) return msg(r.error, 'err');
   busy = true; renderAll();
   showTab('update');
@@ -362,7 +393,7 @@ async function pollJob() {
   msg(j.error ? j.error : (STEP_TEXT[j.step] || 'Đang cập nhật…'), j.error ? 'err' : '');
   if (j.running) { setTimeout(pollJob, 1000); return; }
   busy = false;
-  if (j.done) { await load(); msg('Đã cập nhật firmware' + (edit && layoutState(edit.usage.layout) === 'ready' ? ' và áp dụng cài đặt.' : '.'), 'good'); $('fwStep').textContent = 'Xong.'; }
+  if (j.done) { await load(); msg('Đã cập nhật firmware' + (edit && styleState(style) === 'ready' ? ' và áp dụng cài đặt.' : '.'), 'good'); $('fwStep').textContent = 'Xong.'; }
   else { renderAll(); msg(j.error || 'Cập nhật không thành công.', 'err'); }
 }
 $('fwBtn').addEventListener('click', () => startUpdate(null, null));
@@ -418,7 +449,7 @@ document.addEventListener('keydown', e => {
 // ---------- load ----------
 function apply(r) {
   S = r;
-  if (r.ok) { orig = view(r.config); edit = mkEdit(orig); msg('Không có thay đổi chưa lưu.'); }
+  if (r.ok) { orig = view(r.config); edit = mkEdit(orig); style = activeStyle(); msg('Không có thay đổi chưa lưu.'); }
   else if (r.code === 'auth') { askAuth(); msg(r.error, 'err'); }
   else { msg(r.error, 'err'); if (r.code === 'noclock') showTab('app'); }
   renderAll();

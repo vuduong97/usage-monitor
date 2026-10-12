@@ -2,8 +2,9 @@
 
 A small synchronous client for the clawd firmware's web API: read and save the
 settings (`/api/config`, a POST carries only what changed), scan WiFi, reboot,
-factory reset, backup/restore, and push a firmware image (`/update`, the same
-upload tools/flash.sh does).
+factory reset, backup/restore, push a firmware image (`/update`, the same
+upload tools/flash.sh does), and install or clear the usage screen's style pack
+(`/api/style`).
 
 The web password is HTTP digest auth. One `httpx.DigestAuth` lives as long as
 the client, so after the first challenge every request (the 0.5 MB firmware
@@ -24,6 +25,7 @@ UPLOAD_TIMEOUT = 180.0
 RETRIES = 2             # extra tries for a GET that timed out or could not connect
 RETRY_GAP = 1.5
 OTA_MAX = 524_288       # clawd -> clawd OTA budget (docs/FIRMWARE.md in the firmware repo)
+STYLE_MAX = 32_768      # the largest style pack the firmware takes (STYLE_MAX_BYTES)
 
 
 class ClockError(Exception):
@@ -168,6 +170,37 @@ class ClockApi:
                        files={"firmware": ("firmware.bin", image, "application/octet-stream")})
         if r.text.strip() != "OK":
             raise ClockError(f"update refused: {r.text[:200]}")
+
+    def style(self) -> dict:
+        """`GET /api/style` (no login): {api, active, slot, id?, name?, size?, crc?, error?}."""
+        d = self._json("GET", "/api/style", retries=RETRIES)
+        if not isinstance(d, dict):
+            raise ClockError("odd /api/style answer")
+        return d
+
+    def install_style(self, pack: bytes) -> dict:
+        """Send a style pack; the clock checks it and shows it at once (no reboot).
+        Returns its /api/style view. ClockError (the clock's reason) when it refuses."""
+        if not pack or len(pack) > STYLE_MAX:
+            raise ClockError(f"style pack size {len(pack)} B is outside 1..{STYLE_MAX}")
+        if self._auth is not None:
+            self.config()          # collect the digest challenge first: the upload is then sent once
+        try:
+            r = self._send("POST", "/api/style", timeout=60.0,
+                           files={"file": ("style.pak", pack, "application/octet-stream")})
+        except ClockError as e:
+            raise ClockError(f"the clock refused the style pack ({e})") from e
+        d = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+        if not isinstance(d, dict) or not d.get("ok"):
+            raise ClockError(f"the clock refused the style pack: {d!r}")
+        return d.get("style") or {}
+
+    def clear_style(self) -> dict:
+        """Back to the classic screen (the clock deletes its pack)."""
+        d = self._json("DELETE", "/api/style")
+        if not isinstance(d, dict) or not d.get("ok"):
+            raise ClockError(f"clear refused: {d!r}")
+        return d.get("style") or {}
 
     def wait_back(self, booted_before: float, deadline: float = 150.0,
                   clock: Callable[[], float] = time.monotonic,

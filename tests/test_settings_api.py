@@ -1,5 +1,5 @@
 """The settings window bridge, without pywebview: input checks, diff saves,
-login, layout gating and the update job."""
+login, style packs and the update job."""
 import hashlib
 import json
 import time
@@ -9,6 +9,7 @@ import pytest
 from clawd_desktop import firmware as fw, settings_api as sa
 from clawd_desktop.clockapi import AuthNeeded, ClockError
 from clawd_desktop.discovery import ClockStore
+from tests.test_firmware_ota import make_bundle
 
 CFG = {"hostname": "clawd", "wifi": [{"ssid": "Home", "passSet": True}, {"ssid": "Phone", "passSet": True}],
        "brightness": 45, "autoBrightness": False, "rotation": 0, "mode": "usage",
@@ -19,6 +20,7 @@ CFG = {"hostname": "clawd", "wifi": [{"ssid": "Home", "passSet": True}, {"ssid":
 OLD_HEAP = {"version": "2.16.0", "pak": 17, "desk": 31, "uptime": 900}
 NEW_HEAP = {"version": "2.16.0", "variant": "esp8266-clawd", "fwSeq": 1, "layouts": 3, "pak": 17, "desk": 31,
             "uptime": 5}
+STYLED_HEAP = {**NEW_HEAP, "fwSeq": 2, "layouts": 1, "styleApi": 1, "style": ""}
 
 
 class FakeApi:
@@ -29,6 +31,8 @@ class FakeApi:
         self.password = password
         self.saved = []
         self.uploads = 0
+        self.styles = []                  # packs sent (their bytes), "" for a clear
+        self.after = NEW_HEAP             # what the clock runs after an update
 
     def set_auth(self, auth):
         self.auth = auth
@@ -62,8 +66,21 @@ class FakeApi:
         self.uploads += 1
 
     def wait_back(self, started, clock=None, tick=None):
-        self.heap_ = dict(NEW_HEAP)
+        self.heap_ = dict(self.after)
         return self.heap_
+
+    def install_style(self, pack):
+        self._check()
+        self.styles.append(pack)
+        sid = pack[16:32].rstrip(b"\0").decode()
+        self.heap_["style"] = sid
+        return {"api": 1, "active": True, "id": sid}
+
+    def clear_style(self):
+        self._check()
+        self.styles.append("")
+        self.heap_["style"] = ""
+        return {"api": 1, "active": False}
 
 
 class Keys:
@@ -116,12 +133,13 @@ def test_clean_drops_unknown_keys_and_checks_values():
 def test_state_and_a_one_post_save(tmp_path):
     b, made, _k, _n = bridge(tmp_path)
     s = b.state()
-    assert s["ok"] and s["fw"]["layouts"] == ["ready", "ready"] + ["unavailable"] * 4 and s["app"]["clock"] == "http://10.0.0.5"
+    assert s["ok"] and s["fw"]["styles"] == {"state": "unavailable", "active": "classic", "packs": []}
+    assert s["app"]["clock"] == "http://10.0.0.5"
     assert b.preview(edited())["changes"] == {}
-    r = b.save(edited(brightness=60, usage={"layout": 1}, auth={"enabled": True}))
-    assert r["ok"] and r["sent"] == {"brightness": 60, "usage": {"layout": 1}} and not r["reboot"]
-    assert made[0].saved == [{"brightness": 60, "usage": {"layout": 1}}]
-    assert b.save(edited(brightness=60, usage={"layout": 1}))["sent"] == {}     # nothing left to send
+    r = b.save(edited(brightness=60, auth={"enabled": True}))
+    assert r["ok"] and r["sent"] == {"brightness": 60} and not r["reboot"] and not r["styleSent"]
+    assert made[0].saved == [{"brightness": 60}]
+    assert b.save(edited(brightness=60))["sent"] == {}     # nothing left to send
 
 
 def test_wifi_change_sends_the_whole_list_and_reboots(tmp_path):
@@ -139,11 +157,37 @@ def test_bad_input_is_refused_before_the_clock(tmp_path):
     assert r["code"] == "bad" and made[0].saved == []
 
 
-def test_a_layout_the_clock_cannot_draw_is_not_saved(tmp_path):
-    b, made, _k, _n = bridge(tmp_path, heap=OLD_HEAP)
+@pytest.fixture
+def bundle(tmp_path):
+    return make_bundle(tmp_path / "bundle", seq=2, style_api=1, styles=("synth", "paper"))
+
+
+def test_a_style_the_clock_cannot_draw_is_not_sent(tmp_path, bundle):
+    b, made, _k, _n = bridge(tmp_path, heap=NEW_HEAP, bundle=bundle)
     s = b.state()
-    assert s["fw"]["layouts"] == ["ready"] + ["unavailable"] * 5          # no bundle in this test
-    assert b.save(edited(usage={"layout": 1}))["code"] == "bad" and made[0].saved == []
+    assert s["fw"]["styles"]["state"] == "update" and [p["id"] for p in s["fw"]["styles"]["packs"]] == ["synth", "paper"]
+    assert b.save(edited(), "synth")["code"] == "bad" and made[0].styles == []
+    assert b.save(edited(), "classic")["ok"] and made[0].styles == []    # already classic: nothing to send
+
+
+def test_a_style_is_sent_first_then_the_settings(tmp_path, bundle):
+    b, made, _k, _n = bridge(tmp_path, heap=STYLED_HEAP, bundle=bundle)
+    assert b.state()["fw"]["styles"]["state"] == "ready"
+    r = b.save(edited(wifi=[{"ssid": "Home"}]), "synth")             # reboots: the pack is kept on the clock
+    assert r["ok"] and r["styleSent"] and r["reboot"] and r["fw"]["styles"]["active"] == "synth"
+    assert made[0].styles == [bundle.styles[0].read()]
+    assert b.save(edited(), "synth")["styleSent"] is False             # it shows that one already
+    assert b.save(edited(), "classic")["ok"] and made[0].styles[-1] == ""
+    for bad in ("nope", 3, ["synth"]):
+        assert b.save(edited(), bad)["code"] == "bad"
+
+
+def test_a_damaged_bundled_pack_is_never_sent(tmp_path, bundle):
+    b, made, _k, _n = bridge(tmp_path, heap=STYLED_HEAP, bundle=bundle)
+    b.state()
+    p = bundle.styles[1].path
+    p.write_bytes(p.read_bytes()[:-1] + b"!")
+    assert b.save(edited(), "paper")["code"] == "error" and made[0].styles == []
 
 
 def test_login_keeps_the_password_in_the_keychain(tmp_path):
@@ -177,17 +221,14 @@ def test_factory_reset_needs_the_word(tmp_path):
     assert b.factory_reset("yes")["code"] == "bad"
 
 
-def test_update_job_installs_then_saves_the_layout(tmp_path, monkeypatch):
-    image = b"\xe9" + b"\0" * 99
-    (tmp_path / "f.bin").write_bytes(image)
-    (tmp_path / "firmware.json").write_text(json.dumps({"file": "f.bin", "size": len(image),
-        "sha256": hashlib.sha256(image).hexdigest(), "variant": "esp8266-clawd", "fwSeq": 1, "layouts": 3}))
-    bundle = fw.load_bundle(tmp_path)
+def test_update_job_installs_then_saves_and_shows_the_style(tmp_path, monkeypatch, bundle):
     monkeypatch.setattr(sa.ota, "SETTLE", 0)
     b, made, _k, _n = bridge(tmp_path, heap=OLD_HEAP, bundle=bundle)
+    made[0].after = STYLED_HEAP
     s = b.state()
-    assert s["fw"]["update"] == "available" and s["fw"]["layouts"] == ["ready", "update"] + ["unavailable"] * 4
-    assert b.update(edited(usage={"layout": 1}), 1)["ok"]
+    assert s["fw"]["update"] == "available" and s["fw"]["styles"]["state"] == "update"
+    assert b.update(edited(brightness=30), 3)["code"] == "bad"
+    assert b.update(edited(brightness=30), "paper")["ok"]
     for _ in range(300):
         if not b.job()["running"]:
             break
@@ -195,8 +236,25 @@ def test_update_job_installs_then_saves_the_layout(tmp_path, monkeypatch):
     assert not (tmp_path / "pause.json").exists()             # the lease was let go
     j = b.job()
     assert j["done"] and not j["error"], j
-    assert made[0].uploads == 1 and made[0].saved == [{"usage": {"layout": 1}}]
-    assert b.state()["fw"]["update"] == "current"
+    assert made[0].uploads == 1 and made[0].saved == [{"brightness": 30}]
+    assert made[0].styles == [bundle.styles[1].read()]
+    st = b.state()
+    assert st["fw"]["update"] == "current" and st["fw"]["styles"] == {
+        "state": "ready", "active": "paper",
+        "packs": [{"id": "synth", "name": "Synth", "light": False}, {"id": "paper", "name": "Paper", "light": True}]}
+
+
+def test_update_job_fails_when_the_new_image_draws_no_styles(tmp_path, monkeypatch, bundle):
+    monkeypatch.setattr(sa.ota, "SETTLE", 0)
+    b, made, _k, _n = bridge(tmp_path, heap=OLD_HEAP, bundle=bundle)
+    made[0].after = {**NEW_HEAP, "fwSeq": 2}
+    b.state()
+    assert b.update(None, "synth")["ok"]
+    for _ in range(300):
+        if not b.job()["running"]:
+            break
+        time.sleep(0.01)
+    assert b.job()["error"] and made[0].styles == []
 
 
 def test_set_clock_by_hand_reconnects_and_tells_the_tray(tmp_path):
@@ -225,15 +283,6 @@ def test_main_screen_is_handed_to_the_engine():
     assert seen == [0]                                    # what the clock has now
     s.save({"usage": {"screen": 1}})
     assert seen[-1] == 1
-
-
-def test_all_six_layouts_are_listed_and_a_full_clock_draws_them(tmp_path):
-    full = {**NEW_HEAP, "fwSeq": 2, "layouts": 63}
-    b, made, _k, _n = bridge(tmp_path, heap=full)
-    assert b.state()["fw"]["layouts"] == ["ready"] * 6
-    for i in range(2, 6):
-        assert b.save(edited(usage={"layout": i}))["ok"]
-    assert b.save(edited(usage={"layout": 6}))["code"] == "bad"     # still not a layout the app knows
 
 
 def test_a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save(tmp_path):

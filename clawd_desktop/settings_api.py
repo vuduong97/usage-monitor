@@ -173,13 +173,35 @@ class SettingsApi:
 
     def _bundle_info(self) -> dict | None:
         b = self._bundle
-        return None if b is None else {"seq": b.seq, "layouts": b.layouts, "size": b.size, "commit": b.commit}
+        return None if b is None else {"seq": b.seq, "size": b.size, "commit": b.commit, "styleApi": b.style_api}
 
     def _fw_info(self) -> dict:
         h = self._heap
+        packs = self._bundle.styles if self._bundle else ()
         return {"update": firmware.update_state(h, self._bundle),
-                "layouts": [firmware.layout_state(i, h, self._bundle) for i in range(firmware.LAYOUT_COUNT)],
+                "styles": {"state": firmware.style_state(h, self._bundle),
+                           "active": firmware.clock_style(h) or pv.CLASSIC,
+                           "packs": [{"id": p.id, "name": p.name, "light": p.light} for p in packs]},
                 "seq": firmware.clock_seq(h), "bundle": self._bundle_info()}
+
+    def _style_arg(self, style: Any) -> str | None:
+        """The page's style choice, checked: None (leave it), "classic" or a bundled pack id.
+        ValueError for anything else."""
+        if style is None:
+            return None
+        packs = self._bundle.styles if self._bundle else ()
+        if not isinstance(style, str) or (style != pv.CLASSIC and style not in {p.id for p in packs}):
+            raise ValueError("unknown style")
+        return style
+
+    def _apply_style(self, style: str) -> None:
+        """Show `style` on the clock: send its pack, or clear the pack for the classic screen."""
+        if style == pv.CLASSIC:
+            view = self._api.clear_style()
+        else:
+            pack = next(p for p in self._bundle.styles if p.id == style)   # _style_arg checked it
+            view = self._api.install_style(pack.read())
+        self._heap = {**self._heap, "style": str(view.get("id") or "")}
 
     def _app_info(self) -> dict:
         return {"version": __version__, "autostart": autostart.is_enabled(),
@@ -231,20 +253,20 @@ class SettingsApi:
         saved = self._keychain.put(self._key, user, password)
         return {**self.state(), "saved": saved}
 
-    def usage_preview(self, layouts: Any = None, motion: Any = True) -> dict:
-        """The clock's usage screen for each layout, with the usage the app last sent it.
+    def usage_preview(self, styles: Any = None, motion: Any = True) -> dict:
+        """The clock's usage screen in each style ("classic" or a pack id), with the usage
+        the app last sent it.
 
-        {"ok": true, "exact": true, "frames": {"0": "data:image/png;..."}, "sentAt": <epoch>|null}
+        {"ok": true, "exact": true, "frames": {"classic": "data:image/png;..."}, "sentAt": <epoch>|null}
         when the clock's own renderer is built into the app: with `motion` each frame is one
         loop of the screen as it animates (an animated PNG), without it (reduced motion) one
         still BMP. With `exact` false there are no frames and the page draws its approximation
         from `payload` (None: no data yet).
         """
         motion = motion if isinstance(motion, bool) else True     # the page is untrusted input
-        if (not isinstance(layouts, list) or not layouts
-                or not all(isinstance(i, int) and not isinstance(i, bool) and 0 <= i < firmware.LAYOUT_COUNT
-                           for i in layouts)):
-            layouts = list(range(firmware.LAYOUT_COUNT))
+        known = [pv.CLASSIC] + [p.id for p in (self._bundle.styles if self._bundle else ())]
+        if not isinstance(styles, list) or not styles or not all(isinstance(i, str) and i in known for i in styles):
+            styles = known
         stored = self._payload_source()
         payload, sent_at = stored if stored else (None, None)
         now = self._now()
@@ -254,8 +276,8 @@ class SettingsApi:
         if r is None:
             return out
         frames: dict[str, str] = {}
-        for i in dict.fromkeys(layouts):
-            if not r.layouts >> i & 1:
+        for i in dict.fromkeys(styles):
+            if i != pv.CLASSIC and i not in r.styles:
                 continue
             key = pv.frame_key(i, live, int(now // 60), "clip" if motion else "still")
             url = self._frames.get(key)
@@ -266,7 +288,7 @@ class SettingsApi:
                     print(f"[settings] preview renderer failed: {e}", flush=True)
                     return out                 # the page falls back to its canvas
                 self._frames.put(key, url)
-            frames[str(i)] = url
+            frames[i] = url
         out.update(exact=True, frames=frames)
         return out
 
@@ -306,27 +328,37 @@ class SettingsApi:
         except ValueError as e:
             return _fail("bad", f"Giá trị không hợp lệ ({e}).")
 
-    def save(self, edited: Any) -> dict:
+    def save(self, edited: Any, style: Any = None) -> dict:
+        """Show `style` ("classic" or a pack id; None: leave it) when it is not what the
+        clock shows already, then POST the changed settings. The pack goes first: it is
+        kept on the clock's filesystem, so a reboot for a WiFi change keeps it."""
         if self._job["running"]:
             return _fail("busy", "Đang cập nhật firmware, chờ xong đã.")
         try:
             changes = self._diff(edited)
+            style = self._style_arg(style)
         except ValueError as e:
             return _fail("bad", f"Giá trị không hợp lệ ({e}).")
-        layout = changes.get("usage", {}).get("layout")
-        if layout is not None and not firmware.clock_layouts(self._heap) >> layout & 1:
+        if style == (firmware.clock_style(self._heap) or pv.CLASSIC):
+            style = None
+        if style is not None and firmware.style_state(self._heap, self._bundle) != "ready":
             return _fail("bad", "Firmware trên đồng hồ chưa vẽ được kiểu này: cập nhật firmware trước.")
         try:
+            if style is not None:
+                self._apply_style(style)
             r = self._api.save(changes)
         except ClockError as e:
             return _err(e)
+        except (OSError, ValueError) as e:
+            return _fail("error", f"Gói kiểu màn hình đi kèm app bị hỏng ({e}).")
         if not r.get("reboot"):
             with contextlib.suppress(ClockError):
                 self._cfg = self._api.config()
         screen = changes.get("usage", {}).get("screen")
         if screen is not None:
             self._mirror_screen({"usage": {"screen": screen}})
-        return {"ok": True, "sent": changes, "reboot": bool(r.get("reboot")), "config": self._cfg}
+        return {"ok": True, "sent": changes, "reboot": bool(r.get("reboot")), "config": self._cfg,
+                "styleSent": style is not None, "fw": self._fw_info()}
 
     # ---- WiFi ------------------------------------------------------------------------
     def scan(self) -> dict:
@@ -398,31 +430,35 @@ class SettingsApi:
         return {"ok": True}
 
     # ---- firmware update (runs in the background; the page polls job()) ----------------
-    def update(self, edited: Any = None, layout: int | None = None) -> dict:
+    def update(self, edited: Any = None, style: Any = None) -> dict:
+        """Install the bundled firmware in the background, then save `edited` and show
+        `style` (None: leave both)."""
         if self._bundle is None:
             return _fail("bad", "Bản app này không kèm firmware.")
-        if layout is not None and (isinstance(layout, bool) or not isinstance(layout, int)):
-            return _fail("bad", "Kiểu màn hình không hợp lệ.")
         try:
             changes = self._diff(edited) if edited is not None else {}
+            style = self._style_arg(style)
         except ValueError as e:
             return _fail("bad", f"Giá trị không hợp lệ ({e}).")
         with self._lock:
             if self._job["running"]:
                 return _fail("busy", "Đang cập nhật rồi.")
             self._job = {"running": True, "step": "check", "error": "", "done": False, "started": time.time()}
-        threading.Thread(target=self._run_update, args=(changes, layout), name="clawd-ota", daemon=True).start()
+        threading.Thread(target=self._run_update, args=(changes, style), name="clawd-ota", daemon=True).start()
         return {"ok": True}
 
-    def _run_update(self, changes: dict, layout: int | None) -> None:
+    def _run_update(self, changes: dict, style: str | None) -> None:
         def step(s: str) -> None:
             self._job["step"] = s
         bundle = self._bundle                  # update() only starts this thread with one
         try:
             if bundle is None:
                 raise ValueError("no bundled firmware")
-            heap = ota.install_then_save(self._api, bundle, changes, need_layout=layout, progress=step)
+            heap = ota.install_then_save(self._api, bundle, changes, progress=step,
+                                         need_style_api=bundle.style_api if style else 0)
             self._heap = heap
+            if style and style != (firmware.clock_style(heap) or pv.CLASSIC):
+                self._apply_style(style)
             with contextlib.suppress(ClockError):
                 self._cfg = self._api.config()
             self._mirror_screen(self._cfg)

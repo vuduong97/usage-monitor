@@ -1,4 +1,4 @@
-"""The settings window's clock client: diffs, digest login, retries, OTA upload."""
+"""The settings window's clock client: diffs, digest login, retries, OTA upload, style packs."""
 import json
 
 import httpx
@@ -51,6 +51,15 @@ class FakeClock:
                 return httpx.Response(200, json={"ok": True})
             if p == "/api/export":
                 return httpx.Response(200, json={"wifi": [{"ssid": "Home", "pass": "x"}]})
+            if p == "/api/style" and req.method == "GET":
+                return httpx.Response(200, json={"api": 1, "active": False, "slot": 32768})
+            if p == "/api/style" and req.method == "POST":
+                assert b'name="file"' in req.content
+                if b"CSTY" not in req.content:
+                    return httpx.Response(400, json={"ok": False, "error": "magic", "style": {"active": False}})
+                return httpx.Response(200, json={"ok": True, "style": {"active": True, "id": "synth"}})
+            if p == "/api/style" and req.method == "DELETE":
+                return httpx.Response(200, json={"ok": True, "style": {"active": False}})
             if p == "/api/fs/get" and req.url.params.get("path") == "/clawd.pak":
                 return httpx.Response(200, content=b"CLWD" + bytes(96))
             return httpx.Response(404)
@@ -157,3 +166,18 @@ def test_get_file_reads_one_file_signed_and_minds_its_size():
         a.get_file("/nope", 1000)                          # 404
     with pytest.raises(ca.AuthNeeded):
         api(FakeClock(password="pw")).get_file("/clawd.pak", 1000)
+
+
+def test_style_install_signed_once_clear_and_refusals():
+    fake = FakeClock(password="pw")
+    c = api(fake, auth=("admin", "pw"))
+    assert c.install_style(b"CSTY" + bytes(200)) == {"active": True, "id": "synth"}
+    posts = [x for x in fake.calls if x[:2] == ("POST", "/api/style")]
+    assert posts == [("POST", "/api/style", True)]               # challenge collected first: sent once
+    with pytest.raises(ca.ClockError, match="refused"):
+        c.install_style(b"nope")
+    for bad in (b"", bytes(ca.STYLE_MAX + 1)):
+        with pytest.raises(ca.ClockError):
+            c.install_style(bad)
+    assert c.clear_style() == {"active": False}
+    assert api(FakeClock()).style()["slot"] == 32768

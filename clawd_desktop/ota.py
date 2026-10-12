@@ -1,8 +1,8 @@
-"""Install the bundled firmware on the clock, then (optionally) a setting that
-needs it, e.g. a usage layout the old image cannot draw.
+"""Install the bundled firmware on the clock, then (optionally) the settings that
+were waiting for it, e.g. a style pack the old image cannot draw.
 
-Order matters: the layout is saved only after the new image is up and says it
-draws that layout (an old image would store an unknown value and draw classic).
+Order matters: a pack is sent only after the new image is up and says it draws
+that style API (an old image has no /api/style at all).
 """
 from __future__ import annotations
 
@@ -54,11 +54,12 @@ def install(api: ClockApi, bundle: firmware.Bundle,
 
 
 def install_then_save(api: ClockApi, bundle: firmware.Bundle, changes: dict,
-                      need_layout: int | None = None, **kw) -> dict:
-    """`install`, then POST `changes` once the new image draws `need_layout`."""
+                      need_style_api: int = 0, **kw) -> dict:
+    """`install`, then POST `changes`; ClockError when the new image does not draw style
+    packs of API `need_style_api` (0: no need)."""
     heap = install(api, bundle, **kw)
-    if need_layout is not None and not firmware.clock_layouts(heap) >> need_layout & 1:
-        raise ClockError("the new firmware does not draw that layout")
+    if need_style_api and firmware.clock_style_api(heap) != need_style_api:
+        raise ClockError("the new firmware does not draw these style packs")
     if changes:
         api.save(changes)
     return heap

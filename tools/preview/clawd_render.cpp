@@ -1,7 +1,10 @@
 // clawd_render: draw the clock's usage screen on this computer, with the clock's own
 // code. The settings window runs it to show what the clock will look like.
 //
-//   clawd_render --layout N [--pak clawd.pak] [--ms 3000] [--clip] < payload.json > out
+//   clawd_render [--style file.pak] [--pak clawd.pak] [--ms 3000] [--clip] < payload.json > out
+//
+// --style    draw the usage screen from this style pack (firmware/styles/*.pak), as
+//            the clock does once it is installed; without it, the classic screen
 //
 // stdin  the usage payload the app POSTs to the clock's /api/usage (flat JSON:
 //        s sr w wr acct tp rd t tf ok), or nothing at all: no data yet, which
@@ -14,7 +17,7 @@
 // exit   0 ok, 1 bad arguments, 2 the clock would reject the payload
 //
 // Built by tools/build_preview.py together with the firmware's src/features/clawd
-// (ClawdDraw, ClawdAnim, ClawdRate, ClawdUi, ClawdPack, DeskPack), so the pixels are
+// (ClawdDraw, ClawdAnim, ClawdRate, ClawdUi, ClawdPack, DeskPack, StylePack), so the pixels are
 // the firmware's. Only the payload -> ClawdData step below is written out here; it
 // copies forwardToClawd() in the firmware's UsageClient.cpp, field for field.
 #include <math.h>
@@ -26,6 +29,7 @@
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
 #include "ClawdUi.h"
+#include "StylePack.h"
 
 static uint32_t g_now = 1000;
 uint32_t clawdNow() { return g_now; }
@@ -150,13 +154,13 @@ static bool toClawdData(const Doc& d, ClawdData& c) {
 
 #define STEP_MS 10
 
-static void step(uint8_t layout) {
+static void step() {
   g_now += STEP_MS;
-  clawdUiService(CLAWD_SCREEN_AUTO, -1, layout);
+  clawdUiService(CLAWD_SCREEN_AUTO, -1, CLAWD_LAYOUT_CLASSIC);
 }
 
-static void run(uint32_t ms, uint8_t layout) {
-  for (uint32_t t = 0; t < ms; t += STEP_MS) step(layout);
+static void run(uint32_t ms) {
+  for (uint32_t t = 0; t < ms; t += STEP_MS) step();
 }
 
 static void toRgb(uint16_t c, uint8_t* o) {        // RGB565 -> RGB888, the preview's expansion
@@ -170,13 +174,15 @@ static void toRgb(uint16_t c, uint8_t* o) {        // RGB565 -> RGB888, the prev
 // (clawdUiSpriteBox) decides the loop: it starts the moment Clawd comes to rest after moving (the corner mascot back on its still pose after an act, the pixel
 // walker standing at one end) and ends when Clawd comes to rest in that same picture
 // again (one rest + one act; one round trip). The status line is not part of it, so its
-// spinner may skip a beat where the loop wraps. Without a box (the splash) or when no
-// loop shows up in time, it is a fixed stretch.
+// spinner may skip a beat where the loop wraps. Without a box (the splash, a style pack:
+// its tracks loop on their own periods) or when no loop shows up in time, it is a fixed
+// stretch.
 #define REST_MS     1000      // still this long = at rest (shorter than every rest on the clock)
 #define SEARCH_MS   50000     // give up looking for the loop after this (a round trip of the
                               // walker takes ~36 s; the caller keeps the title clock off a
                               // minute change by sending a payload time on the minute)
 #define FALLBACK_MS 6000
+static uint32_t g_fixedMs = FALLBACK_MS;   // the fixed stretch (a style pack: its loop)
 
 struct Rect { int x, y, w, h; };
 struct Change { uint32_t t; Rect r; std::vector<uint16_t> px; };
@@ -233,7 +239,7 @@ static int writeClip(const std::vector<uint16_t>& key, uint32_t t0, const std::v
   return writeFrame(t1 - prev, r, *px) ? 0 : 1;
 }
 
-static int clip(uint8_t layout) {
+static int clip() {
   std::vector<uint16_t> prev(fb, fb + CLAWD_W * CLAWD_H);
   const std::vector<uint16_t> initial(prev);
   std::vector<Change> changes;
@@ -244,11 +250,11 @@ static int clip(uint8_t layout) {
   uint32_t t0 = 0;
   bool started = false;
   for (;;) {
-    step(layout);
+    step();
     int bx = 0, by = 0, bw = 0, bh = 0;
     const bool box = clawdUiSpriteBox(bx, by, bw, bh);
     const Rect sprite = {bx, by, bw, bh};
-    if (g_now - begin >= (box ? SEARCH_MS : FALLBACK_MS)) break;
+    if (g_now - begin >= (box ? SEARCH_MS : g_fixedMs)) break;
     const Rect all = {0, 0, CLAWD_W, CLAWD_H};
     const Rect d = diffRect(fb, prev.data(), all);
     if (d.w) {
@@ -274,23 +280,53 @@ static int clip(uint8_t layout) {
   }
   // No box, or no loop in time: a fixed stretch from the loop's start, or from where the
   // search began.
-  if (started) return writeClip(key, t0, changes, t0 + FALLBACK_MS < g_now ? t0 + FALLBACK_MS : g_now);
-  return writeClip(initial, begin, changes, begin + FALLBACK_MS < g_now ? begin + FALLBACK_MS : g_now);
+  if (started) return writeClip(key, t0, changes, t0 + g_fixedMs < g_now ? t0 + g_fixedMs : g_now);
+  return writeClip(initial, begin, changes, begin + g_fixedMs < g_now ? begin + g_fixedMs : g_now);
+}
+
+// One loop of a style pack: the least common multiple of its animation tracks'
+// periods (header trackCount @59, tracksOff @76; a track is u16 stepMs, u8 steps, pad,
+// u32 stepsOff). 0 when nothing moves, UINT32_MAX when the loop runs past `cap`.
+static uint32_t styleLoopMs(const std::vector<uint8_t>& p, uint32_t cap) {
+  if (p.size() < STYLE_HEADER_BYTES) return 0;
+  const uint8_t n = p[59];
+  const uint32_t off = p[76] | p[77] << 8 | p[78] << 16 | (uint32_t)p[79] << 24;
+  uint64_t loop = 0;
+  for (uint8_t i = 0; i < n && off + 8u * i + 3 <= p.size(); i++) {
+    const uint8_t* t = &p[off + 8u * i];
+    const uint64_t period = (uint64_t)(t[0] | t[1] << 8) * t[2];
+    if (!period) continue;
+    uint64_t a = loop ? loop : period, b = period;
+    while (b) { const uint64_t r = a % b; a = b; b = r; }
+    loop = loop ? loop / a * period : period;
+    if (loop > cap) return UINT32_MAX;
+  }
+  return (uint32_t)loop;
+}
+
+static bool readAll(const char* path, std::vector<uint8_t>& out) {
+  FILE* f = fopen(path, "rb");
+  if (!f) return false;
+  uint8_t buf[4096];
+  size_t got;
+  while ((got = fread(buf, 1, sizeof(buf), f)) > 0 && out.size() <= STYLE_MAX_BYTES) out.insert(out.end(), buf, buf + got);
+  fclose(f);
+  return true;
 }
 
 int main(int argc, char** argv) {
-  int layout = 0;
   long ms = 3000;
   const char* pak = nullptr;
+  const char* style = nullptr;
   bool wantClip = false;
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--layout") && i + 1 < argc) layout = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "--clip")) wantClip = true;
+    if (!strcmp(argv[i], "--clip")) wantClip = true;
     else if (!strcmp(argv[i], "--ms") && i + 1 < argc) ms = atol(argv[++i]);
     else if (!strcmp(argv[i], "--pak") && i + 1 < argc) pak = argv[++i];
-    else { fprintf(stderr, "usage: clawd_render --layout N [--pak file] [--ms 3000] < payload.json > frame.rgb\n"); return 1; }
+    else if (!strcmp(argv[i], "--style") && i + 1 < argc) style = argv[++i];
+    else { fprintf(stderr, "usage: clawd_render [--style file.pak] [--pak file] [--ms 3000] [--clip] < payload.json > frame.rgb\n"); return 1; }
   }
-  if (layout < 0 || layout > 255 || ms < 100 || ms > 60000) { fprintf(stderr, "bad --layout or --ms\n"); return 1; }
+  if (ms < 100 || ms > 60000) { fprintf(stderr, "bad --ms\n"); return 1; }
   if (pak) {
 #ifdef _WIN32
     _putenv_s("CLAWD_PACK_PATH", pak);
@@ -314,14 +350,30 @@ int main(int argc, char** argv) {
   MemSurface surf;
   clawdSetSurface(&surf);
   clawdUiBegin();
+  static std::vector<uint8_t> stylePack;     // read in place for as long as it draws
+  if (style) {
+    if (!readAll(style, stylePack)) { fprintf(stderr, "cannot read %s\n", style); return 1; }
+    const char* why = styleValidate(stylePack.data(), (uint32_t)stylePack.size());
+    if (why || !styleAttach(stylePack.data(), (uint32_t)stylePack.size())) {
+      fprintf(stderr, "style pack rejected: %s\n", why ? why : "attach");
+      return 1;
+    }
+    // A clip of a pack is its loop, at least 2 s (a still pack: one 1 s frame), starting
+    // on the painted screen: the tracks run on absolute time, so any start is seamless.
+    const uint32_t loop = styleLoopMs(stylePack, SEARCH_MS);
+    g_fixedMs = !loop ? 1000 : loop == UINT32_MAX ? FALLBACK_MS : loop < 2000 ? loop * ((2000 + loop - 1) / loop) : loop;
+  }
   if (have) clawdUiPayload(data);
-  if (!wantClip) run((uint32_t)ms, (uint8_t)layout);   // a clip starts on the blank panel: its first paint
+  // A classic clip starts on the blank panel (its first paint counts as Clawd moving);
+  // a style clip after the first full paint.
+  if (!wantClip) run((uint32_t)ms);
+  else if (style) run(600);
 
 #ifdef _WIN32
   fflush(stdout);
   _setmode(_fileno(stdout), _O_BINARY);
 #endif
-  if (wantClip) return clip((uint8_t)layout) || fflush(stdout) ? 1 : 0;
+  if (wantClip) return clip() || fflush(stdout) ? 1 : 0;
   static uint8_t out[CLAWD_W * CLAWD_H * 3];
   for (int i = 0; i < CLAWD_W * CLAWD_H; i++) toRgb(fb[i], &out[i * 3]);
   if (fwrite(out, 1, sizeof(out), stdout) != sizeof(out)) return 1;

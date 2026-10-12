@@ -2,9 +2,10 @@
 
 `tools/build_preview.py` compiles `clawd_render` from the firmware's drawing
 sources into `clawd_desktop/renderer/` (git-ignored, private like the bundled
-firmware). Given the usage payload the app last sent the clock and a layout it
-writes the 240x240 frame the clock would show, or (`--clip`) one loop of the
-screen as it animates. This module runs it and wraps the pixels in a BMP, or the
+firmware). Given the usage payload the app last sent the clock and a style (the
+classic screen, or one of the style packs built with that firmware, kept next to
+the renderer in styles/) it writes the 240x240 frame the clock would show, or
+(`--clip`) one loop of the screen as it animates. This module runs it and wraps the pixels in a BMP, or the
 loop in an animated PNG, that the settings page can show.
 
 The renderer is only trusted when it was built from the firmware that ships in
@@ -22,8 +23,10 @@ import time
 import zlib
 from base64 import b64encode
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
+from clawd_desktop.firmware import load_styles
 
 W = H = 240
 FRAME_BYTES = W * H * 3
@@ -42,34 +45,46 @@ def preview_dir() -> Path:
     return Path(__file__).resolve().parent / "renderer"
 
 
+CLASSIC = "classic"       # the style key of the classic screen (no pack)
+
+
 @dataclass(frozen=True)
 class Renderer:
     exe: Path
     pak: Path
     commit: str
-    layouts: int
+    styles: dict[str, Path] = field(default_factory=dict)   # pack id -> .pak next to the renderer
 
-    def draw(self, layout: int, payload: dict | None) -> bytes:
-        """RGB bytes of the clock's screen for `layout` with this payload (None or a
+    def _args(self, style: str) -> list[str]:
+        args = [str(self.exe), "--pak", str(self.pak)]
+        if style != CLASSIC:
+            path = self.styles.get(style)
+            if path is None:
+                raise ValueError(f"no style pack {style!r} next to the renderer")
+            args += ["--style", str(path)]
+        return args
+
+    def draw(self, style: str, payload: dict | None) -> bytes:
+        """RGB bytes of the clock's screen in `style` with this payload (None or a
         payload the clock would reject: its waiting screen). Raises OSError/ValueError."""
         stdin = json.dumps(payload).encode() if payload else b""
         extra = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
-        r = subprocess.run([str(self.exe), "--layout", str(layout), "--pak", str(self.pak)],
-                           input=stdin, capture_output=True, timeout=RUN_TIMEOUT, check=False, **extra)
+        r = subprocess.run(self._args(style), input=stdin, capture_output=True, timeout=RUN_TIMEOUT,
+                           check=False, **extra)
         if r.returncode == 2 and payload:      # the clock ignores such a payload: it would stay on its last screen
-            return self.draw(layout, None)
+            return self.draw(style, None)
         if r.returncode != 0 or len(r.stdout) != FRAME_BYTES:
             raise ValueError(f"clawd_render failed ({r.returncode}): {r.stderr[-200:].decode(errors='replace')}")
         return r.stdout
 
-    def clip(self, layout: int, payload: dict | None) -> list[Frame]:
+    def clip(self, style: str, payload: dict | None) -> list[Frame]:
         """One loop of the screen as it animates (see parse_clip). Raises OSError/ValueError."""
         stdin = json.dumps(payload).encode() if payload else b""
         extra = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
-        r = subprocess.run([str(self.exe), "--layout", str(layout), "--pak", str(self.pak), "--clip"],
-                           input=stdin, capture_output=True, timeout=RUN_TIMEOUT, check=False, **extra)
+        r = subprocess.run(self._args(style) + ["--clip"], input=stdin, capture_output=True,
+                           timeout=RUN_TIMEOUT, check=False, **extra)
         if r.returncode == 2 and payload:
-            return self.clip(layout, None)
+            return self.clip(style, None)
         if r.returncode != 0:
             raise ValueError(f"clawd_render --clip failed ({r.returncode}): {r.stderr[-200:].decode(errors='replace')}")
         return parse_clip(r.stdout)
@@ -150,8 +165,9 @@ def load_renderer(folder: Path | None = None, firmware_commit: str = "") -> Rend
     folder = folder or preview_dir()
     try:
         m = json.loads((folder / "preview.json").read_text())
+        packs = load_styles(folder / "styles", int(m.get("styleApi", 0)))
         r = Renderer(exe=folder / str(m["exe"]), pak=folder / str(m["pak"]),
-                     commit=str(m.get("commit", "")), layouts=int(m["layouts"]))
+                     commit=str(m.get("commit", "")), styles={p.id: p.path for p in packs})
     except (OSError, ValueError, KeyError, TypeError):
         return None
     if not r.exe.is_file() or not r.pak.is_file():
@@ -262,6 +278,6 @@ class FrameCache:
             self._d.popitem(last=False)
 
 
-def frame_key(layout: int, payload: dict | None, minute: int, kind: str = "still") -> str:
+def frame_key(style: str, payload: dict | None, minute: int, kind: str = "still") -> str:
     # the title clock moves once a minute, so a frame is good for that long
-    return f"{kind}|{layout}|{minute}|{json.dumps(payload, sort_keys=True)}"
+    return f"{kind}|{style}|{minute}|{json.dumps(payload, sort_keys=True)}"
