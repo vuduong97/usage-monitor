@@ -44,6 +44,10 @@ summary: the boot animation is the "no data" splash, which stayed up until the n
   - `HttpSinks` logs only state changes, so the log cannot show whether the 15 s resend itself landed. Commit 7c377d1 adds "took its data again" / "did not take the data yet; retrying" lines.
   - An agent was running, so the clock showed desk (`onDesk:true`). `splash:false` says nothing about usage then.
 - Second reboot at 11:11:26, engine run from source: the clock never came back on the network (ConnectTimeout, LAN scan found nothing, curl `000` for more than 3 min). This is the office-network block from the replug journal again, so there is no measurement.
+- 11:15, after the clock rejoined (uptime 29 s; it had booted once more by itself around 11:14:55) and Clawd.app was reinstalled with 7c377d1:
+  - The "new clock, booted under 120 s ago" path fired at 11:15:24: `restarted (up 29 s)`, then `took its data again` in the same second.
+  - `/api/heap` then showed `splash:false`.
+  - The time from "the clock first answers" to "data" is still not measured: it is unknown when the clock became reachable before 11:15:24.
 - Seen on the side, not changed: while the clock is unreachable, the publisher retries every tick and calls `poll_active` (cliproxy) each time, about every 5–11 s. This was already the behaviour before this work.
 
 ## Not verified
