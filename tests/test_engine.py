@@ -109,3 +109,22 @@ def test_a_settings_pause_empties_the_targets(tmp_path):
     assert e.targets() == [] and e.snapshot()["paused"] == "firmware update"
     now[0] += 61                                     # the window crashed: the lease runs out
     assert e.targets() == ["http://10.0.0.7/api/usage"] and e.snapshot()["paused"] is None
+
+
+def test_read_clock_screen_uses_the_clocks_config(tmp_path, monkeypatch):
+    from clawd_desktop import engine as eng_mod
+    from clawd_desktop.discovery import Clock
+
+    class Api:
+        def __init__(self, base, auth=None):
+            self.base = base
+        def config(self):
+            return {"usage": {"screen": 1}}
+        def close(self):
+            pass
+    monkeypatch.setattr(eng_mod, "ClockApi", Api)
+    monkeypatch.setattr(eng_mod.creds, "get", lambda key: None)
+    e = eng_mod.Engine(ClockFinder(ClockStore(tmp_path / "clock.json"), browser=NoBrowser()))
+    assert e.read_clock_screen() is None                 # no clock yet
+    e.finder.current = Clock(host="10.0.0.5")
+    assert e.read_clock_screen() == 1

@@ -830,8 +830,10 @@ FOCUS_KEEPS_TEXT = {"notification", "question", "error"}
 class Brain:
     """Owns every layer and decides the one state the clock should show."""
 
-    def __init__(self, pet: Pet | None = None) -> None:
+    def __init__(self, pet: Pet | None = None,
+                 usage_only: Callable[[], bool] = lambda: False) -> None:
         self.pet = pet or Pet()
+        self.usage_only = usage_only            # the clock's main screen is Usage
         self.tracker = Tracker(on_turn=self.pet.on_turn)
         self.pokes = Pokes()
         self.wake = asyncio.Event()
@@ -856,14 +858,17 @@ class Brain:
     def desired(self, now: float) -> dict:
         """{'a', 'seq', 'rep', 'v', 'u', 'txt', 'cd', 'dim', 'focus_until'} for this instant."""
         v = self.pokes.moment(now) or self.tracker.view(now)
+        only = self.usage_only()
+        if only and v is not None and v.layer != "poke" and not (v.layer == "agent" and v.urgent):
+            v = None        # Usage screen: only a poke or an agent that needs you interrupts it
         focus = self.pokes.focus_left(now)
         cd = 0
         if focus and (v is None or (v.layer == "agent" and v.anim not in FOCUS_KEEPS_TEXT)):
             v = replace(v, text="Focus") if v else View("reading", "Focus", "focus")
             cd = focus
-        if v is None:
+        if v is None and not only:
             v = self.pet.moment(now)
-        if v is None:
+        if v is None and not only:
             v = self.pet.continuous(now)
         v = self._hold(v, now)
         if v is not None and v.layer != "idle":

@@ -34,6 +34,24 @@ def save_prefs(data: dict) -> None:
     tmp.replace(PREFS_FILE)
 
 
+SCREEN_USAGE = 1                              # the clock's `usage.screen`: 0 auto, 1 usage, 2 clawd
+
+
+def clock_screen() -> int | None:
+    """The clock's "Màn hình chính" as the settings window last saw it, or None.
+    The settings window is its own process, so this file is how the engine learns
+    it (`Brain` stops pushing animations while it is Usage)."""
+    v = load_prefs().get("clock_screen")
+    return v if isinstance(v, int) and not isinstance(v, bool) else None
+
+
+def set_clock_screen(screen: int) -> None:
+    prefs = load_prefs()
+    if prefs.get("clock_screen") != screen:
+        prefs["clock_screen"] = screen
+        save_prefs(prefs)
+
+
 class RotatingLog:
     """A text stream for print(): appends to LOG_FILE and keeps one previous
     file, so the log never grows past ~2 MB however long the app runs."""

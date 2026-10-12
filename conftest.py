@@ -12,3 +12,10 @@ def _private_pause_file(tmp_path, monkeypatch):
     """Never touch the real ~/.config pause lease (a running Clawd reads it)."""
     from clawd_desktop import pause
     monkeypatch.setattr(pause, "PAUSE_FILE", tmp_path / "pause.json")
+
+
+@pytest.fixture(autouse=True)
+def _private_prefs_file(tmp_path, monkeypatch):
+    """Same for the app preferences (desktop.json)."""
+    from clawd_desktop import paths
+    monkeypatch.setattr(paths, "PREFS_FILE", tmp_path / "desktop.json")

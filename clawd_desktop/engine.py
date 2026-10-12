@@ -4,17 +4,20 @@ the tray icon can own the main thread (macOS requires it)."""
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import threading
 import time
 
 import httpx
 
-from clawd_desktop import events, paths, usage
+from clawd_desktop import creds, events, paths, usage
+from clawd_desktop.clockapi import ClockApi, ClockError
 from clawd_desktop.pause import PauseReader
 from clawd_desktop.bootwatch import BootWatch
 from clawd_desktop.discovery import ClockFinder, ClockStore
 
 TOKEN_CHECK_EVERY = 60.0
+SCREEN_SYNC_EVERY = 300.0
 
 
 def log(msg: str) -> None:
@@ -96,20 +99,47 @@ class Engine:
             except asyncio.TimeoutError:
                 pass
 
+    def read_clock_screen(self) -> int | None:
+        """The clock's main screen (`usage.screen` in its config), with the web
+        password from the keychain when it has one; None when it can't be read."""
+        clock = self.finder.current
+        if clock is None:
+            return None
+        api = ClockApi(clock.base, auth=creds.get(clock.name or clock.host))
+        try:
+            s = (api.config().get("usage") or {}).get("screen")
+        except ClockError:
+            return None
+        finally:
+            api.close()
+        return s if isinstance(s, int) and not isinstance(s, bool) else None
+
+    async def _sync_screen(self, stop: asyncio.Event) -> None:
+        # The settings window tells the engine when it saves; this covers a change
+        # made on the clock's web page, and the first run after an update.
+        while not stop.is_set():
+            if not self.pause.reason():
+                s = await asyncio.to_thread(self.read_clock_screen)
+                if s is not None:
+                    await asyncio.to_thread(paths.set_clock_screen, s)
+            with contextlib.suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(stop.wait(), timeout=SCREEN_SYNC_EVERY)
+
     async def run(self, stop: asyncio.Event) -> None:
         log("=== Clawd desktop (usage + agent events over WiFi) ===")
         publisher = usage.Publisher(http=TrackingSinks(self.finder.report),
                                     targets=self.targets)
         tasks = [asyncio.create_task(self.finder.run(stop)),
                  asyncio.create_task(publisher.run(stop)),
-                 asyncio.create_task(self._watch_token(stop))]
+                 asyncio.create_task(self._watch_token(stop)),
+                 asyncio.create_task(self._sync_screen(stop))]
         server = None
         brain = None
         pusher: events.StatePusher | None = None
         if usage.read_onoff_setting("events", default="on") == "on":
             pet = events.Pet(events.read_pet_config(usage.read_config_value),
                              store=usage.ATTENTION_DIR / "pet.json")
-            brain = events.Brain(pet)
+            brain = events.Brain(pet, usage_only=lambda: paths.clock_screen() == paths.SCREEN_USAGE)
             server = events.EventServer(brain, port=events.read_event_port(usage.read_config_value))
             try:
                 await server.start()
