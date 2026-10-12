@@ -6,8 +6,13 @@ one in use. The clock switches to it at once, with no reboot, and keeps it acros
 reboots and firmware updates. With no pack installed, the clock draws the classic
 screen.
 
-Six packs ship with the firmware source: `gameboy`, `synth`, `paper`, `blueprint`,
-`pastel` and `onebit`.
+Sixteen packs ship with the firmware source:
+- The first six: `gameboy`, `synth`, `paper`, `blueprint`, `pastel` and `onebit`.
+- Batch A, retro computers and devices: `ambercrt`, `vt100tui`, `mac84`, `win95`,
+  `biossetup`, `c64`, `zxspec`, `casiolcd`, `calc` and `hifivfd`.
+
+Adding a pack is data only. It needs no firmware change, no `CLAWD_FW_SEQ` bump
+and no OTA.
 
 ## Behaviour
 
@@ -120,7 +125,8 @@ To check the packs on the host, run:
 DESK_PACK_PATH=…/desk.pak sh tools/clawd_preview/run.sh /tmp/cp-out
 ```
 
-This renders every pack in four states (`30-<id>-*`) plus synth animation frames,
+This renders every pack listed in `styles/index.json` in four states
+(`30-<id>-<k>-<state>`) plus synth animation frames,
 and checks the guards: a corrupt pack, a future API, a truncated pack, an alert
 over a style, Enterprise, and removing the pack. It ends with `styles: ok`.
 
@@ -143,6 +149,70 @@ module.exports = {
 Add the id to `ORDER` in `build.js`, and a Vietnamese description to
 `STYLE_DESC` in the app's `ui/app.js`.
 
+### From a design sheet
+
+The Batch A packs are ports of a design sheet ("Clawd style packs - Batch A.html").
+Each of its artboards draws the four states with a small vocabulary:
+- `R` rect, with an optional stripe `p: [dir, period, on]`
+- `O` 1 px outline
+- `C` disc
+- `P` triangle
+- `T` text (`S12`…`S48` Styrene, `M18`/`M32` mono; `y` is the top of a line box
+  as tall as the font size)
+- `S` 1-bit sprite
+
+`tools/style/mock.js` gives a pack source the same calls (`b.R`, `b.T`, `b.Sp`,
+`b.clawd`, …), so a port keeps the artboard's numbers. It converts two things:
+- **Text y:** the font's baseline offset (`Y_OFF`, measured once per font) moves
+  the glyphs onto the mock's baseline.
+- **Stripes:** the stripe phase is shifted from the element's edge to the screen.
+
+`b.hatch` draws the sheet's 45° hatch (`\` lines), because the firmware's `diag`
+pattern runs the other way.
+
+Porting works like this:
+- Each `if (s.hot)` / `if (ok)` in the artboard becomes a `when` gate:
+  - `hot`
+  - `ok fresh !hot` (fresh)
+  - `ok !hot !fresh` (normal)
+  - `!ok` (no data)
+- Each threshold becomes a `gate` on `s`/`w`/`ts`/`tw`.
+- Each data string becomes a token.
+- Data that the stale screen must hide gets a separate `!ok` op printing `--`. The
+  `fresh` bit does not need live data, so a fresh-only op also needs `ok`.
+
+```sh
+node tools/style/build.js <Clawdmeter>/firmware/src
+CLAWD_STYLES_ONLY=1 [CLAWD_STYLE_ONLY=<id>] sh tools/clawd_preview/run.sh /tmp/cp
+python3 tools/style/compare.py "<sheet>.html" /tmp/cp /tmp/cmp [<id> ...]
+```
+
+`compare.py` renders the sheet in headless Chrome and crops each pack's 1x states.
+It writes `<id>-<k>.png` (mock | clock | difference) and prints the share of
+pixels that differ. Text always differs a little, because the sheet's fonts (Space
+Grotesk, JetBrains Mono) are not the clock's (Styrene, DejaVu Mono). Shapes,
+colours and positions should match.
+
+The preview also prints each pack's full paint time on the host, plus `~clock`.
+`~clock` is a fit to the first six packs as measured on the clock:
+43 ms + 1.54 ms per host µs, within about 12 ms for all six. It is a guide for
+the 500 ms budget, not a measurement.
+
+Batch A on the host, 2026-10-13:
+
+| Pack | Size | Ops | ~clock full paint |
+|---|---|---|---|
+| ambercrt | 7,984 B | 126 | 226 ms |
+| vt100tui | 5,376 B | 68 | 197 ms |
+| mac84 | 18,348 B | 212 | 325 ms |
+| win95 | 13,240 B | 135 | 327 ms |
+| biossetup | 7,276 B | 71 | 221 ms |
+| c64 | 5,112 B | 62 | 218 ms |
+| zxspec | 5,900 B | 83 | 270 ms |
+| casiolcd | 7,400 B | 75 | 369 ms |
+| calc | 9,120 B | 57 | 222 ms |
+| hifivfd | 9,660 B | 137 | 319 ms |
+
 **Primitives:**
 - `rect`: optional radius and a `diag`/`cols`/`rows` pattern.
 - `strokeRect`
@@ -154,7 +224,7 @@ Add the id to `ORDER` in `build.js`, and a Vietnamese description to
 - `disc`: becomes rect rows.
 
 **Fonts:** `s14`, `s24`, `m18` and `t34` are linked into the firmware, so they
-are free. Any other font (`s48`, `t56`, `m32`) is embedded as a subset of the
+are free. Any other font (`s12`, `s16`, `s20`, `s28`, `s48`, `t56`, `m32`) is embedded as a subset of the
 characters the pack can print.
 
 **Gating:** `when: 'ok !over hot'` combines the usage conditions with AND:
