@@ -84,6 +84,7 @@ function uptime(s) { if (s < 3600) return Math.floor(s / 60) + ' phút'; if (s <
 // ---------- tabs ----------
 function showTab(t) {
   tab = t;
+  history.replaceState(null, '', '#' + t);   // a reload (live reload in `make dev`) reopens this tab
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('[data-pane]').forEach(p => p.classList.toggle('hide', p.dataset.pane !== t));
   if (t === 'usage') refreshLive();
@@ -124,7 +125,7 @@ function paintPreview(now) {
   const name = PV.LAYOUTS[layout] ? PV.LAYOUTS[layout].name : 'Hiện tại';
   const how = url ? 'vẽ bằng firmware' : 'gần đúng';
   const when = live.sentAt ? `Usage ${ago(Math.max(0, live.now - live.sentAt))}` : 'chưa có usage thật';
-  $('prevLabel').textContent = `Xem trước · ${name} · ${how} · ${when}`;
+  $('device').title = `${name} · ${how} · ${when}`;   // hover only: the pane shows just the clock
   [...$('gal').children].forEach((b, i) => {          // one button per layout: its canvas and its image
     const u = live.exact ? live.frames[String(i)] : null;
     const c = b.querySelector('canvas.thumb'), im = b.querySelector('img.thumb');
@@ -175,9 +176,6 @@ function renderConn() {
   else if (S.code === 'auth') { dot.className = 'dot busy'; t.textContent = `${addr} · cần mật khẩu`; }
   else if (S.code === 'noclock') { dot.className = 'dot bad'; t.textContent = 'Chưa có đồng hồ'; }
   else { dot.className = 'dot bad'; t.textContent = `${addr} · không trả lời`; }
-  const h = S.heap || {};
-  $('meta').textContent = h.version ? `fw ${h.version}${h.fwSeq ? ' · #' + h.fwSeq : ''} · bật ${uptime(h.uptime || 0)}\nheap ${kb(h.heap || 0)} · loop ${h.loopMaxMs ?? '?'} ms` : '';
-  $('meta').style.whiteSpace = 'pre-line';
 }
 function renderDisplay() {
   if (!edit) return;
@@ -200,7 +198,7 @@ function renderGallery() {
       const b = el('button'); b.setAttribute('role', 'radio'); b.dataset.id = String(L.id);
       const cv = el('canvas', 'thumb'); cv.width = 240; cv.height = 240;
       const im = el('img', 'thumb hide'); im.width = 240; im.height = 240; im.alt = '';
-      b.append(cv, im, el('span', 'n', L.name), el('span', 'd', L.desc), el('span', 'chip'));
+      b.append(cv, im, el('span', 'n', L.name), el('span', 'chip'));
       g.append(b);
     });
   }
@@ -242,7 +240,8 @@ function renderUpdate() {
   const kv = $('fwKv'); kv.replaceChildren();
   const h = (S && S.heap) || {}, fw = S && S.fw;
   const add = (k, v) => kv.append(el('span', null, k), el('span', null, v));
-  add('Đồng hồ đang chạy', h.version ? `${h.version} (bản #${h.fwSeq || 0})` : '—');
+  add('Đồng hồ đang chạy', h.version ? `${h.version} (bản #${h.fwSeq || 0}) · bật ${uptime(h.uptime || 0)}` : '—');
+  if (h.version) add('Bộ nhớ', `heap ${kb(h.heap || 0)} · loop ${h.loopMaxMs ?? '?'} ms`);
   add('Đi kèm app', fw && fw.bundle ? `bản #${fw.bundle.seq}${fw.bundle.commit ? ' · ' + fw.bundle.commit : ''} · ${kb(fw.bundle.size)}` : 'không có');
   const st = fw ? fw.update : 'none';
   $('fwText').textContent = {
@@ -426,5 +425,10 @@ function apply(r) {
 }
 async function load() { msg('Đang đọc cài đặt từ đồng hồ…'); apply(await api.state()); }
 
-window.addEventListener('pywebviewready', () => { api = window.pywebview.api; load(); refreshLive(); });
+window.addEventListener('pywebviewready', () => {
+  api = window.pywebview.api; load();
+  const h = location.hash.slice(1);
+  if (h !== tab && document.querySelector(`#tabs [data-tab="${CSS.escape(h)}"]`)) showTab(h);   // refreshes for usage
+  else refreshLive();
+});
 requestAnimationFrame(loop);

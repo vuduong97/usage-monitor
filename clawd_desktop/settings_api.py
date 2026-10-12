@@ -145,7 +145,7 @@ class SettingsApi:
         self._bundle = bundle
         self._store = store or ClockStore(paths.CLOCK_FILE)
         self._keychain = keychain
-        self._window = None                    # set by settings_app, for file dialogs
+        self._window: Any = None               # set by settings_app, for file dialogs
         self._lock = threading.Lock()
         self._job: dict = {"running": False}
         self._heap: dict = {}

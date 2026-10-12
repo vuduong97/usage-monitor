@@ -14,6 +14,7 @@ directly, which the next tray start picks up.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 import time
@@ -58,9 +59,38 @@ class Channel:
             store.save({"manual_host": msg["host"]} if msg.get("host") else {})
 
 
+def dev() -> bool:
+    """`make dev`: CLAWD_DEV=1 from source turns on the inspector and live reload."""
+    return os.environ.get("CLAWD_DEV") == "1" and not paths.frozen()
+
+
+def _ui_stamp() -> dict[Path, int]:
+    return {p: p.stat().st_mtime_ns for p in UI_DIR.rglob("*") if p.is_file()}
+
+
+def _watch_ui(win) -> None:
+    """Dev: reload the page when a file under ui/ changes. Python changes restart
+    the whole process instead (tools/dev.py)."""
+    last = _ui_stamp()
+    while True:
+        time.sleep(0.3)
+        try:
+            now = _ui_stamp()
+        except OSError:                     # an editor's atomic save: the file is gone for a moment
+            continue
+        if now != last:
+            last = now
+            log("ui changed: reload")
+            try:
+                win.evaluate_js("location.reload()")
+            except Exception as e:          # the window may be closing
+                log(f"reload failed: {e!r}")
+
+
 def main(clock: str, key: str, piped: bool) -> int:
     pipe_out = sys.stdout                  # the tray reads commands here; keep it before logging moves stdout
-    paths.open_log()
+    if paths.frozen() or not sys.stdout or not sys.stdout.isatty():
+        paths.open_log()                    # started by hand in a terminal: log there (as the tray does)
     log(f"window for {clock or 'no clock'}")
     import webview
 
@@ -73,6 +103,9 @@ def main(clock: str, key: str, piped: bool) -> int:
         f"{APP_NAME} · Cài đặt", url=str(UI_DIR / "index.html"), js_api=api,
         width=WIDTH, height=HEIGHT, min_size=(720, 540), background_color="#141413",
         text_select=False)
+    if win is None:
+        log("could not create the window")
+        return 1
     api._window = win
 
     def closing() -> bool:
@@ -94,7 +127,11 @@ def main(clock: str, key: str, piped: bool) -> int:
     if piped:
         threading.Thread(target=listen, name="clawd-settings-in", daemon=True).start()
 
-    webview.start(_front, private_mode=True)
+    if dev():
+        webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] = False   # right click -> Inspect Element when needed
+        threading.Thread(target=_watch_ui, args=(win,), name="clawd-settings-dev", daemon=True).start()
+        log("dev: live reload on " + str(UI_DIR))
+    webview.start(_front, private_mode=True, debug=dev())
     log("window closed")
     return 0
 
@@ -104,8 +141,8 @@ def _front() -> None:
     if sys.platform != "darwin":
         return
     try:
-        from AppKit import NSApplication
+        from AppKit import NSApplication  # type: ignore[attr-defined]  # pyobjc, no stubs
         from PyObjCTools import AppHelper
         AppHelper.callAfter(lambda: NSApplication.sharedApplication().activateIgnoringOtherApps_(True))
-    except Exception:
-        pass
+    except Exception as e:                  # only cosmetic: the window opens behind
+        log(f"bring to front failed: {e!r}")
