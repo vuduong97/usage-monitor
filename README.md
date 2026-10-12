@@ -97,20 +97,24 @@ trang web của đồng hồ):
 khẩu trang cài đặt (in trên thẻ đi kèm), app hỏi một lần rồi nhớ trong Keychain (Mac) /
 Credential Manager (Windows).
 
-Menu còn mấy lối tắt dùng được cả khi cửa sổ cài đặt không mở được:
+Trên Mac, bấm biểu tượng (chuột trái) mở một bảng nhỏ: Clawd chuyển động như trên đồng hồ,
+hai thanh **Phiên** và **Tuần** kèm thời gian còn lại tới lúc đặt lại, nút bánh răng mở
+**Cài đặt…** (hoặc ⌘,). Bấm ra ngoài hay Esc là đóng. Hình Clawd lấy từ chính đồng hồ của
+bạn (một lần, giữ trong `~/.config/claude-usage-monitor/clawd.pak`); chưa lấy được thì bảng
+vẽ biểu tượng app. Bấm chuột phải (hoặc Control + bấm) ra menu.
 
-- **Tìm lại đồng hồ**: dò lại từ đầu (sau khi đổi router, đổi WiFi...).
-- **Nhập địa chỉ đồng hồ…**: nếu mạng nhà bạn chặn việc dò tìm, nhập IP mà đồng hồ hiện
-  lúc khởi động (ví dụ `192.168.1.48`).
-- **Mở trang cài đặt đồng hồ**: trang web của đồng hồ (vẫn dùng được như trước).
-- **Mở nhật ký**: file ghi lại mọi việc ứng dụng làm (`~/.config/claude-usage-monitor/clawd-desktop.log`),
-  gửi cho người tặng đồng hồ nếu có lỗi.
+Menu (trên Windows: bấm chuột phải biểu tượng) chỉ có tình trạng (tên đồng hồ, % phiên và % tuần), **Cài đặt…** và **Thoát**. Tìm
+lại đồng hồ, nhập địa chỉ, mở nhật ký (`~/.config/claude-usage-monitor/clawd-desktop.log`,
+gửi cho người tặng đồng hồ nếu có lỗi) và trang web của đồng hồ đều nằm trong tab **App**
+của cửa sổ cài đặt. Khi không thấy đồng hồ, menu hiện thêm **Nhập địa chỉ đồng hồ…** (dùng
+được cả khi cửa sổ cài đặt không mở được): nhập IP mà đồng hồ hiện lúc khởi động (ví dụ
+`192.168.1.48`).
 
 ## Gặp vấn đề
 
 | Hiện tượng | Cách xử lý |
 | --- | --- |
-| "Không thấy đồng hồ" | Đồng hồ và máy tính phải cùng một WiFi (không dùng mạng khách). Thử **Tìm lại đồng hồ**, hoặc **Nhập địa chỉ đồng hồ…** |
+| "Không thấy đồng hồ" | Đồng hồ và máy tính phải cùng một WiFi (không dùng mạng khách). Thử **Cài đặt… → App → Tìm lại**, hoặc **Nhập địa chỉ đồng hồ…** |
 | Lúc được lúc mất, nhất là ở công ty, quán cà phê, khách sạn | Nhiều mạng công ty / mạng khách chặn các thiết bị nói chuyện với nhau (đồng hồ vẫn vào WiFi, vẫn hiện IP, nhưng máy tính không tới được). Ứng dụng không vượt qua được: dùng WiFi nhà, hoặc phát WiFi từ điện thoại rồi cho cả máy tính và đồng hồ vào đó (thêm mạng này trong trang cài đặt đồng hồ, mục WiFi) |
 | "Chưa đăng nhập Claude" | Mở Terminal (Mac) hoặc PowerShell (Windows), gõ `claude`, đăng nhập. Ứng dụng tự nhận trong 1 phút |
 | Đồng hồ hiện SETUP MODE | Đồng hồ không vào được WiFi (đổi mật khẩu WiFi, router mới...). Làm lại Bước 1 |
@@ -129,6 +133,8 @@ Menu còn mấy lối tắt dùng được cả khi cửa sổ cài đặt khôn
 ```sh
 uv sync --python 3.12 --group dev
 uv run --python 3.12 --group dev python -m pytest     # chạy test
+make dev        # cửa sổ Cài đặt từ mã nguồn: sửa ui/ → trang tự tải lại (giữ tab), sửa .py → tự mở lại
+make dev-tray   # tray từ mã nguồn, sửa .py → tự chạy lại (tắt Clawd.app đã cài trước: pkill -x Clawd)
 uv run --python 3.12 python -m clawd_desktop          # chạy tray từ mã nguồn
 uv run --python 3.12 python -m clawd_desktop run      # chạy không giao diện, log ra terminal
 uv run --python 3.12 python -m clawd_desktop find     # liệt kê đồng hồ trong mạng

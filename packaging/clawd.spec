@@ -32,7 +32,9 @@ else:
     print("no clock firmware bundled (CLAWD_PRIVATE_FIRMWARE=1 + tools/bundle_firmware.py); "
           "the Update tab will say so")
 if sys.platform == "darwin":
-    hidden += ["pystray._darwin", "PyObjCTools.AppHelper", "webview.platforms.cocoa", "keyring.backends.macOS"]
+    # clawd_desktop.popover loads AppKit/WebKit by name (importlib): list them for the analysis
+    hidden += ["pystray._darwin", "PyObjCTools.AppHelper", "webview.platforms.cocoa", "keyring.backends.macOS",
+               "clawd_desktop.popover", "AppKit", "Foundation", "WebKit", "objc"]
     icon = str(ICONS / "clawd.icns")
 elif sys.platform == "win32":
     hidden += ["pystray._win32", "webview.platforms.winforms", "webview.platforms.edgechromium",

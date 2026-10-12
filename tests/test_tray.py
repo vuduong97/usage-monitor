@@ -1,6 +1,5 @@
 """Tray status text, icons, autostart files (no GUI needed)."""
 import plistlib
-import time
 
 from clawd_desktop import autostart, icons, tray
 from clawd_desktop.discovery import Clock
@@ -19,8 +18,18 @@ def snap(**kw):
 def test_connected_with_usage_detail():
     s, head, detail = tray.status(snap(clock=A, last_ok=NOW - 10, payload={"s": 42, "w": 17, "ok": True},
                                        payload_at=NOW - 10), NOW)
-    assert s == "ok" and head == "Đã kết nối: clawd (10.0.0.7)"
-    assert detail.startswith("Cập nhật ") and detail.endswith("Phiên 42% · Tuần 17%")
+    assert s == "ok" and head == "Đã kết nối · clawd"
+    assert detail == "Phiên 42% · Tuần 17%"
+
+
+def test_old_usage_says_when():
+    _, _, detail = tray.status(snap(clock=A, last_ok=NOW - 3600, payload={"s": 1, "w": 2},
+                                    payload_at=NOW - 3600), NOW)
+    assert detail.startswith("Phiên 1% · Tuần 2% · lúc ")
+
+
+def test_unnamed_clock_shows_its_address():
+    assert tray.status(snap(clock=Clock(host="10.0.0.9"), last_ok=NOW), NOW)[1] == "Đã kết nối · 10.0.0.9"
 
 
 def test_problems_come_first():
@@ -52,7 +61,8 @@ def test_icons_have_a_status_dot():
     ok, err = icons.status_icon("ok"), icons.status_icon("error")
     assert ok.size == (64, 64) and ok.mode == "RGBA"
     assert ok.getpixel((52, 52)) != err.getpixel((52, 52))
-    assert icons.base_icon(32).getpixel((16, 16))[3] == 255
+    px = icons.base_icon(32).getpixel((16, 16))
+    assert isinstance(px, tuple) and px[3] == 255
 
 
 def test_launch_agent_restarts_only_after_a_crash():

@@ -353,12 +353,12 @@ const PV = (() => {
     mascot(c, Math.round(x), 234 - 34 - (Math.floor(now / 160) % 2));
   }
   const LAYOUTS = [
-    { id:0, name:'Hiện tại', desc:'Hai thẻ Current / Weekly và dòng trạng thái.', draw:classic },
-    { id:1, name:'Nhịp & dự báo', desc:'Cho biết đang dùng nhanh hay chậm, và lúc nào hết.', draw:paced },
-    { id:2, name:'Tiêu điểm', desc:'Một số lớn cho phiên 5 giờ, tuần nằm gọn bên dưới.', draw:hero },
-    { id:3, name:'Vòng đôi', desc:'Hai vòng lồng nhau, đồng hồ nằm giữa.', draw:rings },
-    { id:4, name:'Đồng hồ đôi', desc:'Hai mặt đồng hồ tròn cạnh nhau.', draw:gauges },
-    { id:5, name:'Pixel retro', desc:'Thanh 20 ô kiểu game, Clawd đi dạo bên dưới.', draw:pixel },
+    { id:0, name:'Hiện tại', draw:classic },
+    { id:1, name:'Nhịp & dự báo', draw:paced },
+    { id:2, name:'Tiêu điểm', draw:hero },
+    { id:3, name:'Vòng đôi', draw:rings },
+    { id:4, name:'Đồng hồ đôi', draw:gauges },
+    { id:5, name:'Pixel retro', draw:pixel },
   ];
   function waiting(c, now) {
     clawd(c, 92, 66, now);
@@ -372,5 +372,6 @@ const PV = (() => {
     if (!d) { waiting(c, now); return; }
     (LAYOUTS[layout] || LAYOUTS[0]).draw(c, d, now);
   }
-  return { LAYOUTS, paint, fromPayload, setPak, hasPak };
+  // drawClawd(ctx, x, y, now): Clawd in his 56 x 42 corner box, as on the clock (the menu-bar panel)
+  return { LAYOUTS, paint, fromPayload, setPak, hasPak, drawClawd: clawd };
 })();

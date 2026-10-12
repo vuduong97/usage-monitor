@@ -11,7 +11,7 @@ import subprocess
 import sys
 import threading
 import time
-import webbrowser
+from typing import Any
 
 from clawd_desktop import APP_NAME, __version__, autostart, hooks, icons, paths
 from clawd_desktop.engine import Engine, daemon_running
@@ -28,6 +28,11 @@ def log(msg: str) -> None:
 # =============================================================================
 # Status text (pure, tested)
 # =============================================================================
+def _no(v: object) -> bool:
+    """An explicit False (None means "not known yet")."""
+    return isinstance(v, bool) and not v
+
+
 def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
     """(dot state, headline, detail line) for the menu and tooltip."""
     now = time.time() if now is None else now
@@ -36,16 +41,18 @@ def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
     connected = bool(last_ok and now - last_ok < FRESH)
     payload = snap.get("payload") or {}
     detail = ""
-    if payload.get("ok") is not False and ("s" in payload or "w" in payload) and snap.get("payload_at"):
-        at = time.strftime("%H:%M", time.localtime(snap["payload_at"]))
-        detail = f"Cập nhật {at} · Phiên {payload.get('s', 0)}% · Tuần {payload.get('w', 0)}%"
+    at = snap.get("payload_at")
+    if not _no(payload.get("ok")) and ("s" in payload or "w" in payload) and at:
+        detail = f"Phiên {payload.get('s', 0)}% · Tuần {payload.get('w', 0)}%"
+        if now - at >= FRESH:          # only an old reading needs its time
+            detail += time.strftime(" · lúc %H:%M", time.localtime(at))
 
-    if snap.get("token") is False:
+    if _no(snap.get("token")):
         return "error", "Chưa đăng nhập Claude: mở Terminal, gõ claude login", detail
     if snap.get("manual_config"):
         where = ", ".join(snap.get("config_targets") or [])
         return ("ok" if connected else "busy",
-                ("Đã kết nối: " if connected else "Đang gửi tới: ") + where, detail)
+                ("Đã kết nối · " if connected else "Đang gửi tới · ") + where, detail)
     if clock is None:
         if snap.get("lan_blocked"):
             if sys.platform == "darwin":
@@ -54,11 +61,12 @@ def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
         if snap.get("scanning"):
             return "busy", "Đang dò tìm đồng hồ trong mạng…", detail
         return "error", "Không thấy đồng hồ: cùng WiFi chưa? (mạng công ty/mạng khách có thể chặn)", detail
+    name = clock.name or clock.host    # the address lives in Cài đặt
     if connected:
-        return "ok", f"Đã kết nối: {clock.label}", detail
+        return "ok", f"Đã kết nối · {name}", detail
     if snap.get("failing"):
-        return "error", f"Đồng hồ {clock.label} không trả lời", detail
-    return "busy", f"Đang kết nối {clock.label}…", detail
+        return "error", f"Đồng hồ {name} không trả lời", detail
+    return "busy", f"Đang kết nối {name}…", detail
 
 
 # =============================================================================
@@ -112,7 +120,7 @@ def open_path(path: str) -> None:
         if sys.platform == "darwin":
             subprocess.Popen(["open", path])
         elif sys.platform == "win32":
-            os.startfile(path)  # type: ignore[attr-defined]
+            os.startfile(path)  # type: ignore[attr-defined]  # noqa: S606 (opens a file, no shell wanted)
         else:
             subprocess.Popen(["xdg-open", path])
     except OSError:
@@ -152,7 +160,7 @@ class Tray:
         self.head = "Đang khởi động…"
         self.detail = ""
         self._icons = {s: icons.status_icon(s) for s in ("ok", "busy", "error")}
-        M = pystray.MenuItem
+        M: Any = pystray.MenuItem   # `visible` takes a callable too; the stubs say bool
         self.icon = pystray.Icon(
             "clawd", self._icons["busy"], APP_NAME,
             menu=pystray.Menu(
@@ -160,21 +168,19 @@ class Tray:
                 M(lambda _i: self.detail, None, enabled=False, visible=lambda _i: bool(self.detail)),
                 pystray.Menu.SEPARATOR,
                 M("Cài đặt…", self.open_settings, default=True),
+                # Only while something is wrong. Everything else (rescan, address,
+                # log, the clock's web page, version) lives in the settings window.
                 M("Mở cài đặt Mạng cục bộ…", lambda: open_path(LOCAL_NETWORK_PANE),
                   visible=lambda _i: sys.platform == "darwin"
                   and bool(self.engine.snapshot().get("lan_blocked"))),
+                # Rescue that works without the settings window (e.g. no WebView2).
+                M("Nhập địa chỉ đồng hồ…", self.manual, visible=lambda _i: self._lost()),
                 pystray.Menu.SEPARATOR,
-                # Fallbacks that work without the settings window (e.g. no WebView2).
-                M("Tìm lại đồng hồ", self.rescan),
-                M("Nhập địa chỉ đồng hồ…", self.manual),
-                M("Mở trang cài đặt đồng hồ", self.open_clock,
-                  visible=lambda _i: self.engine.snapshot().get("clock") is not None),
-                M("Mở nhật ký", lambda: open_path(str(paths.LOG_FILE))),
-                pystray.Menu.SEPARATOR,
-                M(f"Thoát {APP_NAME} (v{__version__})", self.quit),
+                M(f"Thoát {APP_NAME}", self.quit),
             ))
         self._stop = threading.Event()
         self._settings: subprocess.Popen | None = None
+        self._popover: Any = None       # macOS: the panel a left click opens (popover.py)
 
     # ---- main-thread helper for AppKit -----------------------------------------
     def on_main(self, fn) -> None:
@@ -197,6 +203,44 @@ class Tray:
         if changed:
             title = f"{APP_NAME}: {head}" + (f"\n{detail}" if detail else "")
             self.on_main(lambda: (setattr(self.icon, "title", title[:120]), self.icon.update_menu()))
+        if self._popover is not None:
+            self.on_main(self._popover.push)     # a no-op while the panel is closed
+
+    # ---- the panel (macOS) -------------------------------------------------------
+    def _install_popover(self) -> None:
+        """Left click opens the panel, right click the menu. Runs on the main thread; on
+        any failure the icon keeps its plain menu."""
+        from clawd_desktop import popover
+        if not popover.supported():
+            return
+        icon: Any = self.icon
+        try:
+            self._popover = popover.MacPopover(
+                icon._status_item, self.engine.snapshot, self._clawd_pak,
+                on_settings=self.open_settings, on_menu=self._show_menu)
+        except Exception as e:
+            log(f"Panel not available, the menu stays: {e!r}")
+            self._popover = None
+            return
+        update = icon._update_menu
+
+        def detached() -> None:              # pystray re-attaches the menu on every update
+            update()
+            icon._status_item.setMenu_(None)
+        icon._update_menu = detached
+        log("Panel ready (left click), menu on right click")
+
+    def _show_menu(self) -> None:
+        icon: Any = self.icon
+        icon.update_menu()                    # current texts
+        handle = getattr(icon, "_menu_handle", None)
+        if self._popover is not None and handle:
+            self._popover.show_menu(handle[0])
+
+    def _clawd_pak(self) -> bytes | None:
+        from clawd_desktop import popover
+        clock = self.engine.snapshot().get("clock")
+        return popover.load_pak(clock.base, self._clock_key(clock)) if clock is not None else popover.load_pak("", "")
 
     def _loop(self) -> None:
         while not self._stop.wait(REFRESH):
@@ -206,9 +250,10 @@ class Tray:
                 log(f"Tray refresh failed: {e!r}")
 
     # ---- menu actions ------------------------------------------------------------
-    def rescan(self) -> None:
-        self.engine.finder.forget()
-        self.refresh()
+    def _lost(self) -> bool:
+        snap = self.engine.snapshot()
+        return (snap.get("clock") is None and not snap.get("scanning")
+                and not snap.get("manual_config"))
 
     def manual(self) -> None:
         def ask() -> None:
@@ -224,7 +269,7 @@ class Tray:
         thread, which the tray holds). A second click brings it forward."""
         from clawd_desktop import settings_app
         p = self._settings
-        if p is not None and p.poll() is None:
+        if p is not None and p.poll() is None and p.stdin is not None:
             try:
                 p.stdin.write(b"show\n")
                 p.stdin.flush()
@@ -233,7 +278,7 @@ class Tray:
                 pass
         clock = self.engine.snapshot().get("clock")
         base = clock.base if clock is not None else ""
-        key = (clock.name or self._typed_host() or clock.host) if clock is not None else ""
+        key = self._clock_key(clock) if clock is not None else ""
         try:
             p = subprocess.Popen(settings_app.command(base, key), stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE, **_no_window())
@@ -246,8 +291,12 @@ class Tray:
     def _typed_host(self) -> str:
         return str(self.engine.finder.store.load().get("manual_host") or "")
 
+    def _clock_key(self, clock) -> str:
+        """The keychain entry for the clock's web password (its name survives a new IP)."""
+        return clock.name or self._typed_host() or clock.host
+
     def _settings_cmds(self, p: subprocess.Popen) -> None:
-        for line in p.stdout:
+        for line in p.stdout or ():
             try:
                 msg = json.loads(line)
             except ValueError:
@@ -261,11 +310,6 @@ class Tray:
                     self.engine.finder.forget()
                 self.refresh()
 
-    def open_clock(self) -> None:
-        clock = self.engine.snapshot().get("clock")
-        if clock is not None:
-            webbrowser.open(clock.base + "/")
-
     def quit(self) -> None:
         self._stop.set()
         if self._settings is not None and self._settings.poll() is None:
@@ -276,6 +320,8 @@ class Tray:
     def run(self) -> None:
         def setup(icon) -> None:
             icon.visible = True
+            if sys.platform == "darwin":
+                self.on_main(self._install_popover)
             threading.Thread(target=self._loop, name="clawd-tray", daemon=True).start()
             self.refresh()
         self.icon.run(setup=setup)
