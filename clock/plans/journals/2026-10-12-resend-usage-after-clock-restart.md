@@ -1,7 +1,7 @@
 ---
 title: send usage again as soon as the clock restarts
 date: 2026-10-12
-summary: the boot animation is the "no data" splash, which stayed up until the next usage poll (up to 60 s). clawd-desktop now watches /api/heap uptime every 5 s and resends the cached usage payload plus the state at once. Verified against a fake clock (usage 4.1 s, state 4.4 s after it answers again, 0 extra API polls); not yet on the real clock (office WiFi blocks it)
+summary: the boot animation is the "no data" splash, which stayed up until the next usage poll (up to 60 s). clawd-desktop now watches /api/heap uptime every 5 s and resends the cached usage payload plus the state at once. Fake clock: usage 4.1 s after it answers again, 0 extra API polls. Real clock: restart detected 24 s after the reboot, but the office WiFi blocked the clock on the second try, so the ≤ 10 s target is not measured yet
 ---
 
 # Resend usage after a clock restart
@@ -36,9 +36,19 @@ summary: the boot animation is the "no data" splash, which stayed up until the n
   - `poll_active` was awaited 1 time in total.
 - PROTOCOL.md in both repos has a note on the 5 s `/api/heap` watch (clawd-home 9923069).
 
+## On the real clock (office WiFi, 10.97.44.122)
+- At 11:06 the office network let the clock through again. Rebuilt `Clawd.app` installed (build 1).
+- Reboot at 11:07:30:
+  - BootWatch logged `restarted (up 22 s)` at 11:07:54.
+  - The regular 60 s poll was due at the same moment, and its 5 s push timed out (11:08:04). Usage was confirmed ok at 11:08:23.
+  - `HttpSinks` logs only state changes, so the log cannot show whether the 15 s resend itself landed. Commit 7c377d1 adds "took its data again" / "did not take the data yet; retrying" lines.
+  - An agent was running, so the clock showed desk (`onDesk:true`). `splash:false` says nothing about usage then.
+- Second reboot at 11:11:26, engine run from source: the clock never came back on the network (ConnectTimeout, LAN scan found nothing, curl `000` for more than 3 min). This is the office-network block from the replug journal again, so there is no measurement.
+- Seen on the side, not changed: while the clock is unreachable, the publisher retries every tick and calls `poll_active` (cliproxy) each time, about every 5–11 s. This was already the behaviour before this work.
+
 ## Not verified
-- Behaviour on the real clock. It is on the office WiFi (10.97.44.122), where nothing on the LAN can reach it (see the replug journal).
-- An `/api/reboot` sent to the old 192.168.1.48 reached nothing.
+- The ≤ 10 s target on the real clock.
+- An `/api/reboot` sent to the old 192.168.1.48 reached nothing. The clock had moved to the office network.
 - Still to measure at home or on a hotspot:
   - Reboot the clock and watch `/api/heap` until `splash:false`. Target: ≤ 10 s after the clock's first HTTP reply.
   - Check that the slow HTTP after boot (8–10 s per request) stays under the 12 s probe and 15 s push timeouts.
