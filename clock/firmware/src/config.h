@@ -1,6 +1,6 @@
 // config.h — compile-time constants for the Clawd desk clock firmware
 //
-// Hardware: JUZIPi SmallTV SD Pro, ESP-12F (ESP8266) with a 1.54" 240x240 ST7789
+// Hardware: the JUZIPi 1.54" desk clock, ESP-12F (ESP8266) with a 1.54" 240x240 ST7789
 // IPS panel [board_esp8266.h]. The board headers for the ESP32 family
 // (board_esp32*.h) are kept so a port stays possible, but nothing builds them.
 // The board-specific pin map + panel quirks live in the board headers, selected
@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 // Firmware identity
 // ---------------------------------------------------------------------------
-#define FW_NAME     "smalltv-mod"   // renamed with the other identifiers
+#define FW_NAME     "clawd"
 #define FW_VERSION  "2.16.0"
 
 // /api/heap "variant": the desktop app matches on it to recognise this firmware.
@@ -26,11 +26,11 @@
 // Provides TFT_SCLK/MOSI/DC/RST/CS/BL, TFT_BGR, TFT_BL_DEFAULT_INVERTED,
 // HAS_LDR/LDR_PIN/ADC_MAX. Both panels are 1.54" 240x240 ST7789 IPS.
 // ---------------------------------------------------------------------------
-#if defined(SMALLTV_ESP32C2)
+#if defined(CLAWD_ESP32C2)
   #include "board_esp32c2.h"
-#elif defined(SMALLTV_ESP32_PRO)
+#elif defined(CLAWD_ESP32_PRO)
   #include "board_esp32_pro.h"
-#elif defined(SMALLTV_ESP32)
+#elif defined(CLAWD_ESP32)
   #include "board_esp32.h"
 #else
   #include "board_esp8266.h"
@@ -71,20 +71,20 @@
 #define MAX_AUTH_USER_LEN 32
 #define MAX_AUTH_PASS_LEN 64
 #define DEFAULT_AUTH_USER "admin"
-#define AUTH_REALM        "SmallTV"
+#define AUTH_REALM        "Clawd"
 
 // ---------------------------------------------------------------------------
 // Defaults (used on first boot / factory reset)
 // ---------------------------------------------------------------------------
-#define DEFAULT_AP_SSID      "SmallTV-Setup"
+#define DEFAULT_AP_SSID      "Clawd-Setup"
 #define DEFAULT_AP_PASS      ""              // empty => open AP
-#define DEFAULT_HOSTNAME     "smalltv"
+#define DEFAULT_HOSTNAME     "clawd"
 #define DEFAULT_POLL_SEC      120            // usage pull period (when a Usage URL is set)
 #define DEFAULT_BRIGHTNESS    90             // 0..100 %
 #define DEFAULT_HTTP_TIMEOUT  8000           // ms per request
 
 // --- Panel colour correction (device-wide) ---
-// Panels differ between (and within) the SmallTV variants: white balance drifts
+// Panels differ between (and within) the clock variants: white balance drifts
 // and some controllers have red and blue swapped. AUTO keeps the board header's
 // TFT_BGR default; RGB/BGR force the MADCTL colour-order bit either way.
 #define COLOR_ORDER_AUTO   0

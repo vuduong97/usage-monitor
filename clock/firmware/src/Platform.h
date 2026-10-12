@@ -2,14 +2,14 @@
 //
 // It pulls in the arch-specific SDK headers and exposes a small, uniform surface
 // (class aliases + inline shims) so the rest of the firmware stays chip-agnostic.
-// Target is chosen by a build-time macro: -D SMALLTV_ESP32C2 (ESP8684 knockoff),
-// -D SMALLTV_ESP32 (classic ESP32, NM-TV-154), or -D SMALLTV_ESP8266 (original
-// SmallTV, the default). Both ESP32 targets share the Arduino core 3.x branch.
+// Target is chosen by a build-time macro: -D CLAWD_ESP32C2 (ESP8684 knockoff),
+// -D CLAWD_ESP32 (classic ESP32, NM-TV-154), or -D CLAWD_ESP8266 (original
+// clock, the default). Both ESP32 targets share the Arduino core 3.x branch.
 #pragma once
 #include <Arduino.h>
 #include <time.h>
 
-#if defined(SMALLTV_ESP32C2) || defined(SMALLTV_ESP32)
+#if defined(CLAWD_ESP32C2) || defined(CLAWD_ESP32)
 // ================== ESP32 family (C2/ESP8684 + classic ESP32) ==================
 #include <WiFi.h>
 #include <WiFiClientSecure.h>

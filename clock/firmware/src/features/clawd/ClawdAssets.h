@@ -1,4 +1,4 @@
-// ClawdAssets.h — data types for the Clawdmeter assets ported to the SmallTV.
+// ClawdAssets.h — data types for the Clawd assets ported to the clock.
 //
 // Fonts live in flash (PROGMEM, clawd_fonts.h). On the ESP8266 a 16-bit or
 // 8-bit load straight from flash faults, so callers copy records out with

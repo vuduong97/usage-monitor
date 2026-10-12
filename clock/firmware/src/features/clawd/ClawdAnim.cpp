@@ -89,7 +89,7 @@ bool ClawdPlayer::tick(uint32_t now, bool& completed) {
 #define SCENE_LOOP_MS 6000
 #define ROTATE_MS 20000
 
-// Usage-rate groups (same as Clawdmeter): idle, normal, active, heavy.
+// Usage-rate groups (same as the original firmware): idle, normal, active, heavy.
 static const char* const GROUPS[4][4] = {
     {"magnifier", "walking", "pointing", "lurking"},
     {"crab walking", "waving", "trumpet", "basketball"},
@@ -178,7 +178,7 @@ void ClawdSplash::walkBegin(int target) {
   player_.inLoop = false;
 }
 
-// Stand -> walk to the right edge -> off-screen left -> back home (Clawdmeter's
+// Stand -> walk to the right edge -> off-screen left -> back home (the original firmware's
 // demo choreography).
 void ClawdSplash::walkChoreo(uint32_t now) {
   if (!player_.holding) return;
@@ -273,7 +273,7 @@ void ClawdSplash::tick() {
 #define MAS_CELL 2
 #define MAS_ACT_LOOP_MS 2500
 
-static const char* const MAS_ACTS[4][3] = {      // Clawdmeter's per-rate acts, minus
+static const char* const MAS_ACTS[4][3] = {      // the original firmware's per-rate acts, minus
     {"pointing", "waving", nullptr},             // the lurking walk-off trips
     {"waving", "pointing", nullptr},
     {"waving", "dancing", nullptr},

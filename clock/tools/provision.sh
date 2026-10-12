@@ -1,5 +1,5 @@
 #!/bin/sh
-# provision.sh: turn a stock JUZIPi SmallTV SD Pro into a clawd clock ready to gift.
+# provision.sh: turn a stock JUZIPi 1.54" desk clock into a clawd clock ready to gift.
 #
 #   tools/provision.sh <clock-ip> [--dry-run] [--yes]
 #
@@ -130,7 +130,6 @@ say "clawd $ver, clawd.pak screens: ${pak:-?}"
 cfgnow=$(get "$H/api/config") || die "cannot read /api/config (web login already set? use CLAWD_AUTH=user:pass)"
 host=$(printf '%s' "$cfgnow" | json_str hostname)
 case $host in
-  smalltv-*) id=${host#smalltv-} ;;
   clawd-*) id=${host#clawd-} ;;
   *) id=$(randpw 4) ;;          # custom name: no chip id to reuse
 esac

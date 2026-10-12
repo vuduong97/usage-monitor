@@ -45,14 +45,14 @@ bool usageFresh(uint32_t withinMs) {
 //   w  = 7d utilization %        wr = minutes until 7d reset
 //   st = rate-limit status       ok = false => explicit "no data"
 //
-// Clawdmeter daemon extensions (its BLE payload, same keys over HTTP):
+// Clawd desktop app extensions (its BLE payload, same keys over HTTP):
 //   acct = "ent" on Enterprise: s = spending %, tp = % of the billing period
 //          elapsed, rd = reset date ("Jul 1")
 //   t/tf = local wall-clock epoch + 12/24 h format (drives the title clock)
 //   m    = attention message (alert)    x = true: clear the alert
 //   ok   = false is the daemon's "no data" beat: accepted, the screen goes idle
 //          once the last good data ages out. The chime/beep keys (c, b) are
-//   ignored — the SmallTV has no speaker.
+//   ignored — the clock has no speaker.
 static void usageFilter(JsonDocument& f) {
   f["s"] = true; f["sr"] = true; f["w"] = true;
   f["wr"] = true; f["st"] = true; f["ok"] = true;
@@ -60,7 +60,7 @@ static void usageFilter(JsonDocument& f) {
   f["t"] = true; f["tf"] = true; f["m"] = true; f["x"] = true;
 }
 
-// Forward a payload to the Clawdmeter screens.
+// Forward a payload to the Clawd screens.
 static void forwardToClawd(JsonDocument& doc, bool ok) {
   ClawdData c;
   memset(&c, 0, sizeof(c));
@@ -172,7 +172,7 @@ static bool fetchUsage(const Settings& s) {
 
   std::unique_ptr<NetClient> client;
   if (https) {
-    return false;   // no TLS in the Clawdmeter build: use http:// or push mode
+    return false;   // no TLS in the Clawd build: use http:// or push mode
     if (ESP.getFreeHeap() < 20000) return false;   // too little heap for TLS (incl. the 9 KB thunk); skip, don't crash
     client.reset(platformMakeSecureClient(2048));   // LAN / self-hosted endpoint
   } else {

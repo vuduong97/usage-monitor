@@ -1,4 +1,4 @@
-// ClawdDraw.h — the drawing layer for the Clawdmeter screens on the SmallTV.
+// ClawdDraw.h — the drawing layer for the Clawd screens on the clock.
 //
 // The ESP8266 has no room for a 240x240 framebuffer (115 KB), and filling a
 // background and then printing over it flickers. Instead every widget is
@@ -18,7 +18,7 @@
 #define CLAWD_BAND_ROWS 4          // rows composed per push (1,920 B buffer)
 #define CLAWD_SCRATCH_PX (CLAWD_W * CLAWD_BAND_ROWS)
 
-// RGB565 design tokens — Clawdmeter's theme.h, converted.
+// RGB565 design tokens — the original firmware's theme.h, converted.
 #define CLAWD_BG      0x0000   // 0x000000
 #define CLAWD_PANEL   0x18E3   // 0x1f1f1e card fill
 #define CLAWD_TEXT    0xFFDE   // 0xfaf9f5

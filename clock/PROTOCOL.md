@@ -1,6 +1,6 @@
 # Clawd clock protocol, v1
 
-How a computer talks to a Clawd desk clock (ESP8266 "SmallTV" running the
+How a computer talks to a Clawd desk clock (ESP8266 clock running the
 clawd firmware, 2.x) on the local network. Plain HTTP on port 80, JSON bodies.
 This file is kept identical in the desktop app repo and the firmware repo.
 
@@ -10,8 +10,8 @@ The clock advertises itself over mDNS (Bonjour):
 
 | Field | Value |
 | --- | --- |
-| Service type | `_clawdmeter._tcp.local.`, port 80 |
-| TXT `id` | the clock's hostname, e.g. `clawd-3fa2` (firmware default `smalltv-<chip id>`) |
+| Service type | `_clawd._tcp.local.`, port 80 |
+| TXT `id` | the clock's hostname, e.g. `clawd-3fa2` (firmware default `clawd-<chip id>`) |
 | TXT `ver` | firmware version, e.g. `2.16.0` |
 | TXT `path` | `/api/usage` |
 
@@ -104,7 +104,7 @@ provisioning script and the clock's own web page, never by the desktop app.
 ## Setup mode
 
 With no saved WiFi (or none in reach) the clock opens its own WiFi network
-(`apSsid`: firmware default `SmallTV-Setup`, open; provisioned clocks use
+(`apSsid`: firmware default `Clawd-Setup`, open; provisioned clocks use
 `Clawd-XXXX`) and shows the network name, password and
 `http://192.168.4.1` on screen. Joining it opens a captive portal where the
 owner picks the home WiFi. The clock then reboots onto that network.

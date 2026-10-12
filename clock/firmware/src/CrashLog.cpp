@@ -1,6 +1,6 @@
 #include "CrashLog.h"
 
-#if defined(SMALLTV_ESP8266)
+#if defined(CLAWD_ESP8266)
 #include <user_interface.h>
 
 namespace {

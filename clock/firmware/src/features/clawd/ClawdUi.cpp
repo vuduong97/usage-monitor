@@ -1,6 +1,6 @@
-// ClawdUi.cpp — Clawdmeter's compact (240 px) usage screen + the splash, drawn
-// with ClawdDraw. Layout numbers are Clawdmeter's compute_layout() small
-// breakpoint, resolved to absolute pixels (see ui.cpp in the Clawdmeter repo).
+// ClawdUi.cpp — the original firmware's compact (240 px) usage screen + the splash, drawn
+// with ClawdDraw. Layout numbers are the original firmware's compute_layout() small
+// breakpoint, resolved to absolute pixels (see ui.cpp in the original firmware repo).
 #include "ClawdUi.h"
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
@@ -120,7 +120,7 @@ static char      g_addrDrawn[24] = "";
 static bool      g_dirtyPanels = true;
 static bool      g_dirtyTitle = true;
 
-// status line animation (Clawdmeter's whimsical spinner)
+// status line animation (the original firmware's whimsical spinner)
 static uint32_t g_spinLast = 0, g_msgStart = 0;
 static uint8_t  g_spinIdx = 0, g_spinPhase = 0, g_msgIdx = 0;
 static char     g_statusDrawn[96] = "";

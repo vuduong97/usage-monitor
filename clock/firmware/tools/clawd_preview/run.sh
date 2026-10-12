@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build the desktop preview of the Clawdmeter screens and write PNG screenshots.
+# Build the desktop preview of the Clawd screens and write PNG screenshots.
 #   tools/clawd_preview/run.sh [out_dir]      (needs a C++17 compiler + ImageMagick)
 set -eu
 root=$(cd "$(dirname "$0")/../.." && pwd)

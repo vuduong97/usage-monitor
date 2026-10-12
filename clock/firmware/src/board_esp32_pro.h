@@ -1,8 +1,8 @@
-// board_esp32_pro.h — pin map + panel quirks for the GeekMagic SmallTV Pro:
+// board_esp32_pro.h — pin map + panel quirks for the GeekMagic "Pro" clock:
 // classic ESP32 (esp32dev), 8 MB flash, 1.54" 240x240 ST7789V IPS over SPI
 // (VSPI-default pins), same panel family as the other boards.
 //
-// Pin map taken from the ESPHome SmallTV Pro config and verified on hardware
+// Pin map taken from the ESPHome config for the Pro and verified on hardware
 // by the GeekTV-Pro alternative firmware (its stock firmware drives this panel
 // at 60 MHz SPI, mode 3). Note the NM-TV-154 pins in board_esp32.h
 // (GPIO 13/14/15/19/21) are a DIFFERENT board and do not apply here.
@@ -18,7 +18,7 @@
 #define TFT_CS     -1   // CS tied to GND on the PCB -> GFX_NOT_DEFINED
 #define TFT_BL     25   // backlight (PWM, active-low)
 
-// Panel colour order: RGB, like the other SmallTV-family panels.
+// Panel colour order: RGB, like the other clock-family panels.
 #define TFT_BGR     0
 
 // Backlight is active-low (inverted PWM per the ESPHome config). Runtime-overridable.

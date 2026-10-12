@@ -77,7 +77,7 @@ void appInvalidate() {
 }
 
 static void bootProgress(const char* msg) {
-  gfxBoot("SmallTV", msg);
+  gfxBoot("Clawd", msg);
 }
 
 void setup() {
@@ -115,7 +115,7 @@ void setup() {
 
   Serial.println("[boot] display");
   gfxBegin(g_settings);
-  gfxBoot(g_safeMode ? "Crashed" : "SmallTV", FW_VERSION);
+  gfxBoot(g_safeMode ? "Crashed" : "Clawd", FW_VERSION);
 
   Serial.println("[boot] net");
   netBegin(g_settings, bootProgress);

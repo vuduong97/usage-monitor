@@ -1,4 +1,4 @@
-// Desktop preview of the Clawdmeter screens: runs the exact firmware renderer
+// Desktop preview of the Clawd screens: runs the exact firmware renderer
 // (src/features/clawd) against an in-memory 240x240 panel with a fake clock
 // and writes PPM screenshots. Build + run: tools/clawd_preview/run.sh
 #include <stdio.h>

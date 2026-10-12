@@ -78,9 +78,9 @@ static void handleGetConfig() {
     anims.add(String(name));
   }
   // Which chip this build runs on (the UI warns about per-chip limitations).
-#if defined(SMALLTV_ESP32C2)
+#if defined(CLAWD_ESP32C2)
   root["chip"] = "esp32c2";
-#elif defined(SMALLTV_ESP32)
+#elif defined(CLAWD_ESP32)
   root["chip"] = "esp32";
 #else
   root["chip"] = "esp8266";
@@ -200,7 +200,7 @@ static void handleExport() {
   if (!requireAuth()) return;
   File f = LittleFS.open("/config.json", "r");
   if (!f) { server.send(404, "text/plain", "no config saved yet"); return; }
-  server.sendHeader("Content-Disposition", "attachment; filename=smalltv-config.json");
+  server.sendHeader("Content-Disposition", "attachment; filename=clawd-config.json");
   server.streamFile(f, "application/json");
   f.close();
 }
@@ -262,7 +262,7 @@ static void handleHeap() {
   o["maxblk"] = platformMaxFreeBlock();
   o["minHeap"] = g_minHeap;
   o["minMaxblk"] = g_minMaxBlk;
-#if defined(SMALLTV_ESP8266)
+#if defined(CLAWD_ESP8266)
   o["frag"] = ESP.getHeapFragmentation();
   o["contFree"] = ESP.getFreeContStack();   // loop() stack never used yet (low-water mark)
 #endif
@@ -291,7 +291,7 @@ static void handleHeap() {
     d["drawMax"] = ds.drawMax;
     d["lateP95"] = ds.lateP95;
   }
-#if defined(SMALLTV_ESP8266)
+#if defined(CLAWD_ESP8266)
   {
     FSInfo fi;
     if (LittleFS.info(fi)) { o["fsTotal"] = fi.totalBytes; o["fsUsed"] = fi.usedBytes; }
@@ -380,7 +380,7 @@ static void handleDeskPakDone() {
   sendJson(doc, ok ? 200 : 500);
 }
 
-#if defined(SMALLTV_ESP8266)
+#if defined(CLAWD_ESP8266)
 // Filesystem maintenance for the shared LittleFS (the stock firmware's assets +
 // ours), driven by clawd-home tools/stock_fs.sh: back the stock files up to the
 // Mac, free their space, and put them back before a return to stock. All of it
@@ -520,7 +520,7 @@ static void handleUpdateUpload() {
     return;
   }
   if (up.status == UPLOAD_FILE_START) {
-#if defined(SMALLTV_ESP8266)
+#if defined(CLAWD_ESP8266)
     WiFiUDP::stopAll();   // free UDP sockets so the OTA has max contiguous flash/heap
 #endif
     // The whole free slot: Updater::begin already refuses an image that would
@@ -566,7 +566,7 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/heap", HTTP_GET, handleHeap);          // unauthenticated heap watch
   server.on("/api/clawdpak", HTTP_POST, handleClawdPakDone, handleClawdPakUpload);
   server.on("/api/deskpak", HTTP_POST, handleDeskPakDone, handleDeskPakUpload);
-#if defined(SMALLTV_ESP8266)
+#if defined(CLAWD_ESP8266)
   server.on("/api/fs/list", HTTP_GET, handleFsList);
   server.on("/api/fs/get", HTTP_GET, handleFsGet);
   server.on("/api/fs/raw", HTTP_GET, handleFsRaw);

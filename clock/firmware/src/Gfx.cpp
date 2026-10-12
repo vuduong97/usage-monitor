@@ -3,7 +3,7 @@
 #include <Arduino_GFX_Library.h>
 #include <SPI.h>
 
-// The SmallTV's ST7789 has its CS line tied to GND and only latches SPI in
+// The clock's ST7789 has its CS line tied to GND and only latches SPI in
 // **mode 3**. Arduino_GFX's stock Arduino_ST7789 forces SPI_MODE2 on the ESP8266
 // (wrong clock edge for this panel), so the controller never initializes and the
 // screen stays black even with the backlight on. Subclass begin() to force mode 3
@@ -16,7 +16,7 @@
 // swapped in the controller.
 static bool g_bgr = (TFT_BGR != 0);
 
-class Arduino_ST7789_SmallTV : public Arduino_ST7789 {
+class Arduino_ST7789_Clawd : public Arduino_ST7789 {
  public:
   using Arduino_ST7789::Arduino_ST7789;   // inherit constructors
   bool begin(int32_t speed = GFX_NOT_DEFINED) override {
@@ -28,7 +28,7 @@ class Arduino_ST7789_SmallTV : public Arduino_ST7789 {
   // BGR bit (0x08) tracking g_bgr on every rotation change. The MX/MY/MV values
   // below are the base class's own mapping (ST7789_MADCTL_RGB is 0x00), so with
   // g_bgr false this writes exactly what the library would have written. Only
-  // rotations 0-3 are used by the SmallTV (setRotation(r & 3)).
+  // rotations 0-3 are used by the clock (setRotation(r & 3)).
   void setRotation(uint8_t r) override {
     Arduino_TFT::setRotation(r);           // updates _rotation + width/height
     uint8_t madctl;
@@ -79,7 +79,7 @@ void gfxBegin(const Settings& s) {
   platformAnalogWriteInit(TFT_BL);
   gfxSetBrightness(s.brightness, s.backlightInverted);
 
-#if defined(SMALLTV_ESP32C2) || defined(SMALLTV_ESP32)
+#if defined(CLAWD_ESP32C2) || defined(CLAWD_ESP32)
   // Hardware SPI via the Arduino SPI library (IDF spi_master driver) on explicit
   // GPIOs. The register-level Arduino_ESP32SPI hangs in begin() on the C2, and
   // Arduino_SWSPI's fast-IO path doesn't cover the C2 — Arduino_HWSPI uses the
@@ -93,8 +93,8 @@ void gfxBegin(const Settings& s) {
   // IPS=true so the panel colors are not inverted. The ST7789(V) has 240x320
   // RAM against 240x240 glass, so the rotation 2/3 row offset (TFT_ROW_OFFSET2,
   // 80) matters: without it a 180°-rotated image slides into the dead band.
-  // Use the SmallTV variant so the SPI bus comes up in mode 3 (see class above).
-  gfx = new Arduino_ST7789_SmallTV(bus, TFT_RST, 0 /*rotation*/, true /*IPS*/,
+  // Use the Clawd variant so the SPI bus comes up in mode 3 (see class above).
+  gfx = new Arduino_ST7789_Clawd(bus, TFT_RST, 0 /*rotation*/, true /*IPS*/,
                                    TFT_WIDTH, TFT_HEIGHT,
                                    TFT_COL_OFFSET1, TFT_ROW_OFFSET1,
                                    TFT_COL_OFFSET2, TFT_ROW_OFFSET2);

@@ -166,7 +166,7 @@ void clawdRenderCells(ClawdCellFn cellAt, void* ctx, int gx0, int gy0, int gw, i
                       uint8_t* prev, bool force) {
   if (!g_surface) return;
   const int bandW = gw * cell;
-  if (bandW * cell > CLAWD_SCRATCH_PX) return;   // never happens for the SmallTV layouts
+  if (bandW * cell > CLAWD_SCRATCH_PX) return;   // never happens for the Clawd layouts
   uint8_t rowCells[64];
   for (int gy = 0; gy < gh; gy++) {
     bool changed = force || !prev;

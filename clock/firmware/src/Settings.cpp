@@ -153,7 +153,7 @@ void Settings::setDefaults() {
   }
   apSsid  = DEFAULT_AP_SSID;
   apPass  = DEFAULT_AP_PASS;
-  // Unique per device so several SmallTVs on one network don't collide on
+  // Unique per device so several clocks on one network don't collide on
   // mDNS out of the box. A hostname saved in config.json overrides this.
   hostname = String(DEFAULT_HOSTNAME) + "-" + String(platformChipId() & 0xFFFF, HEX);
 

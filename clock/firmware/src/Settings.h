@@ -20,7 +20,7 @@ struct WifiCred {
 struct UsageSettings {
   String   usageUrl;      // daemon HTTP endpoint, e.g. http://192.168.1.10:8787/
   uint16_t pollSec;       // refresh period
-  uint8_t  screen;        // Clawdmeter screen: 0 auto, 1 usage, 2 splash (CLAWD_SCREEN_*)
+  uint8_t  screen;        // Clawd screen: 0 auto, 1 usage, 2 splash (CLAWD_SCREEN_*)
   int8_t   anim;          // splash animation: -1 = by usage rate, else index
   uint8_t  layout;        // usage screen layout: CLAWD_LAYOUT_* (0 classic, 1 pace)
 
@@ -59,7 +59,7 @@ struct AuthSettings {
 };
 
 // ---- Panel colour slice (device-wide) --------------------------------------
-// Same firmware, different panels: the SmallTV variants and even units of one
+// Same firmware, different panels: the clock variants and even units of one
 // variant render the same RGB565 value differently, and a few have red and blue
 // swapped in the controller. These settings correct that per device.
 struct DisplaySettings {

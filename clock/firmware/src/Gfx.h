@@ -10,7 +10,7 @@
 class Arduino_GFX;   // fwd-decl: only the drawing .cpp files pull in the full lib
 
 // ---- Shared colors (RGB565) ----------------------------------------------
-// The SmallTV variants ship visibly different panels: some run warm, some cold,
+// The clock variants ship visibly different panels: some run warm, some cold,
 // and a few have red and blue swapped in the controller. gfxTint() applies the
 // per-channel gain set in the Display tab to every colour on its way to the
 // panel, so a unit can be matched to the others without touching each renderer.

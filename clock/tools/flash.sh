@@ -12,7 +12,7 @@ set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 FW="$ROOT/firmware/.pio/build/clawd/firmware.bin"
-MAX=524288   # clawd -> clawd OTA budget (firmware/CLAWDMETER.md)
+MAX=524288   # clawd -> clawd OTA budget (docs/FIRMWARE.md)
 
 build=1
 clock=

@@ -1,6 +1,6 @@
-// UsageMode.h — Claude usage, Clawdmeter edition.
+// UsageMode.h — Claude usage, Clawd edition.
 //
-// The screens are a port of Clawdmeter's compact (240 px) UI: the usage card
+// The screens are a port of the original firmware's compact (240 px) UI: the usage card
 // pair (or Enterprise spending/period), the daemon-fed clock, the whimsical
 // status line, attention alerts and the animated corner Clawd, plus the
 // full-screen official Clawd animations. All of it lives in features/clawd;

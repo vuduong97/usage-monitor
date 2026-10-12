@@ -1,5 +1,5 @@
-// ClawdUi.h — the Clawdmeter screens on the SmallTV (240x240, no touch, no
-// buttons): the usage screen of Clawdmeter's small layout and the full-screen
+// ClawdUi.h — the Clawd screens on the clock (240x240, no touch, no
+// buttons): the usage screen of the original firmware's small layout and the full-screen
 // Clawd splash. Which one shows is chosen in the web UI (auto / usage /
 // splash); an attention alert always brings the usage screen forward.
 //

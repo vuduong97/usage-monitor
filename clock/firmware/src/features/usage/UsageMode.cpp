@@ -57,7 +57,7 @@ void UsageMode::invalidate(const Settings& s) {
 }
 
 void UsageMode::service(const Settings& s) {
-  // Pull mode: poll the daemon when a Usage URL is set. Push mode (Clawdmeter's
+  // Pull mode: poll the usage server when a Usage URL is set. Push mode (the original firmware's
   // daemon with http_targets): leave it blank and the daemon POSTs /api/usage.
   if (s.usage.usageUrl.length() >= 8) usageService(s);
   ensureClawd();

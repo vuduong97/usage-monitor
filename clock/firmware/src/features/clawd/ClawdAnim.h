@@ -1,6 +1,6 @@
-// ClawdAnim.h — playback of the official Clawd animations on the SmallTV.
+// ClawdAnim.h — playback of the official Clawd animations on the clock.
 //
-// A port of Clawdmeter's splash engine (splash.cpp): every animation plays
+// A port of the original firmware's splash engine (splash.cpp): every animation plays
 // intro -> loop -> outro, so switches always pass through the shared idle
 // pose; the two walk gaits translate across the stage locked to their feet;
 // usage-rate groups pick what plays. Rendering goes straight to the panel in

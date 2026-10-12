@@ -1,5 +1,5 @@
 // c++ -std=c++11 -Wall -Wextra -Werror -g -Isrc -I<ArduinoJson include dir>
-// tests/test_storage.cpp -o /tmp/smalltv-storage-tests && /tmp/smalltv-storage-tests
+// tests/test_storage.cpp -o /tmp/clawd-storage-tests && /tmp/clawd-storage-tests
 #include "AtomicJson.h"
 #include "SettingsTransaction.h"
 #include <cassert>
@@ -51,7 +51,7 @@ struct FakeFS {
 int main() {
   JsonDocument config;
   config["wifi"] = "working-network";
-  config["hostname"] = "smalltv-1234";
+  config["hostname"] = "clawd-1234";
   FakeFS fs;
   fs.files["/config.json"] = "old-settings";
   // A budget too small to hold the full write: saveJsonAtomically must fail
@@ -71,7 +71,7 @@ int main() {
   assert(saveJsonAtomically(fs, config, "/config.json", "/config.json.tmp"));
   JsonDocument saved;
   assert(!deserializeJson(saved, fs.files["/config.json"]));
-  assert(saved["hostname"] == "smalltv-1234");
+  assert(saved["hostname"] == "clawd-1234");
   assert(!fs.files.count("/config.json.tmp"));
 
   struct State {

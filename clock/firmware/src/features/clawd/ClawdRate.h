@@ -1,5 +1,5 @@
 // ClawdRate.h — short-term usage rate (%/min of the 5-hour session), ported
-// from Clawdmeter's usage_rate.cpp. Picks which group of animations plays.
+// from the original firmware's usage_rate.cpp. Picks which group of animations plays.
 #pragma once
 #include <stdint.h>
 
