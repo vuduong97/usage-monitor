@@ -1,11 +1,9 @@
-// smalltv-mod — custom firmware for the GeekMagic SmallTV (ESP-12F / ESP8266)
+// Clawd desk clock firmware (ESP-12F / ESP8266).
 //
-// Three features, each a self-contained DisplayMode (see Mode.h), picked in the
-// web UI and dispatched from the registry below:
-//   - Ticker (features/ticker):  stock/crypto price, % change, sparkline.
-//   - Usage  (features/usage):   Claude 5h/7d usage bars + animated mascot.
-//   - Radar  (features/radar):   live ADS-B plane radar (compiled in when WITH_RADAR).
-// Shared plumbing (WiFi, web UI, OTA, display core, settings) lives at src root.
+// One feature, a self-contained DisplayMode (see Mode.h): Usage plus the Clawd
+// animations (features/usage, features/clawd), fed by the desktop app's HTTP
+// push. Shared plumbing (WiFi, web UI, OTA, display core, settings) lives at
+// src root.
 //
 // License: WTFPL
 #include <Arduino.h>
@@ -18,63 +16,14 @@
 #include "OtaUpdate.h"
 #include "Mode.h"
 #include "Clock.h"
-#include "WgClient.h"
 #include "CrashLog.h"
-
 #include "UsageMode.h"
 #include "ClawdUi.h"
 
-// ---- mode registry --------------------------------------------------------
-// The compiled-in features, in display order. main.cpp holds no per-feature
-// state of its own — each mode owns its fetch/render/dirty tracking.
-static DisplayMode* kModes[] = {
-  &g_usageMode,
-};
-static const size_t kModeCount = sizeof(kModes) / sizeof(kModes[0]);
-
-// ---- carousel -------------------------------------------------------------
-// MODE_CAROUSEL rotates through the ticked features. Switches call wake() on
-// the incoming mode: repaint from cached data, no refetch.
-static size_t   g_carIdx = 0;
-static uint32_t g_carSwitch = 0;
-
-static bool carouselHas(const Settings& s, const DisplayMode* m) {
-  switch (m->modeConst()) {
-    case MODE_STOCKS: return s.carouselTicker;
-    case MODE_USAGE:  return s.carouselUsage;
-    case MODE_RADAR:  return s.carouselRadar;
-    case MODE_THEME:  return false; // explicitly selected, not in the existing carousel
-    default:          return true;
-  }
-}
-
-// Advance g_carIdx to the next ticked mode (stays put if none other is ticked).
-static void carouselNext(const Settings& s) {
-  for (size_t hop = 1; hop <= kModeCount; hop++) {
-    size_t cand = (g_carIdx + hop) % kModeCount;
-    if (!carouselHas(s, kModes[cand])) continue;
-    if (cand != g_carIdx) {
-      g_carIdx = cand;
-      kModes[cand]->wake(s);
-    }
-    return;
-  }
-}
-
-static DisplayMode* activeMode(const Settings& s) {
-  if (s.mode == MODE_CAROUSEL && kModeCount > 0) {
-    if (g_carSwitch == 0) g_carSwitch = millis();
-    if (!carouselHas(s, kModes[g_carIdx])) carouselNext(s);   // settings changed
-    if (millis() - g_carSwitch >= (uint32_t)s.carouselSec * 1000UL) {
-      g_carSwitch = millis();
-      carouselNext(s);
-    }
-    return kModes[g_carIdx];
-  }
-  for (size_t i = 0; i < kModeCount; i++)
-    if (kModes[i]->modeConst() == s.mode) return kModes[i];
-  return kModeCount ? kModes[0] : nullptr;   // fall back to the first compiled mode
-}
+// ---- mode -------------------------------------------------------------------
+// The one compiled-in feature owns its fetch/render/dirty tracking; main.cpp
+// holds no per-feature state of its own.
+static DisplayMode* const kMode = &g_usageMode;
 
 static Settings g_settings;
 static String   g_resetReason;        // why the chip last reset (diagnostics)
@@ -125,7 +74,7 @@ const char* appResetReason() { return g_resetReason.c_str(); }
 // Called by the web portal after settings are applied: re-init every mode and
 // force a fresh repaint so a mode/URL/symbol change takes effect immediately.
 void appInvalidate() {
-  for (size_t i = 0; i < kModeCount; i++) kModes[i]->invalidate(g_settings);
+  kMode->invalidate(g_settings);
 }
 
 static void bootProgress(const char* msg) {
@@ -171,20 +120,11 @@ void setup() {
 
   Serial.println("[boot] net");
   netBegin(g_settings, bootProgress);
-  // Arm SNTP now that WiFi (STA) is up — but only if night mode is enabled, so a
-  // ticker-only device doesn't pay the SNTP heap cost (which can starve the cash.ch
-  // TLS handshake on the ESP8266). clockReapply arms it iff needed. Skipped after a
+  // Arm SNTP now that WiFi (STA) is up, but only if night mode is enabled (the
+  // SNTP client costs heap). clockReapply arms it iff needed. Skipped after a
   // crash so a fault in here can't boot-loop before the web server starts (the
   // device then comes up in safe mode, OTA-recoverable, instead of needing UART).
-  // ...unless a WireGuard tunnel is configured, which needs the clock and only
-  // exists on an ESP32 where the heap argument for the skip does not apply.
-  if (!g_safeMode || wgNeedsClock(g_settings)) clockReapply(g_settings);
-
-  // Optional WireGuard tunnel (ESP32 targets). Arms the state machine only;
-  // the bring-up itself runs from loop(), so nothing here can delay the web
-  // server. A crash last boot feeds the three-strikes hold that keeps a bad
-  // tunnel config from locking the device out of its own web UI.
-  wgBegin(g_settings, g_safeMode);
+  if (!g_safeMode) clockReapply(g_settings);
 
   // A GitHub update queued from the web UI runs now, before the features claim
   // the heap (the download needs a 16 KB TLS buffer that only fits at boot).
@@ -200,9 +140,8 @@ void setup() {
   Serial.println("[boot] web");
   webPortalBegin(g_settings);
 
-
   Serial.println("[boot] modes");
-  for (size_t i = 0; i < kModeCount; i++) kModes[i]->begin(g_settings);
+  kMode->begin(g_settings);
   Serial.println("[boot] done");
 
   if (netMode() == NET_AP) {
@@ -248,16 +187,10 @@ void loop() {
     ESP.restart();
   }
 
-  // Before the safe-mode return on purpose: if the crash had nothing to do with
-  // the tunnel, remote access survives it, and if it did, the three-strikes hold
-  // stops the retries by itself.
-  wgService(g_settings);
-
   if (g_safeMode) {
     delay(5);
     return;  // crashed last boot: web UI stays up for OTA recovery, no rendering
   }
-
 
   if (netMode() == NET_AP) {
     delay(5);
@@ -271,17 +204,7 @@ void loop() {
   clockService(g_settings);
   appApplyBrightness();
 
-  // On expiry the carousel dwell is credited back the time it was hidden, so it
-  // resumes on the same feature with the same remaining slice. heldMs() spans
-  // the whole run rather than the last request in it, so a queue that chained
-  // four overlays credits back all four.
-  const bool restore = false;
-
-  DisplayMode* m = activeMode(g_settings);
-  if (m) {
-    if (restore) m->wake(g_settings);
-    m->service(g_settings);
-  }
+  kMode->service(g_settings);
 
   delay(5);
 }

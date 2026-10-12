@@ -6,14 +6,12 @@
 #include "Net.h"
 #include "Gfx.h"
 #include "OtaUpdate.h"
-#include "StockClient.h"
 #include "UsageClient.h"
 #include "ClawdAnim.h"
 #include "ClawdPack.h"
 #include "DeskPack.h"
 #include "ClawdUi.h"
 #include "Clock.h"
-#include "WgClient.h"
 #include "SettingsTransaction.h"
 #include "CrashLog.h"
 
@@ -128,10 +126,7 @@ static void handleStatus() {
   o["night"]     = clockNightActive();   // dimming now
   o["nightHeld"] = clockNightHeld();      // in the window but waiting for a fresh NTP sync
   o["clockFresh"] = clockTrusted();       // last NTP sync within the trust window
-  wgStatusJson(o["wg"].to<JsonObject>()); // tunnel state (compiledIn=false where it isn't built)
-
-
-
+  o["wg"]["compiledIn"] = false;   // no WireGuard in this firmware (the web UI still reads the key)
   sendJson(doc);
 }
 
@@ -151,21 +146,6 @@ static String netFingerprint(const Settings& s) {
   return f;
 }
 
-// Everything the tunnel is built from. A change here tears it down and brings
-// it back up with the new settings; an unchanged save leaves a working tunnel
-// alone.
-static String wgFingerprint(const Settings& s) {
-  String f(s.wg.enabled ? '1' : '0');
-  f += s.wg.privateKey;    f += '\x01';
-  f += s.wg.peerPublicKey; f += '\x01';
-  f += s.wg.endpointHost;  f += '\x01';
-  f += String(s.wg.endpointPort); f += '\x01';
-  f += s.wg.address;       f += '\x01';
-  f += s.wg.allowedIps;    f += '\x01';
-  f += String(s.wg.keepalive);
-  return f;
-}
-
 static void handlePostConfig() {
   if (!requireAuth()) return;
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
@@ -177,7 +157,6 @@ static void handlePostConfig() {
   }
 
   String oldNet = netFingerprint(*S);
-  String oldWg = wgFingerprint(*S);
 
   if (!applyAndSaveSettings(*S,
         [&](Settings& settings) { settingsApplyJson(settings, doc.as<JsonObjectConst>()); },
@@ -192,20 +171,12 @@ static void handlePostConfig() {
   gfxApplyColors(*S);       // rotation, panel colour order/inversion, channel gain
   appInvalidate();          // re-init every mode + repaint (covers mode/URL/symbol changes)
 
-  // Rebuild the tunnel when its settings changed. A save that changes nothing
-  // still rebuilds while the tunnel is held after repeated crashes: that
-  // re-save is the deliberate "I fixed it, try again".
-  bool wgChanged = (wgFingerprint(*S) != oldWg) || wgHeld();
   bool wifiChanged = netFingerprint(*S) != oldNet;
 
   JsonDocument res;
   res["ok"] = true;
   res["reboot"] = wifiChanged;
   sendJson(res);
-
-  // After the response, not before: a browser reaching the device *through* the
-  // tunnel would otherwise lose the answer to the very save that rebuilt it.
-  if (wgChanged) wgReapply(*S);
 
   if (wifiChanged) scheduleReboot(800);
 }
