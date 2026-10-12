@@ -19,7 +19,7 @@
 // Bumped by hand whenever a build adds something the desktop app gates on
 // (usage layouts, endpoints). The app only pushes its bundled image to a clock
 // with a lower number, so it never downgrades one. 0 = before this field.
-#define CLAWD_FW_SEQ 1
+#define CLAWD_FW_SEQ 2
 
 // ---------------------------------------------------------------------------
 // Display wiring + panel quirks — board-specific, pulled from the right header.

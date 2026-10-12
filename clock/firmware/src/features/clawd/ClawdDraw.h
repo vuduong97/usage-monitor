@@ -54,6 +54,18 @@ struct ClawdShape {                // a filled rounded rectangle
   int16_t  clipRight = 0;          // if > 0: nothing at or right of this x
 };
 
+// An anti-aliased arc stroke with round caps, or a filled disc (r == 0, diameter
+// lw). Angles are degrees clockwise from 12 o'clock. sweepDeg >= 360 is a full
+// ring, <= 0 draws nothing. Drawn after the shapes, in list order, so a gauge sits
+// on its card and a marker dot on its ring.
+struct ClawdArc {
+  int16_t  cx, cy;                 // centre
+  int16_t  r;                      // radius to the middle of the stroke
+  uint8_t  lw;                     // stroke width
+  int16_t  startDeg, sweepDeg;
+  uint16_t color;
+};
+
 struct ClawdText {                 // one run of text, pen at (x, y = line top)
   const ClawdFont* font;
   const char*      s;              // UTF-8
@@ -67,6 +79,15 @@ struct ClawdText {                 // one run of text, pen at (x, y = line top)
 void clawdRender(int x, int y, int w, int h, uint16_t bg,
                  const ClawdShape* shapes, int shapeCount,
                  const ClawdText* texts, int textCount);
+
+// clawdRender plus arcs (layer order: background, shapes, arcs, text).
+void clawdRenderArcs(int x, int y, int w, int h, uint16_t bg,
+                     const ClawdShape* shapes, int shapeCount,
+                     const ClawdArc* arcs, int arcCount,
+                     const ClawdText* texts, int textCount);
+
+float clawdSin(int deg);                 // whole degrees, table based (no libm trig)
+float clawdCos(int deg);
 
 int  clawdTextWidth(const ClawdFont& f, const char* s);   // px, kerning included
 

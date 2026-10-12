@@ -21,7 +21,7 @@ so a port stays possible, but nothing compiles them.
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.
   - On the Auto screen the splash means no fresh data, so it captions the clock's IP in a 24 px band at the bottom: the way to reach a clock the desktop app cannot find. Every animation ends by grid row 47 of 60, so the band never covers one. A splash picked on purpose (Screen: Clawd) stays full height.
 
-- **Usage layouts** (`usage.layout`): 0 classic (above); 1 pace: two taller cards with a pace pill (Under/On/Over pace, Just reset), a white time marker on each bar and a forecast line ("Out at ~14:41", "Lasts until reset"); the status line shows only an alert. Enterprise accounts always draw classic. A value this build cannot draw is stored as sent and draws classic, so a later image can pick it up.
+- **Usage layouts** (`usage.layout`): 0 classic (above); 1 pace: two taller cards with a pace pill (Under/On/Over pace, Just reset), a white time marker on each bar and a forecast line ("Out at ~14:41", "Lasts until reset"); 2 hero: the 5-hour window as one big Styrene 48 number with the pace pill, a marker bar and the forecast, weekly as a strip underneath; 3 rings: 5-hour on the outer ring, weekly inside, a white dot on each ring where the window's time has got to, the clock and both numbers in the middle (the corner Clawd moves to the centre); 4 gauges: two 270-degree gauges side by side, spinner line kept; 5 pixel: 20-block bars (5% each), a mono clock, and Clawd strolling along a dotted floor, faster at a higher usage rate. Layouts 1, 2, 3 and 5 show only an alert on the status line. Enterprise accounts always draw classic. A value this build cannot draw is stored as sent and draws classic, so a later image can pick it up. The arc layouts (3, 4) use `ClawdArc` in ClawdDraw: whole-degree sin/cos from a 91-entry table, no libm trig. A payload that changes none of what layouts 2-5 show repaints nothing.
 
 The web UI's Clawd tab has two settings:
 - **Screen:** Auto (usage while data is live, splash otherwise), Usage, or Clawd.
@@ -124,7 +124,7 @@ The Clawd desktop app finds the clock over mDNS (`_clawd._tcp`, TXT `id`, `ver`,
 - `heap`, `maxblk`, `minHeap`, `minMaxblk`, `frag`
 - `uptime`, `reset`, `version`, `variant` (`esp8266-clawd`, which the app matches on)
 - `fwSeq` (`CLAWD_FW_SEQ` in `config.h`): bump it by hand for every image the desktop app should install; the app only pushes its bundled image to a clawd clock with a lower number (missing = 0), so it never downgrades
-- `layouts`: bitmask of the usage layouts this image draws (`CLAWD_LAYOUTS`, bit 0 classic, bit 1 pace); the desktop app offers a layout the clock lacks only when its bundled image has the bit
+- `layouts`: bitmask of the usage layouts this image draws (`CLAWD_LAYOUTS`, one bit per layout: 0 classic, 1 pace, 2 hero, 3 rings, 4 gauges, 5 pixel); the desktop app offers a layout the clock lacks only when its bundled image has the bit
 - `pak` (animations loaded; 0 means `/clawd.pak` is missing), `splash`, `anim`
 - `desk` (animations in `/desk.pak`), `onDesk`, `fsTotal`, `fsUsed`
 - `contFree`: the least free `loop()` stack seen so far (of 4 KB)

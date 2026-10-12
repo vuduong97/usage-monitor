@@ -134,10 +134,97 @@ static uint8_t shapeCoverage(const ClawdShape& s, int px, int py) {
   return (uint8_t)(cov * 255.0f);
 }
 
+// ---- arcs -------------------------------------------------------------------
+// Per-arc constants, worked out once per render so the per-pixel test has no
+// trigonometry: a pixel is on the stroke when it lies in the annulus and in the
+// angular sector (two cross products), or inside a round cap.
+#define CLAWD_MAX_ARCS 8
+struct ArcCalc {
+  float cx, cy, r, half;           // centre, radius, half the stroke width
+  float in2, out2;                 // squared bounds of the annulus (with AA margin)
+  float sx, sy, ex, ey;            // unit vectors at the start and end
+  float c1x, c1y, c2x, c2y;        // cap centres
+  bool  full, disc;
+  bool  big;                       // sweep > 180: the sector test is inverted
+};
+
+static float clamp01(float v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+// sin(0..90 deg) x 16384. A table instead of sinf/cosf: the soft-float trig
+// library costs several KB of the OTA budget, and whole degrees are enough
+// (one degree is under 2 px on the biggest ring).
+static const uint16_t SIN_Q[91] PROGMEM = {
+    0,   286,  572,  857,  1143, 1428, 1713, 1997, 2280, 2563, 2845, 3126, 3406, 3686, 3964,
+    4240, 4516, 4790, 5063, 5334, 5604, 5872, 6138, 6402, 6664, 6924, 7182, 7438, 7692, 7943,
+    8192, 8438, 8682, 8923, 9162, 9397, 9630, 9860, 10087, 10311, 10531, 10749, 10963, 11174, 11381,
+    11585, 11786, 11982, 12176, 12365, 12551, 12733, 12911, 13085, 13255, 13421, 13583, 13741, 13894, 14044,
+    14189, 14330, 14466, 14598, 14726, 14849, 14968, 15082, 15191, 15296, 15396, 15491, 15582, 15668, 15749,
+    15826, 15897, 15964, 16026, 16083, 16135, 16182, 16225, 16262, 16294, 16322, 16344, 16362, 16374, 16383,
+    16384};
+
+float clawdSin(int deg) {
+  deg %= 360;
+  if (deg < 0) deg += 360;
+  const bool neg = deg >= 180;
+  if (neg) deg -= 180;
+  if (deg > 90) deg = 180 - deg;
+  const float v = (float)pgm_read_word(&SIN_Q[deg]) * (1.0f / 16384.0f);
+  return neg ? -v : v;
+}
+float clawdCos(int deg) { return clawdSin(deg + 90); }
+
+static void arcPrepare(const ClawdArc& a, ArcCalc& c) {
+  c.cx = a.cx; c.cy = a.cy; c.r = a.r; c.half = a.lw * 0.5f;
+  c.disc = a.r == 0;
+  c.full = a.sweepDeg >= 360;
+  const float lo = c.r - c.half - 1.0f, hi = c.r + c.half + 1.0f;
+  c.in2 = (c.disc || lo < 0) ? 0.0f : lo * lo;
+  c.out2 = hi * hi;
+  c.sx = clawdSin(a.startDeg); c.sy = -clawdCos(a.startDeg);
+  c.ex = clawdSin(a.startDeg + a.sweepDeg); c.ey = -clawdCos(a.startDeg + a.sweepDeg);
+  c.c1x = c.cx + c.r * c.sx; c.c1y = c.cy + c.r * c.sy;
+  c.c2x = c.cx + c.r * c.ex; c.c2y = c.cy + c.r * c.ey;
+  c.big = a.sweepDeg > 180;
+}
+
+// Coverage (0..255) of the pixel centre (px, py) by one arc.
+static uint8_t arcCoverage(const ArcCalc& c, float px, float py) {
+  const float dx = px - c.cx, dy = py - c.cy;
+  const float d2 = dx * dx + dy * dy;
+  if (d2 > c.out2 || d2 < c.in2) return 0;
+  if (c.disc) return (uint8_t)(clamp01(c.half - sqrtf(d2) + 0.5f) * 255.0f);
+  const float ring = clamp01(c.half - fabsf(sqrtf(d2) - c.r) + 0.5f);
+  if (ring <= 0) return 0;
+  if (c.full) return (uint8_t)(ring * 255.0f);
+  // Clockwise rotation a -> b is positive in screen coordinates (y down).
+  const bool afterStart = c.sx * dy - c.sy * dx >= 0;     // p is clockwise of the start
+  const bool beforeEnd = dx * c.ey - dy * c.ex >= 0;      // p is anticlockwise of the end
+  const bool in = c.big ? (afterStart || beforeEnd) : (afterStart && beforeEnd);
+  float cov = in ? ring : 0.0f;
+  if (!in) {
+    const float lim = c.half + 1.0f;
+    float ax = px - c.c1x, ay = py - c.c1y, bx = px - c.c2x, by = py - c.c2y;
+    float q1 = ax * ax + ay * ay, q2 = bx * bx + by * by;
+    if (q1 < lim * lim) cov = clamp01(c.half - sqrtf(q1) + 0.5f);
+    if (q2 < lim * lim) { float k = clamp01(c.half - sqrtf(q2) + 0.5f); if (k > cov) cov = k; }
+  }
+  return (uint8_t)(cov * 255.0f);
+}
+
 void clawdRender(int x, int y, int w, int h, uint16_t bg,
                  const ClawdShape* shapes, int shapeCount,
                  const ClawdText* texts, int textCount) {
+  clawdRenderArcs(x, y, w, h, bg, shapes, shapeCount, nullptr, 0, texts, textCount);
+}
+
+void clawdRenderArcs(int x, int y, int w, int h, uint16_t bg,
+                     const ClawdShape* shapes, int shapeCount,
+                     const ClawdArc* arcs, int arcCount,
+                     const ClawdText* texts, int textCount) {
   if (!g_surface || w <= 0 || h <= 0) return;
+  ArcCalc calc[CLAWD_MAX_ARCS];
+  if (arcCount > CLAWD_MAX_ARCS) arcCount = CLAWD_MAX_ARCS;
+  for (int k = 0; k < arcCount; k++) arcPrepare(arcs[k], calc[k]);
   if (w > CLAWD_W) w = CLAWD_W;
   const int rowsPerBand = CLAWD_SCRATCH_PX / w;
   for (int by = y; by < y + h; by += rowsPerBand) {
@@ -150,6 +237,10 @@ void clawdRender(int x, int y, int w, int h, uint16_t bg,
         for (int k = 0; k < shapeCount; k++) {
           uint8_t a = shapeCoverage(shapes[k], x + c, py);
           if (a) px = clawdBlend(shapes[k].color, px, a);
+        }
+        for (int k = 0; k < arcCount; k++) {
+          uint8_t a = arcCoverage(calc[k], x + c + 0.5f, py + 0.5f);
+          if (a) px = clawdBlend(arcs[k].color, px, a);
         }
         line[c] = px;
       }

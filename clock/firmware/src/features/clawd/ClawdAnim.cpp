@@ -364,6 +364,98 @@ void ClawdMascot::tick(int rate) {
 }
 
 // =============================================================================
+// Strolling Clawd for the pixel layout.
+// =============================================================================
+#define WLK_CELL 2
+#define WLK_MARGIN 2          // black cells either side: a step wipes its own trail
+#define WLK_STAND_MS 1200
+static const uint8_t WLK_SPEED[4] = {10, 13, 17, 22};   // tenths: frame-hold speed-up per rate group
+
+// Cells the crab gait moves the body when it advances INTO `frame` (same table
+// as the splash's walker: the planted feet stay put on screen).
+static int crabCells(uint16_t frame, bool fromLoop) {
+  if (frame == 1) return fromLoop ? 1 : 0;
+  return (frame == 4 || frame == 5 || frame == 8) ? 1 : 0;
+}
+
+void ClawdWalker::begin(int x0, int x1, int feetY) {
+  player_.buf = g_masBuf;                 // the corner mascot is off in this layout
+  x0_ = (int16_t)x0;
+  x1_ = (int16_t)x1;
+  feet_ = (int16_t)feetY;
+  reset();
+}
+
+void ClawdWalker::reset() {
+  int idx = clawdAnimFind("crab walking");
+  player_.buf = g_masBuf;
+  player_.start(idx < 0 ? 0 : idx, clawdNow());
+  player_.holding = true;                 // frame 0 is the standing pose
+  loadPalette(player_.a, pal_);
+  x_ = x0_;
+  dir_ = 0;
+  face_ = 1;
+  standSince_ = clawdNow();
+  force_ = true;
+}
+
+uint8_t ClawdWalker::cellAt(void* self, int gx, int gy) {
+  ClawdWalker& w = *(ClawdWalker*)self;
+  const ClawdAnim& a = w.player_.a;
+  const int sx = w.face_ < 0 ? a.w - 1 - gx : gx;      // walking left: mirror
+  return clawdFrameCell(a, w.player_.cells(), sx, gy);
+}
+
+void ClawdWalker::render() {
+  if (player_.index < 0) return;
+  const ClawdAnim& a = player_.a;
+  clawdRenderCells(cellAt, this, -WLK_MARGIN, 0, a.w + 2 * WLK_MARGIN, a.h, WLK_CELL,
+                   x_ - WLK_MARGIN * WLK_CELL, feet_ - a.h * WLK_CELL, pal_, nullptr, true);
+}
+
+void ClawdWalker::tick(int rate) {
+  if (player_.index < 0) return;
+  const uint32_t now = clawdNow();
+  if (rate < 0 || rate > 3) rate = 0;
+  if (force_) { force_ = false; render(); }
+
+  if (player_.holding) {                  // standing
+    if (now - standSince_ < WLK_STAND_MS) return;
+    const int span = player_.a.w * WLK_CELL;
+    const int far = x1_ - span;
+    target_ = (x_ - x0_ < (far - x0_) / 2) ? (int16_t)far : x0_;
+    if (target_ == x_) { standSince_ = now; return; }
+    dir_ = target_ > x_ ? 1 : -1;
+    face_ = dir_;
+    player_.frame = 0;
+    player_.frameStart = now;
+    player_.sync();
+    player_.holding = false;
+    player_.loopRelease = false;
+    player_.inLoop = false;
+  }
+  const bool fromLoop = player_.inLoop;
+  bool completed;
+  if (!player_.tick(now, completed)) return;
+  player_.hold = (uint16_t)((uint32_t)player_.hold * 10 / WLK_SPEED[rate]);
+  if (completed) {                        // walk finished: stand
+    player_.holding = true;
+    standSince_ = now;
+    render();
+    return;
+  }
+  if (dir_ != 0 && player_.inLoop) {
+    x_ += dir_ * crabCells(player_.frame, fromLoop) * WLK_CELL;
+    if ((dir_ > 0 && x_ >= target_) || (dir_ < 0 && x_ <= target_)) {
+      x_ = target_;
+      dir_ = 0;
+      player_.loopRelease = true;         // gait runs out into the standing pose
+    }
+  }
+  render();
+}
+
+// =============================================================================
 // Mini creature: one crop, looping, centred.
 // =============================================================================
 void ClawdMini::begin(const char* name, int cx, int cy, int px) {

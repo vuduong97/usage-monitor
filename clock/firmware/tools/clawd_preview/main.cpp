@@ -253,6 +253,62 @@ int main(int argc, char** argv) {
   shot(dir, "06f-unknown-layout");
   g_layout = CLAWD_LAYOUT_CLASSIC;
 
+  // the four newer layouts: normal, heavy use, just reset, an alert over it and its end,
+  // an Enterprise payload (falls back to classic), and the idle screen (classic chrome)
+  {
+    static const struct { uint8_t id; const char* name; } NEW_LAYOUTS[] = {
+        {CLAWD_LAYOUT_HERO, "hero"}, {CLAWD_LAYOUT_RINGS, "rings"},
+        {CLAWD_LAYOUT_GAUGES, "gauges"}, {CLAWD_LAYOUT_PIXEL, "pixel"}};
+    for (const auto& L : NEW_LAYOUTS) {
+      char n[48];
+      g_layout = L.id;
+      clawdUiPayload(base());
+      run(3000, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-normal", L.name); shot(dir, n);
+      ClawdData hot = base();
+      hot.sessionPct = 88; hot.sessionResetMin = 38; hot.weeklyPct = 93; hot.weeklyResetMin = 540;
+      clawdUiPayload(hot);
+      run(3000, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-hot", L.name); shot(dir, n);
+      ClawdData fresh = base();
+      fresh.sessionPct = 4; fresh.sessionResetMin = 291; fresh.weeklyPct = 18; fresh.weeklyResetMin = 8200;
+      clawdUiPayload(fresh);
+      run(3000, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-fresh", L.name); shot(dir, n);
+      ClawdData full = base();
+      full.sessionPct = 100; full.sessionResetMin = 5; full.weeklyPct = 100; full.weeklyResetMin = 60;
+      clawdUiPayload(full);
+      run(3000, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-full", L.name); shot(dir, n);
+      ClawdData al = base();
+      strcpy(al.alertMsg, "Claude needs your permission to run: npm test");
+      clawdUiPayload(al);
+      run(1500, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-alert", L.name); shot(dir, n);
+      ClawdData cl = base();
+      cl.alertClear = true;
+      clawdUiPayload(cl);
+      run(3000, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-alert-cleared", L.name); shot(dir, n);
+      ClawdData ent = base();
+      ent.enterprise = true; ent.sessionPct = 38; ent.timePct = 61;
+      strcpy(ent.resetDate, "Nov 1");
+      clawdUiPayload(ent);
+      run(1500, CLAWD_SCREEN_AUTO, -1);
+      snprintf(n, sizeof(n), "20-%s-enterprise", L.name); shot(dir, n);
+    }
+    g_layout = CLAWD_LAYOUT_PIXEL;     // Clawd's stroll: a frame every 3 s over 30 s
+    clawdUiPayload(base());
+    for (int i = 0; i < 10; i++) {
+      run(3000, CLAWD_SCREEN_AUTO, -1);
+      char n[48];
+      snprintf(n, sizeof(n), "21-pixel-walk-%02d", i); shot(dir, n);
+    }
+    g_layout = CLAWD_LAYOUT_CLASSIC;
+    clawdUiPayload(base());
+    run(1000, CLAWD_SCREEN_AUTO, -1);
+  }
+
   // mascot acts over time
   for (int i = 0; i < 4; i++) {
     clawdUiPayload(base());

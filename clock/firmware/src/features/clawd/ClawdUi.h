@@ -59,8 +59,16 @@ enum : uint8_t { CLAWD_SCREEN_AUTO = 0, CLAWD_SCREEN_USAGE = 1, CLAWD_SCREEN_SPL
 // Usage screen layouts (Settings usage.layout). A value this build lacks draws
 // the classic one. CLAWD_LAYOUTS is the bitmask /api/heap reports, so the
 // desktop app only offers what the clock can draw.
-enum : uint8_t { CLAWD_LAYOUT_CLASSIC = 0, CLAWD_LAYOUT_PACE = 1 };
-#define CLAWD_LAYOUTS ((1u << CLAWD_LAYOUT_CLASSIC) | (1u << CLAWD_LAYOUT_PACE))
+enum : uint8_t {
+  CLAWD_LAYOUT_CLASSIC = 0,   // two cards + spinner line
+  CLAWD_LAYOUT_PACE = 1,      // cards with pace pill, time marker and forecast
+  CLAWD_LAYOUT_HERO = 2,      // one big 5-hour number, weekly as a strip
+  CLAWD_LAYOUT_RINGS = 3,     // two concentric rings around the clock
+  CLAWD_LAYOUT_GAUGES = 4,    // two 270 degree gauges side by side
+  CLAWD_LAYOUT_PIXEL = 5,     // 20-block bars, Clawd strolling along the floor
+  CLAWD_LAYOUT_COUNT = 6
+};
+#define CLAWD_LAYOUTS ((1u << CLAWD_LAYOUT_COUNT) - 1u)
 
 #define CLAWD_DATA_FRESH_MS 90000UL   // usage counts as live within this window
 

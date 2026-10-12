@@ -38,6 +38,9 @@ const ASCII = range(0x20, 0x7e);
 const FONTS = [
   { name: 'tiempos_34', file: 'font_tiempos_34.c', chars: cps('Usage0123456789: APM') },
   { name: 'styrene_24', file: 'font_styrene_24.c', chars: cps('0123456789%-') },
+  // Hero and pixel-retro usage layouts (usage.layout 2 and 5): digits only, to stay small.
+  { name: 'styrene_48', file: 'font_styrene_48.c', chars: cps('0123456789%-') },
+  { name: 'mono_32',    file: 'font_mono_32.c',    chars: cps('0123456789:-') },
   { name: 'styrene_14', file: 'font_styrene_14.c', chars: ASCII },
   { name: 'mono_18',    file: 'font_mono_18.c',    chars: null },   // all of it
 ];

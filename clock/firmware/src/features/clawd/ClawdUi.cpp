@@ -47,6 +47,7 @@ enum View : int8_t { VIEW_NONE = -1, VIEW_SPLASH, VIEW_IDLE, VIEW_USAGE, VIEW_DE
 
 static ClawdSplash g_splash;
 static ClawdMascot g_mascot;
+static ClawdWalker g_walker;     // the pixel layout's strolling Clawd (the mascot is off there)
 static ClawdMini   g_mini;
 
 static ClawdData g_data;
@@ -210,9 +211,22 @@ static void drawPanel(int y, const char* pill, float barPct, uint16_t barColor,
 #define WIN_SESSION 300          // 5-hour window, minutes
 #define WIN_WEEKLY  10080        // 7-day window, minutes
 
-static uint8_t g_layout = CLAWD_LAYOUT_CLASSIC;   // effective layout (one this build draws)
+static uint8_t g_layout = CLAWD_LAYOUT_CLASSIC;   // requested layout (one this build draws)
+static uint8_t g_effDrawn = 0xFF;                 // layout the chrome (title, mascot) was last set up for
+static bool    g_floorWipe = false;               // an alert began: clear the pixel layout's floor strip once
+static uint32_t g_sig = 0;                        // what the last panel paint showed
+static bool    g_sigValid = false;
 
-static bool paceOn() { return g_layout == CLAWD_LAYOUT_PACE && !g_data.enterprise; }
+// Enterprise accounts (Spending / Period) only have the classic screen.
+static uint8_t usageLayout() { return g_data.enterprise ? CLAWD_LAYOUT_CLASSIC : g_layout; }
+// The title and mascot follow the layout only while usage is on screen; the idle
+// screen keeps the classic chrome.
+static uint8_t chromeLayout() { return g_view == VIEW_USAGE ? usageLayout() : (uint8_t)CLAWD_LAYOUT_CLASSIC; }
+// Layouts whose panels reach the bottom: the spinner line only shows an alert there.
+static bool fullBottom() {
+  const uint8_t l = chromeLayout();
+  return l == CLAWD_LAYOUT_PACE || l == CLAWD_LAYOUT_HERO || l == CLAWD_LAYOUT_RINGS || l == CLAWD_LAYOUT_PIXEL;
+}
 
 struct Pace { const char* label; uint16_t color; float t; };
 
@@ -306,8 +320,235 @@ static void drawPacePanels() {
   drawPaceCard(PACE_P2_Y, "weekly", d.weeklyPct, d.weeklyResetMin, WIN_WEEKLY, nowMin);
 }
 
+// ---- hero / gauges / rings / pixel layouts ---------------------------------------------
+static void titleText(uint32_t now, char* out, size_t n, int* minute);
+
+static void spanText(int mins, char* buf, size_t n) {   // "2h 14m", "---" when unknown
+  if (mins < 0) snprintf(buf, n, "---");
+  else formatSpan(mins, buf, n);
+}
+
+static float clampPct(float p) { return p < 0 ? 0 : p; }
+static int   pctInt(float p) { return (int)(clampPct(p) + 0.5f); }
+static int   fillPx(int w, float pct) {                  // bar fill width, 0..w
+  const float p = pct > 100 ? 100 : clampPct(pct);
+  return (int)(w * p / 100.0f + 0.5f);
+}
+static int rightX(const ClawdFont& f, const char* s, int right) { return right - clawdTextWidth(f, s); }
+static int centerX(const ClawdFont& f, const char* s, int cx) { return cx - clawdTextWidth(f, s) / 2; }
+
+// Hero: the 5-hour window as one big number, weekly as a strip underneath.
+static void drawHeroPanels() {
+  const ClawdData& d = g_data;
+  const ClawdFont& sf = CF_STYRENE_14;
+  const ClawdFont& nf = CF_STYRENE_48;
+  const ClawdFont& pf = CF_STYRENE_24;
+  const int nowMin = localMinute(clawdNow());
+  const float s = clampPct(d.sessionPct);
+  const Pace p = paceOf(s, d.sessionResetMin, WIN_SESSION);
+  char num[8], span[16], rst[28], fc[32];
+  snprintf(num, sizeof(num), "%d", pctInt(s));
+  spanText(d.sessionResetMin, span, sizeof(span));
+  snprintf(rst, sizeof(rst), "resets %s", span);
+  const uint16_t fcColor = forecast(s, d.sessionResetMin, WIN_SESSION, nowMin, fc, sizeof(fc));
+
+  const int numY = 62;
+  const int base = numY + nf.lineHeight - nf.baseLine;           // shared baseline for the number and its %
+  const int numW = clawdTextWidth(nf, num);
+  const int pillW = clawdTextWidth(sf, p.label) + 26;
+  const int pillX = 228 - pillW, pillY = base - 26;
+  const int barX = 12, barW = 216, barY = 132;
+  const int fillW = fillPx(barW, s);
+  const int markX = barX + (int)(barW * p.t + 0.5f) - 1;
+
+  ClawdShape sh[5];
+  int n = 0;
+  if (d.sessionResetMin >= 0) {
+    sh[n++] = {(int16_t)pillX, (int16_t)pillY, (int16_t)pillW, 20, 99, CLAWD_BAR_BG};
+    sh[n++] = {(int16_t)(pillX + 8), (int16_t)(pillY + 7), 6, 6, 3, p.color};
+  }
+  sh[n++] = {barX, barY, barW, 14, 7, CLAWD_BAR_BG};
+  if (fillW > 0) sh[n++] = {barX, barY, (int16_t)(fillW < 14 ? 14 : fillW), 14, 7, pctColor(s)};
+  ClawdShape mark = {(int16_t)markX, (int16_t)(barY - 5), 2, 24, 1, CLAWD_TEXT};
+  ClawdShape all[6];
+  int m = 0;
+  for (int i = 0; i < n; i++) all[m++] = sh[i];
+  if (d.sessionResetMin >= 0) all[m++] = mark;
+
+  ClawdText tx[7];
+  int t = 0;
+  tx[t++] = {&sf, "5-HOUR", 12, 50, CLAWD_DIM};
+  tx[t++] = {&sf, rst, (int16_t)rightX(sf, rst, 228), 50, CLAWD_DIM};
+  tx[t++] = {&nf, num, 10, (int16_t)numY, CLAWD_TEXT};
+  tx[t++] = {&pf, "%", (int16_t)(14 + numW), (int16_t)(base - (pf.lineHeight - pf.baseLine)), CLAWD_TEXT};
+  if (d.sessionResetMin >= 0)
+    tx[t++] = {&sf, p.label, (int16_t)(pillX + 18), (int16_t)(pillY + 3), CLAWD_TEXT};
+  tx[t++] = {&sf, fc, 12, 156, fcColor};
+  clawdRender(0, 44, CLAWD_W, 140, CLAWD_BG, all, m, tx, t);
+
+  // weekly strip
+  const float w = clampPct(d.weeklyPct);
+  char wnum[8], wspan[16];
+  snprintf(wnum, sizeof(wnum), "%d%%", pctInt(w));
+  spanText(d.weeklyResetMin, wspan, sizeof(wspan));
+  const int wf = fillPx(204, w);
+  ClawdShape ws[3];
+  int k = 0;
+  ws[k++] = {8, 184, 224, 48, 8, CLAWD_PANEL};
+  ws[k++] = {18, 216, 204, 6, 3, CLAWD_BAR_BG};
+  if (wf > 0) ws[k++] = {18, 216, (int16_t)(wf < 6 ? 6 : wf), 6, 3, pctColor(w)};
+  ClawdText wt[3] = {
+      {&sf, "Weekly", 18, 192, CLAWD_DIM},
+      {&sf, wspan, (int16_t)(18 + clawdTextWidth(sf, "Weekly") + 8), 192, CLAWD_DIM},
+      {&pf, wnum, (int16_t)rightX(pf, wnum, 222), 187, CLAWD_TEXT},
+  };
+  clawdRender(8, 184, 224, 48, CLAWD_BG, ws, k, wt, 3);
+}
+
+// Gauges: two 270 degree gauges, each on its own card (the spinner line stays).
+static void drawGaugeCard(int x, const char* label, float pct, int resetMin) {
+  const int cx = x + 54, cy = 102;
+  const float v = clampPct(pct);
+  const int gr = 40, gw = 8;                  // wide enough inside for "100%"
+  char num[8], span[16];
+  snprintf(num, sizeof(num), "%d%%", pctInt(v));
+  spanText(resetMin, span, sizeof(span));
+  ClawdShape card = {(int16_t)x, 46, 108, 156, 10, CLAWD_PANEL};
+  ClawdArc arcs[2];
+  int n = 0;
+  arcs[n++] = {(int16_t)cx, (int16_t)cy, (int16_t)gr, (uint8_t)gw, 225, 270, CLAWD_BAR_BG};
+  const int sweep = (int)(270.0f * (v > 100 ? 100 : v) / 100.0f + 0.5f);
+  if (sweep > 0) arcs[n++] = {(int16_t)cx, (int16_t)cy, (int16_t)gr, (uint8_t)gw, 225, (int16_t)sweep, pctColor(v)};
+  ClawdText tx[3] = {
+      {&CF_STYRENE_24, num, (int16_t)centerX(CF_STYRENE_24, num, cx), 91, CLAWD_TEXT},
+      {&CF_STYRENE_14, label, (int16_t)centerX(CF_STYRENE_14, label, cx), 150, CLAWD_TEXT},
+      {&CF_STYRENE_14, span, (int16_t)centerX(CF_STYRENE_14, span, cx), 172, CLAWD_DIM},
+  };
+  clawdRenderArcs(x, 46, 108, 156, CLAWD_BG, &card, 1, arcs, n, tx, 3);
+}
+
+static void drawGaugePanels() {
+  drawGaugeCard(8, "Current", g_data.sessionPct, g_data.sessionResetMin);
+  drawGaugeCard(124, "Weekly", g_data.weeklyPct, g_data.weeklyResetMin);
+}
+
+// Rings: 5-hour on the outside, weekly inside, a white dot on each ring where the
+// window's time has got to; the clock and both numbers sit in the middle. The
+// corner mascot window (92..148 x 36..78) is left alone, so the ring field is
+// painted in four pieces around it.
+#define RING_CX 120
+#define RING_CY 120
+#define RING_MASCOT_X 92
+#define RING_MASCOT_Y 36
+
+static int ringSweep(float pct) {
+  const float v = pct > 100 ? 100 : clampPct(pct);
+  int s = (int)(360.0f * v / 100.0f + 0.5f);
+  return (v > 0 && s < 1) ? 1 : s;
+}
+
+static void drawRingPanels() {
+  const ClawdData& d = g_data;
+  const float s = clampPct(d.sessionPct), w = clampPct(d.weeklyPct);
+  const Pace ps = paceOf(s, d.sessionResetMin, WIN_SESSION);
+  const Pace pw = paceOf(w, d.weeklyResetMin, WIN_WEEKLY);
+
+  ClawdArc arcs[6];
+  int n = 0;
+  arcs[n++] = {RING_CX, RING_CY, 110, 12, 0, 360, CLAWD_BAR_BG};
+  if (s > 0) arcs[n++] = {RING_CX, RING_CY, 110, 12, 0, (int16_t)ringSweep(s), pctColor(s)};
+  arcs[n++] = {RING_CX, RING_CY, 94, 8, 0, 360, CLAWD_BAR_BG};
+  if (w > 0) arcs[n++] = {RING_CX, RING_CY, 94, 8, 0, (int16_t)ringSweep(w), pctColor(w)};
+  if (d.sessionResetMin >= 0) {
+    const int a = (int)(360.0f * ps.t + 0.5f);
+    arcs[n++] = {(int16_t)(RING_CX + (int)(110 * clawdSin(a) + (clawdSin(a) < 0 ? -0.5f : 0.5f))),
+                 (int16_t)(RING_CY - (int)(110 * clawdCos(a) + (clawdCos(a) < 0 ? -0.5f : 0.5f))),
+                 0, 5, 0, 360, CLAWD_TEXT};
+  }
+  if (d.weeklyResetMin >= 0) {
+    const int a = (int)(360.0f * pw.t + 0.5f);
+    arcs[n++] = {(int16_t)(RING_CX + (int)(94 * clawdSin(a) + (clawdSin(a) < 0 ? -0.5f : 0.5f))),
+                 (int16_t)(RING_CY - (int)(94 * clawdCos(a) + (clawdCos(a) < 0 ? -0.5f : 0.5f))),
+                 0, 5, 0, 360, CLAWD_TEXT};
+  }
+
+  char clock[16], a[8], b[8], span[16], rst[28];
+  int minute;
+  titleText(clawdNow(), clock, sizeof(clock), &minute);
+  g_clockMin = minute;
+  snprintf(a, sizeof(a), "%d%%", pctInt(s));
+  snprintf(b, sizeof(b), "%d%%", pctInt(w));
+  spanText(d.sessionResetMin, span, sizeof(span));
+  snprintf(rst, sizeof(rst), "resets %s", span);
+  const ClawdFont& sf = CF_STYRENE_14;
+  const ClawdFont& pf = CF_STYRENE_24;
+  ClawdShape div = {RING_CX - 1, 130, 2, 16, 1, CLAWD_BAR_BG};
+  ClawdText tx[6] = {
+      {&CF_TIEMPOS_34, clock, (int16_t)centerX(CF_TIEMPOS_34, clock, RING_CX), 80, CLAWD_TEXT},
+      {&pf, a, (int16_t)rightX(pf, a, RING_CX - 8), 126, pctColor(s)},
+      {&pf, b, (int16_t)(RING_CX + 8), 126, pctColor(w)},
+      {&sf, "5-hour", (int16_t)rightX(sf, "5-hour", RING_CX - 8), 152, CLAWD_DIM},
+      {&sf, "weekly", (int16_t)(RING_CX + 8), 152, CLAWD_DIM},
+      {&sf, rst, (int16_t)centerX(sf, rst, RING_CX), 176, CLAWD_DIM},
+  };
+  clawdRenderArcs(0, 0, CLAWD_W, RING_MASCOT_Y, CLAWD_BG, &div, 1, arcs, n, tx, 6);
+  clawdRenderArcs(0, RING_MASCOT_Y, RING_MASCOT_X, 42, CLAWD_BG, &div, 1, arcs, n, tx, 6);
+  clawdRenderArcs(RING_MASCOT_X + 56, RING_MASCOT_Y, CLAWD_W - RING_MASCOT_X - 56, 42, CLAWD_BG, &div, 1, arcs, n, tx, 6);
+  clawdRenderArcs(0, RING_MASCOT_Y + 42, CLAWD_W, CLAWD_H - RING_MASCOT_Y - 42, CLAWD_BG, &div, 1, arcs, n, tx, 6);
+}
+
+// Pixel: 20 blocks a row (5% each), compact reset text, a dotted floor for Clawd.
+#define PIX_ROW1_Y 52
+#define PIX_ROW2_Y 124
+#define PIX_FLOOR_Y 234
+
+static void drawPixelRow(int y, const char* label, float pct, int resetMin) {
+  const ClawdFont& f = CF_MONO_18;
+  const float v = clampPct(pct);
+  char num[8], span[16], rst[24];
+  snprintf(num, sizeof(num), "%d%%", pctInt(v));
+  spanText(resetMin, span, sizeof(span));
+  char* o = rst + snprintf(rst, sizeof(rst), "rst ");
+  for (const char* p = span; *p && o < rst + sizeof(rst) - 1; p++)
+    if (*p != ' ') *o++ = *p;
+  *o = 0;
+  ClawdText top[2] = {{&f, label, 11, (int16_t)y, CLAWD_DIM},
+                      {&f, num, (int16_t)rightX(f, num, 229), (int16_t)y, CLAWD_TEXT}};
+  clawdRender(0, y, CLAWD_W, f.lineHeight, CLAWD_BG, nullptr, 0, top, 2);
+  fillRect(0, y + 24, CLAWD_W, 18, CLAWD_BG);
+  const int lit = (int)((v > 100 ? 100 : v) / 5.0f + 0.5f);
+  const uint16_t col = pctColor(v);
+  for (int i = 0; i < 20; i++) fillRect(11 + i * 11, y + 24, 9, 18, i < lit ? col : CLAWD_BAR_BG);
+  ClawdText bottom = {&f, rst, 11, (int16_t)(y + 48), CLAWD_DIM};
+  clawdRender(0, y + 48, CLAWD_W, f.lineHeight, CLAWD_BG, nullptr, 0, &bottom, 1);
+}
+
+static void drawPixelPanels() {
+  drawPixelRow(PIX_ROW1_Y, "5H", g_data.sessionPct, g_data.sessionResetMin);
+  drawPixelRow(PIX_ROW2_Y, "7D", g_data.weeklyPct, g_data.weeklyResetMin);
+  fillRect(0, PIX_FLOOR_Y - 38, CLAWD_W, 38, CLAWD_BG);   // wipes an alert line's leftovers; Clawd repaints itself after
+  for (int x = 4; x < CLAWD_W - 4; x += 4) fillRect(x, PIX_FLOOR_Y, 2, 2, CLAWD_BAR_BG);
+}
+
+// What a paint of the new layouts shows. A payload that changes none of it repaints nothing.
+static uint32_t panelSig(uint32_t now) {
+  const ClawdData& d = g_data;
+  uint32_t h = 2166136261u;
+  const int32_t v[] = {usageLayout(), pctInt(d.sessionPct), d.sessionResetMin, pctInt(d.weeklyPct),
+                       d.weeklyResetMin, localMinute(now)};
+  for (size_t i = 0; i < sizeof(v) / sizeof(v[0]); i++) h = (h ^ (uint32_t)v[i]) * 16777619u;
+  return h;
+}
+
 static void drawPanels() {
-  if (paceOn()) { drawPacePanels(); return; }
+  switch (usageLayout()) {
+    case CLAWD_LAYOUT_PACE:   drawPacePanels();   return;
+    case CLAWD_LAYOUT_HERO:   drawHeroPanels();   return;
+    case CLAWD_LAYOUT_RINGS:  drawRingPanels();   return;
+    case CLAWD_LAYOUT_GAUGES: drawGaugePanels();  return;
+    case CLAWD_LAYOUT_PIXEL:  drawPixelPanels();  return;
+    default: break;
+  }
   const ClawdData& d = g_data;
   const int cx = MARGIN + PAD_X;
   char pct[16], reset[48], pct2[16], tail[24];
@@ -384,8 +625,23 @@ static void titleText(uint32_t now, char* out, size_t n, int* minute) {
 static void drawTitle(uint32_t now) {
   char buf[16];
   titleText(now, buf, sizeof(buf), &g_clockMin);
+  const uint8_t layout = chromeLayout();
+  if (layout == CLAWD_LAYOUT_PIXEL) {          // mono clock across the top, no mascot there
+    if (g_clockMin < 0) snprintf(buf, sizeof(buf), "--:--");
+    const ClawdFont& pf = CF_MONO_32;
+    ClawdText t = {&pf, buf, (int16_t)(CLAWD_W / 2 - clawdTextWidth(pf, buf) / 2), 4, CLAWD_TEXT};
+    clawdRender(FRAME_W, FRAME_W, CLAWD_W - 2 * FRAME_W, PIX_ROW1_Y - FRAME_W - 2, CLAWD_BG, nullptr, 0, &t, 1);
+    return;
+  }
+  if (layout == CLAWD_LAYOUT_RINGS) {          // in the middle of the rings
+    const ClawdFont& rf = CF_TIEMPOS_34;
+    ClawdText t = {&rf, buf, (int16_t)(RING_CX - clawdTextWidth(rf, buf) / 2), 80, CLAWD_TEXT};
+    clawdRender(52, 80, 136, 36, CLAWD_BG, nullptr, 0, &t, 1);
+    return;
+  }
   const ClawdFont& f = CF_TIEMPOS_34;
   int x = CLAWD_W / 2 + TITLE_NUDGE - clawdTextWidth(f, buf) / 2;
+  if (layout == CLAWD_LAYOUT_HERO) x = 232 - clawdTextWidth(f, buf);   // hero: clock on the right
   if (x < TITLE_X0) x = TITLE_X0;
   ClawdText t = {&f, buf, (int16_t)x, TITLE_Y, CLAWD_TEXT};
   clawdRender(TITLE_X0, FRAME_W, CLAWD_W - TITLE_X0 - FRAME_W, PANEL1_Y - FRAME_W,
@@ -673,7 +929,7 @@ static void endAlert() {
   if (g_view != VIEW_SPLASH && g_view != VIEW_DESK) {
     drawFrame(false);
     g_statusDrawn[0] = 0;
-    if (paceOn()) g_dirtyPanels = true;   // the alert line covered the second card
+    if (fullBottom()) { g_dirtyPanels = true; g_sigValid = false; }   // the alert line covered the bottom cards
   }
 }
 
@@ -688,6 +944,7 @@ void clawdUiBegin() {
   g_deskDirty = true;
   g_splash.begin();
   g_mascot.begin(MASCOT_X, MASCOT_Y);
+  g_walker.begin(4, CLAWD_W - 4, PIX_FLOOR_Y);
   g_mini.begin("cloud", CLAWD_W / 2, IDLE_CY, IDLE_PX);
   g_view = VIEW_NONE;
   g_dirtyAll = true;
@@ -725,7 +982,7 @@ void clawdUiPayload(const ClawdData& d) {
     g_alert = true;
     g_alertSince = now;
     g_mascot.setAttention(true);
-    if (!wasOn) g_statusDrawn[0] = 0;
+    if (!wasOn) { g_statusDrawn[0] = 0; g_floorWipe = true; }
   }
   if (!d.ok) return;     // "no data" beat: keep the last numbers, go idle when stale
 
@@ -866,6 +1123,15 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   else if (screen == CLAWD_SCREEN_SPLASH)  want = VIEW_SPLASH;
   else if (screen == CLAWD_SCREEN_USAGE)   want = fresh ? VIEW_USAGE : VIEW_IDLE;
   else                                     want = fresh ? VIEW_USAGE : VIEW_SPLASH;
+  // The title and mascot follow the layout while usage is up (never on the idle
+  // screen), and an Enterprise payload falls back to the classic one.
+  const uint8_t eff = (want == VIEW_USAGE) ? usageLayout() : (uint8_t)CLAWD_LAYOUT_CLASSIC;
+  if (eff != g_effDrawn) {
+    g_effDrawn = eff;
+    g_dirtyAll = true;
+    g_mascot.place(eff == CLAWD_LAYOUT_RINGS ? RING_MASCOT_X : MASCOT_X,
+                   eff == CLAWD_LAYOUT_RINGS ? RING_MASCOT_Y : MASCOT_Y);
+  }
   // Auto screen + splash means no fresh data: caption the IP under it. A splash
   // picked on purpose (screen = splash) stays full height.
   const bool band = want == VIEW_SPLASH && screen == CLAWD_SCREEN_AUTO;
@@ -914,14 +1180,18 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
       }
     } else {
       g_splash.hide();
-      // the splash borrowed the mascot's frame buffer: reload it
-      if (was == VIEW_SPLASH || was == VIEW_NONE) g_mascot.reset();
+      g_sigValid = false;
+      // the splash borrowed the mascot's frame buffer, and the walker shares it: reload the one in use
+      if (chromeLayout() == CLAWD_LAYOUT_PIXEL) g_walker.reset();
+      else if (was == VIEW_SPLASH || was == VIEW_NONE || was == VIEW_USAGE || was == VIEW_IDLE) g_mascot.reset();
       g_mascot.invalidate();
       g_mini.reset();
       g_dirtyTitle = true;
       g_dirtyPanels = true;
       g_statusDrawn[0] = 0;
-      tickStatus(now, true);
+      // Layouts that reach the bottom (pace, hero, rings, pixel) only show an alert there;
+      // pixel's floor is not repainted by the panels, so a spinner would stay on it.
+      if (!(fullBottom() && g_view == VIEW_USAGE) || g_alert) tickStatus(now, true);
     }
   }
 
@@ -940,6 +1210,11 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
     const bool on = ((now - g_alertSince) / 600) % 2 == 0;
     if (on != g_frameOn) drawFrame(on);
   }
+  if (g_floorWipe) {                  // the alert line replaces Clawd's stroll: no sprite left under it
+    g_floorWipe = false;
+    if (g_view == VIEW_USAGE && chromeLayout() == CLAWD_LAYOUT_PIXEL)
+      fillRect(0, PIX_FLOOR_Y - 38, CLAWD_W, 38, CLAWD_BG);
+  }
   char probe[16];
   int minute;
   titleText(now, probe, sizeof(probe), &minute);
@@ -948,12 +1223,27 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
     drawTitle(now);
   }
   if (g_view == VIEW_USAGE) {
-    if (g_dirtyPanels) { g_dirtyPanels = false; drawPanels(); }
+    if (g_dirtyPanels) {
+      g_dirtyPanels = false;
+      const uint8_t l = usageLayout();
+      const bool sigLayout = l >= CLAWD_LAYOUT_HERO;     // the new layouts skip a paint that would show the same
+      const uint32_t sig = sigLayout ? panelSig(now) : 0;
+      if (!sigLayout || !g_sigValid || sig != g_sig) {
+        g_sig = sig;
+        g_sigValid = sigLayout;
+        drawPanels();
+        if (l == CLAWD_LAYOUT_PIXEL) g_walker.invalidate();
+      }
+    }
   } else {
     g_dirtyPanels = true;          // repaint the panels when data comes back
     g_mini.tick();
   }
-  g_mascot.tick(g_rateGroup);
-  // The pace cards reach the bottom: the status line only shows an alert there.
-  if (!(paceOn() && g_view == VIEW_USAGE) || g_alert) tickStatus(now, false);
+  if (chromeLayout() == CLAWD_LAYOUT_PIXEL) {
+    if (!g_alert) g_walker.tick(g_rateGroup);          // the alert line sits over its floor
+  } else {
+    g_mascot.tick(g_rateGroup);
+  }
+  // Those layouts reach the bottom: the status line only shows an alert there.
+  if (!(fullBottom() && g_view == VIEW_USAGE) || g_alert) tickStatus(now, false);
 }
