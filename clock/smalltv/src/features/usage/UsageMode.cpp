@@ -66,5 +66,5 @@ void UsageMode::service(const Settings& s) {
   // daemon with http_targets): leave it blank and the daemon POSTs /api/usage.
   if (s.usage.usageUrl.length() >= 8) usageService(s);
   ensureClawd();
-  clawdUiService(s.usage.screen, s.usage.anim);
+  clawdUiService(s.usage.screen, s.usage.anim, s.usage.layout);
 }

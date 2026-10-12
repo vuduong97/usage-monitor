@@ -68,6 +68,7 @@ struct UsageSettings {
   uint16_t pollSec;       // refresh period
   uint8_t  screen;        // Clawdmeter screen: 0 auto, 1 usage, 2 splash (CLAWD_SCREEN_*)
   int8_t   anim;          // splash animation: -1 = by usage rate, else index
+  uint8_t  layout;        // usage screen layout: CLAWD_LAYOUT_* (0 classic, 1 pace)
 
   void setDefaults();
   void toJson(JsonObject o) const;

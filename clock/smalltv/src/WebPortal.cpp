@@ -447,7 +447,12 @@ static void handleHeap() {
   o["reset"] = appResetReason();
   if (crashLogLast().length()) o["crash"] = crashLogLast();   // last crash since power on
   o["version"] = FW_VERSION;
+  o["variant"] = FW_VARIANT;
+#if defined(SMALLTV_CLAWD)
+  o["fwSeq"] = CLAWD_FW_SEQ;          // the desktop app never pushes an image with a lower one
+#endif
 #if WITH_USAGE
+  o["layouts"] = CLAWD_LAYOUTS;        // usage screen layouts this build draws (bitmask)
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();

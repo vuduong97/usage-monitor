@@ -129,6 +129,7 @@ void UsageSettings::setDefaults() {
   pollSec = DEFAULT_POLL_SEC;
   screen = 0;
   anim = -1;
+  layout = 0;
 }
 
 void UsageSettings::toJson(JsonObject o) const {
@@ -136,6 +137,7 @@ void UsageSettings::toJson(JsonObject o) const {
   o["pollSec"]  = pollSec;
   o["screen"]   = screen;
   o["anim"]     = anim;
+  o["layout"]   = layout;
 }
 
 void UsageSettings::fromJson(JsonObjectConst o) {
@@ -144,6 +146,9 @@ void UsageSettings::fromJson(JsonObjectConst o) {
   if (o["screen"].is<int>())           screen = (uint8_t)constrain((int)o["screen"], 0, 2);
   // Upper bound is the animation table size; ClawdUi falls back to 0 past it.
   if (o["anim"].is<int>())             anim = (int8_t)constrain((int)o["anim"], -1, 63);
+  // Stored as sent (0..15): a layout this build lacks draws the classic one, so
+  // a config written by newer firmware survives a downgrade unchanged.
+  if (o["layout"].is<int>())           layout = (uint8_t)constrain((int)o["layout"], 0, 15);
 }
 
 // ===========================================================================

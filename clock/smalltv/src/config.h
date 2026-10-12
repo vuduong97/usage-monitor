@@ -46,6 +46,10 @@
   // the GitHub self-updater is disabled (OtaUpdate.cpp). Update via /update.
   #define UPDATE_ASSET "smalltv-clawdmeter-firmware.bin"
   #define FW_VARIANT   "esp8266-clawd"
+  // Bumped by hand whenever a clawd build adds something the desktop app gates
+  // on (usage layouts, endpoints). The app only pushes its bundled image to a
+  // clock with a lower number, so it never downgrades one. 0 = before this field.
+  #define CLAWD_FW_SEQ 1
 #elif defined(SMALLTV_LEAN)
   #define UPDATE_ASSET "smalltv-mod-firmware-lean.bin"
   #define FW_VARIANT   "esp8266-lean"

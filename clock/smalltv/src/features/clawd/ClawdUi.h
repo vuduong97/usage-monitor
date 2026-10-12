@@ -56,6 +56,12 @@ struct ClawdState {
 
 enum : uint8_t { CLAWD_SCREEN_AUTO = 0, CLAWD_SCREEN_USAGE = 1, CLAWD_SCREEN_SPLASH = 2 };
 
+// Usage screen layouts (Settings usage.layout). A value this build lacks draws
+// the classic one. CLAWD_LAYOUTS is the bitmask /api/heap reports, so the
+// desktop app only offers what the clock can draw.
+enum : uint8_t { CLAWD_LAYOUT_CLASSIC = 0, CLAWD_LAYOUT_PACE = 1 };
+#define CLAWD_LAYOUTS ((1u << CLAWD_LAYOUT_CLASSIC) | (1u << CLAWD_LAYOUT_PACE))
+
 #define CLAWD_DATA_FRESH_MS 90000UL   // usage counts as live within this window
 
 void clawdUiBegin();
@@ -64,8 +70,9 @@ void clawdUiPayload(const ClawdData& d);     // a payload landed (POST /api/usag
 void clawdUiState(const ClawdState& s);      // a state landed (POST /api/state)
 int  clawdUiDim();                           // active brightness cap, or -1
 bool clawdUiOnDesk();
-// screen: CLAWD_SCREEN_*; fixedAnim: -1 = by usage rate, else an animation index.
-void clawdUiService(uint8_t screen, int8_t fixedAnim);
+// screen: CLAWD_SCREEN_*; fixedAnim: -1 = by usage rate, else an animation index;
+// layout: CLAWD_LAYOUT_* for the usage screen.
+void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout = CLAWD_LAYOUT_CLASSIC);
 bool        clawdUiOnSplash();
 const char* clawdUiAnimName();               // what the splash is playing ("" if none)
 

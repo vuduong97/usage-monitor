@@ -195,7 +195,114 @@ static void drawPanel(int y, const char* pill, float barPct, uint16_t barColor,
   clawdRender(MARGIN, y, CONTENT_W, PANEL_H, CLAWD_BG, shapes, n, texts, t);
 }
 
+// ---- pace layout (usage.layout = CLAWD_LAYOUT_PACE) ---------------------------------
+// Two taller cards that answer "at this rate, do I run out before the reset?":
+// a pace pill, a white time marker on the bar (how much of the window has gone)
+// and a forecast line. Same rules as plans/reports/261012-design-usage-screen-preview.
+#define PACE_P1_Y   44
+#define PACE_H      92
+#define PACE_P2_Y   142
+#define WIN_SESSION 300          // 5-hour window, minutes
+#define WIN_WEEKLY  10080        // 7-day window, minutes
+
+static uint8_t g_layout = CLAWD_LAYOUT_CLASSIC;   // effective layout (one this build draws)
+
+static bool paceOn() { return g_layout == CLAWD_LAYOUT_PACE && !g_data.enterprise; }
+
+struct Pace { const char* label; uint16_t color; float t; };
+
+// t = share of the window gone (0..1); the label is where the % lands at the
+// reset if the current rate holds.
+static Pace paceOf(float pct, int resetMin, int win) {
+  if (resetMin < 0) return {"No data", CLAWD_DIM, 0.0f};
+  float t = (float)(win - resetMin) / (float)win;
+  if (t < 0) t = 0;
+  if (t > 1) t = 1;
+  if (t < 0.05f) return {"Just reset", CLAWD_GREEN, t};
+  const float end = pct / t;
+  if (end > 100.0f) return {"Over pace", CLAWD_RED, t};
+  if (end >= 70.0f) return {"On pace", CLAWD_AMBER, t};
+  return {"Under pace", CLAWD_GREEN, t};
+}
+
+static void formatSpan(int mins, char* buf, size_t n) {   // "35m", "2h 14m", "1d 4h"
+  if (mins < 60)        snprintf(buf, n, "%dm", mins);
+  else if (mins < 1440) snprintf(buf, n, "%dh %dm", mins / 60, mins % 60);
+  else                  snprintf(buf, n, "%dd %dh", mins / 1440, (mins % 1440) / 60);
+}
+
+// The forecast line and its colour. `nowMin` = local minute of day, -1 = unknown.
+static uint16_t forecast(float pct, int resetMin, int win, int nowMin, char* buf, size_t n) {
+  if (resetMin < 0) { snprintf(buf, n, "---"); return CLAWD_DIM; }
+  if (pct >= 100.0f) { snprintf(buf, n, "Limit reached"); return CLAWD_RED; }
+  const int el = win - resetMin;
+  if (el < win / 20 || pct < 1.0f || el <= 0) { snprintf(buf, n, "Too early to tell"); return CLAWD_DIM; }
+  const int left = (int)((100.0f - pct) * (float)el / pct + 0.5f);   // minutes to 100% at this rate
+  if (left >= resetMin) { snprintf(buf, n, "Lasts until reset"); return CLAWD_GREEN; }
+  if (win == WIN_SESSION && nowMin >= 0) {
+    const int at = (nowMin + left) % 1440;
+    snprintf(buf, n, "Out at ~%02d:%02d", at / 60, at % 60);
+  } else {
+    char span[16];
+    formatSpan(left, span, sizeof(span));
+    snprintf(buf, n, "Out in ~%s", span);
+  }
+  return CLAWD_RED;
+}
+
+static void drawPaceCard(int y, const char* label, float pct, int resetMin, int win, int nowMin) {
+  const int cx = MARGIN + PAD_X, cw = CONTENT_W - 2 * PAD_X;
+  const ClawdFont& sf = CF_STYRENE_14;
+  if (pct < 0) pct = 0;
+  const float bar = pct > 100 ? 100 : pct;
+  const Pace p = paceOf(pct, resetMin, win);
+
+  char num[12], reset[48], fc[32];
+  snprintf(num, sizeof(num), "%d%%", (int)(pct + 0.5f));
+  formatReset(resetMin, reset, sizeof(reset));
+  const uint16_t fcColor = forecast(pct, resetMin, win, nowMin, fc, sizeof(fc));
+
+  const int numW = clawdTextWidth(CF_STYRENE_24, num);
+  const int pillW = clawdTextWidth(sf, p.label) + 12;
+  const int pillX = cx + cw - pillW;
+  const int fillW = (int)(cw * bar / 100.0f + 0.5f);
+  const int markX = cx + (int)(cw * p.t + 0.5f) - 1;
+
+  ClawdShape shapes[5];
+  int n = 0;
+  shapes[n++] = {MARGIN, (int16_t)y, CONTENT_W, PACE_H, 8, CLAWD_PANEL};
+  if (resetMin >= 0) shapes[n++] = {(int16_t)pillX, (int16_t)(y + 9), (int16_t)pillW, 20, 99, p.color};
+  shapes[n++] = {(int16_t)cx, (int16_t)(y + 38), (int16_t)cw, BAR_H, 6, CLAWD_BAR_BG};
+  if (fillW > 0) shapes[n++] = {(int16_t)cx, (int16_t)(y + 38), (int16_t)(fillW < BAR_H ? BAR_H : fillW), BAR_H, 6, pctColor(pct)};
+  if (resetMin >= 0) shapes[n++] = {(int16_t)markX, (int16_t)(y + 34), 2, 20, 1, CLAWD_TEXT};
+
+  ClawdText texts[5];
+  int t = 0;
+  texts[t++] = {&CF_STYRENE_24, num, (int16_t)cx, (int16_t)(y + 6), CLAWD_TEXT};
+  texts[t++] = {&sf, label, (int16_t)(cx + numW + 8), (int16_t)(y + 14), CLAWD_DIM};
+  if (resetMin >= 0)
+    texts[t++] = {&sf, p.label, (int16_t)(pillX + 6), (int16_t)(y + 11),
+                  static_cast<uint16_t>(p.color == CLAWD_GREEN ? CLAWD_TEXT : CLAWD_BG)};
+  texts[t++] = {&sf, reset, (int16_t)cx, (int16_t)(y + 56), CLAWD_DIM};
+  texts[t++] = {&sf, fc, (int16_t)cx, (int16_t)(y + 72), fcColor};
+  clawdRender(MARGIN, y, CONTENT_W, PACE_H, CLAWD_BG, shapes, n, texts, t);
+}
+
+static int localMinute(uint32_t now) {
+  if (g_clockEpoch <= 0) return -1;
+  const long cur = g_clockEpoch + (long)((now - g_clockBaseMs) / 1000);
+  return (int)((cur % 86400L + 86400L) % 86400L / 60);
+}
+
+static void drawPacePanels() {
+  const ClawdData& d = g_data;
+  const int nowMin = localMinute(clawdNow());
+  drawPaceCard(PACE_P1_Y, "5-hour", d.sessionPct, d.sessionResetMin, WIN_SESSION, nowMin);
+  drawPaceCard(PACE_P2_Y, "weekly", d.weeklyPct, d.weeklyResetMin, WIN_WEEKLY, nowMin);
+}
+
 static void drawPanels() {
+  if (paceOn()) { drawPacePanels(); return; }
   const ClawdData& d = g_data;
   const int cx = MARGIN + PAD_X;
   char pct[16], reset[48], pct2[16], tail[24];
@@ -561,6 +668,7 @@ static void endAlert() {
   if (g_view != VIEW_SPLASH && g_view != VIEW_DESK) {
     drawFrame(false);
     g_statusDrawn[0] = 0;
+    if (paceOn()) g_dirtyPanels = true;   // the alert line covered the second card
   }
 }
 
@@ -721,8 +829,13 @@ const char* clawdUiDeskAnimName() {
   return g_desk.var >= 0 ? g_desk.seq.vars[g_desk.var] : g_desk.seq.names[g_desk.item];
 }
 
-void clawdUiService(uint8_t screen, int8_t fixedAnim) {
+void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   const uint32_t now = clawdNow();
+  if (layout > 7 || !((CLAWD_LAYOUTS >> layout) & 1u)) layout = CLAWD_LAYOUT_CLASSIC;
+  if (layout != g_layout) {
+    g_layout = layout;
+    g_dirtyAll = true;                 // different card geometry: repaint everything
+  }
   if (g_alert && now - g_alertSince >= ALERT_TIMEOUT_MS) endAlert();
 
   const bool fresh = dataFresh(now);
@@ -812,5 +925,6 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim) {
     g_mini.tick();
   }
   g_mascot.tick(g_rateGroup);
-  tickStatus(now, false);
+  // The pace cards reach the bottom: the status line only shows an alert there.
+  if (!(paceOn() && g_view == VIEW_USAGE) || g_alert) tickStatus(now, false);
 }

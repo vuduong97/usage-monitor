@@ -50,11 +50,13 @@ static void shot(const char* dir, const char* name) {
   printf("%s\n", path);
 }
 
+static uint8_t g_layout = CLAWD_LAYOUT_CLASSIC;   // usage.layout passed to every service
+
 // Advance the fake clock in 10 ms loop() steps.
 static void run(uint32_t ms, uint8_t screen, int8_t anim) {
   for (uint32_t t = 0; t < ms; t += 10) {
     g_now += 10;
-    clawdUiService(screen, anim);
+    clawdUiService(screen, anim, g_layout);
   }
 }
 
@@ -188,6 +190,36 @@ int main(int argc, char** argv) {
   clawdUiPayload(x);
   run(1000, CLAWD_SCREEN_AUTO, -1);
   shot(dir, "06-alert-cleared");
+
+  // pace layout (usage.layout = 1): normal, heavy use, just reset, an alert over it
+  g_layout = CLAWD_LAYOUT_PACE;
+  clawdUiPayload(base());
+  run(1000, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "06a-pace");
+  ClawdData h = base();
+  h.sessionPct = 88; h.sessionResetMin = 38; h.weeklyPct = 93; h.weeklyResetMin = 540;
+  clawdUiPayload(h);
+  run(1000, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "06b-pace-hot");
+  ClawdData fr = base();
+  fr.sessionPct = 4; fr.sessionResetMin = 291; fr.weeklyPct = 18; fr.weeklyResetMin = 8200;
+  clawdUiPayload(fr);
+  run(1000, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "06c-pace-fresh");
+  ClawdData pa = base();
+  strcpy(pa.alertMsg, "Claude needs your permission to run: npm test");
+  clawdUiPayload(pa);
+  run(1500, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "06d-pace-alert");
+  ClawdData pc = base();
+  pc.alertClear = true;
+  clawdUiPayload(pc);
+  run(1000, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "06e-pace-alert-cleared");
+  g_layout = 9;                      // a layout this build lacks: classic
+  run(1000, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "06f-unknown-layout");
+  g_layout = CLAWD_LAYOUT_CLASSIC;
 
   // mascot acts over time
   for (int i = 0; i < 4; i++) {
