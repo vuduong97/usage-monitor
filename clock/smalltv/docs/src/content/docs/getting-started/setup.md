@@ -10,7 +10,7 @@ On first boot the device has no WiFi saved, so it starts its own hotspot and wai
 1. On first boot the screen shows **SETUP MODE** and creates an open hotspot named `SmallTV-Setup`.
 2. Join it from your phone or PC. A captive portal should open on its own. If it does not, browse to `http://192.168.4.1`.
 3. Open the **WiFi** tab, press **Scan**, pick your 2.4 GHz network, enter the password, and press **Save and connect**. The device reboots and joins your network. You can save up to 4 networks; at boot the device joins the strongest one it can see.
-4. It shows the joined network, its IP, and its `http://<hostname>.local` address on screen at boot. Browse to either one. New devices get a unique default hostname like `smalltv-3fa2` so several SmallTVs can share a network; rename it in the WiFi tab.
+4. It shows the joined network and its IP on screen at boot. Browse to the IP. The mDNS name `http://<hostname>.local` also works where the network and your device support it, but the screen leaves it out because it often fails where the IP works. New devices get a unique default hostname like `smalltv-3fa2` so several SmallTVs can share a network; rename it in the WiFi tab.
 
 The ESP8266 is 2.4 GHz only. For an AP password use at least 8 characters, or leave it blank for an open hotspot.
 

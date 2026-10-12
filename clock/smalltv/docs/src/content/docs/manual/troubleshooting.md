@@ -9,12 +9,12 @@ Common problems and what to do about them, in the everyday terms someone using t
 
 Unplug the device and plug it back in. For a few seconds after it reconnects, the screen shows either:
 
-- a green **CONNECTED** screen with its IP address and a `.local` name address, if it already knows a WiFi network, or
+- a green **CONNECTED** screen with its IP address, if it already knows a WiFi network, or
 - a yellow **SETUP MODE** screen with a hotspot name and `http://192.168.4.1`, if it does not (see [Quick start](/smalltv-mod/manual/quick-start/))
 
 Whichever screen you get tells you exactly where to browse. Your phone or computer needs to be on the same WiFi network as the device; this does not work over mobile data.
 
-If the `.local` address does not open in your browser, try the plain IP address instead. Some networks and some browsers do not support `.local` names well.
+The screen shows only the IP address. The `http://<hostname>.local` name may also work, but some networks and some browsers do not support `.local` names, so the IP is the one to try first. If the IP does not open either, the WiFi may block devices from talking to each other (common on office and guest networks).
 
 ## My WiFi network is not in the scan list
 

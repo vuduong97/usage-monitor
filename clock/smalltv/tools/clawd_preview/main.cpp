@@ -95,6 +95,38 @@ static uint32_t untilChange(uint32_t maxMs) {
 
 #define CHECK(c, ...) do { if (!(c)) { printf("FAIL: " __VA_ARGS__); printf("\n"); bad++; } } while (0)
 
+// Non-background pixels in the splash's bottom band (the IP caption).
+static int bandInk() {
+  int n = 0;
+  for (int y = CLAWD_H - CLAWD_SPLASH_BAND_PX; y < CLAWD_H; y++)
+    for (int x = 0; x < CLAWD_W; x++) n += fb[y * CLAWD_W + x] != CLAWD_BG;
+  return n;
+}
+
+// The waiting splash (auto screen, no fresh data) captions the IP in its bottom
+// band, the animations never paint over it, a new IP is redrawn, and a splash
+// picked on purpose stays full height. Leaves the view on a stale auto splash.
+static int checkAddressBand(const char* dir) {
+  int bad = 0;
+  clawdUiSetAddress("192.168.1.48");
+  run(2000, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "09-splash-auto");
+  const int ink = bandInk();
+  CHECK(ink > 0, "no IP under the waiting splash");
+  run(45000, CLAWD_SCREEN_AUTO, -1);                 // two rotations: other animations
+  CHECK(bandInk() == ink, "the splash painted over the IP (%d -> %d px)", ink, bandInk());
+  clawdUiSetAddress("10.97.44.122");
+  run(100, CLAWD_SCREEN_AUTO, -1);
+  CHECK(bandInk() != ink && bandInk() > 0, "a new IP was not redrawn");
+  run(2500, CLAWD_SCREEN_SPLASH, -1);
+  CHECK(bandInk() == 0, "screen = splash still shows the IP");
+  clawdUiSetAddress("");
+  run(2500, CLAWD_SCREEN_AUTO, -1);
+  CHECK(bandInk() == 0, "an empty IP left ink in the band");
+  printf("address band: %s\n", bad ? "FAILED" : "ok");
+  return bad;
+}
+
 // Variants (`v`): the animation plays CLAWD_VAR_EVERY passes, then one variant at
 // random (never the same one twice in a row), then the animation again; without
 // `v` it just loops, and a change of `v` alone is taken over.
@@ -233,8 +265,7 @@ int main(int argc, char** argv) {
   // stale -> idle view in usage mode, splash in auto mode
   run(95000, CLAWD_SCREEN_USAGE, -1);
   shot(dir, "08-idle");
-  run(2000, CLAWD_SCREEN_AUTO, -1);
-  shot(dir, "09-splash-auto");
+  const int bandBad = checkAddressBand(dir);
 
   for (int i = 0; i < clawdAnimCount(); i++) {
     run(2500, CLAWD_SCREEN_SPLASH, (int8_t)i);
@@ -288,7 +319,7 @@ int main(int argc, char** argv) {
     clawdUiDeskStats(ds);
     printf("desk frames drawn: %u\n", (unsigned)ds.total);
   }
-  const int bad = checkVariants();
+  const int bad = checkVariants() + bandBad;
   printf("pixels pushed: %ld\n", g_pushed);
   return bad ? 1 : 0;
 }

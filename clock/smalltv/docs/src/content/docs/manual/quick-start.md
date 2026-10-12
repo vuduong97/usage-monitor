@@ -57,9 +57,8 @@ After the restart the screen shows a green **CONNECTED** screen for a few second
 
 - the network it joined
 - its IP address, for example `192.168.1.42`
-- a name address, for example `http://smalltv-3fa2.local`
 
-Write one of them down, or take a photo of the screen. This is how you reach the settings page from now on, from any device on your home WiFi. Either address works; the `.local` one keeps working if your router hands out a different IP later, so prefer it if your phone accepts it.
+Write it down, or take a photo of the screen. This is how you reach the settings page from now on, from any device on your home WiFi. If your router hands out a different IP later, unplug and replug the device to read the new one. The name address `http://<hostname>.local` (for example `http://smalltv-3fa2.local`) also works if your network and phone support it, but it is not shown because it often fails where the IP works.
 
 Missed the screen? Unplug the device and plug it back in to see it again.
 

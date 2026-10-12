@@ -16,6 +16,7 @@ the Styrene/Tiempos fonts.
 - **Alert:** the daemon's attention message (`m`) scrolls on the status line inside a blinking accent frame, and Clawd alternates waving and pointing. It clears on `x` or after 2 minutes.
 - **Idle:** the cloud mini animation with "Listening… / No data…".
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.
+  - On the Auto screen the splash means no fresh data, so it captions the clock's IP in a 24 px band at the bottom: the way to reach a clock the desktop app cannot find. Every animation ends by grid row 47 of 60, so the band never covers one. A splash picked on purpose (Screen: Clawd) stays full height.
 
 The web UI's Usage tab, Clawdmeter card, has two settings:
 - **Screen:** Auto (usage while data is live, splash otherwise), Usage, or Clawd.

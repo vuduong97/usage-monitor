@@ -113,7 +113,7 @@ After the first flash, every board updates from the browser under the web UI's S
 1. On first boot the device shows **SETUP MODE** and creates an open `SmallTV-Setup` hotspot.
 2. Join it. A captive portal should open; if not, browse to `http://192.168.4.1`.
 3. Open **WiFi**, scan, pick your 2.4 GHz network, enter the password, and save. The device reboots and joins.
-4. It shows the network, its IP, and its `http://<hostname>.local` address on screen. Browse to either one.
+4. It shows the network and its IP on screen. Browse to the IP. `http://<hostname>.local` also works on networks and devices that support mDNS, but it is no longer shown, because it often fails where the IP works.
 5. Add a few tickers under **Ticker** (for example `AAPL`, `NESN.SW`, `BTC-USD`). Each ticker picks its own source; Yahoo Finance is the default, so it works immediately.
 
 The [First-time setup guide](https://giovi321.github.io/smalltv-mod/getting-started/setup/) walks through the web UI tab by tab.

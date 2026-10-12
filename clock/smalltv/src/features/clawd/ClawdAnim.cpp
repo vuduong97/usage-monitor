@@ -211,7 +211,8 @@ uint8_t ClawdSplash::cellAt(void* self, int gx, int gy) {
 void ClawdSplash::render(bool force) {
   if (!active_ || player_.index < 0) return;
   if (forceFull_ && !force) return;         // a full repaint is due on the next tick
-  clawdRenderCells(cellAt, this, 0, 0, GRID, GRID, SPLASH_CELL, 0, 0, pal_, g_stagePrev, force);
+  const int rows = GRID - (band_ ? CLAWD_SPLASH_BAND_PX / SPLASH_CELL : 0);
+  clawdRenderCells(cellAt, this, 0, 0, GRID, rows, SPLASH_CELL, 0, 0, pal_, g_stagePrev, force);
 }
 
 void ClawdSplash::tick() {

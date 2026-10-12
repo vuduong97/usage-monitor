@@ -66,6 +66,8 @@ enum : uint8_t { CLAWD_LAYOUT_CLASSIC = 0, CLAWD_LAYOUT_PACE = 1 };
 
 void clawdUiBegin();
 void clawdUiInvalidate();                    // another mode drew: repaint everything
+// The clock's IP ("" = none), captioned under the splash while it waits for data.
+void clawdUiSetAddress(const char* ip);
 void clawdUiPayload(const ClawdData& d);     // a payload landed (POST /api/usage)
 void clawdUiState(const ClawdState& s);      // a state landed (POST /api/state)
 int  clawdUiDim();                           // active brightness cap, or -1

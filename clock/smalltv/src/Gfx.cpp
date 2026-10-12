@@ -178,19 +178,16 @@ void gfxApInfo(const char* ssid, const char* pass, const char* ip) {
   gfxDrawCentered(url.c_str(), 206, gfxFitSize(url.c_str(), 232, 2), C_GREEN);
 }
 
-void gfxStaInfo(const char* ssid, const char* ip, const char* host) {
+void gfxStaInfo(const char* ssid, const char* ip) {
   if (!gfx) return;
   gfx->fillScreen(C_BLACK);
   gfxDrawCentered("CONNECTED", 18, 3, C_GREEN);
   gfxDrawCentered("Network:", 62, 2, C_GRAY);
   gfxDrawCentered(ssid && ssid[0] ? ssid : "-", 84, gfxFitSize(ssid, 232, 3), C_WHITE);
   gfxDrawCentered("Open in browser:", 126, 2, C_GRAY);
-  // IP shown big (always fits at size 2); mDNS name below as a friendlier option.
+  // Only the IP: http://<host>.local needs multicast on the network and mDNS on
+  // the phone, so it often fails where the IP works. mDNS stays on for the app.
   gfxDrawCentered(ip && ip[0] ? ip : "-", 150, gfxFitSize(ip, 232, 3), C_GREEN);
-  if (host && host[0]) {
-    String url = String("http://") + host + ".local";
-    gfxDrawCentered(url.c_str(), 188, gfxFitSize(url.c_str(), 232, 2), C_GRAY);
-  }
 }
 
 void gfxMessage(const char* title, const char* msg, uint16_t titleColor) {

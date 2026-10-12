@@ -112,6 +112,11 @@ static uint32_t  g_statTotal = 0;
 
 static View      g_view = VIEW_NONE;
 static bool      g_dirtyAll = true;
+
+// The clock's IP, captioned under the splash while it waits for data (auto
+// screen only): the one way to reach a clock the desktop app cannot find.
+static char      g_addr[24] = "";
+static char      g_addrDrawn[24] = "";
 static bool      g_dirtyPanels = true;
 static bool      g_dirtyTitle = true;
 
@@ -693,6 +698,22 @@ void clawdUiInvalidate() {
   g_dirtyAll = true;
 }
 
+void clawdUiSetAddress(const char* ip) {
+  if (!ip) ip = "";
+  strncpy(g_addr, ip, sizeof(g_addr) - 1);
+  g_addr[sizeof(g_addr) - 1] = 0;
+}
+
+// The splash's bottom band (it never paints there while the band is on).
+static void drawAddrBand() {
+  const ClawdFont& f = CF_STYRENE_14;
+  const int y = CLAWD_H - CLAWD_SPLASH_BAND_PX;
+  ClawdText t = {&f, g_addr, (int16_t)(CLAWD_W / 2 - clawdTextWidth(f, g_addr) / 2),
+                 (int16_t)(y + (CLAWD_SPLASH_BAND_PX - f.lineHeight) / 2), CLAWD_DIM};
+  clawdRender(0, y, CLAWD_W, CLAWD_SPLASH_BAND_PX, CLAWD_BG, nullptr, 0, &t, g_addr[0] ? 1 : 0);
+  strcpy(g_addrDrawn, g_addr);
+}
+
 void clawdUiPayload(const ClawdData& d) {
   const uint32_t now = clawdNow();
   g_lastOk = d.ok;
@@ -845,6 +866,11 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   else if (screen == CLAWD_SCREEN_SPLASH)  want = VIEW_SPLASH;
   else if (screen == CLAWD_SCREEN_USAGE)   want = fresh ? VIEW_USAGE : VIEW_IDLE;
   else                                     want = fresh ? VIEW_USAGE : VIEW_SPLASH;
+  // Auto screen + splash means no fresh data: caption the IP under it. A splash
+  // picked on purpose (screen = splash) stays full height.
+  const bool band = want == VIEW_SPLASH && screen == CLAWD_SCREEN_AUTO;
+  if (want == VIEW_SPLASH && g_view == VIEW_SPLASH && band != g_splash.bottomBand())
+    g_dirtyAll = true;               // band came or went: repaint the splash
 
   static int8_t shownAnim = -2;
   if (want == VIEW_SPLASH && g_view == VIEW_SPLASH && fixedAnim != shownAnim) {
@@ -876,7 +902,9 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
     }
     if (want == VIEW_SPLASH) {
       shownAnim = fixedAnim;
+      g_splash.setBottomBand(band);
       g_splash.show(fixedAnim);
+      if (band) drawAddrBand();
       if (!clawdPackOk()) {          // animations not uploaded: say so, don't sit black
         static const char* const msg = "clawd.pak missing";
         ClawdText t = {&CF_STYRENE_14, msg,
@@ -902,6 +930,7 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
     return;
   }
   if (g_view == VIEW_SPLASH) {
+    if (g_splash.bottomBand() && strcmp(g_addr, g_addrDrawn) != 0) drawAddrBand();
     g_splash.tick();
     return;
   }

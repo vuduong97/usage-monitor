@@ -4,6 +4,7 @@
 #include "UsageClient.h"
 #include "ClawdDraw.h"
 #include "ClawdUi.h"
+#include "Net.h"
 
 UsageMode g_usageMode;
 
@@ -66,5 +67,14 @@ void UsageMode::service(const Settings& s) {
   // daemon with http_targets): leave it blank and the daemon POSTs /api/usage.
   if (s.usage.usageUrl.length() >= 8) usageService(s);
   ensureClawd();
+  // The IP for the waiting splash's caption; a String per call, so not every loop.
+  static uint32_t addrAt = 0;
+  static bool addrSet = false;
+  if (!addrSet || millis() - addrAt >= 2000) {
+    addrSet = true;
+    addrAt = millis();
+    const bool up = netMode() == NET_AP || netConnected();
+    clawdUiSetAddress(up ? netIP().c_str() : "");
+  }
   clawdUiService(s.usage.screen, s.usage.anim, s.usage.layout);
 }

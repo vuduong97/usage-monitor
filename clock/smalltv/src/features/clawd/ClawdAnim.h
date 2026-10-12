@@ -42,9 +42,18 @@ struct ClawdPlayer {
   bool tick(uint32_t now, bool& completed);
 };
 
+// Bottom band the splash can leave alone for a caption (the clock's IP while it
+// waits for data). Every animation in clawd.pak ends by grid row 47 of 60
+// (188 px), so the last 6 rows (24 px) are always empty stage.
+#define CLAWD_SPLASH_BAND_PX 24
+
 class ClawdSplash {
  public:
   void begin();
+  // true: never paint the bottom CLAWD_SPLASH_BAND_PX, the caller owns it.
+  // Takes effect on the next render; toggle it only around a full repaint.
+  void setBottomBand(bool on) { band_ = on; }
+  bool bottomBand() const { return band_; }
   // fixedAnim: -1 = pick from the usage-rate group and rotate every 20 s,
   // otherwise that animation index on repeat.
   void show(int8_t fixedAnim);
@@ -64,6 +73,7 @@ class ClawdSplash {
   uint16_t pal_[16];
   bool     active_ = false;
   bool     forceFull_ = false;
+  bool     band_ = false;
   int8_t   fixed_ = -1;
   uint32_t lastPick_ = 0;
   bool     pendingPick_ = false;
