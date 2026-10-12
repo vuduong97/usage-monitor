@@ -7,12 +7,31 @@
 static UsageData g_usage;
 static uint32_t  g_nextPollMs = 0;
 static bool      g_inited = false;
+static bool      g_pushed = false;      // a daemon has pushed /api/usage or /api/state
+static uint32_t  g_lastPushMs = 0;
+
+// The pull GET blocks loop() (and so the animations and the web server) for up
+// to httpTimeout when the URL is dead, e.g. an old daemon address left in the
+// settings: an 8 s freeze every poll. While a daemon pushes, pulling adds
+// nothing, so it is skipped. Clawd.app pushes usage every 60 s and the screen
+// state every 20 s while it is up.
+#define PUSH_QUIET_MS (5UL * 60UL * 1000UL)
+#if defined(SMALLTV_CLAWD)
+#define FIRST_PULL_DELAY_MS 30000UL   // a booted clock gets its first push within ~10 s
+#else
+#define FIRST_PULL_DELAY_MS 0UL
+#endif
+
+static void notePush() {
+  g_pushed = true;
+  g_lastPushMs = millis();
+}
 
 // ---------------------------------------------------------------------------
 void usageInit(const Settings& s) {
   (void)s;
   g_usage.clear();
-  g_nextPollMs = millis();
+  g_nextPollMs = millis() + (g_inited ? 0UL : FIRST_PULL_DELAY_MS);
   g_inited = true;
 }
 
@@ -96,7 +115,9 @@ bool usageApply(const String& body) {
   JsonDocument filter; usageFilter(filter);
   JsonDocument doc;
   if (deserializeJson(doc, body, DeserializationOption::Filter(filter))) return false;
-  return applyUsageDoc(g_usage, doc);
+  if (!applyUsageDoc(g_usage, doc)) return false;
+  notePush();
+  return true;
 }
 
 // Pushed screen state (POST /api/state), clawd-home daemon:
@@ -143,6 +164,7 @@ bool usageApplyState(const String& body) {
   s.dim = doc["dim"].is<int>() ? (int16_t)constrain(doc["dim"].as<int>(), -1, 100) : (int16_t)-1;
   s.ttlSec = (uint16_t)constrain(doc["ttl"] | 60, 1, 3600);
   clawdUiState(s);
+  notePush();
   return true;
 }
 
@@ -182,7 +204,8 @@ void usageService(const Settings& s) {
   if (!g_inited) usageInit(s);
   if ((int32_t)(millis() - g_nextPollMs) < 0) return;
 
-  if (!fetchUsage(s)) g_usage.error = true;   // keep stale data, flag the error
+  const bool pushing = g_pushed && millis() - g_lastPushMs < PUSH_QUIET_MS;
+  if (!pushing && !fetchUsage(s)) g_usage.error = true;   // keep stale data, flag the error
 
   g_nextPollMs = millis() + (uint32_t)s.usage.pollSec * 1000UL;
 }

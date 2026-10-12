@@ -260,7 +260,27 @@ void setup() {
   }
 }
 
+// Longest loop() pass over the last 1-2 minutes (ms), for /api/heap: anything
+// that blocks here freezes the animations and the web server alike.
+static uint32_t g_loopMaxCur = 0, g_loopMaxPrev = 0, g_loopWinStart = 0, g_loopLast = 0;
+uint32_t appLoopMaxMs() { return g_loopMaxCur > g_loopMaxPrev ? g_loopMaxCur : g_loopMaxPrev; }
+
+static void loopProfile() {
+  const uint32_t now = millis();
+  if (g_loopLast) {
+    const uint32_t gap = now - g_loopLast;
+    if (gap > g_loopMaxCur) g_loopMaxCur = gap;
+  }
+  g_loopLast = now;
+  if (now - g_loopWinStart >= 60000UL) {
+    g_loopWinStart = now;
+    g_loopMaxPrev = g_loopMaxCur;
+    g_loopMaxCur = 0;
+  }
+}
+
 void loop() {
+  loopProfile();
   netLoop();
   webPortalLoop();
 

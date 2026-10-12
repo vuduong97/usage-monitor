@@ -39,6 +39,7 @@
 // Defined in main.cpp — re-init every mode + force a repaint after a config change.
 extern void appInvalidate();
 extern const char* appResetReason();   // last reset reason (diagnostics)
+extern uint32_t appLoopMaxMs();        // longest loop() pass, last 1-2 min
 extern void appApplyBrightness();   // main.cpp: re-resolve effective brightness now
 
 static WebServerClass server(80);
@@ -442,6 +443,7 @@ static void handleHeap() {
   o["contFree"] = ESP.getFreeContStack();   // loop() stack never used yet (low-water mark)
 #endif
   o["uptime"] = millis() / 1000;
+  o["loopMaxMs"] = appLoopMaxMs();     // > ~100 ms: something blocked the animations
   o["reset"] = appResetReason();
   if (crashLogLast().length()) o["crash"] = crashLogLast();   // last crash since power on
   o["version"] = FW_VERSION;
