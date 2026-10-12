@@ -81,6 +81,10 @@ An unknown name is ignored by the clock.
 `version`, `uptime`, `heap`, `pak` (screens in `/clawd.pak`, 0 = missing),
 `desk` (animations in `/desk.pak`, 0 = missing), `anim`, `reset`, `crash`.
 
+The app reads it every 5 s. When `uptime` shows the clock restarted, it
+sends the last `/api/usage` payload and the current `/api/state` again at
+once, so the clock leaves its "no data" splash without waiting for the next poll.
+
 ## Endpoints for setup (login when a password is set)
 
 HTTP digest auth, user/password from the clock's web page. Used by the
