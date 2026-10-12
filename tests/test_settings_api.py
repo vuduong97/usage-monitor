@@ -248,3 +248,47 @@ def test_a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save(tmp_path):
     r = b.save(edited(usage={"screen": 0}))
     assert r["ok"] and r["sent"] == {"usage": {"screen": 0}}
     assert made[0].saved == [{"usage": {"screen": 0}}]
+
+
+def test_window_follows_the_clock_the_tray_found_at_a_new_address(tmp_path):
+    # The window opened on 10.0.0.5; the clock then moved (another network / new DHCP lease)
+    # and the tray's scan saved its new address in clock.json. "Thử lại" must reach it there.
+    b, made, keys, _n = bridge(tmp_path)
+    keys.d["clawd"] = ("admin", "pw")
+
+    def down():
+        raise ClockError("no answer from http://10.0.0.5 (ConnectTimeout)")
+    made[0].heap = down
+    assert b.state()["code"] == "offline"                      # nothing better known yet
+    ClockStore(tmp_path / "clock.json").save({"name": "", "host": "192.168.1.48", "port": 80})
+    s = b.state()
+    assert s["ok"] and s["app"]["clock"] == "http://192.168.1.48"
+    assert made[-1].base == "http://192.168.1.48" and made[-1].auth == ("admin", "pw")   # same clock, same login
+    assert s["app"]["key"] == "clawd"
+
+
+def test_window_follows_a_typed_address_and_ignores_the_same_one(tmp_path):
+    b, made, _k, _n = bridge(tmp_path)
+
+    def down():
+        raise ClockError("no answer from http://10.0.0.5 (ConnectTimeout)")
+    made[0].heap = down
+    ClockStore(tmp_path / "clock.json").save({"host": "10.0.0.5", "port": 80})
+    assert b.state()["code"] == "offline" and len(made) == 1  # the store says the same: no reconnect
+    ClockStore(tmp_path / "clock.json").save({"manual_host": "192.168.1.9:8080"})
+    assert b.state()["app"]["clock"] == "http://192.168.1.9:8080"
+
+
+def test_window_asks_the_trays_newer_address_first(tmp_path):
+    # Waiting out the old address costs ~60 s (3 tries x 20 s on a real network): when the tray
+    # already saved another address, go there without asking the old one at all.
+    b, made, _k, _n = bridge(tmp_path)
+    calls = []
+
+    def down():
+        calls.append(1)
+        raise ClockError("no answer from http://10.0.0.5 (ConnectTimeout)")
+    made[0].heap = down
+    ClockStore(tmp_path / "clock.json").save({"name": "clawd", "host": "192.168.1.48", "port": 80})
+    s = b.state()
+    assert s["ok"] and s["app"]["clock"] == "http://192.168.1.48" and calls == []

@@ -157,6 +157,20 @@ class SettingsApi:
         self._base, self._key = base.rstrip("/"), key or base
         self._api = self._factory(self._base, auth=self._keychain.get(self._key) if self._key else None)
 
+    def _follow_store(self) -> bool:
+        """The window gets its clock once, when it opens; the tray keeps looking and saves
+        where it finds the clock (another network, a new DHCP lease) in clock.json. Use that
+        address when it differs from ours. True if it switched."""
+        d = self._store.load()
+        typed = str(d.get("manual_host") or "")
+        c = manual_clock(typed) if typed else (
+            manual_clock(f"{d['host']}:{d.get('port') or 80}") if d.get("host") else None)
+        if c is None or c.base.rstrip("/") == self._base:
+            return False
+        name = str(d.get("name") or "")
+        self._connect(c.base, name or self._key)    # the same clock keeps its saved login
+        return True
+
     def _bundle_info(self) -> dict | None:
         b = self._bundle
         return None if b is None else {"seq": b.seq, "layouts": b.layouts, "size": b.size, "commit": b.commit}
@@ -176,12 +190,18 @@ class SettingsApi:
     # ---- reading -----------------------------------------------------------------
     def state(self) -> dict:
         """Everything the page shows: heap (no login), config, firmware and app facts."""
+        self._follow_store()     # the tray's latest find first: waiting out a gone address takes ~60 s
         if not self._base:
             return {**_fail("noclock", "Chưa tìm thấy đồng hồ."), "app": self._app_info()}
         try:
             self._heap = self._api.heap()
         except ClockError as e:
-            return {**_err(e), "app": self._app_info()}
+            if isinstance(e, AuthNeeded) or not self._follow_store():
+                return {**_err(e), "app": self._app_info()}
+            try:                                   # the tray found it elsewhere while we waited: ask there
+                self._heap = self._api.heap()
+            except ClockError as e2:
+                return {**_err(e2), "app": self._app_info()}
         try:
             cfg = self._api.config()
         except ClockError as e:

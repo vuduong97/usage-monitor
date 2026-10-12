@@ -148,6 +148,15 @@ async function refreshLive() {
   paintPreview(performance.now());
 }
 setInterval(refreshLive, 20000);
+// While the clock does not answer, ask again now and then: the tray may have found it at a
+// new address meanwhile, and state() then follows it (settings_api._follow_store).
+let relooking = false;
+setInterval(async () => {
+  if (!api || busy || relooking || document.hidden || !S || S.ok || S.code !== 'offline') return;
+  relooking = true;
+  try { const r = await api.state(); if (r && (r.ok || r.code !== 'offline')) apply(r); else if (r) { S = r; renderConn(); } }
+  finally { relooking = false; }
+}, 20000);
 function loop(now) {
   if (!document.hidden && now - lastPaint > (reduce ? 1000 : 80)) { lastPaint = now; paintPreview(now); }
   requestAnimationFrame(loop);
