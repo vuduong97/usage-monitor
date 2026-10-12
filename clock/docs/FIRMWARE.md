@@ -15,7 +15,7 @@ so a port stays possible, but nothing compiles them.
   - "Current" and "Weekly" cards. On Enterprise accounts these become "Spending" and "Period" with pace.
   - The app-fed clock as the title.
   - The whimsical spinner status line.
-- **Corner Clawd:** idles, then does acts (waving, dancing, pointing) at a pace set by the usage rate.
+- **Corner Clawd:** rests, then does acts (waving, dancing, pointing) at a pace set by the usage rate: 4 s of rest between acts when idle, 3 / 2 / 1.5 s as the rate goes up (`MAS_STILL_MS`).
 - **Alert:** the app's attention message (`m`) scrolls on the status line inside a blinking accent frame, and Clawd alternates waving and pointing. It clears on `x` or after 2 minutes.
 - **Idle:** the cloud mini animation with "Listening… / No data…".
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.

@@ -87,6 +87,10 @@ bool clawdUiOnDesk();
 void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout = CLAWD_LAYOUT_CLASSIC);
 bool        clawdUiOnSplash();
 const char* clawdUiAnimName();               // what the splash is playing ("" if none)
+// Where the usage screen's Clawd moves (the corner mascot's window, or the pixel
+// layout's floor band); false when neither is up. The desktop preview cuts its
+// looping clip on this box; the device never calls it (the linker drops it).
+bool clawdUiSpriteBox(int& x, int& y, int& w, int& h);
 
 // The desk pack is about to be replaced: close it and stop drawing from it.
 void clawdUiDeskReleased();

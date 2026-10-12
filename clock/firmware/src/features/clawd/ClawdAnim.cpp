@@ -279,7 +279,9 @@ static const char* const MAS_ACTS[4][3] = {      // the original firmware's per-
     {"waving", "dancing", nullptr},
     {"dancing", "waving", "dancing"},
 };
-static const uint16_t MAS_STILL_MS[4] = {10000, 7000, 5000, 3500};
+// Rest between acts: short enough that Clawd is seen moving within a few seconds,
+// still shorter the faster the usage goes.
+static const uint16_t MAS_STILL_MS[4] = {4000, 3000, 2000, 1500};
 static uint8_t g_mascotPrev[MAS_GW * MAS_GH / 2 + 1];
 
 void ClawdMascot::begin(int x, int y) {

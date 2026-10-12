@@ -1068,6 +1068,20 @@ int clawdUiDim() {
 }
 
 bool clawdUiOnSplash() { return g_view == VIEW_SPLASH; }
+
+bool clawdUiSpriteBox(int& x, int& y, int& w, int& h) {
+  if (g_view != VIEW_USAGE && g_view != VIEW_IDLE) return false;
+  if (chromeLayout() == CLAWD_LAYOUT_PIXEL) {       // the walker's floor band
+    x = 0; y = PIX_FLOOR_Y - 38; w = CLAWD_W; h = 38;
+    return true;
+  }
+  const bool ring = chromeLayout() == CLAWD_LAYOUT_RINGS;
+  x = ring ? RING_MASCOT_X : MASCOT_X;
+  y = ring ? RING_MASCOT_Y : MASCOT_Y;
+  w = 56;                                           // the mascot window: 28 x 21 cells, 2 px each
+  h = 42;
+  return true;
+}
 bool clawdUiOnDesk() { return g_view == VIEW_DESK; }
 
 const char* clawdUiAnimName() {
