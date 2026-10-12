@@ -1,9 +1,17 @@
 #include "DeskPack.h"
 #include <string.h>
 
+// uzlib's inflate (zlib licence, uzlib/LICENSE), copied from the ESP8266
+// core's tools/sdk/uzlib. Compiled here rather than as its own file so the
+// host builds (tools/clawd_preview, tools/desk_check, the desktop renderer)
+// need no extra source; the .inc name keeps PlatformIO from building it twice.
+#include "uzlib/uzlib.h"
+#include "uzlib/tinflate.inc"
+
 #define DESK_HEADER  16
 #define DESK_DESC    64
-#define DESK_VERSION 2
+#define DESK_STORED  0x8000        // v3 index: delta kept uncompressed
+#define DESK_RING    512           // v3 deltas use a 512 B deflate window
 
 #if defined(ARDUINO)
 #include <LittleFS.h>
@@ -42,6 +50,14 @@ static bool backendRead(uint32_t off, void* dst, size_t n) {
 #endif
 
 static uint16_t g_count = 0;
+static uint16_t g_version = 0;     // 2: raw deltas; 3: per-delta raw deflate (DeskPack.h)
+
+// Inflate state for v3, static: ~1.3 KB of Huffman tables + the ring is too
+// much for the 4 KB loop stack. One delta is decoded at a time.
+static struct uzlib_uncomp g_inf;
+static uint8_t  g_ring[DESK_RING];
+static uint8_t  g_in[128];
+static uint32_t g_inOff = 0, g_inEnd = 0;
 
 static uint16_t rdU16(const uint8_t* p) { return (uint16_t)(p[0] | (p[1] << 8)); }
 static uint32_t rdU32(const uint8_t* p) {
@@ -52,10 +68,12 @@ bool deskPackOpen() {
   g_count = 0;
   uint8_t h[DESK_HEADER];
   if (!backendOpen() || !backendRead(0, h, sizeof(h))) return false;
-  if (memcmp(h, "CLDK", 4) != 0 || rdU16(h + 4) != DESK_VERSION || rdU16(h + 8) != DESK_SIZE) return false;
+  const uint16_t v = rdU16(h + 4);
+  if (memcmp(h, "CLDK", 4) != 0 || (v != 2 && v != 3) || rdU16(h + 8) != DESK_SIZE) return false;
   const uint16_t n = rdU16(h + 6);
   if (n == 0 || n >= 64) return false;
   g_count = n;
+  g_version = v;
   return true;
 }
 
@@ -78,7 +96,7 @@ bool deskPackAnim(int i, DeskAnim& a) {
   a.flags = d[26];
   for (int k = 0; k < 16; k++) a.palette[k] = rdU16(d + 28 + 2 * k);
   a.indexOff = rdU32(d + 60);
-  a.holdsOff = a.indexOff + 4u * (a.frameCount + 2u);
+  a.holdsOff = a.indexOff + (g_version == 3 ? 8u * (a.frameCount + 1u) : 4u * (a.frameCount + 2u));
   return a.frameCount > 0 && a.loopStart < a.frameCount && a.w && a.h &&
          a.x + a.w <= DESK_SIZE && a.y + a.h <= DESK_SIZE;
 }
@@ -95,14 +113,39 @@ int deskPackFind(const char* name) {
 }
 
 // Buffered reader over [off, end) of the pack.
+// uzlib pulls compressed bytes through this when g_in runs dry.
+static int infRead(struct uzlib_uncomp* d) {
+  if (g_inOff >= g_inEnd) return -1;
+  const uint32_t n = g_inEnd - g_inOff > sizeof(g_in) ? sizeof(g_in) : g_inEnd - g_inOff;
+  if (!backendRead(g_inOff, g_in, n)) return -1;
+  g_inOff += n;
+  d->source = g_in + 1;
+  d->source_limit = g_in + n;
+  return g_in[0];
+}
+
+// Buffered reader over the ops of one delta: raw bytes [off, end) of the
+// pack, or (v3, zip) `raw` bytes inflated from the stream at g_inOff.
 struct OpReader {
   uint32_t off, end;
   uint8_t  buf[128];
   uint16_t pos = 0, len = 0;
   bool     err = false;
-  bool more() { return pos < len || off < end; }
+  bool     zip = false;
+  uint32_t raw = 0;                 // zip: op bytes not yet inflated
+  bool more() { return pos < len || (zip ? raw > 0 : off < end); }
   int next() {
-    if (pos >= len) {
+    if (pos >= len && zip) {
+      if (!raw) { err = true; return -1; }
+      g_inf.dest_start = g_inf.dest = buf;
+      g_inf.dest_limit = buf + (raw > sizeof(buf) ? sizeof(buf) : raw);
+      const int res = uzlib_uncompress(&g_inf);
+      const uint32_t n = (uint32_t)(g_inf.dest - buf);
+      if (res < 0 || n == 0 || g_inf.eof) { err = true; return -1; }
+      raw -= n;
+      len = (uint16_t)n;
+      pos = 0;
+    } else if (pos >= len) {
       if (off >= end) { err = true; return -1; }
       const uint32_t n = end - off > sizeof(buf) ? sizeof(buf) : end - off;
       if (!backendRead(off, buf, n)) { err = true; return -1; }
@@ -136,10 +179,27 @@ struct SpanOut {
 bool deskPackDraw(const DeskAnim& a, uint16_t d, DeskSpanFn fn, void* ctx, bool full) {
   if (!fn || d > a.frameCount) return false;
   uint8_t ix[8];
-  if (!backendRead(a.indexOff + 4u * d, ix, 8)) return false;
   OpReader r;
-  r.off = rdU32(ix);
-  r.end = rdU32(ix + 4);
+  if (g_version == 3) {
+    if (!backendRead(a.indexOff + 8u * d, ix, 8)) return false;
+    const uint32_t at = rdU32(ix);
+    const uint16_t stored = rdU16(ix + 4), raw = rdU16(ix + 6);
+    r.off = at;
+    r.end = at + stored;
+    if (stored && !(raw & DESK_STORED)) {
+      r.zip = true;
+      r.raw = raw;
+      g_inOff = at;
+      g_inEnd = at + stored;
+      uzlib_uncompress_init(&g_inf, g_ring, sizeof(g_ring));
+      g_inf.source = g_inf.source_limit = nullptr;
+      g_inf.source_read_cb = infRead;
+    }
+  } else {
+    if (!backendRead(a.indexOff + 4u * d, ix, 8)) return false;
+    r.off = rdU32(ix);
+    r.end = rdU32(ix + 4);
+  }
   if (r.end < r.off) return false;
   SpanOut out;
   out.fn = fn;

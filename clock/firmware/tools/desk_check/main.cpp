@@ -1,4 +1,4 @@
-// desk_check — decode every frame of a desk.pak (v2) with the clock's own
+// desk_check — decode every frame of a desk.pak (CLDK v2 or v3) with the clock's own
 // DeskPack.cpp and compare each crop state with the encoder's CRCs
 // (build/desk/desk.crc.json from tools/desk/desk_to_pak.js). Also reports the
 // SPI work per frame: spans (address windows) and pixels pushed.
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   char buf[4096];
   for (size_t n; (n = fread(buf, 1, sizeof(buf), f)) > 0;) json.append(buf, n);
   fclose(f);
-  if (!deskPackOpen()) { fprintf(stderr, "desk.pak missing or not CLDK v2\n"); return 2; }
+  if (!deskPackOpen()) { fprintf(stderr, "desk.pak missing or not CLDK v2/v3\n"); return 2; }
   int bad = 0;
   for (int i = 0; i < deskPackCount(); i++) {
     DeskAnim a;

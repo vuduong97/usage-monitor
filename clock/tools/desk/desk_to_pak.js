@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // desk_to_pak.js — render clawd-on-desk's animated Clawd SVGs into /desk.pak,
-// the clock's full-screen "agent" animations (format CLDK v2).
+// the clock's full-screen "agent" animations (format CLDK v3, desk_pak.js).
 //
 // PERSONAL USE ONLY. The artwork belongs to its authors (clawd-on-desk
 // assets/LICENSE: All Rights Reserved; the Clawd character is Anthropic's).
@@ -34,6 +34,7 @@ const { execFileSync } = require('child_process');
 const { PNG } = require('pngjs');
 const { ANIMS, SIZE, PX_PER_UNIT, WINDOW, FPS, MAX_MS } = require('./desk_anims');
 const codec = require('./desk_codec');
+const { writePak } = require('./desk_pak');   // CLDK v3 container
 
 const SS = 2;                                  // screenshot px per panel pixel
 const VB = { x: -15, y: -25, w: 45, h: 45 };   // every clawd-on-desk Clawd SVG uses this viewBox
@@ -334,49 +335,6 @@ function verifyAnim(a) {
   const wrapped = states[states.length - 1];
   if (Buffer.compare(Buffer.from(wrapped), Buffer.from(a.cropFrames[a.loopStart])) !== 0) throw new Error(`${a.name}: wrap does not land on the loop start`);
   return { worst, worstAt, overFrames, crc: states.map((s) => codec.crc32(s)) };
-}
-
-// ---- pack file ---------------------------------------------------------------------
-// Little-endian.
-//   header  "CLDK", u16 version (2), u16 count, u16 size (240), u16 reserved,
-//           u32 reserved                                                   16 B
-//   desc    name[16], u8 x, y, w, h (crop on the panel), u16 frameCount,
-//           u16 loopStart, u16 maxFrameBytes, u8 flags (bit 0: once),
-//           u8 reserved, u16 palette[16] (RGB565), u32 indexOff            64 B
-//   index   u32 offsets[frameCount + 2]: frame i = [off[i], off[i+1]) for
-//           i < frameCount, then the wrap delta (last frame -> loopStart)
-//   holds   u16 ms[frameCount]
-//   frames  delta ops over the w x h crop, row-major (see desk_codec.js)
-function writePak(anims) {
-  const head = Buffer.alloc(16);
-  head.write('CLDK', 0, 'latin1');
-  head.writeUInt16LE(2, 4);
-  head.writeUInt16LE(anims.length, 6);
-  head.writeUInt16LE(SIZE, 8);
-  const descs = [], bodies = [];
-  let off = 16 + 64 * anims.length;
-  for (const a of anims) {
-    const n = a.frames.length - 1;             // + the wrap delta
-    const index = Buffer.alloc(4 * (n + 2));
-    const holds = Buffer.alloc(2 * n);
-    let fo = off + index.length + holds.length;
-    a.frames.forEach((f, i) => { index.writeUInt32LE(fo, 4 * i); fo += f.length; });
-    index.writeUInt32LE(fo, 4 * (n + 1));
-    a.holds.forEach((h, i) => holds.writeUInt16LE(h, 2 * i));
-    const d = Buffer.alloc(64);
-    d.write(a.name.slice(0, 15), 0, 'latin1');
-    d.writeUInt8(a.x, 16); d.writeUInt8(a.y, 17); d.writeUInt8(a.w, 18); d.writeUInt8(a.h, 19);
-    d.writeUInt16LE(n, 20); d.writeUInt16LE(a.loopStart, 22);
-    d.writeUInt16LE(Math.max(...a.frames.map((f) => f.length)), 24);
-    d.writeUInt8(a.once ? 1 : 0, 26);
-    for (let k = 0; k < 16; k++) d.writeUInt16LE(a.palette[k] || 0, 28 + 2 * k);
-    d.writeUInt32LE(off, 60);
-    descs.push(d);
-    const body = Buffer.concat([index, holds, ...a.frames]);
-    bodies.push(body);
-    off += body.length;
-  }
-  return Buffer.concat([head, ...descs, ...bodies]);
 }
 
 // ---- contact sheets (QA) -----------------------------------------------------------

@@ -2,12 +2,16 @@
 //
 // Rendered at build time from a local clawd-on-desk clone by
 // tools/desk/desk_to_pak.js in the clawd-home repo (personal use only; the
-// file is never committed). Format CLDK v2: every animation is 1:1 on the
+// file is never committed). Format CLDK: every animation is 1:1 on the
 // 240x240 panel, cropped to its union box, ≤15 colours + black. Frame 0 is a
 // delta from a black crop, every later frame a delta from the previous one,
 // and one extra "wrap" delta leads from the last frame back to loopStart, so
 // the player only redraws the pixels that change (the panel itself holds the
 // previous frame: no framebuffer). Op codes: tools/desk/desk_codec.js.
+// Container (tools/desk/desk_pak.js): v2 stores the ops raw; v3 deflates each
+// delta on its own (512 B window, inflated here through a 512 B ring) and
+// stores identical deltas once: about half the size, the same pixels. The
+// clock reads both.
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
