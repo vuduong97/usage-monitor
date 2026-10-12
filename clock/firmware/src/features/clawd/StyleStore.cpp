@@ -100,7 +100,7 @@ static const char* precheck(File& f, uint32_t n) {
   memcpy(&size, head + 8, 4);
   memcpy(&crc, head + 12, 4);
   if (size != n) return "size";
-  uint8_t buf[128];
+  static uint8_t buf[128];                        // static: this runs deep in the web handler
   uint32_t c = 0;
   for (uint32_t done = 16; done < n;) {
     const uint32_t want = n - done < sizeof(buf) ? n - done : (uint32_t)sizeof(buf);
@@ -127,7 +127,7 @@ static const char* mirror(File& f) {
     yield();
   }
   styleLog("erased");
-  uint32_t buf[64];                               // flashWrite wants whole aligned words
+  static uint32_t buf[64];                        // flashWrite wants whole aligned words; static (cont stack)
   f.seek(0);
   for (uint32_t done = 0; done < n;) {
     const uint32_t want = n - done < sizeof(buf) ? n - done : (uint32_t)sizeof(buf);
