@@ -1,0 +1,16 @@
+Clawd desktop app
+
+clawd_desktop/usage.py and clawd_desktop/events.py started as copies of the
+Clawdmeter daemon (claude_usage_daemon.py, clawd_events.py) by Hermann
+Bjorgvin and contributors, https://github.com/HermannBjorgvin/Clawdmeter,
+extended for the clawd desk clock. Upstream Clawdmeter carries no license
+file; credit and thanks go to its authors. If you are an author and want this
+code removed or relicensed, please open an issue.
+
+This repository contains no firmware, fonts, animation packs or Clawd
+artwork. The tray icon is drawn in code (clawd_desktop/icons.py).
+
+Claude, Claude Code and Clawd are trademarks of Anthropic. This project is
+not affiliated with or endorsed by Anthropic. It reads your own Claude Code
+login on your own computer to ask Anthropic's usage endpoint for your usage;
+the token never leaves your machine except to api.anthropic.com.
