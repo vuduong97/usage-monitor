@@ -93,3 +93,19 @@ def test_daemon_running_checks_the_state_endpoint(monkeypatch):
         raise httpx.ConnectError("refused")
     monkeypatch.setattr(httpx, "get", refused)
     assert not eng.daemon_running(5555)
+
+
+def test_a_settings_pause_empties_the_targets(tmp_path):
+    from clawd_desktop import pause
+    store = ClockStore(tmp_path / "clock.json")
+    store.save({"host": "10.0.0.7", "name": "clawdmeter"})
+    now = [1000.0]
+    p = tmp_path / "pause.json"
+    e = eng.Engine(ClockFinder(store, browser=NoBrowser()),
+                   pause=pause.PauseReader(p, now=lambda: now[0]))
+    e.finder.current = Clock(host="10.0.0.7", name="clawdmeter", source="saved")
+    assert e.targets() == ["http://10.0.0.7/api/usage"]
+    pause.hold(60, "firmware update", path=p, now=lambda: now[0])
+    assert e.targets() == [] and e.snapshot()["paused"] == "firmware update"
+    now[0] += 61                                     # the window crashed: the lease runs out
+    assert e.targets() == ["http://10.0.0.7/api/usage"] and e.snapshot()["paused"] is None

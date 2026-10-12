@@ -8,6 +8,8 @@ dependencies = [
   "zeroconf>=0.132",
   "pystray>=0.19",
   "Pillow>=10",
+  "pywebview>=5.3",
+  "keyring>=25",
 ]
 
 [dependency-groups]

@@ -10,6 +10,7 @@ import time
 import httpx
 
 from clawd_desktop import events, paths, usage
+from clawd_desktop.pause import PauseReader
 from clawd_desktop.bootwatch import BootWatch
 from clawd_desktop.discovery import ClockFinder, ClockStore
 
@@ -52,7 +53,7 @@ def daemon_running(port: int | None = None, timeout: float = 1.0) -> bool:
 
 
 class Engine:
-    def __init__(self, finder: ClockFinder | None = None) -> None:
+    def __init__(self, finder: ClockFinder | None = None, pause: PauseReader | None = None) -> None:
         self.finder = finder or ClockFinder(ClockStore(paths.CLOCK_FILE),
                                             manual=usage.read_http_targets)
         self.payload: dict | None = None      # the last usage payload sent
@@ -63,6 +64,17 @@ class Engine:
         self._stop: asyncio.Event | None = None
         self._thread: threading.Thread | None = None
         self._ready = threading.Event()
+        self.pause = pause or PauseReader()
+        self._paused: str | None = None
+
+    def targets(self) -> list[str]:
+        """The clocks to push to: none while the settings window holds a pause
+        (a firmware update), so nothing competes with its upload."""
+        reason = self.pause.reason()
+        if reason != self._paused:
+            log(f"Pushes paused: {reason}" if reason else "Pushes resumed")
+            self._paused = reason
+        return [] if reason else self.finder.targets()
 
     # ---- the async side ------------------------------------------------------
     def _on_payload(self, p: dict) -> None:
@@ -87,7 +99,7 @@ class Engine:
     async def run(self, stop: asyncio.Event) -> None:
         log("=== Clawd desktop (usage + agent events over WiFi) ===")
         publisher = usage.Publisher(http=TrackingSinks(self.finder.report),
-                                    targets=self.finder.targets)
+                                    targets=self.targets)
         tasks = [asyncio.create_task(self.finder.run(stop)),
                  asyncio.create_task(publisher.run(stop)),
                  asyncio.create_task(self._watch_token(stop))]
@@ -102,7 +114,7 @@ class Engine:
             try:
                 await server.start()
                 self.events_on = True
-                pusher = events.StatePusher(brain, self.finder.targets)
+                pusher = events.StatePusher(brain, self.targets)
                 tasks.append(asyncio.create_task(pusher.run(stop)))
             except OSError as e:
                 log(f"Event server not started ({e}); agent events disabled")
@@ -120,7 +132,7 @@ class Engine:
                 pusher.last_key = None
                 brain.wake.set()
             return await publisher.resend(url)
-        tasks.append(asyncio.create_task(BootWatch(self.finder.targets, on_restart).run(stop)))
+        tasks.append(asyncio.create_task(BootWatch(self.targets, on_restart).run(stop)))
         try:
             await stop.wait()
         finally:
@@ -159,5 +171,5 @@ class Engine:
     def snapshot(self) -> dict:
         d = self.finder.describe()
         d.update(payload=self.payload, payload_at=self.payload_at, token=self.token,
-                 events_on=self.events_on)
+                 events_on=self.events_on, paused=self._paused)
         return d
