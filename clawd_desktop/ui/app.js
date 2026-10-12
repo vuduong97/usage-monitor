@@ -53,6 +53,16 @@ const STYLE_DESC = {
   blueprint:'Bản vẽ kỹ thuật, nét trắng trên nền xanh.',
   pastel:'Màu kẹo nhạt, Clawd nhún nhảy.',
   onebit:'Đen trắng 1-bit, chữ gõ từng ký tự.',
+  ambercrt:'Màn hình CRT màu hổ phách, vòng 24 ô cho phiên 5 giờ.',
+  vt100tui:'Terminal VT100 xanh lá, thanh tiến độ kiểu htop.',
+  mac84:'Hai cửa sổ Macintosh 1984 đen trắng trên nền gạch chéo.',
+  win95:'Hộp thoại Windows 95, thanh tiến độ dạng khối.',
+  biossetup:'Màn hình cài đặt BIOS nền xanh, Clawd ở khung trợ giúp.',
+  c64:'Commodore 64, Clawd đi sang phải khi phiên đầy dần.',
+  zxspec:'ZX Spectrum, cột ô màu cầu vồng, viền đổi màu theo trạng thái.',
+  casiolcd:'Đồng hồ Casio LCD, chữ số đè lên vạch 8 mờ.',
+  calc:'Máy tính bỏ túi, số lớn trên màn LCD.',
+  hifivfd:'Màn VFD dàn hi-fi, hai cột đo và phổ âm.',
 };
 
 // ---------- helpers ----------
