@@ -209,12 +209,34 @@ def local_ipv4() -> str | None:
     return None if ip.startswith("127.") else ip
 
 
-def scan_candidates(ip: str | None) -> list[str]:
-    """Every other host in the /24 around `ip` (most home networks)."""
+SCAN_MIN_PREFIX = 22      # never sweep more than a /22 (1,022 hosts, ~7 s)
+
+
+def local_prefix(ip: str | None) -> int:
+    """Netmask length of the interface holding `ip`; 24 when unknown.
+
+    Office networks are often /23 or wider: scanning only the /24 would miss a
+    clock whose DHCP lease landed in the other half."""
+    if not ip:
+        return 24
+    try:
+        import ifaddr  # a zeroconf dependency
+        for adapter in ifaddr.get_adapters():
+            for a in adapter.ips:
+                if a.ip == ip and isinstance(a.network_prefix, int):
+                    return a.network_prefix
+    except Exception:  # odd adapters on Windows; fall back to the common case
+        pass
+    return 24
+
+
+def scan_candidates(ip: str | None, prefix: int = 24) -> list[str]:
+    """Every other host on `ip`'s subnet, capped at the /22 around it."""
     if not ip:
         return []
+    prefix = min(max(prefix, SCAN_MIN_PREFIX), 30)
     try:
-        net = ipaddress.ip_network(f"{ip}/24", strict=False)
+        net = ipaddress.ip_network(f"{ip}/{prefix}", strict=False)
     except ValueError:
         return []
     return [str(h) for h in net.hosts() if str(h) != ip]
@@ -271,7 +293,10 @@ async def _port_open(host: str, port: int, sem: asyncio.Semaphore,
 async def scan_lan(hosts: Iterable[str] | None = None,
                    transport: httpx.AsyncBaseTransport | None = None) -> ScanResult:
     """Clawd clocks in the local /24, found by a port-80 sweep then /api/heap."""
-    hosts = list(hosts) if hosts is not None else scan_candidates(local_ipv4())
+    if hosts is None:
+        ip = local_ipv4()
+        hosts = scan_candidates(ip, local_prefix(ip))
+    hosts = list(hosts)
     found = ScanResult()
     if not hosts:
         return found

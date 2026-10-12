@@ -96,6 +96,7 @@ Menu của biểu tượng:
 | Hiện tượng | Cách xử lý |
 | --- | --- |
 | "Không thấy đồng hồ" | Đồng hồ và máy tính phải cùng một WiFi (không dùng mạng khách). Thử **Tìm lại đồng hồ**, hoặc **Nhập địa chỉ đồng hồ…** |
+| Lúc được lúc mất, nhất là ở công ty, quán cà phê, khách sạn | Nhiều mạng công ty / mạng khách chặn các thiết bị nói chuyện với nhau (đồng hồ vẫn vào WiFi, vẫn hiện IP, nhưng máy tính không tới được). Ứng dụng không vượt qua được: dùng WiFi nhà, hoặc phát WiFi từ điện thoại rồi cho cả máy tính và đồng hồ vào đó (thêm mạng này trong trang cài đặt đồng hồ, mục WiFi) |
 | "Chưa đăng nhập Claude" | Mở Terminal (Mac) hoặc PowerShell (Windows), gõ `claude`, đăng nhập. Ứng dụng tự nhận trong 1 phút |
 | Đồng hồ hiện SETUP MODE | Đồng hồ không vào được WiFi (đổi mật khẩu WiFi, router mới...). Làm lại Bước 1 |
 | Mac báo "Clawd bị hỏng, nên chuyển vào Thùng rác" | Chạy lệnh `xattr` ở mục Mac phía trên |

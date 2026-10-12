@@ -52,7 +52,7 @@ def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
             return "error", "Máy tính chặn Clawd vào mạng: cho phép Clawd trong Tường lửa", detail
         if snap.get("scanning"):
             return "busy", "Đang dò tìm đồng hồ trong mạng…", detail
-        return "error", "Không thấy đồng hồ: đồng hồ và máy tính cùng WiFi chưa?", detail
+        return "error", "Không thấy đồng hồ: cùng WiFi chưa? (mạng công ty/mạng khách có thể chặn)", detail
     if connected:
         return "ok", f"Đã kết nối: {clock.label}", detail
     if snap.get("failing"):

@@ -157,6 +157,14 @@ def test_manual_clock_parsing():
     assert dsc.manual_clock("h:abc") is None
 
 
+def test_scan_candidates_follow_the_netmask():
+    wide = dsc.scan_candidates("10.97.44.245", 23)          # office /23: both halves
+    assert len(wide) == 509 and "10.97.45.12" in wide and "10.97.44.245" not in wide
+    assert len(dsc.scan_candidates("10.1.2.3", 16)) == 1021   # capped at a /22
+    assert len(dsc.scan_candidates("192.168.1.20", 28)) == 13
+    assert dsc.local_prefix(None) == 24
+
+
 def test_scan_candidates_cover_the_slash_24():
     hosts = dsc.scan_candidates("192.168.1.20")
     assert len(hosts) == 253 and "192.168.1.48" in hosts and "192.168.1.20" not in hosts
