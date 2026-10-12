@@ -74,7 +74,6 @@ def _wifi(v):
 SCHEMA: dict[str, Any] = {
     "hostname": _str(32, HOSTNAME, 1),
     "brightness": _int(0, 100),
-    "autoBrightness": _bool,
     "rotation": _int(0, 3),
     "wifi": _wifi,
     "usage": {"screen": _int(0, 2), "anim": _int(-1, 63), "layout": _int(0, 15)},

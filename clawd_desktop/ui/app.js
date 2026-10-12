@@ -42,7 +42,7 @@ let busy = false;      // a request or the firmware update is running
 function view(cfg) {   // the editable part of /api/config (settings_api._clock_view)
   const u = cfg.usage || {}, k = cfg.clock || {};
   return {
-    hostname: cfg.hostname || '', brightness: cfg.brightness ?? 50, autoBrightness: !!cfg.autoBrightness,
+    hostname: cfg.hostname || '', brightness: cfg.brightness ?? 50,
     rotation: cfg.rotation ?? 0,
     wifi: (cfg.wifi || []).filter(r => r && r.ssid).map(r => ({ ssid: r.ssid })),
     usage: { screen: u.screen ?? 0, anim: u.anim ?? -1, layout: u.layout ?? 0 },
@@ -124,7 +124,6 @@ function renderConn() {
 function renderDisplay() {
   if (!edit) return;
   $('brightness').value = edit.brightness; $('brightVal').textContent = edit.brightness + '%';
-  setSw('autoBrightness', edit.autoBrightness);
   setSeg('rotation', edit.rotation); setSeg('screen', edit.usage.screen);
   const sel = $('anim'); sel.replaceChildren();
   const add = (v, t) => { const o = el('option', null, t); o.value = String(v); sel.append(o); };
@@ -228,7 +227,6 @@ function renderBar() {
 // ---------- inputs ----------
 function on(id, ev, fn) { $(id).addEventListener(ev, e => { if (edit) { fn(e); renderBar(); } }); }
 on('brightness', 'input', e => { edit.brightness = +e.target.value; $('brightVal').textContent = edit.brightness + '%'; paintPreview(performance.now()); });
-on('autoBrightness', 'click', () => { edit.autoBrightness = !edit.autoBrightness; setSw('autoBrightness', edit.autoBrightness); });
 on('rotation', 'click', e => { const b = e.target.closest('button'); if (b) { edit.rotation = +b.dataset.v; setSeg('rotation', edit.rotation); paintPreview(performance.now()); } });
 on('screen', 'click', e => { const b = e.target.closest('button'); if (b) { edit.usage.screen = +b.dataset.v; setSeg('screen', edit.usage.screen); } });
 on('anim', 'change', e => { edit.usage.anim = +e.target.value; });
