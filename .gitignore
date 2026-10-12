@@ -6,3 +6,4 @@ build/
 dist/
 *.spec.bak
 .DS_Store
+clawd_desktop/firmware/

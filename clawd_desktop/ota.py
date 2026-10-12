@@ -19,12 +19,16 @@ UPLOAD_LEASE = 200.0 # > clockapi.UPLOAD_TIMEOUT
 
 def install(api: ClockApi, bundle: firmware.Bundle,
             progress: Callable[[str], None] = lambda _s: None,
-            hold: Callable[[float, str], None] = pause.hold,
-            release: Callable[[], None] = pause.release,
-            sleep: Callable[[float], None] = time.sleep,
+            hold: Callable[[float, str], None] | None = None,
+            release: Callable[[], None] | None = None,
+            sleep: Callable[[float], None] | None = None,
             clock: Callable[[], float] = time.monotonic,
-            settle: float = SETTLE) -> dict:
+            settle: float | None = None) -> dict:
     """Push the bundle; returns the clock's /api/heap after it came back."""
+    hold = hold or pause.hold
+    release = release or pause.release
+    sleep = sleep or time.sleep
+    settle = SETTLE if settle is None else settle
     image = bundle.read()
     progress("check")
     heap = api.heap()

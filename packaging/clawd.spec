@@ -11,11 +11,20 @@ from clawd_desktop import __version__  # noqa: E402
 
 ICONS = ROOT / "build" / "icons"
 hidden = collect_submodules("zeroconf") + collect_submodules("clawd_desktop")
+# The settings window: its page, and the clock firmware if tools/bundle_firmware.py put one there.
+datas = [(str(ROOT / "clawd_desktop" / "ui"), "clawd_desktop/ui")]
+FIRMWARE = ROOT / "clawd_desktop" / "firmware"
+if (FIRMWARE / "firmware.json").is_file():
+    datas.append((str(FIRMWARE), "clawd_desktop/firmware"))
+    print(f"bundling clock firmware from {FIRMWARE}")
+else:
+    print("no clock firmware bundled (tools/bundle_firmware.py); the Update tab will say so")
 if sys.platform == "darwin":
-    hidden += ["pystray._darwin", "PyObjCTools.AppHelper"]
+    hidden += ["pystray._darwin", "PyObjCTools.AppHelper", "webview.platforms.cocoa", "keyring.backends.macOS"]
     icon = str(ICONS / "clawd.icns")
 elif sys.platform == "win32":
-    hidden += ["pystray._win32"]
+    hidden += ["pystray._win32", "webview.platforms.winforms", "webview.platforms.edgechromium",
+               "keyring.backends.Windows"]
     icon = str(ICONS / "clawd.ico")
 else:
     hidden += ["pystray._xorg", "pystray._appindicator"]
@@ -25,7 +34,11 @@ a = Analysis(
     [str(ROOT / "packaging" / "entry.py")],
     pathex=[str(ROOT)],
     hiddenimports=hidden,
-    excludes=["tkinter", "bleak", "pytest", "numpy"],
+    datas=datas,
+    # pywebview's Qt/GTK/Android backends are never used: keep them (and their toolkits) out.
+    excludes=["tkinter", "bleak", "pytest", "numpy", "webview.platforms.qt", "webview.platforms.gtk",
+              "webview.platforms.android", "webview.platforms.cef", "PyQt5", "PyQt6", "PySide2", "PySide6",
+              "qtpy", "gi", "cefpython3"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

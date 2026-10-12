@@ -23,8 +23,9 @@ PAUSE_FILE = paths.CONFIG_DIR / "pause.json"
 MAX_LEASE = 300.0       # never trust an `until` further out than this
 
 
-def hold(seconds: float, reason: str, path: Path = PAUSE_FILE,
+def hold(seconds: float, reason: str, path: Path | None = None,
          now: Callable[[], float] = time.time) -> None:
+    path = path or PAUSE_FILE
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps({"until": now() + min(seconds, MAX_LEASE), "reason": reason,
@@ -32,7 +33,8 @@ def hold(seconds: float, reason: str, path: Path = PAUSE_FILE,
     tmp.replace(path)
 
 
-def release(path: Path = PAUSE_FILE) -> None:
+def release(path: Path | None = None) -> None:
+    path = path or PAUSE_FILE
     try:
         path.unlink()
     except FileNotFoundError:
@@ -43,8 +45,8 @@ class PauseReader:
     """For the engine: `reason()` is the active pause's reason, or None. Re-reads
     the file only when it changes (it is asked every second)."""
 
-    def __init__(self, path: Path = PAUSE_FILE, now: Callable[[], float] = time.time) -> None:
-        self.path, self.now = path, now
+    def __init__(self, path: Path | None = None, now: Callable[[], float] = time.time) -> None:
+        self.path, self.now = path or PAUSE_FILE, now
         self._stamp: tuple | None = None
         self._until = 0.0
         self._reason = ""

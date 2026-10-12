@@ -6,6 +6,7 @@
   Clawd hooks on|off        install / remove the Claude Code hooks
   Clawd autostart on|off    start at login, or not
   Clawd cleanup             what the uninstaller runs: autostart off, hooks off
+  Clawd settings            the settings window (the tray's "Cài đặt…" starts it)
 """
 from __future__ import annotations
 
@@ -61,6 +62,20 @@ def _find(seconds: float) -> int:
     return 0
 
 
+def remembered_clock() -> tuple[str, str]:
+    """(base URL, keychain key) of the clock the tray last used, or ("", "")."""
+    from clawd_desktop import paths
+    from clawd_desktop.discovery import ClockStore, manual_clock
+    d = ClockStore(paths.CLOCK_FILE).load()
+    raw = d.get("manual_host") or d.get("host") or ""
+    if d.get("host") and not d.get("manual_host") and d.get("port"):
+        raw = f"{d['host']}:{d['port']}"
+    c = manual_clock(raw) if raw else None
+    if c is None:
+        return "", ""
+    return c.base, d.get("manual_host") or d.get("name") or c.host
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     # macOS passes -psn_… when an app is opened from Finder on old systems.
@@ -76,6 +91,10 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name)
         p.add_argument("state", choices=["on", "off"])
     sub.add_parser("cleanup")
+    st = sub.add_parser("settings")
+    st.add_argument("--clock", default="", help="http://<clock>; default: the remembered clock")
+    st.add_argument("--key", default="", help="keychain entry for its web password (its name)")
+    st.add_argument("--piped", action="store_true", help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
 
     if a.cmd in (None, "tray"):
@@ -92,6 +111,12 @@ def main(argv: list[str] | None = None) -> int:
         ok = autostart.set_enabled(a.state == "on")
         print(f"autostart {'on' if a.state == 'on' else 'off'}" if ok else "autostart: not supported here")
         return 0 if ok else 1
+    if a.cmd == "settings":
+        from clawd_desktop import settings_app
+        clock, key = a.clock, a.key
+        if not clock:
+            clock, key = remembered_clock()
+        return settings_app.main(clock, key or clock, a.piped)
     if a.cmd == "cleanup":
         autostart.disable()
         hooks.apply(False)
