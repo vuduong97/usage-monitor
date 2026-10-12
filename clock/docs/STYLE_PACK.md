@@ -63,9 +63,11 @@ How the two copies are kept in step:
 - **Failed OTA:** the slot is re-checked (`styleStoreResume`).
 - **When flash is written:** only when a pack is installed, or at the first boot
   after a firmware update.
-- **Install:** the upload goes to `/style.pak.tmp`, is copied into the slot,
-  validated through the flash cache, attached, and only then renamed to
-  `/style.pak`. When LittleFS is short of room (less than 64 KB free), the old
+- **Install:** the upload goes to `/style.pak.tmp`. Its magic, API, size and CRC
+  are checked from the file first, so a damaged upload leaves the current pack on
+  screen. Only then is it copied into the slot, validated in full through the
+  flash cache, attached, and renamed to `/style.pak`. An upload over 32 KB stops
+  being written at once. When LittleFS is short of room (less than 64 KB free), the old
   `/style.pak` is deleted before the upload; the screen keeps drawing the old pack
   from the slot until the new one is in.
 
