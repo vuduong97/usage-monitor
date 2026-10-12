@@ -18,6 +18,7 @@ from clawd_desktop import engine as eng
 from clawd_desktop import paths
 from clawd_desktop import settings_api as sa
 from clawd_desktop.discovery import ClockFinder, ClockStore
+from tests.test_firmware_ota import make_bundle, write_styles
 from tests.test_settings_api import FakeApi
 
 PAYLOAD = {"s": 42, "sr": 134, "w": 67, "wr": 3960, "st": "allowed", "t": 1760191500, "tf": 24}
@@ -163,15 +164,16 @@ def test_frame_cache_keeps_the_latest_few():
 
 
 # ---- loading and running the renderer ----------------------------------------------------
-def fake_folder(tmp_path, body, commit="44e244f", layouts=63):
+def fake_folder(tmp_path, body, commit="44e244f", styles=("synth", "paper")):
     d = tmp_path / "renderer"
     d.mkdir()
+    write_styles(d / "styles", styles)
     exe = d / "clawd_render"
     exe.write_text("#!/bin/sh\n" + body)
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
     (d / "clawd.pak").write_bytes(b"CLWD")
     (d / "preview.json").write_text(json.dumps({"exe": "clawd_render", "pak": "clawd.pak", "commit": commit,
-                                                "layouts": layouts, "fwSeq": 2}))
+                                                "layouts": 1, "styleApi": 1, "fwSeq": 2}))
     return d
 
 
@@ -179,7 +181,10 @@ def test_load_renderer_needs_every_file(tmp_path):
     assert pv.load_renderer(tmp_path / "nothing") is None
     d = fake_folder(tmp_path, "exit 0")
     r = pv.load_renderer(d)
-    assert r is not None and r.layouts == 63
+    assert r is not None and sorted(r.styles) == ["paper", "synth"]
+    (d / "styles" / "index.json").unlink()
+    r = pv.load_renderer(d)
+    assert r is not None and r.styles == {}                             # no packs: the classic screen still draws
     (d / "clawd.pak").unlink()
     assert pv.load_renderer(d) is None
 
@@ -197,11 +202,15 @@ def test_draw_returns_the_frame_and_passes_the_payload_on(tmp_path):
     d = fake_folder(tmp_path, f'echo "$@" > {log}; cat > {log}.in; head -c {pv.FRAME_BYTES} /dev/zero')
     r = pv.load_renderer(d)
     assert r is not None
-    assert len(r.draw(3, {"s": 5})) == pv.FRAME_BYTES
-    assert log.read_text().split()[:2] == ["--layout", "3"]
+    assert len(r.draw("synth", {"s": 5})) == pv.FRAME_BYTES
+    args = log.read_text().split()
+    assert args[-2] == "--style" and args[-1].endswith("styles/synth.pak")
     assert json.loads(Path(f"{log}.in").read_text()) == {"s": 5}
-    r.draw(0, None)
+    r.draw(pv.CLASSIC, None)
+    assert "--style" not in log.read_text().split()                     # the classic screen: no pack
     assert Path(f"{log}.in").read_text() == ""                          # nothing at all: the waiting screen
+    with pytest.raises(ValueError):
+        r.draw("nope", None)
 
 
 @posix_only
@@ -211,8 +220,9 @@ def test_clip_asks_for_one_and_parses_it(tmp_path):
     src.write_bytes(clip_bytes([FULL, SPOT]))
     r = pv.load_renderer(fake_folder(tmp_path, f'echo "$@" > {log}; cat > /dev/null; cat {src}'))
     assert r is not None
-    assert len(r.clip(5, PAYLOAD)) == 2
-    assert "--clip" in log.read_text().split() and log.read_text().split()[:2] == ["--layout", "5"]
+    assert len(r.clip("paper", PAYLOAD)) == 2
+    args = log.read_text().split()
+    assert args[-1] == "--clip" and args[args.index("--style") + 1].endswith("paper.pak")
 
 
 @posix_only
@@ -221,7 +231,7 @@ def test_a_broken_clip_raises(tmp_path, body):
     r = pv.load_renderer(fake_folder(tmp_path, "cat > /dev/null; " + body))
     assert r is not None
     with pytest.raises(ValueError):
-        r.clip(0, PAYLOAD)
+        r.clip(pv.CLASSIC, PAYLOAD)
 
 
 @posix_only
@@ -230,7 +240,7 @@ def test_a_payload_the_clock_would_reject_draws_the_waiting_screen(tmp_path):
     d = fake_folder(tmp_path, f'echo x >> {n}; if [ "$(wc -c)" -gt 0 ]; then exit 2; fi; head -c {pv.FRAME_BYTES} /dev/zero')
     r = pv.load_renderer(d)
     assert r is not None
-    assert len(r.draw(0, {"foo": 1})) == pv.FRAME_BYTES
+    assert len(r.draw(pv.CLASSIC, {"foo": 1})) == pv.FRAME_BYTES
     assert len(n.read_text().split()) == 2
 
 
@@ -240,71 +250,86 @@ def test_a_broken_renderer_raises(tmp_path, body):
     r = pv.load_renderer(fake_folder(tmp_path, body))
     assert r is not None
     with pytest.raises(ValueError):
-        r.draw(0, PAYLOAD)
+        r.draw(pv.CLASSIC, PAYLOAD)
 
 
 # ---- the bridge call ----------------------------------------------------------------------------
 class FakeRenderer:
-    def __init__(self, layouts=63, fail=False):
-        self.layouts, self.fail, self.calls = layouts, fail, []
+    def __init__(self, styles=("synth", "paper"), fail=False):
+        self.styles = {sid: Path(f"/x/{sid}.pak") for sid in styles}
+        self.fail, self.calls = fail, []
 
-    def draw(self, layout, payload):
-        self.calls.append((layout, payload))
+    def _byte(self, style):
+        return 0 if style == pv.CLASSIC else 1 + sorted(self.styles).index(style)
+
+    def draw(self, style, payload):
+        self.calls.append((style, payload))
         if self.fail:
             raise ValueError("boom")
-        return bytes([layout]) * pv.FRAME_BYTES
+        return bytes([self._byte(style)]) * pv.FRAME_BYTES
 
-    def clip(self, layout, payload):
-        self.calls.append((layout, payload))
+    def clip(self, style, payload):
+        self.calls.append((style, payload))
         if self.fail:
             raise ValueError("boom")
-        return pv.parse_clip(clip_bytes([(400, 0, 0, 240, 240, bytes([layout]) * pv.FRAME_BYTES), SPOT]))
+        return pv.parse_clip(clip_bytes([(400, 0, 0, 240, 240, bytes([self._byte(style)]) * pv.FRAME_BYTES), SPOT]))
 
 
 NOW = 1_800_000_000.0
 
 
-def api_with(renderer, stored=(PAYLOAD, NOW - 30)):
+def api_with(renderer, stored=(PAYLOAD, NOW - 30), bundle=None):
     return sa.SettingsApi("http://c", "k", api_factory=lambda *a, **k: FakeApi("http://c"),  # type: ignore[arg-type,return-value]
-                          renderer=renderer,  # type: ignore[arg-type]
+                          renderer=renderer, bundle=bundle,  # type: ignore[arg-type]
                           store=ClockStore(Path("/nonexistent/x.json")), payload_source=lambda: stored,
                           now=lambda: NOW)
 
 
-def test_usage_preview_draws_every_layout_with_the_real_usage():
+@pytest.fixture
+def bundle(tmp_path):
+    return make_bundle(tmp_path / "bundle", seq=2, style_api=1, styles=("synth", "paper"))
+
+
+def test_usage_preview_draws_every_style_with_the_real_usage(bundle):
     r = FakeRenderer()
-    out = api_with(r).usage_preview()
-    assert out["ok"] and out["exact"] and sorted(out["frames"]) == ["0", "1", "2", "3", "4", "5"]
+    out = api_with(r, bundle=bundle).usage_preview()
+    assert out["ok"] and out["exact"] and sorted(out["frames"]) == ["classic", "paper", "synth"]
     assert out["sentAt"] == NOW - 30 and out["now"] == NOW
     live = out["payload"]
     assert live["s"] == 42 and live["w"] == 67 and live["t"] != PAYLOAD["t"]      # real numbers, wall clock now
-    assert [c[0] for c in r.calls] == [0, 1, 2, 3, 4, 5] and all(c[1] == live for c in r.calls)
-    png = base64.b64decode(out["frames"]["1"].split(",", 1)[1])
-    assert out["frames"]["1"].startswith("data:image/png;base64,") and b"acTL" in png     # an animated loop
+    assert [c[0] for c in r.calls] == ["classic", "synth", "paper"] and all(c[1] == live for c in r.calls)
+    png = base64.b64decode(out["frames"]["synth"].split(",", 1)[1])
+    assert out["frames"]["synth"].startswith("data:image/png;base64,") and b"acTL" in png     # an animated loop
 
 
-def test_usage_preview_without_motion_draws_still_frames():
+def test_usage_preview_without_a_bundle_draws_only_the_classic_screen():
+    out = api_with(FakeRenderer()).usage_preview()
+    assert sorted(out["frames"]) == ["classic"]
+
+
+def test_usage_preview_without_motion_draws_still_frames(bundle):
     r = FakeRenderer()
-    b = api_with(r)
-    still = b.usage_preview([1], False)
-    assert still["frames"]["1"].startswith("data:image/bmp;base64,")
-    assert b.usage_preview([1], "yes")["frames"]["1"].startswith("data:image/png;base64,")  # not a bool: animate
-    assert b.usage_preview([1], False) == still and len(r.calls) == 2                       # each kind cached
+    b = api_with(r, bundle=bundle)
+    still = b.usage_preview(["synth"], False)
+    assert still["frames"]["synth"].startswith("data:image/bmp;base64,")
+    assert b.usage_preview(["synth"], "yes")["frames"]["synth"].startswith("data:image/png;base64,")  # not a bool: animate
+    assert b.usage_preview(["synth"], False) == still and len(r.calls) == 2                            # each kind cached
 
 
-def test_usage_preview_reuses_frames_within_the_minute():
+def test_usage_preview_reuses_frames_within_the_minute(bundle):
     r = FakeRenderer()
-    b = api_with(r)
-    b.usage_preview([1])
-    b.usage_preview([1])
+    b = api_with(r, bundle=bundle)
+    b.usage_preview(["paper"])
+    b.usage_preview(["paper"])
     assert len(r.calls) == 1
 
 
-def test_usage_preview_ignores_bad_layout_lists_and_skips_what_the_renderer_lacks():
-    r = FakeRenderer(layouts=0b11)
-    out = api_with(r).usage_preview(["x", 99, True])               # not a layout list: all six
-    assert sorted(out["frames"]) == ["0", "1"]                       # the renderer only has two
-    assert sorted(api_with(FakeRenderer()).usage_preview([4, 4, 2])["frames"]) == ["2", "4"]
+def test_usage_preview_ignores_bad_style_lists_and_skips_what_the_renderer_lacks(bundle):
+    r = FakeRenderer(styles=("synth",))
+    out = api_with(r, bundle=bundle).usage_preview(["x", 99, True])      # not a style list: all of them
+    assert sorted(out["frames"]) == ["classic", "synth"]                  # the renderer has no paper
+    out = api_with(FakeRenderer(), bundle=bundle).usage_preview(["paper", "paper", "classic"])
+    assert sorted(out["frames"]) == ["classic", "paper"]
 
 
 def test_usage_preview_without_a_renderer_hands_the_page_the_real_payload():
@@ -320,9 +345,9 @@ def test_usage_preview_falls_back_when_the_renderer_fails(capsys):
 
 def test_usage_preview_before_any_usage_draws_the_waiting_screen():
     r = FakeRenderer()
-    out = api_with(r, stored=None).usage_preview([0])
+    out = api_with(r, stored=None).usage_preview(["classic"])
     assert out["exact"] and out["payload"] is None and out["sentAt"] is None
-    assert r.calls == [(0, None)]
+    assert r.calls == [("classic", None)]
 
 
 # ---- the real renderer (only where tools/build_preview.py has built it) ---------------------------------
@@ -330,27 +355,28 @@ REAL = pv.load_renderer()
 
 
 @pytest.mark.skipif(REAL is None or not os.environ.get("CLAWD_GOLDEN"), reason="needs the built renderer + CLAWD_GOLDEN=1")
-def test_real_renderer_is_deterministic_and_draws_each_layout():
+def test_real_renderer_is_deterministic_and_draws_each_style():
     assert REAL is not None
-    frames = {i: REAL.draw(i, PAYLOAD) for i in range(6)}
-    assert all(len(f) == pv.FRAME_BYTES for f in frames.values())
-    assert len({hashlib.sha256(f).hexdigest() for f in frames.values()}) == 6      # six different screens
-    assert REAL.draw(1, PAYLOAD) == frames[1]
-    assert REAL.draw(0, None) != REAL.draw(0, PAYLOAD)                                   # waiting screen vs usage
+    ids = [pv.CLASSIC, *sorted(REAL.styles)]
+    frames = {i: REAL.draw(i, PAYLOAD) for i in ids}
+    assert len(ids) == 7 and all(len(f) == pv.FRAME_BYTES for f in frames.values())
+    assert len({hashlib.sha256(f).hexdigest() for f in frames.values()}) == len(ids)   # all different
+    assert REAL.draw("synth", PAYLOAD) == frames["synth"]
+    assert REAL.draw(pv.CLASSIC, None) != REAL.draw(pv.CLASSIC, PAYLOAD)              # waiting screen vs usage
 
 
 @pytest.mark.skipif(REAL is None or not os.environ.get("CLAWD_GOLDEN"), reason="needs the built renderer + CLAWD_GOLDEN=1")
-def test_real_clip_loops_clawd_one_rest_and_move():
+def test_real_clips_loop_each_style():
     assert REAL is not None
     live = pv.live_payload(PAYLOAD, NOW)
-    for i in range(6):
-        frames = REAL.clip(i, live)
+    frames = REAL.clip(pv.CLASSIC, live)                # corner mascot: a 4 s rest + one act
+    assert len(frames) > 10 and 5_000 < sum(f.delay_ms for f in frames) < 15_000
+    for sid in REAL.styles:
+        frames = REAL.clip(sid, live)
         total = sum(f.delay_ms for f in frames)
-        assert len(frames) > 10
-        # corner mascot: a 4 s rest + one act; pixel walker: a round trip of the floor
-        assert (20_000 < total < 50_000) if i == 5 else (5_000 < total < 15_000), (i, total)
-        assert len(pv.apng(frames)) < 150_000
-    assert REAL.clip(5, live) == REAL.clip(5, live)                                        # deterministic
+        assert 1_000 <= total <= 50_000, (sid, total)
+        assert len(pv.apng(frames)) < 400_000, sid
+    assert REAL.clip("synth", live) == REAL.clip("synth", live)                         # deterministic
 
 
 # ---- the clock's own clawd.pak for the approximate preview ---------------------------------------

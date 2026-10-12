@@ -10,6 +10,10 @@ fwSeq and layouts must be what that image reports in /api/heap: --src reads
 them from the firmware source it was built from (CLAWD_FW_SEQ in config.h,
 CLAWD_LAYOUTS in ClawdUi.h), or pass --seq/--layouts. A wrong seq would make
 the app offer the same update again after installing it.
+
+With --src it also copies the style packs built from that source (<src>/styles:
+index.json + *.pak, from `node tools/style/build.js`) into styles/, and records
+the style API the image draws (STYLE_API in StylePack.h).
 """
 import argparse
 import hashlib
@@ -17,6 +21,7 @@ import re
 import json
 import shutil
 import sys
+import zlib
 from pathlib import Path
 
 OTA_MAX = 524_288
@@ -39,6 +44,38 @@ def from_source(src: Path) -> tuple[int, int]:
     if not names or any(n not in enum for n in names):
         raise ValueError(f"cannot read CLAWD_LAYOUTS: {d.group(1).strip()}")
     return int(m.group(1)), sum(1 << enum[n] for n in set(names))
+
+
+def style_api_from_source(src: Path) -> int:
+    """STYLE_API from the firmware source, 0 for one from before style packs."""
+    try:
+        h = (src / "src" / "features" / "clawd" / "StylePack.h").read_text()
+    except FileNotFoundError:
+        return 0
+    m = re.search(r"#define\s+STYLE_API\s+(\d+)", h)
+    if not m:
+        raise ValueError("no STYLE_API in StylePack.h")
+    return int(m.group(1))
+
+
+def copy_styles(src: Path, api: int, dest: Path) -> int:
+    """Copy <src>/styles (index.json + the packs it lists) to `dest`; how many packs.
+    ValueError when the index is not for `api` or a pack does not match it."""
+    shutil.rmtree(dest, ignore_errors=True)
+    folder = src / "styles"
+    if not api or not (folder / "index.json").is_file():
+        return 0
+    index = json.loads((folder / "index.json").read_text())
+    if index.get("api") != api:
+        raise ValueError(f"styles/index.json is for style API {index.get('api')}, the image draws {api}")
+    dest.mkdir(parents=True)
+    for e in index["styles"]:
+        data = (folder / e["file"]).read_bytes()
+        if len(data) != e["size"] or data[:4] != b"CSTY" or f"{zlib.crc32(data[16:]):08x}" != e["crc"]:
+            raise ValueError(f"styles/{e['file']} does not match index.json: rebuild the packs")
+        (dest / e["file"]).write_bytes(data)
+    shutil.copyfile(folder / "index.json", dest / "index.json")
+    return len(index["styles"])
 
 
 def main() -> int:
@@ -64,6 +101,13 @@ def main() -> int:
             print(f"--seq/--layouts disagree with the source (fwSeq {seq}, layouts {layouts})")
             return 1
         a.seq, a.layouts = seq, layouts
+        try:
+            style_api = style_api_from_source(a.src)
+        except (OSError, ValueError) as e:
+            print(f"--src: {e}")
+            return 1
+    else:
+        style_api = 0
     if a.seq is None or a.layouts is None:
         print("give --src, or both --seq and --layouts")
         return 1
@@ -81,10 +125,19 @@ def main() -> int:
     for old in DEST.glob("*.bin"):
         old.unlink()
     (DEST / "clawd-firmware.bin").write_bytes(data)
+    try:
+        styles = copy_styles(a.src, style_api, DEST / "styles") if a.src else 0
+        if not a.src:
+            shutil.rmtree(DEST / "styles", ignore_errors=True)
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"styles: {e}")
+        return 1
     manifest = {"file": "clawd-firmware.bin", "size": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-                "variant": "esp8266-clawd", "fwSeq": a.seq, "layouts": a.layouts, "commit": a.commit}
+                "variant": "esp8266-clawd", "fwSeq": a.seq, "layouts": a.layouts, "styleApi": style_api,
+                "commit": a.commit}
     (DEST / "firmware.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f"bundled {len(data):,} B fwSeq {a.seq} layouts {a.layouts} -> {DEST}")
+    print(f"bundled {len(data):,} B fwSeq {a.seq} layouts {a.layouts} styleApi {style_api} "
+          f"({styles} style packs) -> {DEST}")
     return 0
 
 

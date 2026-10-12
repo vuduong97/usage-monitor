@@ -6,8 +6,8 @@
   CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
 
 Compiles tools/preview/clawd_render.cpp with the firmware's own drawing code
-(<src>/src/features/clawd) and copies clawd.pak next to it, plus a preview.json
-that records the firmware commit and layouts. The window only trusts the renderer
+(<src>/src/features/clawd) and copies clawd.pak and the style packs (<src>/styles)
+next to it, plus a preview.json that records the firmware commit and layouts. The window only trusts the renderer
 when that matches the bundled firmware image, so it never shows a screen the
 installed firmware cannot draw. Needs a gcc/clang-style C++17 compiler (set CXX
 to pick one; on Windows use MinGW-w64 or clang).
@@ -21,12 +21,13 @@ import sys
 from pathlib import Path
 
 # tools/ is on sys.path when this runs as a script
-from bundle_firmware import from_source
+from bundle_firmware import copy_styles, from_source, style_api_from_source
 
 ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "clawd_desktop" / "renderer"
 MAIN = ROOT / "tools" / "preview" / "clawd_render.cpp"
-SOURCES = ("ClawdDraw.cpp", "ClawdAnim.cpp", "ClawdRate.cpp", "ClawdUi.cpp", "ClawdPack.cpp", "DeskPack.cpp")
+SOURCES = ("ClawdDraw.cpp", "ClawdAnim.cpp", "ClawdRate.cpp", "ClawdUi.cpp", "ClawdPack.cpp", "DeskPack.cpp",
+           "StylePack.cpp")
 
 
 def git_commit(src: Path) -> str:
@@ -64,6 +65,7 @@ def main() -> int:
         return 1
     try:
         seq, layouts = from_source(a.src)
+        style_api = style_api_from_source(a.src)
     except (OSError, ValueError) as e:
         print(f"--src: {e}")
         return 1
@@ -82,10 +84,16 @@ def main() -> int:
         print("compile failed")
         return 1
     shutil.copyfile(pak, DEST / "clawd.pak")
+    try:
+        styles = copy_styles(a.src, style_api, DEST / "styles")
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"styles: {e}")
+        return 1
     (DEST / "preview.json").write_text(json.dumps({
         "exe": exe.name, "pak": "clawd.pak", "commit": commit, "fwSeq": seq, "layouts": layouts,
+        "styleApi": style_api,
     }, indent=2) + "\n")
-    print(f"built {exe} (firmware {commit or '?'}, fwSeq {seq}, layouts {layouts})")
+    print(f"built {exe} (firmware {commit or '?'}, fwSeq {seq}, layouts {layouts}, {styles} style packs)")
     return 0
 
 
