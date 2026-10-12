@@ -22,7 +22,7 @@ TIMEOUT = 20.0          # the clock answers slowly for a few minutes after a boo
 UPLOAD_TIMEOUT = 180.0
 RETRIES = 2             # extra tries for a GET that timed out or could not connect
 RETRY_GAP = 1.5
-OTA_MAX = 524_288       # clawd -> clawd OTA budget (firmware/docs/FIRMWARE.md in the firmware repo)
+OTA_MAX = 524_288       # clawd -> clawd OTA budget (docs/FIRMWARE.md in the firmware repo)
 
 
 class ClockError(Exception):
