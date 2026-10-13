@@ -359,7 +359,7 @@ def test_real_renderer_is_deterministic_and_draws_each_style():
     assert REAL is not None
     ids = [pv.CLASSIC, *sorted(REAL.styles)]
     frames = {i: REAL.draw(i, PAYLOAD) for i in ids}
-    assert len(ids) == 17 and all(len(f) == pv.FRAME_BYTES for f in frames.values())   # classic + 16 packs
+    assert len(ids) == 47 and all(len(f) == pv.FRAME_BYTES for f in frames.values())   # classic + 46 packs
     assert len({hashlib.sha256(f).hexdigest() for f in frames.values()}) == len(ids)   # all different
     assert REAL.draw("synth", PAYLOAD) == frames["synth"]
     assert REAL.draw(pv.CLASSIC, None) != REAL.draw(pv.CLASSIC, PAYLOAD)              # waiting screen vs usage
