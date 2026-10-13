@@ -17,6 +17,8 @@ from clawd_desktop import APP_NAME, __version__, autostart, hooks, icons, paths
 from clawd_desktop.engine import Engine, daemon_running
 
 REFRESH = 3.0
+FEED_FIRST = 60.0       # first firmware feed check after start (s)
+FEED_RETRY = 1800.0     # after a failed check
 FRESH = 180.0      # a push this recent counts as "connected"
 LOCAL_NETWORK_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork"
 
@@ -167,6 +169,8 @@ class Tray:
                 M(lambda _i: self.head, None, enabled=False),
                 M(lambda _i: self.detail, None, enabled=False, visible=lambda _i: bool(self.detail)),
                 pystray.Menu.SEPARATOR,
+                M(lambda _i: f"● Có firmware mới (#{self.fw_new})", self.open_update,
+                  visible=lambda _i: bool(self.fw_new)),
                 M("Cài đặt…", self.open_settings, default=True),
                 # Only while something is wrong. Everything else (rescan, address,
                 # log, the clock's web page, version) lives in the settings window.
@@ -181,6 +185,7 @@ class Tray:
         self._stop = threading.Event()
         self._settings: subprocess.Popen | None = None
         self._popover: Any = None       # macOS: the panel a left click opens (popover.py)
+        self.fw_new = 0                 # a newer release for the clock (feed.py), 0: none
 
     # ---- main-thread helper for AppKit -----------------------------------------
     def on_main(self, fn) -> None:
@@ -264,14 +269,53 @@ class Tray:
             self.refresh()
         threading.Thread(target=ask, daemon=True).start()
 
-    def open_settings(self) -> None:
+    def open_update(self) -> None:
+        self._open_window("update")
+
+    def _feed_loop(self) -> None:
+        """Ask the firmware feed now and then whether the clock has something to install."""
+        from clawd_desktop import feed, firmware
+        from clawd_desktop.clockapi import ClockApi, ClockError
+        source = feed.from_settings()
+        if source is None:
+            return
+        log(f"Update feed: {source.url} ({source.channel})")
+        bundle = firmware.load_bundle()
+        wait = FEED_FIRST
+        while not self._stop.wait(wait):
+            wait = feed.CHECK_EVERY
+            clock = self.engine.snapshot().get("clock")
+            if clock is None:
+                wait = FEED_FIRST                  # try again soon once a clock is found
+                continue
+            try:
+                m = source.latest()
+                api = ClockApi(clock.base)
+                try:
+                    heap = api.heap()
+                finally:
+                    api.close()
+            except (feed.FeedError, ClockError) as e:
+                log(f"Update check: {e}")
+                wait = FEED_RETRY
+                continue
+            new = feed.offer(heap, m, bundle)
+            if new != self.fw_new:
+                self.fw_new = new
+                log(f"Update for the clock: #{new}" if new else "Clock is up to date")
+                self.on_main(self.icon.update_menu)
+
+    def open_settings(self) -> None:      # no arguments: pystray passes (icon, item) to more
+        self._open_window("")
+
+    def _open_window(self, tab: str) -> None:
         """The settings window, in its own process (pywebview wants the main
         thread, which the tray holds). A second click brings it forward."""
         from clawd_desktop import settings_app
         p = self._settings
         if p is not None and p.poll() is None and p.stdin is not None:
             try:
-                p.stdin.write(b"show\n")
+                p.stdin.write(b"show update\n" if tab == "update" else b"show\n")
                 p.stdin.flush()
                 return
             except (OSError, ValueError):
@@ -280,7 +324,7 @@ class Tray:
         base = clock.base if clock is not None else ""
         key = self._clock_key(clock) if clock is not None else ""
         try:
-            p = subprocess.Popen(settings_app.command(base, key), stdin=subprocess.PIPE,
+            p = subprocess.Popen(settings_app.command(base, key, tab), stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE, **_no_window())
         except OSError as e:
             log(f"Settings window did not start: {e}")
@@ -323,6 +367,7 @@ class Tray:
             if sys.platform == "darwin":
                 self.on_main(self._install_popover)
             threading.Thread(target=self._loop, name="clawd-tray", daemon=True).start()
+            threading.Thread(target=self._feed_loop, name="clawd-feed", daemon=True).start()
             self.refresh()
         self.icon.run(setup=setup)
 

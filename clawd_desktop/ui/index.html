@@ -926,16 +926,19 @@
           <!-- UPDATE -->
           <section data-pane="update" class="hide">
             <h2>Cập nhật &amp; bảo trì</h2>
-            <p class="sub">Firmware đi kèm app. Không cần tải gì từ mạng.</p>
+            <p class="sub">Firmware và gói hoạt hình mới nhất cho đồng hồ, cài qua Wi‑Fi.</p>
             <div class="box">
               <h3>Firmware</h3>
               <div class="kv" id="fwKv"></div>
               <p id="fwText" style="margin: 10px 0"></p>
               <div class="steps hide" id="steps">
-                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span>
               </div>
               <p id="fwStep" class="hide" style="margin: 6px 0 10px"></p>
-              <button class="btn" id="fwBtn" disabled>Cập nhật firmware</button>
+              <div class="row">
+                <button class="btn" id="fwBtn" disabled>Cập nhật firmware</button>
+                <button class="btn ghost small" id="fwCheck" disabled>Kiểm tra bản mới</button>
+              </div>
             </div>
             <div class="box">
               <h3>Sao lưu</h3>

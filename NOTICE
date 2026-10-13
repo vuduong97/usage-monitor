@@ -8,7 +8,8 @@ file; credit and thanks go to its authors. If you are an author and want this
 code removed or relicensed, please open an issue.
 
 This repository contains no firmware, fonts, animation packs or Clawd
-artwork. The tray icon is drawn in code (clawd_desktop/icons.py).
+artwork. The app can download them, encrypted, from the clock's firmware feed and
+hand them straight to the clock; they are never written to disk. The tray icon is drawn in code (clawd_desktop/icons.py).
 
 Claude, Claude Code and Clawd are trademarks of Anthropic. This project is
 not affiliated with or endorsed by Anthropic. It reads your own Claude Code

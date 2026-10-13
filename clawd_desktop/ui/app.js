@@ -32,9 +32,12 @@ const TZMAP = {
   'America/Anchorage':'AKST9AKDT,M3.2.0,M11.1.0', 'America/Sao_Paulo':'<-03>3', 'America/Mexico_City':'CST6',
   'America/Bogota':'<-05>5', 'America/Argentina/Buenos_Aires':'<-03>3',
 };
-const STEP_TEXT = { check:'Đang kiểm tra đồng hồ…', pause:'Tạm dừng gửi dữ liệu tới đồng hồ…',
-  upload:'Đang gửi firmware (khoảng 30 giây)…', reboot:'Đồng hồ đang khởi động lại…', done:'Xong.' };
-const STEP_ORDER = ['pause', 'upload', 'reboot', 'done'];
+const STEP_TEXT = { check:'Đang kiểm tra đồng hồ…', download:'Đang tải bản cập nhật…',
+  pause:'Tạm dừng gửi dữ liệu tới đồng hồ…', upload:'Đang gửi firmware (khoảng 30 giây)…',
+  reboot:'Đồng hồ đang khởi động lại…', clawdpak:'Đang gửi gói hoạt hình Clawd…',
+  deskpak:'Đang gửi gói hoạt hình bàn làm việc (vài phút)…', style:'Đang gửi kiểu màn hình…', done:'Xong.' };
+const STEP_ORDER = ['download', 'pause', 'upload', 'reboot', 'clawdpak', 'deskpak'];
+const PACK_NAME = { fw:'firmware', clawdpak:'gói Clawd', deskpak:'gói bàn làm việc' };
 
 let api = null;
 let S = null;          // last state from Python
@@ -402,15 +405,24 @@ function renderUpdate() {
   const add = (k, v) => kv.append(el('span', null, k), el('span', null, v));
   add('Đồng hồ đang chạy', h.version ? `${h.version} (bản #${h.fwSeq || 0}) · bật ${uptime(h.uptime || 0)}` : '—');
   if (h.version) add('Bộ nhớ', `heap ${kb(h.heap || 0)} · loop ${h.loopMaxMs ?? '?'} ms`);
-  add('Đi kèm app', fw && fw.bundle ? `bản #${fw.bundle.seq}${fw.bundle.commit ? ' · ' + fw.bundle.commit : ''} · ${kb(fw.bundle.size)}` : 'không có');
+  const b = fw && fw.bundle, feed = b && b.source === 'feed';
+  add(feed ? 'Bản mới nhất' : 'Đi kèm app', b ? `bản #${b.seq}${b.date ? ' · ' + b.date : ''}${b.commit ? ' · ' + b.commit : ''} · ${kb(b.size)}` : 'không có');
+  const plan = (fw && fw.plan) || {};
+  const todo = Object.keys(plan).filter(k => plan[k] !== 'ok').map(k => PACK_NAME[k] + (plan[k] === 'wait' ? ' (đồng hồ đang kiểm tra)' : ''));
+  if (todo.length) add('Sẽ cài', todo.join(' · '));
+  if (feed && b.notes) add('Ghi chú', b.notes);
   const st = fw ? fw.update : 'none';
+  const from = feed ? 'Có bản mới' : 'Có bản mới hơn đi kèm app';
   $('fwText').textContent = {
-    available: 'Có bản mới hơn đi kèm app' + (fw && fw.styles && fw.styles.state === 'update' ? ': thêm các kiểu màn hình usage mới' : '') + '. Cài mất khoảng 1 phút, cài đặt trên đồng hồ được giữ nguyên.',
+    available: from + (fw && fw.styles && fw.styles.state === 'update' ? ': thêm các kiểu màn hình usage mới' : '') + '. Cài mất vài phút, cài đặt trên đồng hồ được giữ nguyên.',
+    packs: 'Firmware đã mới nhất, nhưng gói hoạt hình trên đồng hồ khác bản mới nhất. Bấm Cập nhật để gửi lại.',
     current: 'Đồng hồ đang chạy bản mới nhất.',
-    none: 'Bản app này không kèm firmware.',
+    none: (fw && fw.feedError) ? 'Chưa đọc được nguồn cập nhật. Kiểm tra mạng rồi thử lại.' : 'Chưa có bản firmware nào để cài.',
     incompatible: 'Đồng hồ này không chạy firmware Clawd nên app không cập nhật được.',
   }[st] || '';
-  $('fwBtn').disabled = busy || st !== 'available' || !S || !S.ok;
+  $('fwBtn').disabled = busy || (st !== 'available' && st !== 'packs') || !S || !S.ok;
+  $('fwBtn').textContent = st === 'packs' ? 'Cập nhật gói hoạt hình' : 'Cập nhật firmware';
+  $('fwCheck').disabled = busy || !S || !S.ok;
 }
 function renderApp() {
   const a = S && S.app; if (!a) return;
@@ -503,6 +515,16 @@ async function pollJob() {
   else { renderAll(); msg(j.error || 'Cập nhật không thành công.', 'err'); }
 }
 $('fwBtn').addEventListener('click', () => startUpdate(null, null));
+$('fwCheck').addEventListener('click', async () => {
+  $('fwCheck').disabled = true; msg('Đang hỏi nguồn cập nhật…');
+  try {
+    const r = await api.check_update();
+    if (!r.ok) return msg(r.error, 'err');
+    S.fw = r.fw; S.heap = r.heap; renderAll();
+    msg(r.fw.update === 'available' || r.fw.update === 'packs' ? 'Có bản cập nhật.' : r.fw.feedError ? 'Chưa đọc được nguồn cập nhật.' : 'Đồng hồ đang chạy bản mới nhất.', r.fw.feedError ? 'err' : 'good');
+  } finally { renderUpdate(); }
+});
+window.clawdShowTab = t => showTab(t);
 window.clawdBusyClose = () => msg('Đang cập nhật firmware: chờ xong rồi hãy đóng cửa sổ.', 'err');
 
 // ---------- maintenance ----------
@@ -559,6 +581,7 @@ function apply(r) {
   else if (r.code === 'auth') { askAuth(); msg(r.error, 'err'); }
   else { msg(r.error, 'err'); if (r.code === 'noclock') showTab('app'); }
   renderAll();
+  if (r.tab) showTab(r.tab);                 // the tray's "new firmware" item opens the Update tab
   if (r.ok && tab === 'wifi' && !scan.nets && !scan.busy) doScan();   // opened on #wifi before the clock answered
 }
 async function load() { msg('Đang đọc cài đặt từ đồng hồ…'); apply(await api.state()); }
