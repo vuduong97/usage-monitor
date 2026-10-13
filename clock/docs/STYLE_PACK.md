@@ -6,10 +6,16 @@ one in use. The clock switches to it at once, with no reboot, and keeps it acros
 reboots and firmware updates. With no pack installed, the clock draws the classic
 screen.
 
-Sixteen packs ship with the firmware source:
+Forty-six packs ship with the firmware source:
 - The first six: `gameboy`, `synth`, `paper`, `blueprint`, `pastel` and `onebit`.
 - Batch A, retro computers and devices: `ambercrt`, `vt100tui`, `mac84`, `win95`,
   `biossetup`, `c64`, `zxspec`, `casiolcd`, `calc` and `hifivfd`.
+- Batch C, games and toys: `tetris`, `pinballdmd`, `pacmaze`, `jrpgstatus`, `hiscore`,
+  `invaders`, `eggpet`, `platformer`, `chessclock` and `racinghud`.
+- Batch D, instruments and gauges: `vumeter`, `scope`, `pfd`, `fuel`, `monitor`,
+  `rack`, `weather`, `powerbank`, `lab` and `sonar`.
+- Batch E, interface styles: `hairline`, `widget`, `tonal`, `brutal`, `soft`, `oled`,
+  `ink`, `tufte`, `frost` and `bigtype`.
 
 Adding a pack is data only. It needs no firmware change, no `CLAWD_FW_SEQ` bump
 and no OTA.
@@ -217,8 +223,62 @@ payloads, 1 or 2 runs:
 
 The estimate missed by up to 120 ms in both directions: mac84 (about 40 hatch line
 ops) and hifivfd ran slower than estimated, and casiolcd ran faster. Measure new
-packs on the clock. The `~clock` figure only says whether a pack is near the budget. Ten installs in a row
-left `minHeap` at 21,392 B, with no reset and no `error`.
+packs on the clock. The `~clock` figure only says whether a pack is near the budget.
+Ten installs in a row left `minHeap` at 21,392 B, with no reset and no `error`.
+
+### Batches C, D and E
+
+Thirty more packs, ported from three sheets ("Batch C", "Batch D" and "Batch 5 10"),
+six workers in parallel, one worktree each. These figures are **host estimates only**:
+nothing from these batches has been run on the clock yet. Measure the packs marked
+"first" on the clock before anything else.
+
+| Pack | Size | Ops | ~clock (host) | Note |
+|---|---|---|---|---|
+| tetris | 14,304 B | 121 | 198 ms | |
+| pinballdmd | 11,596 B | 42 | 292 ms | first |
+| pacmaze | 7,224 B | 99 | 174 ms | rounded outlines from rects and corner masks (`packs/_c1_ring.js`) |
+| jrpgstatus | 10,552 B | 78 | 211 ms | |
+| hiscore | 5,324 B | 63 | 185 ms | |
+| invaders | 7,412 B | 75 | 176 ms | |
+| eggpet | 10,256 B | 141 | 348 ms | first; the egg is a fan of 76 triangles, raise `stepDeg` in `eggFan` if over 450 ms |
+| platformer | 7,796 B | 64 | 208 ms | |
+| chessclock | 17,652 B | 92 | 236 ms | |
+| racinghud | 17,120 B | 156 | 263 ms | first; the carbon stripes are fainter than the sheet's |
+| vumeter | 13,436 B | 69 | 210 ms | |
+| scope | 8,912 B | 108 | 204 ms | |
+| pfd | 8,660 B | 103 | 226 ms | |
+| fuel | 15,832 B | 118 | 249 ms | first; the arc is 64 triangle ops |
+| monitor | 14,144 B | 111 | 221 ms | |
+| rack | 13,508 B | 105 | 232 ms | |
+| weather | 15,224 B | 69 | 205 ms | |
+| powerbank | 12,284 B | 74 | 211 ms | |
+| lab | 14,768 B | 152 | 210 ms | |
+| sonar | 17,624 B | 130 | 246 ms | |
+| hairline | 10,436 B | 44 | 183 ms | |
+| widget | 12,024 B | 45 | 222 ms | |
+| tonal | 11,912 B | 37 | 300 ms | |
+| brutal | 12,888 B | 64 | 332 ms | first; the ticker repaints a 29-row strip every 100 ms |
+| soft | 18,416 B | 132 | 320 ms | 18.4 of 20 KB |
+| oled | 9,984 B | 60 | 177 ms | |
+| ink | 13,356 B | 40 | 206 ms | |
+| tufte | 18,828 B | 150 | 210 ms | first; 95 gated text ops for "time used N%", 18.8 of 20 KB |
+| frost | 11,472 B | 46 | 230 ms | |
+| bigtype | 15,336 B | 152 | 210 ms | first; its digits are 110 gated mask ops that divide per pixel |
+
+Known differences from the sheets, shared by many of these packs:
+- `{wr@d}` prints only the time when the reset is within a day (the sheet says
+  "Mon 23:05" or "today 23:05"), and `{sr~}` / `{wr~}` print "9h 0m" where the sheet
+  says "9h".
+- Rounded shapes and discs are 1-bit masks, so their edges are not anti-aliased.
+- Newsreader (the sheets' serif) is drawn with Tiempos (`t34`, `t56`).
+- brutal's ticker is only seamless while its text is 40 characters or fewer; the hot
+  string on a 12-hour clock runs to about 42.
+- bigtype shows "limit reached" from 99.5 %.
+
+A pack's own helper file (`packs/_c1_ring.js`, `_c2_util.js`, `_d1_common.js`,
+`_d2_kit.js`, `_e1_common.js`) holds what its sheet shares between artboards.
+`compare_<batch>.py` next to `compare.py` is its board-layout variant for that sheet.
 
 **Primitives:**
 - `rect`: optional radius and a `diag`/`cols`/`rows` pattern.
