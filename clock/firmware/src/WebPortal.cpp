@@ -253,7 +253,10 @@ static void handleStatePush() {
 // Heap watch for long-run stability checks: numbers only, nothing settable, so
 // it is open like /api/usage and a logger can poll it without credentials.
 //   while sleep 60; do curl -s http://<ip>/api/heap; echo; done >> heap.log
+static uint32_t g_lastHeapMs = 0;
+uint32_t webLastHeapMs() { return g_lastHeapMs; }
 static void handleHeap() {
+  g_lastHeapMs = millis();
   {   // sample now too, so the first request after boot never reports UINT32_MAX
     uint32_t h = ESP.getFreeHeap(), b = platformMaxFreeBlock();
     if (h < g_minHeap) g_minHeap = h;

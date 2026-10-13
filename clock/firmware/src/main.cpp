@@ -18,6 +18,7 @@
 #include "CrashLog.h"
 #include "UsageMode.h"
 #include "ClawdUi.h"
+uint32_t webLastHeapMs();   // WebPortal: when /api/heap was last answered
 #include "features/clawd/StyleStore.h"
 
 // ---- mode -------------------------------------------------------------------
@@ -178,7 +179,7 @@ static void loopProfile() {
 void loop() {
   loopProfile();
 #if defined(CLAWD_ESP8266)
-  {   // debug trail: WiFi changes, and a heartbeat while it is down
+  {   // debug trail: WiFi changes, and a heartbeat (30 s while down, 60 s otherwise)
     static int lastSt = -1;
     static uint32_t lastBeat = 0;
     const int st = (int)WiFi.status();
@@ -186,9 +187,13 @@ void loop() {
       styleLog("wifi %d -> %d heap=%u", lastSt, st, (unsigned)ESP.getFreeHeap());
       lastSt = st;
       lastBeat = millis();
-    } else if (st != WL_CONNECTED && millis() - lastBeat > 30000) {
+    } else if (millis() - lastBeat > (st == WL_CONNECTED ? 60000UL : 30000UL)) {
       lastBeat = millis();
-      styleLog("alive wifi=%d heap=%u", st, (unsigned)ESP.getFreeHeap());
+      // web = seconds since the last /api/heap was answered: a link that looks
+      // connected but serves nothing shows here
+      styleLog("alive wifi=%d rssi=%d heap=%u web=%lus view=%c%c", st, (int)WiFi.RSSI(),
+               (unsigned)ESP.getFreeHeap(), (unsigned long)((millis() - webLastHeapMs()) / 1000),
+               clawdUiOnStyle() ? 'S' : '-', clawdUiOnDesk() ? 'D' : '-');
     }
   }
 #endif
