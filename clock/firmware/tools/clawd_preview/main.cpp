@@ -338,14 +338,64 @@ static int checkStyles(const char* dir) {
   return bad;
 }
 
+// Non-background pixels in the idle screen's IP line.
+static int idleAddrInk() {
+  int n = 0;
+  for (int y = CLAWD_H - 10 - 19 - 24; y < CLAWD_H - 10 - 19 - 24 + 14; y++)
+    for (int x = 0; x < CLAWD_W; x++) n += fb[y * CLAWD_W + x] != CLAWD_BG;
+  return n;
+}
+
+// Before the first payload since boot the usage screen is the classic waiting
+// screen (cloud + IP + "Waiting"), even with a style pack installed; the pack
+// takes over once data arrives. Must run before any clawdUiPayload.
+static int checkWaiting(const char* dir) {
+  int bad = 0;
+  clawdUiSetAddress("192.168.1.48");
+  run(3000, CLAWD_SCREEN_USAGE, -1);
+  shot(dir, "01-waiting");
+  const int ink = idleAddrInk();
+  CHECK(ink > 0, "no IP on the waiting screen");
+  clawdUiSetAddress("10.97.44.122");
+  run(100, CLAWD_SCREEN_USAGE, -1);
+  CHECK(idleAddrInk() != ink && idleAddrInk() > 0, "a new IP was not redrawn on the waiting screen");
+  clawdUiSetAddress("192.168.1.48");
+  run(100, CLAWD_SCREEN_USAGE, -1);
+  const char* sdir = getenv("CLAWD_STYLE_DIR");
+  std::vector<uint8_t> pk;
+  if (sdir) {
+    char path[512];
+    snprintf(path, sizeof(path), "%s/synth.pak", sdir);
+    pk = readFile(path);
+  }
+  if (!pk.empty() && styleAttach(pk.data(), (uint32_t)pk.size())) {
+    run(1000, CLAWD_SCREEN_USAGE, -1);
+    CHECK(!clawdUiOnStyle(), "a style pack drew the screen before any data");
+    CHECK(idleAddrInk() == ink, "no IP on the waiting screen with a style pack");
+    shot(dir, "01b-waiting-style");
+    ClawdData d = base();
+    clawdUiPayload(d);
+    run(1000, CLAWD_SCREEN_USAGE, -1);
+    CHECK(clawdUiOnStyle(), "the style pack did not take over once data came");
+    run(CLAWD_DATA_FRESH_MS + 1000, CLAWD_SCREEN_USAGE, -1);
+    CHECK(clawdUiOnStyle(), "the style pack left the stale screen after the first data");
+    styleDetach();
+    run(1000, CLAWD_SCREEN_USAGE, -1);
+    CHECK(!clawdUiOnStyle() && idleAddrInk() == 0, "the idle screen kept the IP after the first data");
+  } else {
+    printf("waiting: synth.pak not found, style part skipped\n");
+  }
+  printf("waiting screen: %s\n", bad ? "FAILED" : "ok");
+  return bad;
+}
+
 int main(int argc, char** argv) {
   const char* dir = argc > 1 ? argv[1] : ".";
   MemSurface surf;
   clawdSetSurface(&surf);
   clawdUiBegin();
 
-  run(3000, CLAWD_SCREEN_USAGE, -1);
-  shot(dir, "01-waiting");
+  const int waitBad = checkWaiting(dir);
 
   ClawdData d = base();
   clawdUiPayload(d);
@@ -382,7 +432,7 @@ int main(int argc, char** argv) {
   g_layout = CLAWD_LAYOUT_CLASSIC;
 
   const int styleBad = checkStyles(dir);
-  if (getenv("CLAWD_STYLES_ONLY")) return styleBad ? 1 : 0;   // the style-pack loop only
+  if (getenv("CLAWD_STYLES_ONLY")) return (styleBad + waitBad) ? 1 : 0;   // the style-pack loop only
 
   // mascot acts over time
   for (int i = 0; i < 4; i++) {
@@ -450,7 +500,7 @@ int main(int argc, char** argv) {
     clawdUiDeskStats(ds);
     printf("desk frames drawn: %u\n", (unsigned)ds.total);
   }
-  const int bad = checkVariants() + bandBad + styleBad;
+  const int bad = checkVariants() + bandBad + styleBad + waitBad;
   printf("pixels pushed: %ld\n", g_pushed);
   return bad ? 1 : 0;
 }

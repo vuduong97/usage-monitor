@@ -33,6 +33,7 @@
 #define MASCOT_Y    2
 #define IDLE_CY     (PANEL1_Y + (CLAWD_H - PANEL1_Y) / 2 - 20)
 #define IDLE_PX     96
+#define IDLE_ADDR_Y (STATUS_Y - 24)                  // styrene_14 IP line above the status
 #define FRAME_W     2           // alert border
 
 #define ALERT_TIMEOUT_MS 120000UL
@@ -114,8 +115,9 @@ static uint32_t  g_statTotal = 0;
 static View      g_view = VIEW_NONE;
 static bool      g_dirtyAll = true;
 
-// The clock's IP, captioned under the splash while it waits for data (auto
-// screen only): the one way to reach a clock the desktop app cannot find.
+// The clock's IP, captioned while it waits for data: under the splash (auto
+// screen) or above the idle screen's status line until the first payload since
+// boot. The one way to reach a clock the desktop app cannot find.
 static char      g_addr[24] = "";
 static char      g_addrDrawn[24] = "";
 static bool      g_dirtyPanels = true;
@@ -635,6 +637,16 @@ static void drawAddrBand() {
   strcpy(g_addrDrawn, g_addr);
 }
 
+// The idle screen's IP line (between the cloud and the status), until the
+// first payload; then it is cleared for good.
+static void drawIdleAddr() {
+  const ClawdFont& f = CF_STYRENE_14;
+  const char* ip = g_received ? "" : g_addr;
+  ClawdText t = {&f, ip, (int16_t)(CLAWD_W / 2 - clawdTextWidth(f, ip) / 2), IDLE_ADDR_Y, CLAWD_DIM};
+  clawdRender(MARGIN, IDLE_ADDR_Y, CONTENT_W, f.lineHeight, CLAWD_BG, nullptr, 0, &t, ip[0] ? 1 : 0);
+  strcpy(g_addrDrawn, ip);
+}
+
 void clawdUiPayload(const ClawdData& d) {
   const uint32_t now = clawdNow();
   g_lastOk = d.ok;
@@ -793,10 +805,12 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   else if (screen == CLAWD_SCREEN_SPLASH)  want = VIEW_SPLASH;
   else if (screen == CLAWD_SCREEN_USAGE)   want = fresh ? VIEW_USAGE : VIEW_IDLE;
   else                                     want = fresh ? VIEW_USAGE : VIEW_SPLASH;
-  // An installed style pack draws the usage screen, live or stale. An alert keeps
-  // the classic screen (its line and the waving mascot), and so does an
-  // Enterprise account (spending / period cards).
-  if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !g_alert && !(g_received && g_data.enterprise))
+  // An installed style pack draws the usage screen, live or stale, once the
+  // desktop has sent data since boot; before that the classic waiting screen
+  // (cloud, IP, "Waiting") shows. An alert keeps the classic screen (its line
+  // and the waving mascot), and so does an Enterprise account (spending /
+  // period cards).
+  if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !g_alert && g_received && !g_data.enterprise)
     want = VIEW_STYLE;
   if (styleGeneration() != g_styleGen) {   // a pack was installed or removed
     g_styleGen = styleGeneration();
@@ -864,6 +878,8 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
       g_dirtyTitle = true;
       g_dirtyPanels = true;
       g_statusDrawn[0] = 0;
+      g_addrDrawn[0] = 0;
+      if (want == VIEW_IDLE) drawIdleAddr();
       tickStatus(now, true);
     }
   }
@@ -901,6 +917,7 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
     }
   } else {
     g_dirtyPanels = true;          // repaint the panels when data comes back
+    if (strcmp(g_received ? "" : g_addr, g_addrDrawn) != 0) drawIdleAddr();
     g_mini.tick();
   }
   g_mascot.tick(g_rateGroup);

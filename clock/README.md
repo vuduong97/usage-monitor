@@ -7,7 +7,7 @@ react to what Claude Code and pi are doing. The host side is a separate repo,
 
 **Private.** Never pushed anywhere. The animation pack `desk.pak` is rendered from
 clawd-on-desk art (All Rights Reserved, personal use only) and the fonts are
-Anthropic's: generated on this Mac and never committed. Origins: `NOTICE`.
+Anthropic's: generated on this Mac and never committed.
 
 ```
 firmware/        PlatformIO project (envs: clawd, clawd_loader), src/, tests/, tools/

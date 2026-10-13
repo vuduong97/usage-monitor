@@ -6,9 +6,12 @@
 #   tools/release.sh --promote [SEQ]        copy the beta release (or release SEQ) to stable
 #
 # Options: --dirty (allow uncommitted changes), --skip-tests, --local DIR (use the
-# wrangler dev store in DIR instead of Cloudflare: for the end-to-end test).
+# wrangler dev store in DIR instead of Cloudflare: for the end-to-end test),
+# --private (publish to Cloudflare without feed/LICENCE: only while no public app holds
+# the feed token, i.e. the owner's own test).
 # Env: DESK_PAK (default build/desk/desk.pak), CLAWD_PAK (default firmware/data/clawd.pak),
 #      FEED_BUCKET (default clawd-fw), WRANGLER (default "npx -y wrangler@4").
+#
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 fw="$root/firmware"
@@ -18,7 +21,7 @@ WRANGLER=${WRANGLER:-"npx -y wrangler@4"}
 DESK_PAK=${DESK_PAK:-"$root/build/desk/desk.pak"}
 CLAWD_PAK=${CLAWD_PAK:-"$fw/data/clawd.pak"}
 
-notes="" stable=0 promote=0 pseq="" dirty=0 tests=1 where="--remote"
+notes="" stable=0 promote=0 pseq="" dirty=0 tests=1 where="--remote" private=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --notes) notes=$2; shift ;;
@@ -26,18 +29,24 @@ while [ $# -gt 0 ]; do
     --promote) promote=1; case "${2:-}" in [0-9]*) pseq=$2; shift ;; esac ;;
     --dirty) dirty=1 ;;
     --skip-tests) tests=0 ;;
+    --private) private=1 ;;
     --local) where="--local --persist-to $2"; shift ;;
-    -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) echo "release: unknown option $1" >&2; exit 2 ;;
   esac
   shift
 done
 
 # The feed hands the art and fonts to anyone with the app: no real publish without the
-# licence that allows it recorded in NOTICE (a line "Feed licence: <owner, scope, date>").
-if [ "$where" = "--remote" ] && ! grep -q '^Feed licence: ..' "$root/NOTICE"; then
-  echo "release: NOTICE has no 'Feed licence:' line; record the distribution licence first" >&2
-  exit 1
+# licence that allows it recorded in feed/LICENCE (a line "Feed licence: <owner, scope, date>").
+if [ "$where" = "--remote" ] && ! grep -qs '^Feed licence: ..' "$root/feed/LICENCE"; then
+  if [ $private = 1 ]; then
+    echo "release: PRIVATE publish without feed/LICENCE: do not ship the feed token in a public app" >&2
+  else
+    echo "release: feed/LICENCE has no 'Feed licence:' line; record the distribution licence first" >&2
+    echo "         (or --private for the owner's own test, while no public app holds the token)" >&2
+    exit 1
+  fi
 fi
 
 wr() { (cd "$worker" && $WRANGLER "$@"); }

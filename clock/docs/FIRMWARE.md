@@ -2,7 +2,7 @@
 
 The firmware of the Clawd desk clock: the JUZIPi "Smart Weather Clock" / SD Pro
 (ESP8266, 240x240 ST7789, WiFi only). Keep the repo private: it embeds
-Anthropic's Clawd art and the Styrene/Tiempos fonts. Origins are in `NOTICE`.
+Anthropic's Clawd art and the Styrene/Tiempos fonts.
 
 Build: `cd firmware && pio run -e clawd` (the clock), `-e clawd_loader` (a tiny
 OTA trampoline for stock clocks whose updater is too small, e.g. the "ultra").
@@ -17,11 +17,11 @@ so a port stays possible, but nothing compiles them.
   - The whimsical spinner status line.
 - **Corner Clawd:** rests, then does acts (waving, dancing, pointing) at a pace set by the usage rate: 4 s of rest between acts when idle, 3 / 2 / 1.5 s as the rate goes up (`MAS_STILL_MS`).
 - **Alert:** the app's attention message (`m`) scrolls on the status line inside a blinking accent frame, and Clawd alternates waving and pointing. It clears on `x` or after 2 minutes.
-- **Idle:** the cloud mini animation with "Listening… / No data…".
+- **Idle:** the cloud mini animation with "Listening… / No data…". Until the first payload since boot it says "Waiting…" and shows the clock's IP above the status line, so a clock the desktop app has not reached yet can still be found.
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.
   - On the Auto screen the splash means no fresh data, so it captions the clock's IP in a 24 px band at the bottom: the way to reach a clock the desktop app cannot find. Every animation ends by grid row 47 of 60, so the band never covers one. A splash picked on purpose (Screen: Clawd) stays full height.
 
-- **Style packs:** the usage screen can instead be drawn from a style pack installed by the desktop app (`POST /api/style`), switched at once without a reboot: Game Boy, Synthwave, Newspaper, Blueprint, Pastel, 1-bit. Alerts and Enterprise accounts still use the classic screen. Format, storage and endpoints: `docs/STYLE_PACK.md`. The old usage layouts (pace, hero, rings, gauges, pixel) were removed; `usage.layout` is kept in the config but ignored.
+- **Style packs:** the usage screen can instead be drawn from a style pack installed by the desktop app (`POST /api/style`), switched at once without a reboot: Game Boy, Synthwave, Newspaper, Blueprint, Pastel, 1-bit. Alerts and Enterprise accounts still use the classic screen, and so does the time before the first payload since boot (the Idle waiting screen with the IP); after that the pack draws live and stale data. Format, storage and endpoints: `docs/STYLE_PACK.md`. The old usage layouts (pace, hero, rings, gauges, pixel) were removed; `usage.layout` is kept in the config but ignored.
 
 The web UI's Clawd tab has two settings:
 - **Screen:** Auto (usage while data is live, splash otherwise), Usage, or Clawd.

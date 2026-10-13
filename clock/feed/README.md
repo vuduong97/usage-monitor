@@ -69,7 +69,7 @@ tools/release.sh --stable --notes "…"        # straight to both
 - `CLAWD_FW_SEQ` must be above every published release, or the script stops.
 - It runs the host test, the Worker test and the preview checks (`--skip-tests` skips them).
 - It needs `build/desk/desk.pak` (or `DESK_PAK=`).
-- Publishing to Cloudflare needs a `Feed licence:` line in `NOTICE` (the art and fonts reach every app user).
+- Publishing to Cloudflare needs a `Feed licence: <owner, scope, date>` line in `feed/LICENCE`, because the art and fonts reach every app user. `--private` skips that check. Use it only for the owner's own test, while no public app holds the feed token.
 - The manifest is uploaded last, so a client never sees a release with missing files.
 - To put your own clock on beta, add `feed_channel = beta` in `~/.config/claude-usage-monitor/config`.
 
