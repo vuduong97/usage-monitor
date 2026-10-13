@@ -14,7 +14,7 @@ bucket_name = "clawd-fw"
 
 [[kv_namespaces]]
 binding = "KEYS"
-id = "00000000000000000000000000000000"   # replace with the clawd-fw-keys namespace id
+id = "74afa38d2c0c430eb51690ca0b476680"   # clawd-fw-keys (account 72100c…)
 
 # 120 requests a minute per IP: a check is 1 request, an update 2 + one per file.
 [[ratelimits]]
