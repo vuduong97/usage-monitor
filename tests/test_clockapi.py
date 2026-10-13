@@ -45,6 +45,8 @@ class FakeClock:
             if p == "/update":
                 assert b'name="firmware"' in req.content
                 return httpx.Response(200, text="OK")
+            if p == "/api/status":
+                return httpx.Response(200, json={"mode": "sta", "connected": True, "ssid": "Home", "rssi": -50})
             if p == "/api/scan":
                 return httpx.Response(200, json=[{"ssid": "Home", "rssi": -50, "enc": True}])
             if p in ("/api/reboot", "/api/factory", "/api/import"):
@@ -134,6 +136,7 @@ def test_scan_export_restore_reboot():
     fake = FakeClock()
     c = api(fake)
     assert c.scan()[0]["ssid"] == "Home"
+    assert c.status()["ssid"] == "Home"
     assert c.export()["wifi"][0]["pass"] == "x"
     c.restore({"brightness": 1})
     c.reboot()

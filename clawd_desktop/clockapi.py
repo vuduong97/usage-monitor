@@ -130,6 +130,13 @@ class ClockApi:
             raise ClockError(f"save refused: {d!r}")
         return d
 
+    def status(self) -> dict:
+        """`GET /api/status` (login): mode, connected, ssid, ip, rssi, uptime..."""
+        d = self._json("GET", "/api/status")
+        if not isinstance(d, dict):
+            raise ClockError("odd /api/status answer")
+        return d
+
     def scan(self) -> list[dict]:
         """Nearby WiFi networks [{ssid, rssi, enc}]; the clock blocks ~3 s scanning."""
         d = self._json("GET", "/api/scan", retries=1, timeout=30.0)

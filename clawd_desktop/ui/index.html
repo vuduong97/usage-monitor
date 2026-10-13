@@ -404,40 +404,172 @@
         font-size: 12px;
         line-height: 1.3;
       }
-      .nets {
+      /* WiFi tab: saved networks, then the ones the clock hears */
+      .whd {
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin: 6px 0 10px;
+        align-items: baseline;
+        justify-content: space-between;
       }
-      .net {
-        display: grid;
-        grid-template-columns: 22px 1fr 170px auto;
-        gap: 8px;
+      .whd span {
+        font-size: 12px;
+        color: var(--mute);
+      }
+      .wgrp {
+        font-size: 11px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--mute);
+        display: flex;
+        justify-content: space-between;
         align-items: center;
+        min-height: 28px;
+        margin: 14px 0 4px;
+      }
+      .wl {
         background: var(--card);
         border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .wn {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .wr {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto 32px;
+        gap: 12px;
+        align-items: center;
+        padding: 0 6px 0 14px;
+        min-height: 46px;
+      }
+      .wl .wr + .wr {
+        border-top: 1px solid var(--line);
+      }
+      .wn .wr {
+        min-height: 42px;
         border-radius: 10px;
-        padding: 8px 10px;
       }
-      .net .pri {
-        font: 11px var(--mono);
-        color: var(--mute);
-        text-align: center;
+      .wn .wr:hover {
+        background: var(--card);
       }
-      .net .ss {
+      .wr .nm {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      .net .ss small {
-        display: block;
-        color: var(--mute);
-        font-size: 11px;
+      .wl .wr.open {
+        grid-template-rows: 46px auto;
+        background: #262624;
       }
-      .net .acts {
+      .wn .wr.open {
+        grid-template-rows: 42px auto;
+        background: #2a1f1a;
+        outline: 1px solid var(--acc);
+      }
+      .pwf input:focus-visible {
+        outline-offset: -1px;
+        border-color: transparent;
+      }
+      .wr .ed {
+        grid-column: 2 / 5;
         display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 0 4px 12px 0;
+      }
+      .wr .lk {
+        color: var(--mute);
+      }
+      .wr .plus {
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--line2);
+        border-radius: 8px;
+        background: none;
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+      }
+      .wr .plus:hover:not(:disabled) {
+        border-color: #55534d;
+      }
+      .wr .plus:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .tag {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 99px;
+        white-space: nowrap;
+        background: var(--okbg);
+        color: var(--okfg);
+      }
+      .tag.new {
+        background: var(--warnbg);
+        color: var(--warnfg);
+      }
+      .bars {
+        display: inline-flex;
         gap: 2px;
+        align-items: flex-end;
+        height: 12px;
+      }
+      .bars i {
+        width: 3px;
+        border-radius: 1px;
+        background: var(--line2);
+      }
+      .bars i:nth-child(1) { height: 4px; }
+      .bars i:nth-child(2) { height: 7px; }
+      .bars i:nth-child(3) { height: 10px; }
+      .bars i:nth-child(4) { height: 12px; }
+      .bars i.on {
+        background: var(--dim);
+      }
+      .bars.cur i.on {
+        background: var(--ok);
+      }
+      .pwf {
+        position: relative;
+        flex: 1;
+        display: flex;
+      }
+      .pwf input {
+        flex: 1;
+        padding: 7px 36px 7px 10px;
+        background: var(--bg);
+      }
+      .pwf .ib {
+        position: absolute;
+        right: 3px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .wr .ib {
+        width: 32px;
+        height: 32px;
+      }
+      .spin {
+        display: block;
+        width: 14px;
+        height: 14px;
+        margin: 0 9px;
+        border: 2px solid var(--line2);
+        border-top-color: var(--acc);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .wnote {
+        font-size: 12px;
+        color: var(--mute);
+        margin: 4px 14px;
       }
       .ib {
         background: none;
@@ -456,31 +588,6 @@
       .ib:disabled {
         opacity: 0.3;
         cursor: default;
-      }
-      .scan {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        max-height: 170px;
-        overflow: auto;
-        margin-top: 8px;
-      }
-      .scan button {
-        all: unset;
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 6px 10px;
-        border-radius: 7px;
-        cursor: pointer;
-        font-size: 13px;
-      }
-      .scan button:hover,
-      .scan button:focus-visible {
-        background: var(--card);
-      }
-      .scan small {
-        color: var(--mute);
       }
       .box {
         background: var(--card);
@@ -604,6 +711,9 @@
         * {
           transition: none !important;
         }
+        .spin {
+          animation-duration: 3s;
+        }
       }
     </style>
   </head>
@@ -638,6 +748,19 @@
       <symbol id="lock" viewBox="0 0 24 24">
         <rect x="5" y="11" width="14" height="10" rx="2" />
         <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </symbol>
+      <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="more" viewBox="0 0 24 24">
+        <circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" />
+      </symbol>
+      <symbol id="eye" viewBox="0 0 24 24">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="trash" viewBox="0 0 24 24">
+        <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+      </symbol>
+      <symbol id="refresh" viewBox="0 0 24 24">
+        <path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4" />
       </symbol>
     </svg>
 
@@ -791,31 +914,13 @@
 
           <!-- WIFI -->
           <section data-pane="wifi" class="hide">
-            <h2>Wi‑Fi &amp; mạng</h2>
-            <p class="sub">
-              Đồng hồ thử các mạng theo thứ tự từ trên xuống. Lưu Wi‑Fi sẽ khởi
-              động lại đồng hồ.
-            </p>
-            <div class="nets" id="nets"></div>
-            <div class="row">
-              <button class="btn ghost small" id="scanBtn">
-                <svg class="i"><use href="#wifi" /></svg>Tìm mạng quanh đồng hồ</button
-              ><span class="note" id="scanNote" style="margin: 0"></span>
+            <h2>Wi‑Fi</h2>
+            <div class="wgrp">Đã lưu<span id="wifiCount"></span></div>
+            <div class="wl" id="nets"></div>
+            <div class="wgrp">
+              Mạng quanh đây<span id="scanCtl"></span>
             </div>
-            <div class="scan" id="scanList"></div>
-            <div class="f" style="margin-top: 14px">
-              <span
-                >Tên đồng hồ<small
-                  >Địa chỉ <span id="hostHint"></span>.local</small
-                ></span
-              ><input
-                id="hostname"
-                type="text"
-                maxlength="32"
-                spellcheck="false"
-                aria-label="Tên đồng hồ"
-              />
-            </div>
+            <div class="wn" id="near"></div>
           </section>
 
           <!-- UPDATE -->

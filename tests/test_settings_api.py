@@ -33,6 +33,7 @@ class FakeApi:
         self.uploads = 0
         self.styles = []                  # packs sent (their bytes), "" for a clear
         self.after = NEW_HEAP             # what the clock runs after an update
+        self.status_ = {"mode": "sta", "connected": True, "ssid": "Home", "rssi": -58}
 
     def set_auth(self, auth):
         self.auth = auth
@@ -57,6 +58,10 @@ class FakeApi:
             else:
                 self.cfg[k] = v
         return {"ok": True, "reboot": "wifi" in changes or "hostname" in changes}
+
+    def status(self):
+        self._check()
+        return dict(self.status_)
 
     def scan(self):
         return [{"ssid": "A", "rssi": -70, "enc": True}, {"ssid": "A", "rssi": -50, "enc": True},
@@ -209,6 +214,19 @@ def test_offline_and_noclock(tmp_path):
     nb = sa.SettingsApi("", "", api_factory=lambda base, auth=None: FakeApi(base),
                         store=ClockStore(tmp_path / "c.json"), keychain=Keys())
     assert nb.state()["code"] == "noclock"
+
+
+def test_state_names_the_network_in_use_and_none_when_it_cannot(tmp_path):
+    b, made, _k, _n = bridge(tmp_path)
+    assert b.state()["net"] == {"ssid": "Home", "rssi": -58}
+    made[0].status_ = {"mode": "ap", "connected": False, "ssid": "", "rssi": 0}
+    assert b.state()["net"] is None
+
+    def down():
+        raise ClockError("no answer")
+    made[0].status = down
+    s = b.state()
+    assert s["ok"] and s["net"] is None      # decoration only: the page still loads
 
 
 def test_scan_keeps_the_strongest_of_each_name(tmp_path):

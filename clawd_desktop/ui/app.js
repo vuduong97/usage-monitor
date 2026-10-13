@@ -115,6 +115,7 @@ function showTab(t) {
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('[data-pane]').forEach(p => p.classList.toggle('hide', p.dataset.pane !== t));
   if (t === 'usage') refreshLive();
+  if (t === 'wifi' && !scan.nets && !scan.err) doScan();   // the clock's scan blocks it ~3 s: once per window
 }
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
 $('tabs').addEventListener('keydown', e => {
@@ -243,28 +244,117 @@ function renderGallery() {
   $('galNote').textContent = need ? 'Kiểu này cần firmware mới. Bấm “Cập nhật & áp dụng”: app cài firmware đi kèm (khoảng 1 phút), rồi bật kiểu này.'
     : ent ? 'Tài khoản Enterprise không có giới hạn 5 giờ / tuần nên đồng hồ vẫn hiện kiểu “Hiện tại”.' : '';
 }
+// The WiFi tab: "Đã lưu" (edit.wifi) above "Mạng quanh đây" (the clock's own scan, run when
+// the tab opens). The clock joins the strongest saved network it hears, so there is no order
+// to edit. One row at a time is open for a password: wifiOpen = {list:'saved'|'near', ssid}.
+const MAX_NETS = 4;
+let scan = { busy: false, nets: null, err: '' };
+let wifiOpen = null;
+function bars(rssi, cur) {   // 4 bars from dBm; none lit when the clock does not hear it
+  const n = rssi == null ? 0 : rssi >= -55 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1;
+  const b = el('span', 'bars' + (cur ? ' cur' : ''));
+  for (let k = 0; k < 4; k++) b.append(el('i', k < n ? 'on' : null));
+  b.setAttribute('role', 'img');
+  b.setAttribute('aria-label', n ? `Sóng ${n}/4` : 'Không thấy quanh đồng hồ');
+  return b;
+}
+function heard(ssid) {       // the clock's rssi for a network: its live link first, then the scan
+  const net = S && S.net;
+  if (net && net.ssid === ssid && net.rssi != null) return net.rssi;
+  const n = scan.nets && scan.nets.find(x => x.ssid === ssid);
+  return n ? n.rssi : null;
+}
+function iconBtn(icon, label, cls = 'ib') { const b = el('button', cls); b.append(svgIcon(icon)); b.setAttribute('aria-label', label); b.title = label; return b; }
+function pwField(label, placeholder, value, oninput) {
+  const w = el('div', 'pwf'), pw = el('input');
+  pw.type = 'password'; pw.autocomplete = 'off'; pw.spellcheck = false; pw.value = value || '';
+  pw.placeholder = placeholder; pw.setAttribute('aria-label', label); pw.dataset.focus = '1';
+  pw.addEventListener('input', () => oninput(pw.value));
+  const eye = iconBtn('eye', 'Hiện mật khẩu');
+  eye.addEventListener('click', () => { const show = pw.type === 'password'; pw.type = show ? 'text' : 'password';
+    eye.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'); eye.title = eye.getAttribute('aria-label'); });
+  w.append(pw, eye);
+  return { w, pw };
+}
+function toggleOpen(list, ssid) {
+  wifiOpen = wifiOpen && wifiOpen.list === list && wifiOpen.ssid === ssid ? null : { list, ssid };
+  renderWifi();
+  const f = $('panes').querySelector('.wr.open [data-focus]'); if (f) f.focus();
+}
+function addNet(ssid, pass) {
+  if (!edit || edit.wifi.length >= MAX_NETS || edit.wifi.some(r => r.ssid === ssid)) return;
+  edit.wifi.push(pass ? { ssid, pass } : { ssid });
+  wifiOpen = null; renderWifi(); renderBar();
+}
 function renderWifi() {
   if (!edit) return;
+  const isOpen = (list, ssid) => wifiOpen && wifiOpen.list === list && wifiOpen.ssid === ssid;
+  const saved = new Set(orig ? orig.wifi.map(r => r.ssid) : []), full = edit.wifi.length >= MAX_NETS;
+  $('wifiCount').textContent = `${edit.wifi.length} / ${MAX_NETS}`;
+
   const box = $('nets'); box.replaceChildren();
-  const saved = new Set(orig ? orig.wifi.map(r => r.ssid) : []);
   edit.wifi.forEach((r, i) => {
-    const row = el('div', 'net');
-    const name = el('div', 'ss', r.ssid);
-    name.append(el('small', null, saved.has(r.ssid) ? (r.pass ? 'mật khẩu mới' : 'đã lưu mật khẩu') : 'mạng mới'));
-    const pw = el('input'); pw.type = 'password'; pw.autocomplete = 'off'; pw.value = r.pass || '';
-    pw.placeholder = saved.has(r.ssid) ? 'giữ mật khẩu cũ' : 'mật khẩu (≥ 8 ký tự)';
-    pw.setAttribute('aria-label', `Mật khẩu ${r.ssid}`);
-    pw.addEventListener('input', () => { r.pass = pw.value; renderBar(); });
-    const acts = el('div', 'acts');
-    const up = el('button', 'ib'); up.title = 'Ưu tiên lên trên'; up.setAttribute('aria-label', `Đưa ${r.ssid} lên trên`); up.append(svgIcon('up')); up.disabled = i === 0;
-    up.addEventListener('click', () => { [edit.wifi[i - 1], edit.wifi[i]] = [edit.wifi[i], edit.wifi[i - 1]]; renderWifi(); renderBar(); });
-    const rm = el('button', 'ib'); rm.title = 'Xoá mạng này'; rm.setAttribute('aria-label', `Xoá ${r.ssid}`); rm.append(svgIcon('x')); rm.disabled = edit.wifi.length <= 1;
-    rm.addEventListener('click', () => { edit.wifi.splice(i, 1); renderWifi(); renderBar(); });
-    acts.append(up, rm);
-    row.append(el('span', 'pri', String(i + 1)), name, pw, acts);
+    const open = isOpen('saved', r.ssid), cur = S && S.net && S.net.ssid === r.ssid;
+    const row = el('div', 'wr' + (open ? ' open' : ''));
+    const tag = cur ? el('span', 'tag', 'Đang dùng') : !saved.has(r.ssid) ? el('span', 'tag new', 'Mới') : el('span');
+    const tog = iconBtn(open ? 'x' : 'more', open ? 'Đóng' : `Sửa ${r.ssid}`);
+    tog.setAttribute('aria-expanded', String(open));
+    tog.addEventListener('click', () => toggleOpen('saved', r.ssid));
+    row.append(bars(heard(r.ssid), cur), el('span', 'nm', r.ssid), tag, tog);
+    if (open) {
+      const ed = el('div', 'ed');
+      const { w } = pwField(`Mật khẩu ${r.ssid}`, saved.has(r.ssid) ? 'Mật khẩu mới' : 'Mật khẩu', r.pass,
+        v => { r.pass = v; renderBar(); });
+      const rm = iconBtn('trash', `Xoá ${r.ssid}`);
+      rm.disabled = edit.wifi.length <= 1;
+      if (rm.disabled) rm.title = 'Cần giữ ít nhất một mạng';
+      rm.addEventListener('click', () => { edit.wifi.splice(i, 1); wifiOpen = null; renderWifi(); renderBar(); });
+      ed.append(w, rm); row.append(ed);
+    }
     box.append(row);
   });
-  $('hostname').value = edit.hostname; $('hostHint').textContent = edit.hostname || 'clawd';
+
+  const ctl = $('scanCtl'); ctl.replaceChildren();
+  if (scan.busy) { const sp = el('span', 'spin'); sp.setAttribute('role', 'status'); sp.setAttribute('aria-label', 'Đang dò mạng'); ctl.append(sp); }
+  else { const rb = iconBtn('refresh', 'Dò lại'); rb.disabled = !S || !S.ok; rb.addEventListener('click', doScan); ctl.append(rb); }
+
+  const near = $('near'); near.replaceChildren();
+  if (scan.err) { near.append(el('p', 'wnote', scan.err)); return; }
+  if (!scan.nets) return;
+  const have = new Set(edit.wifi.map(r => r.ssid));
+  const list = scan.nets.filter(n => !have.has(n.ssid));
+  if (!list.length && !scan.busy) near.append(el('p', 'wnote', 'Không thấy mạng nào khác.'));
+  list.forEach(n => {
+    const open = isOpen('near', n.ssid);
+    const row = el('div', 'wr' + (open ? ' open' : ''));
+    const lk = n.enc ? svgIcon('lock') : el('span');
+    if (n.enc) lk.classList.add('lk');
+    let act;
+    if (open) { act = iconBtn('x', 'Đóng'); act.addEventListener('click', () => toggleOpen('near', n.ssid)); }
+    else {
+      act = iconBtn('plus', `Thêm ${n.ssid}`, 'plus'); act.disabled = full;
+      if (full) act.title = `Đồng hồ nhớ tối đa ${MAX_NETS} mạng`;
+      act.addEventListener('click', () => n.enc ? toggleOpen('near', n.ssid) : addNet(n.ssid));
+    }
+    row.append(bars(n.rssi), el('span', 'nm', n.ssid), lk, act);
+    if (open) {
+      const ed = el('div', 'ed'), ok = el('button', 'btn small', 'Thêm');
+      const { w, pw } = pwField(`Mật khẩu ${n.ssid}`, 'Mật khẩu', '', v => { ok.disabled = v.length < 8; });
+      ok.disabled = true;
+      ok.addEventListener('click', () => addNet(n.ssid, pw.value));
+      pw.addEventListener('keydown', e => { if (e.key === 'Enter' && !ok.disabled) ok.click(); });
+      ed.append(w, ok); row.append(ed);
+    }
+    near.append(row);
+  });
+}
+async function doScan() {
+  if (!api || scan.busy || !S || !S.ok) return;
+  scan = { ...scan, busy: true, err: '' }; renderWifi();
+  const r = await api.scan();
+  scan = r.ok ? { busy: false, nets: r.networks, err: '' } : { busy: false, nets: null, err: r.error };
+  if (wifiOpen && wifiOpen.list === 'near' && !(scan.nets || []).some(n => n.ssid === wifiOpen.ssid)) wifiOpen = null;
+  renderWifi();
 }
 function renderUpdate() {
   const kv = $('fwKv'); kv.replaceChildren();
@@ -318,7 +408,6 @@ on('nightEnabled', 'click', () => { edit.clock.nightEnabled = !edit.clock.nightE
 on('nightStart', 'change', e => { if (e.target.value) edit.clock.nightStart = e.target.value; });
 on('nightEnd', 'change', e => { if (e.target.value) edit.clock.nightEnd = e.target.value; });
 on('nightLevel', 'input', e => { edit.clock.nightLevel = +e.target.value; $('nightVal').textContent = edit.clock.nightLevel + '%'; });
-on('hostname', 'input', e => { edit.hostname = e.target.value.trim().toLowerCase(); $('hostHint').textContent = edit.hostname || 'clawd'; });
 $('gal').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !edit || b.getAttribute('aria-disabled') === 'true') return;
   style = b.dataset.id; renderGallery(); renderBar(); paintPreview(performance.now());
@@ -329,29 +418,6 @@ $('gal').addEventListener('keydown', e => {
   let i = Math.max(0, ids.indexOf(style));
   for (let k = 0; k < n; k++) { i = (i + step) % n; if (styleState(ids[i]) !== 'unavailable') break; }
   style = ids[i]; renderGallery(); renderBar(); paintPreview(performance.now()); $('gal').children[i].focus(); e.preventDefault();
-});
-
-// ---------- WiFi scan ----------
-$('scanBtn').addEventListener('click', async () => {
-  $('scanBtn').disabled = true; $('scanNote').textContent = 'Đồng hồ đang dò mạng (vài giây)…'; $('scanList').replaceChildren();
-  const r = await api.scan();
-  $('scanBtn').disabled = false;
-  if (!r.ok) { $('scanNote').textContent = r.error; return; }
-  $('scanNote').textContent = r.networks.length ? 'Bấm vào một mạng để thêm.' : 'Không thấy mạng nào.';
-  r.networks.forEach(n => {
-    const b = el('button'); b.append(el('span', null, n.ssid), el('small', null, `${n.enc ? 'có mật khẩu · ' : 'mạng mở · '}${n.rssi} dBm`));
-    b.addEventListener('click', () => {
-      if (!edit) return;
-      let i = edit.wifi.findIndex(r => r.ssid === n.ssid);
-      if (i < 0) {
-        if (edit.wifi.length >= 4) { msg('Đồng hồ nhớ tối đa 4 mạng: xoá bớt một mạng trước.', 'err'); return; }
-        edit.wifi.push({ ssid: n.ssid }); i = edit.wifi.length - 1;
-      }
-      renderWifi(); renderBar();
-      const inp = $('nets').children[i].querySelector('input'); if (inp) inp.focus();
-    });
-    $('scanList').append(b);
-  });
 });
 
 // ---------- save / undo ----------
@@ -449,10 +515,11 @@ document.addEventListener('keydown', e => {
 // ---------- load ----------
 function apply(r) {
   S = r;
-  if (r.ok) { orig = view(r.config); edit = mkEdit(orig); style = activeStyle(); msg('Không có thay đổi chưa lưu.'); }
+  if (r.ok) { orig = view(r.config); edit = mkEdit(orig); style = activeStyle(); wifiOpen = null; msg('Không có thay đổi chưa lưu.'); }
   else if (r.code === 'auth') { askAuth(); msg(r.error, 'err'); }
   else { msg(r.error, 'err'); if (r.code === 'noclock') showTab('app'); }
   renderAll();
+  if (r.ok && tab === 'wifi' && !scan.nets && !scan.busy) doScan();   // opened on #wifi before the clock answered
 }
 async function load() { msg('Đang đọc cài đặt từ đồng hồ…'); apply(await api.state()); }
 

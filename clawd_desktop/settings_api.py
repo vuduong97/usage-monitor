@@ -20,8 +20,9 @@ import threading
 import time
 import webbrowser
 from base64 import b64encode
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import clawd_desktop.preview as pv
 from clawd_desktop import __version__, autostart, creds, firmware, hooks, ota, paths
@@ -199,7 +200,8 @@ class SettingsApi:
         if style == pv.CLASSIC:
             view = self._api.clear_style()
         else:
-            pack = next(p for p in self._bundle.styles if p.id == style)   # _style_arg checked it
+            packs = self._bundle.styles if self._bundle else ()            # _style_arg checked it
+            pack = next(p for p in packs if p.id == style)
             view = self._api.install_style(pack.read())
         self._heap = {**self._heap, "style": str(view.get("id") or "")}
 
@@ -231,7 +233,20 @@ class SettingsApi:
         self._cfg = cfg
         self._mirror_screen(cfg)
         return {"ok": True, "heap": self._heap, "config": cfg, "fw": self._fw_info(),
-                "app": self._app_info()}
+                "net": self._net(), "app": self._app_info()}
+
+    def _net(self) -> dict | None:
+        """The network the clock is on now ({ssid, rssi}), for the WiFi tab's "in use" mark.
+        Only decoration: None when the clock does not say (AP mode, an error)."""
+        try:
+            st = self._api.status()
+        except ClockError:
+            return None
+        ssid = st.get("ssid")
+        if st.get("mode") != "sta" or not st.get("connected") or not isinstance(ssid, str) or not ssid:
+            return None
+        rssi = st.get("rssi")
+        return {"ssid": ssid, "rssi": rssi if isinstance(rssi, int) and not isinstance(rssi, bool) else None}
 
     def _mirror_screen(self, cfg: dict) -> None:
         """The engine stops pushing animations while the main screen is Usage; it
