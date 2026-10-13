@@ -26,6 +26,9 @@ RETRIES = 2             # extra tries for a GET that timed out or could not conn
 RETRY_GAP = 1.5
 OTA_MAX = 524_288       # clawd -> clawd OTA budget (docs/FIRMWARE.md in the firmware repo)
 STYLE_MAX = 32_768      # the largest style pack the firmware takes (STYLE_MAX_BYTES)
+PACK_MAX = 3_000_000    # /desk.pak (CLDK) and /clawd.pak: what the filesystem can hold
+PACK_TIMEOUT = 600.0    # ~2 MB over the clock's WiFi
+PACK_PATHS = {"clawdpak": "/api/clawdpak", "deskpak": "/api/deskpak"}
 
 
 class ClockError(Exception):
@@ -177,6 +180,27 @@ class ClockApi:
                        files={"firmware": ("firmware.bin", image, "application/octet-stream")})
         if r.text.strip() != "OK":
             raise ClockError(f"update refused: {r.text[:200]}")
+
+    def upload_pack(self, kind: str, data: bytes) -> dict:
+        """Replace /clawd.pak ("clawdpak") or /desk.pak ("deskpak"); the clock writes a .tmp,
+        renames it and reopens the pack. {ok, anims, crc?}. ClockError when it refuses.
+        /desk.pak: the clock deletes the old pack first (they do not fit side by side)."""
+        path = PACK_PATHS.get(kind)
+        if path is None:
+            raise ClockError(f"unknown pack {kind!r}")
+        if not data or len(data) > PACK_MAX:
+            raise ClockError(f"pack size {len(data)} B is outside 1..{PACK_MAX}")
+        if self._auth is not None:
+            self.config()          # collect the digest challenge first: the upload is then sent once
+        r = self._send("POST", path, timeout=PACK_TIMEOUT,
+                       files={"file": (kind.replace("pak", ".pak"), data, "application/octet-stream")})
+        try:
+            d = r.json()
+        except ValueError as e:
+            raise ClockError(f"not JSON from {path}") from e
+        if not isinstance(d, dict) or not d.get("ok") or not d.get("anims"):
+            raise ClockError(f"the clock refused {kind}: {d!r}")
+        return d
 
     def style(self) -> dict:
         """`GET /api/style` (no login): {api, active, slot, id?, name?, size?, crc?, error?}."""

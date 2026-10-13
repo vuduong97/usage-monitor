@@ -10,6 +10,7 @@ dependencies = [
   "Pillow>=10",
   "pywebview>=5.3",
   "keyring>=25",
+  "cryptography>=42",
 ]
 
 [dependency-groups]

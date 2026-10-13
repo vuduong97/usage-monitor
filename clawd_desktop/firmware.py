@@ -23,7 +23,7 @@ import os
 import re
 import sys
 import zlib
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 CLAWD_VARIANT = "esp8266-clawd"
@@ -48,10 +48,11 @@ class StylePack:
     size: int
     crc: int                                # the pack header's CRC-32 of bytes [16..)
     light: bool = False
+    data: bytes | None = field(default=None, repr=False, compare=False)   # in memory (feed.py)
 
     def read(self) -> bytes:
         """The pack, checked against the index and its own header (a damaged one is never sent)."""
-        data = self.path.read_bytes()
+        data = self.data if self.data is not None else self.path.read_bytes()
         if (len(data) != self.size or data[:4] != STYLE_MAGIC
                 or int.from_bytes(data[12:16], "little") != self.crc or zlib.crc32(data[16:]) != self.crc):
             raise ValueError(f"style pack {self.id} does not match the index")
