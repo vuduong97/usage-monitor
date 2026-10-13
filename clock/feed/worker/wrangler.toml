@@ -1,0 +1,23 @@
+# Clawd firmware feed (see ../README.md). Before the first deploy:
+#   npx wrangler r2 bucket create clawd-fw           (no public access, no custom domain)
+#   npx wrangler kv namespace create clawd-fw-keys   -> put its id below
+#   npx wrangler secret put APP_TOKENS               (comma-separated app tokens)
+#   npx wrangler secret put URL_SECRET               (random, 32+ bytes)
+name = "clawd-fw-feed"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "clawd-fw"
+
+[[kv_namespaces]]
+binding = "KEYS"
+id = "00000000000000000000000000000000"   # replace with the clawd-fw-keys namespace id
+
+# 120 requests a minute per IP: a check is 1 request, an update 2 + one per file.
+[[ratelimits]]
+name = "RL"
+namespace_id = "4711"
+simple = { limit = 120, period = 60 }
