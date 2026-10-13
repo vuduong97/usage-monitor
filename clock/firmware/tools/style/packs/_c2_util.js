@@ -17,4 +17,23 @@ function rectRows(rects, vw, vh, W = vw, H = vh) {
   return rows;
 }
 
-module.exports = { rectRows };
+// The Tamagotchi egg: a stadium on top (centre (120, 92), radius rTop, straight 14 px) merged into a
+// disc (centre (120, 148), radius rBot) that runs off the bottom of the screen, as a polygon filled by a
+// triangle fan from (120, 120). Returns the triangles (three [x, y] points each). `grow` widens
+// both radii (the rim is the shell grown by 2 px). A large rounded rect would cost a square root per
+// pixel on the clock; a fan costs one scanline span per row.
+function eggFan(grow, stepDeg = 12) {
+  const rTop = 84 + grow, rBot = 100 + grow, cx = 120, cyTop = 92, cyBot = 148, bottom = 240;
+  const step = (stepDeg * Math.PI) / 180;
+  const right = [];                                   // the right half, from the top down to the screen edge
+  for (let a = 0; a < Math.PI / 2 - 1e-9; a += step) right.push([cx + rTop * Math.sin(a), cyTop - rTop * Math.cos(a)]);
+  right.push([cx + rTop, cyTop]);                     // the stadium's straight side ...
+  right.push([cx + rTop, cyBot - Math.sqrt(rBot * rBot - rTop * rTop)]);   // ... until the disc is as wide
+  const aStart = Math.asin(rTop / rBot), aEnd = Math.PI - Math.acos((bottom - cyBot) / rBot);   // angles from straight up
+  for (let a = aStart + step; a < aEnd - 1e-9; a += step) right.push([cx + rBot * Math.sin(a), cyBot - rBot * Math.cos(a)]);
+  right.push([cx + rBot * Math.sin(aEnd), bottom]);
+  const ring = [...right, ...right.slice().reverse().map(([x, y]) => [2 * cx - x, y])];
+  return ring.map((p, i) => [[cx, 120], p, ring[(i + 1) % ring.length]]);
+}
+
+module.exports = { rectRows, eggFan };
