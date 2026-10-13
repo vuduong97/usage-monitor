@@ -13,7 +13,7 @@ import threading
 import time
 from typing import Any
 
-from clawd_desktop import APP_NAME, __version__, autostart, hooks, icons, paths
+from clawd_desktop import APP_NAME, __version__, appupdate, autostart, hooks, icons, paths
 from clawd_desktop.engine import Engine, daemon_running
 
 REFRESH = 3.0
@@ -169,6 +169,8 @@ class Tray:
                 M(lambda _i: self.head, None, enabled=False),
                 M(lambda _i: self.detail, None, enabled=False, visible=lambda _i: bool(self.detail)),
                 pystray.Menu.SEPARATOR,
+                M(lambda _i: f"● Khởi động lại để cập nhật Clawd {self.app_new}", self.restart_update,
+                  visible=lambda _i: bool(self.app_new)),
                 M(lambda _i: f"● Có firmware mới (#{self.fw_new})", self.open_update,
                   visible=lambda _i: bool(self.fw_new)),
                 M("Cài đặt…", self.open_settings, default=True),
@@ -186,6 +188,8 @@ class Tray:
         self._settings: subprocess.Popen | None = None
         self._popover: Any = None       # macOS: the panel a left click opens (popover.py)
         self.fw_new = 0                 # a newer release for the clock (feed.py), 0: none
+        self.app_new = ""               # a newer app, downloaded and checked (appupdate.py), "": none
+        self.updater = appupdate.updater()
 
     # ---- main-thread helper for AppKit -----------------------------------------
     def on_main(self, fn) -> None:
@@ -208,8 +212,22 @@ class Tray:
         if changed:
             title = f"{APP_NAME}: {head}" + (f"\n{detail}" if detail else "")
             self.on_main(lambda: (setattr(self.icon, "title", title[:120]), self.icon.update_menu()))
+        self._sync_app_update()
         if self._popover is not None:
             self.on_main(self._popover.push)     # a no-op while the panel is closed
+
+    def _sync_app_update(self) -> None:
+        """The menu item follows the folder, so a download made by the settings window shows too."""
+        try:
+            st = self.updater.state()
+        except Exception as e:                   # never let the updater break the tray
+            log(f"App update state: {e!r}")
+            return
+        new = st["version"] if st["status"] == "ready" and st["canApply"] else ""
+        if new != self.app_new:
+            self.app_new = new
+            log(f"App update ready: {new}" if new else "No app update waiting")
+            self.on_main(self.icon.update_menu)
 
     # ---- the panel (macOS) -------------------------------------------------------
     def _install_popover(self) -> None:
@@ -305,6 +323,38 @@ class Tray:
                 log(f"Update for the clock: #{new}" if new else "Clock is up to date")
                 self.on_main(self.icon.update_menu)
 
+    def _app_update_loop(self) -> None:
+        """Look for a newer app now and then (GitHub Releases) and download it in the background.
+        Applying it is the user's choice: the menu item / the Update tab's button."""
+        if self.updater.source is None or not appupdate.auto_enabled():
+            log("App update check: off")
+            return
+        log(f"App update check: {self.updater.source.repo}")
+        wait = appupdate.FIRST_CHECK
+        while not self._stop.wait(wait):
+            wait = appupdate.CHECK_EVERY
+            try:
+                st = self.updater.check(force=True)
+            except Exception as e:
+                log(f"App update check: {e!r}")
+                wait = appupdate.RETRY
+                continue
+            if st["status"] == "error":
+                wait = appupdate.RETRY
+            self._sync_app_update()
+
+    def restart_update(self) -> None:
+        threading.Thread(target=self._restart_for_update, name="clawd-restart", daemon=True).start()
+
+    def _restart_for_update(self) -> None:
+        ok, why = self.updater.apply(os.getpid())
+        if not ok:
+            alert(why)
+            self._sync_app_update()
+            return
+        log("Restarting to install the update")
+        self.quit()
+
     def open_settings(self) -> None:      # no arguments: pystray passes (icon, item) to more
         self._open_window("")
 
@@ -353,6 +403,8 @@ class Tray:
                 else:
                     self.engine.finder.forget()
                 self.refresh()
+            elif cmd == "app_update_apply":
+                self._restart_for_update()
 
     def quit(self) -> None:
         self._stop.set()
@@ -368,6 +420,7 @@ class Tray:
                 self.on_main(self._install_popover)
             threading.Thread(target=self._loop, name="clawd-tray", daemon=True).start()
             threading.Thread(target=self._feed_loop, name="clawd-feed", daemon=True).start()
+            threading.Thread(target=self._app_update_loop, name="clawd-appupdate", daemon=True).start()
             self.refresh()
         self.icon.run(setup=setup)
 

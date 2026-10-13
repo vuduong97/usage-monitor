@@ -7,6 +7,7 @@ nothing while closed. The tray talks to it over the child's stdin/stdout:
   tray -> window   "show"                         bring the window forward
                    "show update"                  ... on the Update tab
   window -> tray   {"cmd": "refresh"}             autostart/hooks changed
+                   {"cmd": "app_update_apply"}      restart into the downloaded app version
                    {"cmd": "set_clock", "host": "10.0.0.5" | ""}   typed clock / search again
 
 Started by hand (no tray) it works the same; set_clock then edits clock.json
@@ -21,7 +22,7 @@ import threading
 import time
 from pathlib import Path
 
-from clawd_desktop import APP_NAME, feed, firmware, paths, preview
+from clawd_desktop import APP_NAME, appupdate, feed, firmware, paths, preview
 from clawd_desktop.settings_api import SettingsApi
 
 UI_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)) / "clawd_desktop" / "ui"
@@ -45,19 +46,21 @@ class Channel:
         self.out, self.piped = out, piped
         self._lock = threading.Lock()
 
-    def send(self, msg: dict) -> None:
+    def send(self, msg: dict) -> bool:
+        """True when the tray got the message."""
         if self.piped:
             with self._lock:
                 try:
                     self.out.write(json.dumps(msg) + "\n")
                     self.out.flush()
-                    return
+                    return True
                 except (OSError, ValueError, AttributeError):
                     pass
         if msg.get("cmd") == "set_clock":
             from clawd_desktop.discovery import ClockStore
             store = ClockStore(paths.CLOCK_FILE)
             store.save({"manual_host": msg["host"]} if msg.get("host") else {})
+        return False
 
 
 def dev() -> bool:
@@ -101,7 +104,10 @@ def main(clock: str, key: str, piped: bool, tab: str = "") -> int:
     log("preview: " + (f"firmware renderer {renderer.commit or '?'}" if renderer else "no renderer, approximate canvas"))
     source = feed.from_settings()
     log("update feed: " + (f"{source.url} ({source.channel})" if source else "none"))
-    api = SettingsApi(clock, key, notify=chan.send, bundle=bundle, renderer=renderer, feed=source, tab=tab)
+    up = appupdate.updater()
+    log("app update: " + (f"{up.source.repo}" if up.source else "off"))
+    api = SettingsApi(clock, key, notify=chan.send, bundle=bundle, renderer=renderer, feed=source, tab=tab,
+                      updater=up)
     win = webview.create_window(
         f"{APP_NAME} · Cài đặt", url=str(UI_DIR / "index.html"), js_api=api,
         width=WIDTH, height=HEIGHT, min_size=(720, 540), background_color="#141413",

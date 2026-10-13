@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import clawd_desktop.preview as pv
-from clawd_desktop import __version__, autostart, creds, feed as fd, firmware, hooks, ota, paths
+from clawd_desktop import __version__, appupdate, autostart, creds, feed as fd, firmware, hooks, ota, paths
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
 from clawd_desktop.discovery import ClockStore, manual_clock
 
@@ -127,7 +127,8 @@ def _err(e: Exception) -> dict:
 
 class SettingsApi:
     def __init__(self, base: str, key: str, *,
-                 notify: Callable[[dict], None] = lambda _m: None,
+                 notify: Callable[[dict], bool | None] = lambda _m: None,
+                 updater: appupdate.Updater | None = None,
                  api_factory: Callable[..., ClockApi] = ClockApi,
                  bundle: firmware.Bundle | None = None,
                  feed: fd.Feed | None = None,
@@ -144,7 +145,8 @@ class SettingsApi:
         self._frames = pv.FrameCache()
         self._pak_failed = 0.0                 # when reading /clawd.pak off the clock last failed
         self._remember_screen = remember_screen  # tell the engine the main screen
-        self._notify = notify                  # tell the tray (rescan, set host, refresh)
+        self._notify = notify                  # tell the tray (rescan, set host, refresh); True: delivered
+        self._updater = updater                # updates of the app itself (appupdate.py), None: not offered
         self._factory = api_factory
         self._bundle = bundle
         self._feed = feed                      # newer firmware + packs than the bundle (feed.py)
@@ -261,11 +263,14 @@ class SettingsApi:
         return {"version": __version__, "autostart": autostart.is_enabled(),
                 "autostartSupported": autostart.supported(), "hooks": hooks.is_installed(),
                 "log": str(paths.LOG_FILE), "clock": self._base, "key": self._key,
-                "manual": self._store.load().get("manual_host", "")}
+                "manual": self._store.load().get("manual_host", ""),
+                **({"update": self._updater.state()} if self._updater is not None else {})}
 
     # ---- reading -----------------------------------------------------------------
     def state(self) -> dict:
         """Everything the page shows: heap (no login), config, firmware and app facts."""
+        if self._updater is not None:
+            self._updater.check_async()           # the app's own update: needs no clock, never blocks
         self._follow_store()     # the tray's latest find first: waiting out a gone address takes ~60 s
         if not self._base:
             return {**_fail("noclock", "Chưa tìm thấy đồng hồ."), "app": self._app_info()}
@@ -518,8 +523,14 @@ class SettingsApi:
         return {"ok": True}
 
     def _run_update(self, changes: dict, style: str | None) -> None:
+        beat = [0.0]
+
         def step(s: str) -> None:
             self._job["step"] = s
+            if time.monotonic() - beat[0] > 5:      # the tray must not restart the app now
+                beat[0] = time.monotonic()
+                paths.set_ota_busy(True)
+        paths.set_ota_busy(True)
         src = self._src                        # update() only starts this thread with one
         try:
             if src is None:
@@ -546,6 +557,7 @@ class SettingsApi:
             self._job.update(error=_err(e)["error"] if isinstance(e, ClockError) else f"Lỗi: {e}")
         finally:
             self._job["running"] = False
+            paths.set_ota_busy(False)
 
     def _refresh_style(self, src: firmware.Bundle) -> None:
         """The clock's style pack, re-sent when the release carries a different build of it."""
@@ -569,6 +581,43 @@ class SettingsApi:
 
     def job(self) -> dict:
         return {"ok": True, **{k: v for k, v in self._job.items() if k != "started"}}
+
+    # ---- the app's own update (appupdate.py; the tray downloads too, they share one folder) ---
+    def app_update(self) -> dict:
+        """The state of the app's update, for the page's polling."""
+        if self._updater is None:
+            return _fail("bad", "Tự cập nhật app chưa bật.")
+        return {"ok": True, **self._updater.state()}
+
+    def app_update_check(self) -> dict:
+        """The Update tab's \"Kiểm tra bản mới\" for the app: ask GitHub now, download in the background."""
+        if self._updater is None:
+            return _fail("bad", "Tự cập nhật app chưa bật.")
+        self._updater.check_async(force=True)
+        return {"ok": True, **{**self._updater.state(), "status": "checking"}}
+
+    def app_update_apply(self) -> dict:
+        """Restart into the downloaded version. The tray owns the process that has to quit, so
+        it does the swap; a firmware install in progress is never interrupted."""
+        if self._updater is None:
+            return _fail("bad", "Tự cập nhật app chưa bật.")
+        if self._job["running"]:
+            return _fail("busy", "Đang cập nhật firmware cho đồng hồ; hãy đợi xong rồi khởi động lại.")
+        st = self._updater.state()
+        if st["status"] != "ready":
+            return _fail("bad", "Chưa có bản nào được tải xong.")
+        if not st["canApply"]:
+            return _fail("bad", st["why"] or "Bản này không tự cập nhật được.")
+        if not self._notify({"cmd": "app_update_apply"}):
+            return _fail("bad", "Mở lại Clawd từ biểu tượng trên thanh menu / khay hệ thống rồi thử lại.")
+        return {"ok": True}
+
+    def app_update_page(self) -> dict:
+        """Open the release page (an install that cannot replace itself)."""
+        st = self._updater.state() if self._updater is not None else {}
+        page = st.get("page") or f"https://github.com/{appupdate.REPO}/releases/latest"
+        webbrowser.open(page)
+        return {"ok": True}
 
     def busy(self) -> bool:
         return bool(self._job["running"])
