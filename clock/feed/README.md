@@ -73,6 +73,17 @@ tools/release.sh --stable --notes "…"        # straight to both
 - The manifest is uploaded last, so a client never sees a release with missing files.
 - To put your own clock on beta, add `feed_channel = beta` in `~/.config/claude-usage-monitor/config`.
 
+## Deployed
+
+- Account `72100c7c…` (thien.vu97ht123@gmail.com).
+- Worker `https://clawd-fw-feed.thien-vu97ht123.workers.dev`.
+- R2 bucket `clawd-fw`, with its r2.dev URL disabled.
+- KV namespace `clawd-fw-keys`.
+- The app token is kept on the owner's Mac in `~/.clawd-feed/app_token` (mode 600). It is not in any repo.
+- Release 6 was published to beta and stable with `--private` on 2026-10-13.
+- Build an app that uses this feed with:
+  `CLAWD_FEED_URL=https://clawd-fw-feed.thien-vu97ht123.workers.dev CLAWD_FEED_TOKEN="$(cat ~/.clawd-feed/app_token)" sh packaging/build_mac.sh`
+
 ## First deploy
 
 ```sh
