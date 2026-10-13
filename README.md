@@ -88,7 +88,11 @@ trang web của đồng hồ):
   của bạn và giữ trong `~/.config/claude-usage-monitor/clawd.pak`). Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
 - **Wi‑Fi**: các mạng đồng hồ nhớ (tối đa 4, theo thứ tự ưu tiên), tìm mạng quanh đồng hồ,
   tên đồng hồ. Lưu Wi‑Fi thì đồng hồ khởi động lại.
-- **Cập nhật**: cập nhật firmware đi kèm app, sao lưu / khôi phục, khởi động lại, xoá cài đặt.
+- **Cập nhật**: cài firmware và gói hình (Clawd, desk, kiểu màn hình) mới nhất cho đồng hồ
+  bằng một nút, không cần tải lại app. App tự kiểm tra bản mới lúc mở và mỗi 6 giờ. Khi có
+  bản mới, menu tray hiện **● Có firmware mới**. Bấm **Kiểm tra bản mới** để hỏi ngay. Chỉ
+  những gói khác với đồng hồ mới được gửi. Tab này cũng có sao lưu / khôi phục, khởi động
+  lại và xoá cài đặt.
 - **App**: mở cùng máy tính, Clawd phản ứng khi dùng Claude Code (thêm vài dòng "hook"
   vào `~/.claude/settings.json`, có sao lưu file cũ, tắt đi là gỡ đúng các dòng đó), chọn
   đồng hồ, mở nhật ký.
@@ -142,12 +146,16 @@ uv run --python 3.12 python -m clawd_desktop settings # mở cửa sổ cài đ�
 python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/firmware   # kèm firmware…
 python tools/build_preview.py --src ../clawd-home/firmware   # bộ vẽ màn hình đồng hồ cho cửa sổ Cài đặt (cần c++)
 CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
+CLAWD_FEED_URL=https://… CLAWD_FEED_TOKEN=… sh packaging/build_mac.sh   # bản build biết nguồn firmware
+uv run python tools/feed_e2e.py --feed http://127.0.0.1:8799 --token test-token …   # thử nguồn firmware (xem đầu file)
 sh packaging/build_mac.sh                             # build Clawd.app + .dmg (trên Mac)
 ./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows)
 ```
 
 Phát hành: đẩy tag `vX.Y.Z` lên GitHub, workflow **Release** build `.dmg` (Apple silicon và
-Intel) và `.exe`, rồi đính vào một GitHub Release. Nhớ tăng `__version__` trong
+Intel) và `.exe`, rồi đính vào một GitHub Release. Hai secret `CLAWD_FEED_URL` và
+`CLAWD_FEED_TOKEN` của repo cho bản build biết nguồn firmware. Thiếu hai secret này thì
+app vẫn chạy, nhưng không tự tìm được firmware mới. Nhớ tăng `__version__` trong
 `clawd_desktop/__init__.py`.
 
 Cấu trúc:
@@ -163,6 +171,7 @@ clawd_desktop/
   settings_api.py  những gì trang được gọi xuống Python (kiểm tra mọi giá trị)
   clockapi.py    API cài đặt của đồng hồ (/api/config, /update, digest auth)
   firmware.py, ota.py   firmware đi kèm app và cách cài (tạm dừng gửi qua pause.py)
+  feed.py        nguồn firmware: hỏi bản mới, tải, giải mã trong RAM, so CRC gói với đồng hồ
   hooks.py       thêm/gỡ hook Claude Code trong settings.json
   autostart.py   LaunchAgent (Mac) / HKCU Run (Windows)
 integrations/    extension pi và lệnh `clawd` (tuỳ chọn, cho người dùng nâng cao)
@@ -173,9 +182,11 @@ PROTOCOL.md      giao thức giữa máy tính và đồng hồ
 Tuỳ chọn nâng cao nằm trong `~/.config/claude-usage-monitor/config` (dạng `khoá = giá trị`),
 dùng chung với daemon cũ: `http_targets = 192.168.1.48` để chỉ định đồng hồ cố định,
 `config_dirs = ~/.claude, ~/.claude-work` cho nhiều tài khoản, `events = off` để tắt phần
-hoạt hình, `event_port = 47913`.
+hoạt hình, `event_port = 47913`, `feed_channel = beta` để nhận bản thử trước.
 
 Repo này **không chứa** firmware, font hay hình Clawd của đồng hồ (`tools/check_public.py`
 chặn trong CI). Xem `NOTICE`. Firmware chỉ vào bản build khi chạy `tools/bundle_firmware.py`
 (thư mục `clawd_desktop/firmware/` bị git bỏ qua); bản build như vậy chứa firmware riêng tư,
-nên chỉ phát cho người dùng đồng hồ Clawd, đừng đính vào GitHub Release công khai.
+nên chỉ phát cho người dùng đồng hồ Clawd, đừng đính vào GitHub Release công khai. Cách
+phát cho mọi người là **nguồn firmware** (`feed/` trong clawd-home). App tải firmware ở
+dạng mã hoá, chỉ giải mã trong bộ nhớ rồi gửi thẳng lên đồng hồ, không ghi file nào ra đĩa.

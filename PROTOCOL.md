@@ -86,7 +86,11 @@ the app only sends the newer names when every clock reports `desk` ≥ 31.
 `desk` (animations in `/desk.pak`, 0 = missing), `anim`, `deskAnim` (the desk
 animation on screen now, a variant too; only firmware that understands `v` has it),
 `reset`, `crash`, `styleApi` and `style` (the style pack API the clock draws, and
-the pack it shows: `""` = the classic screen).
+the pack it shows: `""` = the classic screen). From `fwSeq` 6: `pakCrc` and
+`deskCrc`, the CRC-32 (zlib, 8 hex digits) of `/clawd.pak` and `/desk.pak`. The
+value is `""` when the pack is missing or not yet checksummed: the clock checksums
+in the background from 30 s after boot, about a minute for `desk.pak`. The app compares
+them with a firmware feed release so it only re-sends packs that differ.
 
 The app reads it every 5 s. When `uptime` shows the clock restarted, it
 sends the last `/api/usage` payload and the current `/api/state` again at
@@ -100,9 +104,13 @@ provisioning script and the clock's own web page, never by the desktop app.
 `GET/POST /api/config` (POST takes partial JSON: `hostname`, `wifi` list,
 `apSsid`, `apPass`, `auth`), `POST /api/reboot`, `GET /api/fs/list`,
 `GET /api/fs/get?path=`, `POST /api/fs/put`, `POST /api/fs/rm`,
-`POST /api/clawdpak`, `POST /api/deskpak`, `POST /update` (firmware).
+`POST /api/clawdpak`, `POST /api/deskpak`, `POST /update` (firmware). The two pack
+uploads answer `{"ok":true,"anims":N,"crc":"<hex>"}`. The `crc` is that of the bytes
+received, so the app can check the pack arrived intact. `desk.pak` is deleted before its
+upload, because LittleFS has no room for two copies.
 
-The settings window of the desktop app also uses `/api/config`, `/update` and the
+The settings window of the desktop app also uses `/api/config`, `/update`, the two
+pack uploads (firmware feed, `feed/README.md` in clawd-home) and the
 usage screen's style pack: `POST /api/style` (multipart field `file`, a pack from
 `firmware/styles/`) shows it at once, `DELETE /api/style` goes back to the classic
 screen, `GET /api/style` (no login) says which one is installed. See
