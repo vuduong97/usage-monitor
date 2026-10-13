@@ -42,6 +42,18 @@ def outline_top(full, x, y_guess):
     return y_guess
 
 
+def screen_top(full, x, y_guess):
+    """The first row of the screen: layout rounding drifts a pixel or two per board, so find
+    the first row at/after y_guess - 6 whose pixel is not the page background (#26262A)."""
+    r = subprocess.run(['magick', full, '-crop', f'1x16+{x}+{y_guess - 6}', '+repage', 'txt:-'],
+                       capture_output=True, text=True, check=True)
+    for line in r.stdout.splitlines()[1:]:
+        m = re.match(r'0,(\d+):.*#([0-9A-F]{6})', line)
+        if m and m.group(2) != '26262A':
+            return y_guess - 6 + int(m.group(1))
+    return y_guess
+
+
 def shoot(html, png, height):
     url = 'file://' + os.path.abspath(html).replace(' ', '%20')
     subprocess.run([CHROME, '--user-data-dir=/tmp/e1-chrome', '--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
@@ -74,7 +86,7 @@ def main():
                 print(f'{pid} {st}: no host shot'); continue
             ref = os.path.join(out, f'_{pid}-{k}-mock.png')
             x0 = 48 + 40 + 264 * k
-            y0 = top + 640 + 24
+            y0 = screen_top(full, x0 + 1, top + 640 + 24)
             subprocess.run(['magick', full, '-crop', f'240x240+{x0}+{y0}', '+repage', ref], check=True)
             h1 = os.path.join(out, f'_{pid}-{k}-host.png')
             subprocess.run(['magick', host, '-scale', '50%', h1], check=True)
