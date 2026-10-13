@@ -36,4 +36,25 @@ function eggFan(grow, stepDeg = 12) {
   return ring.map((p, i) => [[cx, 120], p, ring[(i + 1) % ring.length]]);
 }
 
-module.exports = { rectRows, eggFan };
+// A filled polygon (points [x, y]) as sprite rows ('#' on, pixel centres inside) over its bounding box.
+function polyRows(pts) {
+  const x0 = Math.floor(Math.min(...pts.map((p) => p[0]))), x1 = Math.ceil(Math.max(...pts.map((p) => p[0])));
+  const y0 = Math.floor(Math.min(...pts.map((p) => p[1]))), y1 = Math.ceil(Math.max(...pts.map((p) => p[1])));
+  const inside = (x, y) => {
+    let c = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  };
+  const rows = [];
+  for (let y = y0; y < y1; y++) {
+    let row = '';
+    for (let x = x0; x < x1; x++) row += inside(x + 0.5, y + 0.5) ? '#' : '.';
+    rows.push(row);
+  }
+  return { x: x0, y: y0, rows };
+}
+
+module.exports = { rectRows, eggFan, polyRows };
