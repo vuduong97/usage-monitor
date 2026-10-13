@@ -24,6 +24,9 @@ and no OTA.
 
 - **Usage and idle:** while a pack is installed, the usage view and the "no data"
   idle view both draw the pack. Each pack has its own no-data state.
+- **Before the first data:** until the desktop app sends its first payload since
+  boot, the classic waiting screen shows instead (cloud, the clock's IP,
+  "Waiting…"), so a clock the app has not reached yet can still be found.
 - **Alerts:** an alert (`m` in the payload) shows the classic screen with its
   blinking frame. When the alert clears, the screen goes back to the pack.
 - **Enterprise:** Enterprise accounts (`acct: "ent"`) always draw the classic

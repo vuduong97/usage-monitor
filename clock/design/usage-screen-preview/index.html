@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawd — màn hình Usage (240×240): 6 đã có + 6 mới</title>
+<style>
+  @font-face { font-family: Styrene; src: url(assets/StyreneB-Regular.otf); }
+  @font-face { font-family: Tiempos; src: url(assets/TiemposText-400-Regular.otf); }
+  @font-face { font-family: DejaVuMono; src: url(assets/DejaVuSansMono.ttf); }
+  :root { --bg:#141413; --card:#1f1f1e; --line:#2f2f2c; --text:#faf9f5; --dim:#b0aea5; --accent:#d97757; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 Styrene, system-ui, sans-serif; }
+  header { padding:28px 32px 12px; max-width:1500px; margin:auto; }
+  h1 { font:400 30px/1.2 Tiempos, Georgia, serif; margin:0 0 6px; }
+  .sub { color:var(--dim); margin:0; max-width:900px; }
+  .bar { position:sticky; top:0; z-index:5; background:rgba(20,20,19,.94); backdrop-filter:blur(6px);
+         border-bottom:1px solid var(--line); }
+  .controls { max-width:1500px; margin:auto; padding:12px 32px; display:flex; flex-wrap:wrap; gap:18px 28px; align-items:center; }
+  .group { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .group > span { color:var(--dim); font-size:13px; margin-right:4px; }
+  button { font:inherit; font-size:13px; color:var(--text); background:var(--card); border:1px solid var(--line);
+           border-radius:99px; padding:6px 14px; min-height:32px; cursor:pointer; transition:background .15s, border-color .15s; }
+  button:hover { border-color:#55534d; }
+  button[aria-pressed=true] { background:var(--accent); border-color:var(--accent); color:#141413; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .sliders { display:none; gap:14px 22px; flex-wrap:wrap; padding:0 32px 12px; max-width:1500px; margin:auto; }
+  .sliders.on { display:flex; }
+  .sliders label { display:flex; flex-direction:column; font-size:12px; color:var(--dim); min-width:170px; }
+  .sliders output { color:var(--text); }
+  main { max-width:1500px; margin:auto; padding:24px 32px 60px; display:grid;
+         grid-template-columns:repeat(auto-fill, minmax(var(--colw, 360px), 1fr)); gap:22px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:12px; }
+  .card.base { border-style:dashed; }
+  .card[hidden] { display:none; }
+  .card h2 { margin:0; font:400 21px/1.25 Tiempos, Georgia, serif; }
+  .tag { display:inline-block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-bottom:2px; }
+  .device { align-self:center; background:#0b0b0a; padding:14px; border-radius:16px;
+            box-shadow:inset 0 0 0 1px #2a2a28, 0 10px 30px rgba(0,0,0,.45); }
+  canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
+  .card p { margin:0; color:var(--dim); font-size:14px; }
+  .card ul { margin:0; padding-left:18px; font-size:13.5px; color:var(--dim); }
+  .card li b { color:var(--text); font-weight:400; }
+  .cost { font-size:12.5px; border-top:1px solid var(--line); padding-top:10px; color:var(--dim); }
+  .cost b { color:var(--text); font-weight:400; }
+  .ok { color:#9bb07a; } .warn { color:var(--accent); }
+  .real { display:flex; gap:10px; align-items:center; font-size:12.5px; color:var(--dim); }
+  .real img { width:120px; image-rendering:pixelated; border-radius:6px; border:1px solid var(--line); }
+  footer { max-width:1500px; margin:auto; padding:0 32px 48px; color:var(--dim); font-size:13.5px; }
+  footer table { border-collapse:collapse; width:100%; margin-top:8px; }
+  footer td, footer th { border-bottom:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  footer th { color:var(--text); font-weight:400; }
+  @media (prefers-reduced-motion: reduce) { button { transition:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Màn hình Usage cho đồng hồ Clawd — 6 phong cách &amp; bảng màu mới (R–W)</h1>
+  <p class="sub">Mỗi khung là một canvas đúng <b>240×240 px</b> (ST7789 1.54″ của SmallTV), cùng bảng màu
+  <code>ClawdDraw.h</code> và cùng font Styrene / Tiempos / DejaVu Mono mà firmware dùng. Ở 1× mỗi pixel CSS = 1 pixel màn hình; 2×/3× phóng to kiểu pixel để soi chi tiết.
+  Chữ trên màn hình giữ tiếng Anh như firmware hiện tại. Sáu bố cục cũ (0, A–E) đã nằm trong firmware (layout 0–5); F–K là đợt phác thảo trước. L–Q là đợt “luôn có Clawd”. Đợt này (R–W) mỗi màn một phong cách và bảng màu riêng, thoát khỏi nền đen + cam Claude; Clawd vẫn luôn có mặt (đổi màu theo bảng của màn).</p>
+</header>
+
+<div class="bar">
+  <div class="controls">
+    <div class="group" id="g-state"><span>Dữ liệu</span>
+      <button data-state="normal" aria-pressed="true">Bình thường</button>
+      <button data-state="hot">Sắp hết</button>
+      <button data-state="fresh">Vừa reset</button>
+      <button data-state="stale">Mất dữ liệu</button>
+      <button data-state="custom">Tự chỉnh…</button>
+    </div>
+    <div class="group" id="g-show"><span>Hiện</span>
+      <button data-show="w3" aria-pressed="true">Mới · phong cách khác (6)</button>
+      <button data-show="w2">Clawd L–Q (6)</button>
+      <button data-show="w1">F–K (6)</button>
+      <button data-show="old">Đã có (6)</button>
+      <button data-show="all">Tất cả</button>
+    </div>
+    <div class="group" id="g-scale"><span>Phóng</span>
+      <button data-scale="1">1×</button>
+      <button data-scale="2" aria-pressed="true">2×</button>
+      <button data-scale="3">3×</button>
+    </div>
+    <div class="group"><span>Chuyển động</span>
+      <button id="anim" aria-pressed="true">Bật</button>
+    </div>
+  </div>
+  <div class="sliders" id="sliders">
+    <label>5-hour đã dùng <output id="o-s"></output><input type="range" id="i-s" min="0" max="100" value="42"></label>
+    <label>5-hour reset sau (phút) <output id="o-sr"></output><input type="range" id="i-sr" min="0" max="300" value="134"></label>
+    <label>Weekly đã dùng <output id="o-w"></output><input type="range" id="i-w" min="0" max="100" value="67"></label>
+    <label>Weekly reset sau (giờ) <output id="o-wr"></output><input type="range" id="i-wr" min="0" max="168" value="66"></label>
+  </div>
+</div>
+
+<main id="grid"></main>
+
+<footer>
+  <h2 style="font:400 21px Tiempos,serif;color:var(--text);margin:8px 0 4px">So sánh nhanh</h2>
+  <table>
+    <tr><th>Phương án</th><th>Nhìn lướt 1 giây thấy gì</th><th>Thông tin mới</th><th>Việc phải làm ở firmware</th></tr>
+    <tr><td>0 · Hiện tại</td><td>Hai % và hai thanh</td><td>—</td><td>—</td></tr>
+    <tr><td>A · Tiêu điểm</td><td>Số 5-hour rất to</td><td>Vạch nhịp, trạng thái nhịp</td><td>Font Styrene 56 (chỉ số + %), ~6–7 KB</td></tr>
+    <tr><td>B · Vòng đôi</td><td>Hai vòng như đồng hồ đeo tay</td><td>Chấm nhịp trên vòng</td><td>Hàm vẽ cung tròn có khử răng cưa trong ClawdDraw</td></tr>
+    <tr><td>C · Đồng hồ đôi</td><td>Hai kim gauge cạnh nhau</td><td>—</td><td>Hàm vẽ cung tròn (dùng chung với B)</td></tr>
+    <tr><td>D · Nhịp &amp; dự báo</td><td>Có kịp tới lúc reset không</td><td>Badge nhịp + “Out at ~14:41”</td><td>Chỉ thêm phép tính và text; không cần font hay hàm vẽ mới</td></tr>
+    <tr><td>E · Pixel retro</td><td>Thanh khối như game, Clawd đi dạo</td><td>Clawd đi nhanh hơn khi dùng nhiều</td><td>Font mono 36 (chỉ số), sprite đi bộ đã có trong clawd.pak</td></tr>
+    <tr><th colspan="4" style="color:var(--accent)">Mới</th></tr>
+    <tr><td>F · Terminal</td><td>Y như <code>/usage</code> của Claude Code</td><td>Giờ reset tuyệt đối (16:19, Thu 08:05)</td><td><span class="ok">Không font mới</span>; mono 18 + ô chữ nhật, ~1 KB</td></tr>
+    <tr><td>G · Pin</td><td>Còn lại bao nhiêu, như pin điện thoại</td><td>Đảo cách nhìn: % <i>còn lại</i>; tia sét khi vừa reset</td><td><span class="ok">Không font mới</span>; ô chữ nhật + 1 đa giác (tia sét), ~1 KB</td></tr>
+    <tr><td>H · Đếm ngược</td><td>Còn bao lâu tới reset</td><td>Thanh Thời gian đặt cạnh thanh Đã dùng</td><td>Thêm dấu “:” vào Styrene 48 (~0,3 KB)</td></tr>
+    <tr><td>I · Biểu đồ đốt</td><td>Đường dùng so với đường nhịp lý tưởng</td><td>Lịch sử 5 giờ + đường dự phóng tới lúc hết</td><td>Bộ đệm 60 mẫu (60 B RAM) + hàm vẽ đường; mất lịch sử khi khởi động lại, trừ khi app gửi kèm. ~2 KB</td></tr>
+    <tr><td>J · Clawd tâm trạng</td><td>Clawd to, vẻ mặt theo mức dùng</td><td>Mood: Chilling → Busy → Running hot</td><td>Phóng sprite ×3 + chọn animation có sẵn trong clawd.pak (laptop, racing car, trumpet, jumping happy, magnifier). ~1,5 KB</td></tr>
+    <tr><td>K · Ban đêm</td><td>Chỉ giờ, rất tối</td><td>Tự bật 22:00–07:00, đèn nền thấp</td><td>Dùng chung dấu “:” với H; khung giờ đêm trong Settings, ~1 KB</td></tr>
+    <tr><th colspan="4" style="color:var(--accent)">Mới · luôn có Clawd</th></tr>
+    <tr><td>L · Leo cột</td><td>Clawd leo càng cao là dùng càng nhiều</td><td>Vạch thời gian trên cột: Clawd đứng cao hơn vạch là đang dùng nhanh</td><td>Cột + di chuyển mascot (cơ chế của ClawdWalker), ~1 KB</td></tr>
+    <tr><td>M · Giơ bảng</td><td>Clawd giơ tấm bảng ghi số % to</td><td>Bảng rung khi ≥ 80%; bên cạnh là weekly và nhịp</td><td>Sprite ×2, Styrene 48 sẵn có, ~1 KB</td></tr>
+    <tr><td>N · Bánh quy</td><td>Clawd gặm bánh, phần bị ăn = % đã dùng</td><td>Hộp bánh tuần nhỏ ở đáy</td><td>Thêm hàm tô hình quạt (pie), ~2 KB</td></tr>
+    <tr><td>O · Đua với giờ</td><td>Clawd chạy đua với chiếc đồng hồ</td><td>Clawd vượt đồng hồ = đốt nhanh hơn thời gian</td><td>Hai Clawd đi bộ (ClawdWalker) + biểu tượng đồng hồ, ~1 KB</td></tr>
+    <tr><td>P · Bể nước</td><td>Mực nước = phần còn lại, Clawd nổi trên mặt</td><td>Nước ngả đỏ khi còn ≤ 20%; ống nhỏ cho weekly</td><td>Tô theo hàng có sóng; chỉ vẽ lại dải mặt nước, ~1,5 KB</td></tr>
+    <tr><td>Q · RPG</td><td>HP/MP như game Pokémon</td><td>Hộp thoại kiểu game: “Full heal 16:19.”</td><td>Mono 18 + sprite ×2 + khung, ~1,5 KB</td></tr>
+    <tr><th colspan="4" style="color:var(--accent)">Mới · phong cách &amp; màu khác</th></tr>
+    <tr><td>R · Game Boy</td><td>4 sắc xanh, ô “máu” như game</td><td>Khung thoại giờ reset, ▶ nhấp nháy</td><td>Palette 4 màu + Clawd đổi palette; thêm “%” vào mono 32, ~1 KB</td></tr>
+    <tr><td>S · Synthwave</td><td>Mặt trời lặn, lưới neon chạy</td><td>Mặt trời chuyển đỏ khi ≥ 80%</td><td>Gradient bằng dải màu, lưới 1 px; vẽ lại nửa dưới mỗi khung, ~2 KB</td></tr>
+    <tr><td>T · Tờ báo</td><td>Nền giấy sáng, số serif to</td><td>Dự báo bằng câu văn</td><td>Tiempos 56 chữ số ~5 KB (nên để LittleFS)</td></tr>
+    <tr><td>U · Blueprint</td><td>Bản vẽ kỹ thuật nét trắng</td><td>Đường dóng ghi cả % dùng và % còn</td><td>Gạch chéo bằng mẫu pixel, Clawd viền, ~1,5 KB</td></tr>
+    <tr><td>V · Pastel</td><td>Thanh kẹo dẻo, Clawd má hồng</td><td>Badge “all good / a bit fast”</td><td>Bảng màu sáng + trái tim, ~1 KB</td></tr>
+    <tr><td>W · 1-bit</td><td>Hai màu than/xám như Playdate</td><td>Dither = thời gian đã trôi, đặc = đã dùng</td><td>Mẫu dither trong vòng tô, ~1 KB</td></tr>
+  </table>
+  <p><b style="color:var(--text);font-weight:400">Ngân sách:</b> firmware hiện 514 256 B / 524 288 B OTA, tức còn ~10 KB. Mỗi màn mới tốn ~1–2 KB (riêng T thêm ~5 KB font); nên chọn 2–3 cái, hoặc chuyển font/sprite lớn sang LittleFS (còn ~90 KB).</p>
+  <p>Tính nhịp và dự báo chỉ dùng dữ liệu đồng hồ đã có (<code>sessionPct/ResetMin</code>, <code>weeklyPct/ResetMin</code>): thời gian đã qua = cửa sổ (300 phút / 10 080 phút) − thời gian còn lại. Nhịp = % dự kiến lúc reset nếu giữ tốc độ hiện tại: &gt;100% “Over pace” (đỏ, kèm giờ hết), 70–100% “On pace”, &lt;70% “Under pace”; 5% đầu cửa sổ là “Just reset”. Badge và dòng dự báo vì thế luôn khớp nhau. Trên Enterprise, hàng 5-hour thành “Spending” và Weekly thành “Period”, bố cục giữ nguyên.</p>
+  <p>Font lớn có thể nằm trong LittleFS (còn ~90 KB) thay vì firmware (dư ~9–13 KB OTA).</p>
+</footer>
+
+<script>
+const C = { bg:'#000000', panel:'#1f1f1e', text:'#faf9f5', dim:'#b0aea5', accent:'#d97757',
+            green:'#788c5d', amber:'#d97757', red:'#c0392b', track:'#2a2a28' };
+const F = { s14:'14px Styrene', s24:'24px Styrene', s48:'48px Styrene', s56:'56px Styrene', t34:'34px Tiempos', t56:'56px Tiempos', m32:'32px DejaVuMono',
+            m18:'18px DejaVuMono', m36:'36px DejaVuMono' };
+const W = 240, H = 240, WIN_S = 300, WIN_W = 10080;
+const pctColor = p => p >= 80 ? C.red : p >= 50 ? C.amber : C.green;
+
+const STATES = {
+  normal: { ok:true, s:42, sr:134, w:67, wr:3960,  clock:'14:05', dow:1 },
+  hot:    { ok:true, s:88, sr:38,  w:93, wr:540,   clock:'14:05', dow:1 },
+  fresh:  { ok:true, s:4,  sr:291, w:18, wr:8200,  clock:'09:12', dow:1 },
+  stale:  { ok:false, s:0, sr:-1,  w:0,  wr:-1,    clock:'14:05', dow:1 },
+  custom: { ok:true, s:42, sr:134, w:67, wr:3960,  clock:'14:05', dow:1 },
+};
+let state = 'normal', scale = 2, animate = true, show = 'w3';
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const pad2 = n => String(n).padStart(2, '0');
+// Wall-clock time `add` minutes after d.clock; withDay adds the weekday once it is not today.
+function atClock(d, add, withDay = false) {
+  const [h, m] = d.clock.split(':').map(Number), tot = h * 60 + m + Math.round(add);
+  const t = `${pad2(Math.floor(tot % 1440 / 60))}:${pad2(tot % 60)}`;
+  return withDay && tot >= 1440 ? `${DOW[(d.dow + Math.floor(tot / 1440)) % 7]} ${t}` : t;
+}
+function mix(a, b, k) {          // a*(1-k) + b*k, '#rrggbb'
+  const p = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+  const A = p(a), B = p(b);
+  return '#' + A.map((v, i) => pad2(Math.round(v * (1 - k) + B[i] * k).toString(16))).join('');
+}
+function poly(c, pts, col) { c.fillStyle = col; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill(); }
+// Synthetic 5-hour history (5-minute samples) ending at pct: bursty, with idle stretches.
+function history(pct, el, seed) {
+  let r = seed >>> 0; const rnd = () => (r = (r * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const n = Math.max(1, Math.floor(el / 5)), w = [];
+  for (let i = 0; i < n; i++) { const v = rnd(); w.push(v < 0.3 ? 0 : v * v); }
+  const sum = w.reduce((a, b) => a + b, 0) || 1; let acc = 0; const pts = [[0, 0]];
+  for (let i = 0; i < n; i++) { acc += w[i]; pts.push([Math.min(el, (i + 1) * 5), pct * acc / sum]); }
+  return pts;
+}
+
+// ---- data helpers (same rules as firmware where they exist) ----
+function fmtReset(m) {               // ClawdUi.cpp formatReset, minus the prefix
+  if (m < 0) return '---';
+  if (m < 60) return `${m}m`;
+  if (m < 1440) return `${Math.floor(m/60)}h ${m%60}m`;
+  return `${Math.floor(m/1440)}d ${Math.floor((m%1440)/60)}h`;
+}
+function pace(pct, resetMin, win) {
+  if (resetMin < 0) return { label:'No data', color:C.dim, t:0 };
+  const t = Math.min(1, Math.max(0, (win - resetMin) / win));   // time elapsed 0..1
+  if (t < 0.05) return { label:'Just reset', color:C.green, t };
+  const end = pct / t;                       // % at reset if the rate holds
+  if (end > 100) return { label:'Over pace', color:C.red, t };
+  if (end >= 70) return { label:'On pace', color:C.amber, t };
+  return { label:'Under pace', color:C.green, t };
+}
+function forecast(pct, resetMin, win, clock) {
+  if (resetMin < 0) return { text:'---', color:C.dim };
+  const el = win - resetMin;
+  if (pct >= 100) return { text:'Limit reached', color:C.red };
+  if (el < win * 0.05 || pct < 1) return { text:'Too early to tell', color:C.dim };
+  const left = (100 - pct) / (pct / el);                 // minutes to 100% at this rate
+  if (left >= resetMin) return { text:'Lasts until reset', color:C.green };
+  if (win === WIN_S && clock) {
+    const [h, m] = clock.split(':').map(Number);
+    const t = (h * 60 + m + Math.round(left)) % 1440;
+    return { text:`Out at ~${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`, color:C.red };
+  }
+  return { text:`Out in ~${fmtReset(Math.round(left))}`, color:C.red };
+}
+
+// ---- drawing primitives (what ClawdDraw can do, + arcs where noted) ----
+function rr(c, x, y, w, h, r, col) { c.fillStyle = col; c.beginPath(); c.roundRect(x, y, w, h, Math.min(r, w/2, h/2)); c.fill(); }
+function tx(c, s, x, y, font, col, align='left') { c.font = font; c.fillStyle = col; c.textAlign = align; c.textBaseline = 'top'; c.fillText(s, x, y); }
+function tw(c, s, font) { c.font = font; return c.measureText(s).width; }
+function bar(c, x, y, w, h, pct, col, r=h/2) {
+  rr(c, x, y, w, h, r, C.track);
+  const f = Math.round(w * Math.max(0, Math.min(100, pct)) / 100);
+  if (f > 0) rr(c, x, y, Math.max(f, h), h, r, col);
+}
+function arc(c, cx, cy, r, a0, a1, lw, col) {
+  c.strokeStyle = col; c.lineWidth = lw; c.lineCap = 'round';
+  c.beginPath(); c.arc(cx, cy, r, a0, a1); c.stroke();
+}
+const rad = d => d * Math.PI / 180;
+const imgs = {};
+function clawd(c, x, y, k='clawd') { c.imageSmoothingEnabled = false; if (imgs[k]?.complete) c.drawImage(imgs[k], Math.round(x), Math.round(y)); }
+// Clawd at an integer scale (nearest), optionally dimmed.
+function clawdS(c, x, y, s = 1, alpha = 1) {
+  if (!imgs.clawd?.complete) return;
+  c.save(); c.imageSmoothingEnabled = false; c.globalAlpha = alpha;
+  c.drawImage(imgs.clawd, Math.round(x), Math.round(y), 32 * s, 40 * s); c.restore();
+}
+// Clawd recoloured: { body, eye } fills the body and the eye holes; { outline, fill }
+// keeps only the 1 px silhouette edge (blueprint). The sprite is one colour with
+// transparent eye holes (rows 12-15).
+const tintCache = {};
+function clawdTint(c, x, y, s, o, key) {
+  if (!imgs.clawd?.complete) return;
+  key = key || JSON.stringify(o);
+  let cv = tintCache[key];
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.width = 32; cv.height = 40;
+    const g = cv.getContext('2d'); g.drawImage(imgs.clawd, 0, 0);
+    const id = g.getImageData(0, 0, 32, 40), px = id.data;
+    const on = (xx, yy) => xx >= 0 && yy >= 0 && xx < 32 && yy < 40 && px[(yy * 32 + xx) * 4 + 3] > 0;
+    const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const out = new Uint8ClampedArray(px.length);
+    for (let yy = 0; yy < 40; yy++) for (let xx = 0; xx < 32; xx++) {
+      const i = (yy * 32 + xx) * 4; let col = null;
+      if (on(xx, yy)) {
+        if (o.outline) col = (!on(xx - 1, yy) || !on(xx + 1, yy) || !on(xx, yy - 1) || !on(xx, yy + 1)) ? o.outline : o.fill;
+        else col = o.body;
+      } else if (o.eye && yy >= 12 && yy <= 15 && ((xx >= 4 && xx < 8) || (xx >= 24 && xx < 28))) col = o.eye;
+      if (col) { const [r, gg, b] = hex(col); out.set([r, gg, b, 255], i); }
+    }
+    g.putImageData(new ImageData(out, 32, 40), 0, 0);
+    tintCache[key] = cv;
+  }
+  c.save(); c.imageSmoothingEnabled = false; c.drawImage(cv, Math.round(x), Math.round(y), 32 * s, 40 * s); c.restore();
+}
+function sweat(c, x, y) { c.fillStyle = '#6a9bcc'; c.beginPath(); c.moveTo(x, y - 7); c.lineTo(x - 4, y + 1); c.lineTo(x + 4, y + 1); c.fill(); c.beginPath(); c.arc(x, y + 2, 4, 0, Math.PI * 2); c.fill(); }
+
+// whimsical status line (Clawdmeter spinner)
+const SPIN = ['·','✻','✽','✶','✳','✢'], SPIN_MS = [260,130,130,130,130,260];
+const MSG = ['Perusing','Envisioning','Clauding','Noodling','Percolating','Reticulating','Simmering','Vibing'];
+function statusText(d, now) {
+  let ph = 0, acc = 0; const total = SPIN_MS.reduce((a,b)=>a+b,0) * 2 - SPIN_MS[0] - SPIN_MS[5];
+  let tt = now % total;
+  const seq = [0,1,2,3,4,5,4,3,2,1];
+  for (const i of seq) { acc += SPIN_MS[i]; if (tt < acc) { ph = i; break; } }
+  const word = !d.ok ? (Math.floor(now/4000) % 2 ? 'No data' : 'Listening') : MSG[Math.floor(now/4000) % MSG.length];
+  return `${SPIN[ph]} ${word}…`;
+}
+function statusLine(c, d, now, y = H - 29) { tx(c, statusText(d, now), W/2, y, F.m18, C.accent, 'center'); }
+function header(c, d) {          // mascot window + Tiempos clock (current firmware header)
+  clawd(c, 14, 1);
+  const s = d.clock, x = Math.max(64, W/2 + 8 - tw(c, s, F.t34)/2);
+  tx(c, s, x, 4, F.t34, C.text);
+}
+
+// ---- designs ----
+const DESIGNS = [
+{
+  id:'base', tag:'Đã có · layout 0', name:'0 · Classic (firmware)', base:true,
+  desc:'Bố cục Clawdmeter compact đang chạy: hai thẻ Current / Weekly, đồng hồ Tiempos, dòng trạng thái spinner.',
+  pros:['**Quen thuộc**, đã chạy ổn trên máy','Đọc được mọi con số'],
+  cons:['Hai thẻ nặng ký như nhau: mắt không biết nhìn đâu trước','Không cho biết đang dùng **nhanh hay chậm** so với thời gian'],
+  cost:'!!Không đổi gì.!!',
+  draw(c, d, now) {
+    header(c, d);
+    const card = (y, label, pct, reset) => {
+      rr(c, 8, y, 224, 74, 8, C.panel);
+      const pw = tw(c, label, F.s14) + 16;
+      rr(c, 222 - pw, y + 7, pw, 18, 99, C.track);
+      tx(c, label, 230 - pw, y + 8, F.s14, C.text);
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--%', 18, y + 5, F.s24, d.ok ? C.text : C.dim);
+      bar(c, 18, y + 36, 204, 12, d.ok ? pct : 0, pctColor(pct), 6);
+      tx(c, d.ok ? `Resets in ${fmtReset(reset)}` : '---', 18, y + 52, F.s14, C.dim);
+    };
+    card(44, 'Current', d.s, d.sr);
+    card(124, 'Weekly', d.w, d.wr);
+    statusLine(c, d, now);
+  }
+},
+{
+  id:'hero', tag:'Đã có · layout 2', name:'A · Tiêu điểm (Hero number)',
+  desc:'Cửa sổ 5-hour là thứ hay chạm trần nhất, nên cho nó một con số thật to. Weekly lùi xuống một dòng gọn ở đáy.',
+  pros:['Nhìn từ xa 1–2 m vẫn đọc được %','**Vạch trắng** trên thanh = thời gian đã trôi; fill vượt vạch là dùng nhanh','Thứ bậc rõ: số chính → nhịp → weekly'],
+  cons:['Weekly nhỏ, phải lại gần mới đọc','Bỏ dòng spinner (Clawd góc trên vẫn động)'],
+  cost:'**Font Styrene 56** chỉ gồm 0–9, % (~6–7 KB). Thanh + vạch vẽ bằng ClawdShape có sẵn.',
+  draw(c, d, now) {
+    clawd(c, 10, 1);
+    tx(c, d.clock, 232, 4, F.t34, C.text, 'right');
+    const p = pace(d.s, d.sr, WIN_S);
+    tx(c, '5-HOUR', 12, 50, F.s14, C.dim);
+    if (d.ok) tx(c, `resets ${fmtReset(d.sr)}`, 228, 50, F.s14, C.dim, 'right');
+    const num = d.ok ? String(Math.round(d.s)) : '--';
+    tx(c, num, 10, 64, F.s56, d.ok ? C.text : C.dim);
+    tx(c, '%', 14 + tw(c, num, F.s56), 72, F.s24, d.ok ? C.text : C.dim);
+    // pace pill on the right of the number
+    if (d.ok) {
+      const pw = tw(c, p.label, F.s14) + 16;
+      rr(c, 228 - pw, 90, pw, 20, 99, C.track);
+      rr(c, 228 - pw + 8, 97, 6, 6, 3, p.color);
+      tx(c, p.label, 228 - pw + 18, 93, F.s14, C.text);
+    }
+    bar(c, 12, 132, 216, 14, d.ok ? d.s : 0, pctColor(d.s), 7);
+    if (d.ok) { rr(c, 12 + Math.round(216 * p.t) - 1, 127, 2, 24, 1, C.text); }
+    if (d.ok) { const f = forecast(d.s, d.sr, WIN_S, d.clock); tx(c, f.text, 12, 156, F.s14, f.color); }
+    // weekly strip
+    rr(c, 8, 184, 224, 48, 8, C.panel);
+    tx(c, 'Weekly', 18, 192, F.s14, C.dim);
+    tx(c, d.ok ? fmtReset(d.wr) : '---', 18 + tw(c, 'Weekly  ', F.s14), 192, F.s14, C.dim);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '--%', 222, 187, F.s24, d.ok ? C.text : C.dim, 'right');
+    bar(c, 18, 216, 204, 6, d.ok ? d.w : 0, pctColor(d.w), 3);
+  }
+},
+{
+  id:'rings', tag:'Đã có · layout 3', name:'B · Vòng đôi (Activity rings)',
+  desc:'Kiểu đồng hồ đeo tay: vòng ngoài = 5-hour, vòng trong = weekly, mặt giữa là giờ + Clawd. Đồng hồ vuông nhưng vòng tròn làm nó giống một “mặt đồng hồ” thật.',
+  pros:['Đẹp, hợp vai trò **đồng hồ để bàn**','Một hình nói được cả hai cửa sổ','Chấm trắng trên vòng = vị trí thời gian (nhịp)'],
+  cons:['Cung tròn khó ước lượng % chính xác hơn thanh thẳng','4 góc màn hình bỏ trống'],
+  cost:'**Thêm hàm vẽ cung** có khử răng cưa vào ClawdDraw (~1–2 KB code). Vẽ lại vòng chỉ khi số đổi.',
+  draw(c, d, now) {
+    const cx = 120, cy = 120;
+    const ring = (r, lw, pct, resetMin, win) => {
+      arc(c, cx, cy, r, 0, Math.PI * 2, lw, C.track);
+      if (d.ok && pct > 0) arc(c, cx, cy, r, rad(-90), rad(-90 + 360 * Math.min(pct, 100) / 100), lw, pctColor(pct));
+      if (d.ok) {
+        const t = pace(pct, resetMin, win).t, a = rad(-90 + 360 * t);
+        c.fillStyle = C.text; c.beginPath(); c.arc(cx + r * Math.cos(a), cy + r * Math.sin(a), 2.5, 0, Math.PI*2); c.fill();
+      }
+    };
+    ring(110, 12, d.s, d.sr, WIN_S);
+    ring(94, 8, d.w, d.wr, WIN_W);
+    clawd(c, cx - 16, 34);
+    tx(c, d.clock, cx, 80, F.t34, C.text, 'center');
+    const a = d.ok ? `${Math.round(d.s)}%` : '--%', b = d.ok ? `${Math.round(d.w)}%` : '--%';
+    tx(c, a, cx - 8, 126, F.s24, d.ok ? pctColor(d.s) : C.dim, 'right');
+    tx(c, b, cx + 8, 126, F.s24, d.ok ? pctColor(d.w) : C.dim, 'left');
+    rr(c, cx - 1, 130, 2, 16, 1, C.track);
+    tx(c, '5-hour', cx - 8, 152, F.s14, C.dim, 'right');
+    tx(c, 'weekly', cx + 8, 152, F.s14, C.dim, 'left');
+    tx(c, d.ok ? `resets ${fmtReset(d.sr)}` : 'No data', cx, 176, F.s14, C.dim, 'center');
+  }
+},
+{
+  id:'gauges', tag:'Đã có · layout 4', name:'C · Đồng hồ đôi (Twin gauges)',
+  desc:'Hai gauge 270° cạnh nhau, mỗi cái một thẻ. Giữ header và dòng spinner của bản hiện tại nên chuyển đổi nhẹ nhàng.',
+  pros:['So sánh 5-hour vs weekly **ngang hàng**, liếc là thấy cái nào đầy hơn','Giữ nguyên header + spinner quen thuộc'],
+  cons:['Gauge nhỏ (r=38) nên chỉ hợp để liếc, không để đọc chi tiết','Hai thẻ hẹp, chuỗi reset dài phải rút gọn'],
+  cost:'Dùng chung **hàm vẽ cung** với B. Font giữ nguyên.',
+  draw(c, d, now) {
+    header(c, d);
+    const g = (x, label, pct, reset) => {
+      rr(c, x, 46, 108, 156, 10, C.panel);
+      const cx = x + 54, cy = 102, r = 38;
+      arc(c, cx, cy, r, rad(135), rad(405), 9, C.track);
+      if (d.ok && pct > 0) arc(c, cx, cy, r, rad(135), rad(135 + 270 * Math.min(pct, 100) / 100), 9, pctColor(pct));
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--', cx, 91, F.s24, d.ok ? C.text : C.dim, 'center');
+      tx(c, label, cx, 150, F.s14, C.text, 'center');
+      tx(c, d.ok ? fmtReset(reset) : '---', cx, 172, F.s14, C.dim, 'center');
+    };
+    g(8, 'Current', d.s, d.sr);
+    g(124, 'Weekly', d.w, d.wr);
+    statusLine(c, d, now, 211);
+  }
+},
+{
+  id:'pace', tag:'Đã có · layout 1', name:'D · Nhịp & dự báo (Pace)',
+  desc:'Giữ hai thẻ quen thuộc nhưng trả lời câu hỏi thật sự: “với tốc độ này, có hết trước lúc reset không?”',
+  pros:['**Dự báo** “Out at ~14:41” / “Lasts until reset” — hữu ích nhất khi đang code','Badge nhịp màu + vạch thời gian trên thanh','Rẻ nhất: không font, không hàm vẽ mới'],
+  cons:['Nhiều chữ hơn, phải đọc chứ không chỉ liếc','Bỏ dòng spinner để có chỗ'],
+  cost:'!!Chỉ thêm phép tính + text!! trong drawPanels(); dùng Styrene 14/24 và ClawdShape sẵn có.',
+  draw(c, d, now) {
+    header(c, d);
+    const card = (y, label, pct, reset, win) => {
+      rr(c, 8, y, 224, 92, 8, C.panel);
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--%', 18, y + 6, F.s24, d.ok ? C.text : C.dim);
+      const nw = tw(c, d.ok ? `${Math.round(pct)}%` : '--%', F.s24);
+      tx(c, label, 26 + nw, y + 14, F.s14, C.dim);
+      const p = pace(pct, reset, win);
+      if (d.ok) {
+        const pw = tw(c, p.label, F.s14) + 12;
+        rr(c, 222 - pw, y + 9, pw, 20, 99, p.color);
+        tx(c, p.label, 228 - pw, y + 12, F.s14, p.color === C.green ? C.text : '#141413');
+      }
+      bar(c, 18, y + 38, 204, 12, d.ok ? pct : 0, pctColor(pct), 6);
+      if (d.ok) rr(c, 18 + Math.round(204 * p.t) - 1, y + 34, 2, 20, 1, C.text);
+      tx(c, d.ok ? `Resets in ${fmtReset(reset)}` : '---', 18, y + 56, F.s14, C.dim);
+      if (d.ok) { const f = forecast(pct, reset, win, d.clock); tx(c, f.text, 18, y + 72, F.s14, f.color); }
+    };
+    card(44, '5-hour', d.s, d.sr, WIN_S);
+    card(142, 'weekly', d.w, d.wr, WIN_W);
+  }
+},
+{
+  id:'pixel', tag:'Đã có · layout 5', name:'E · Pixel retro (Clawd đi dạo)',
+  desc:'Thanh khối 20 ô như game 8-bit, hợp với Clawd pixel art. Clawd đi dọc “sàn” ở đáy; dùng càng nhanh Clawd đi càng vội.',
+  pros:['Cá tính, **dễ thương nhất** — hợp làm quà tặng','Mỗi ô = 5%, đếm ô là ra số','Clawd chuyển động liên tục nên màn hình “sống”'],
+  cons:['Font mono kém sang hơn Tiempos','Clawd chạy liên tục tốn vẽ lại (vùng nhỏ 40×40, rẻ)'],
+  cost:'**Font mono 36** chỉ gồm 0–9 và “:” (~3 KB). Sprite đi bộ đã có trong clawd.pak.',
+  draw(c, d, now) {
+    tx(c, d.clock, W/2, 6, F.m36, C.text, 'center');
+    const row = (y, label, pct, reset) => {
+      tx(c, label, 11, y, F.m18, C.dim);
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--%', 229, y, F.m18, d.ok ? C.text : C.dim, 'right');
+      const n = d.ok ? Math.round(pct / 5) : 0, col = pctColor(pct);
+      for (let i = 0; i < 20; i++) c.fillStyle = i < n ? col : C.track, c.fillRect(11 + i * 11, y + 24, 9, 18);
+      tx(c, d.ok ? `rst ${fmtReset(reset).replace(' ', '')}` : 'no data', 11, y + 48, F.m18, C.dim);
+    };
+    row(52, '5H', d.s, d.sr);
+    row(124, '7D', d.w, d.wr);
+    // floor + walking Clawd (speed follows the 5-hour pace)
+    for (let x = 4; x < 236; x += 4) { c.fillStyle = C.track; c.fillRect(x, 234, 2, 2); }
+    const speed = !d.ok ? 0 : 10 + 40 * Math.min(1, d.s / 100);
+    const span = 200, pos = (now / 1000 * speed) % (span * 2);
+    const x = 4 + (pos < span ? pos : span * 2 - pos);
+    const bob = speed && Math.floor(now / 180) % 2 ? 1 : 0;
+    clawd(c, x, 194 - bob);
+  }
+},
+// ======================= new: F–K =======================
+{
+  id:'term', wave:1, tag:'Phương án F', name:'F · Terminal (/usage)',
+  desc:'Y như lệnh /usage của Claude Code: chữ mono, thanh khối có ô lẻ, giờ reset tính sẵn ra giờ đồng hồ. Ai dùng Claude Code nhìn là hiểu ngay.',
+  pros:['**Đúng chất Claude Code**, hợp với dòng spinner sẵn có','Giờ reset tuyệt đối: “Resets 16:19”, “Thu 08:05” — khỏi phải cộng nhẩm','Rẻ nhất trong nhóm mới'],
+  cons:['Không có Clawd (chỉ con trỏ nhấp nháy)','Chữ mono 18 nhỏ, cần lại gần để đọc dòng reset'],
+  cost:'!!Không font mới!!: DejaVu Mono 18 + ô chữ nhật. Ước ~1 KB code.',
+  draw(c, d, now) {
+    const M = F.m18;
+    tx(c, '>', 10, 8, M, C.accent); tx(c, '/usage', 24, 8, M, C.text);
+    if (Math.floor(now / 530) % 2) rr(c, 27 + tw(c, '/usage', M), 10, 9, 17, 0, C.dim);
+    tx(c, d.clock, 230, 8, M, C.dim, 'right');
+    rr(c, 10, 36, 220, 1, 0, C.track);
+    const row = (y, label, pct, reset, absText) => {
+      tx(c, label, 10, y, M, C.text);
+      const n = 16, cw = 10, f = d.ok ? Math.min(n, pct / 100 * n) : 0, col = pctColor(pct);
+      for (let i = 0; i < n; i++) {
+        rr(c, 10 + i * cw, y + 25, cw - 1, 16, 0, C.track);
+        const part = Math.max(0, Math.min(1, f - i));            // ▏▎▍▌ partial last cell
+        if (part > 0) rr(c, 10 + i * cw, y + 25, Math.max(2, Math.round((cw - 1) * part)), 16, 0, col);
+      }
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--%', 230, y + 24, M, d.ok ? C.text : C.dim, 'right');
+      tx(c, d.ok ? absText : 'Resets ---', 10, y + 47, M, C.dim);
+    };
+    row(46, 'Current session', d.s, d.sr, `Resets ${atClock(d, d.sr)} (${fmtReset(d.sr).replace(' ', '')})`);
+    row(126, 'Current week', d.w, d.wr, `Resets ${atClock(d, d.wr, true)}`);
+    tx(c, statusText(d, now), 10, 210, M, C.accent);
+  }
+},
+{
+  id:'battery', wave:1, tag:'Phương án G', name:'G · Pin (còn lại bao nhiêu)',
+  desc:'Đảo cách nhìn: thay vì “đã dùng 42%”, hiện “còn 58%” như pin điện thoại. Pin cạn dần, chuyển vàng rồi đỏ; vừa reset thì hiện tia sét “đang sạc”.',
+  pros:['Ai cũng hiểu **pin** mà không cần giải thích','Câu hỏi thật là “còn bao nhiêu?”, không phải “đã dùng bao nhiêu”','Còn ≤ 10% thì viền pin nhấp nháy đỏ'],
+  cons:['Ngược chiều với số trong app/claude.ai (đã dùng) — dễ lẫn lúc đầu','5 nấc chia nên chỉ ước lượng thô bằng mắt'],
+  cost:'!!Không font mới!!: ô chữ nhật + một đa giác (tia sét). Ước ~1 KB.',
+  draw(c, d, now) {
+    header(c, d);
+    const batt = (cx, label, pct, reset, win) => {
+      const w = 64, h = 112, x = cx - w / 2, y = 54;
+      const left = d.ok ? Math.max(0, 100 - pct) : 0;
+      const col = left <= 20 ? C.red : left <= 50 ? C.amber : C.green;
+      const blink = d.ok && left <= 10 && Math.floor(now / 500) % 2;
+      const rim = !d.ok ? C.track : blink ? C.red : C.dim;
+      rr(c, cx - 12, y - 7, 24, 9, 3, rim);
+      rr(c, x, y, w, h, 10, rim);
+      rr(c, x + 3, y + 3, w - 6, h - 6, 8, C.bg);
+      const ih = h - 12, fh = Math.round(ih * left / 100);
+      if (fh > 0) rr(c, x + 6, y + 6 + ih - fh, w - 12, fh, 5, col);
+      for (let k = 1; k < 5; k++) rr(c, x + 6, y + 6 + Math.round(ih * k / 5) - 1, w - 12, 2, 0, C.bg);
+      if (d.ok && pace(pct, reset, win).t < 0.05) {          // just reset: charging bolt
+        const cy = y + h / 2;
+        poly(c, [[cx + 5, cy - 24], [cx - 11, cy + 4], [cx - 1, cy + 4], [cx - 5, cy + 24], [cx + 11, cy - 4], [cx + 1, cy - 4]], C.text);
+      }
+      if (!d.ok) tx(c, '?', cx, y + 42, F.s24, C.dim, 'center');
+      tx(c, d.ok ? `${Math.round(left)}%` : '--%', cx, 172, F.s24, !d.ok ? C.dim : left <= 20 ? C.red : C.text, 'center');
+      tx(c, `${label} left`, cx, 200, F.s14, C.dim, 'center');
+      tx(c, d.ok ? `full in ${fmtReset(reset)}` : '---', cx, 218, F.s14, C.dim, 'center');
+    };
+    batt(64, '5-hour', d.s, d.sr, WIN_S);
+    batt(176, 'Weekly', d.w, d.wr, WIN_W);
+  }
+},
+{
+  id:'countdown', wave:1, tag:'Phương án H', name:'H · Đếm ngược tới reset',
+  desc:'Lấy thời gian làm nhân vật chính: số to là thời gian còn lại tới reset 5-hour. Ngay dưới, thanh “Time” (đã trôi) đặt cạnh thanh “Used” (đã dùng) — thanh dưới dài hơn thanh trên là đang dùng nhanh.',
+  pros:['Trả lời “**bao lâu nữa** thì được dùng lại?” khi đã sắp chạm trần','So hai thanh cùng thước là thấy nhịp, không cần hiểu khái niệm “pace”','Kết luận bằng chữ: “13% to spare” / “8% ahead of time”'],
+  cons:['Số to là thời gian nên % dùng kém nổi hơn A','Có hai giờ trên màn (giờ hiện tại nhỏ ở góc) — cần phân biệt rõ'],
+  cost:'Thêm **dấu “:”** vào Styrene 48 đã có (~0,3 KB); còn lại là thanh và text sẵn có.',
+  draw(c, d, now) {
+    clawd(c, 10, 1);
+    tx(c, '5-hour resets in', 52, 14, F.s14, C.dim);
+    tx(c, d.clock, 230, 14, F.s14, C.dim, 'right');
+    const big = d.ok ? `${Math.floor(d.sr / 60)}:${pad2(d.sr % 60)}` : '-:--';
+    tx(c, big, 10, 44, F.s48, d.ok ? C.text : C.dim);
+    if (d.ok) tx(c, `at ${atClock(d, d.sr)}`, 16 + tw(c, big, F.s48), 74, F.s14, C.dim);
+    const p = pace(d.s, d.sr, WIN_S), tp = Math.round(p.t * 100);
+    const row = (y, label, v, col) => {
+      tx(c, label, 12, y, F.s14, C.dim);
+      bar(c, 52, y + 5, 140, 8, d.ok ? v : 0, col, 4);
+      tx(c, d.ok ? `${Math.round(v)}%` : '--', 228, y, F.s14, d.ok ? C.text : C.dim, 'right');
+    };
+    row(108, 'Time', tp, C.dim);
+    row(130, 'Used', d.s, pctColor(d.s));
+    if (d.ok) {
+      const diff = Math.round(d.s - tp);
+      const v = p.t < 0.05 ? ['Just reset', C.green] : diff > 5 ? [`${diff}% ahead of time`, C.red]
+              : diff < -5 ? [`${-diff}% to spare`, C.green] : ['Right on pace', C.amber];
+      rr(c, 12, 159, 7, 7, 4, v[1]); tx(c, v[0], 25, 154, F.s14, v[1]);
+    }
+    rr(c, 8, 184, 224, 48, 8, C.panel);
+    tx(c, 'Weekly', 18, 192, F.s14, C.dim);
+    tx(c, d.ok ? fmtReset(d.wr) : '---', 18 + tw(c, 'Weekly  ', F.s14), 192, F.s14, C.dim);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '--%', 222, 187, F.s24, d.ok ? C.text : C.dim, 'right');
+    bar(c, 18, 216, 204, 6, d.ok ? d.w : 0, pctColor(d.w), 3);
+  }
+},
+{
+  id:'burn', wave:1, tag:'Phương án I', name:'I · Biểu đồ đốt (burn chart)',
+  desc:'Biểu đồ cả cửa sổ 5 giờ: đường đứt là nhịp lý tưởng (0 → 100% đúng lúc reset), đường màu là lượng đã dùng thật, chấm mờ là dự phóng nếu giữ tốc độ hiện tại — cắt trần 100% ở đâu thì hết ở đó.',
+  pros:['Thấy được **hình dạng** phiên làm việc: lúc nào đốt mạnh, lúc nào nghỉ','Đường dự phóng + giờ hết trực quan hơn câu chữ ở D','Hợp người thích số liệu'],
+  cons:['Cần **lịch sử**: đồng hồ hiện chỉ biết con số mới nhất','Chi tiết nhỏ, xem kỹ chứ không phải liếc','Weekly chỉ còn một dải nhỏ'],
+  cost:'Bộ đệm 60 mẫu × 1 B (mỗi 5 phút) + hàm vẽ đường/cột; **mất lịch sử khi khởi động lại** trừ khi app gửi kèm mảng sessionHist trong payload (đổi PROTOCOL). ~2 KB.',
+  draw(c, d, now) {
+    header(c, d);
+    const x0 = 14, x1 = 226, top = 88, bot = 180, cw = x1 - x0, ch = bot - top;
+    const X = m => x0 + cw * m / WIN_S, Y = v => bot - ch * Math.min(100, Math.max(0, v)) / 100;
+    tx(c, d.ok ? `${Math.round(d.s)}%` : '--%', 12, 48, F.s24, d.ok ? C.text : C.dim);
+    tx(c, '5-hour', 18 + tw(c, d.ok ? `${Math.round(d.s)}%` : '--%', F.s24), 56, F.s14, C.dim);
+    tx(c, d.ok ? `resets ${fmtReset(d.sr)}` : '', 228, 56, F.s14, C.dim, 'right');
+    // grid: 50% and 100% dashed, hour ticks
+    for (const v of [50, 100]) for (let x = x0; x < x1; x += 6) c.fillStyle = C.track, c.fillRect(x, Y(v), 3, 1);
+    rr(c, x0, bot, cw, 1, 0, C.track);
+    for (let hh = 0; hh <= 5; hh++) rr(c, Math.round(X(hh * 60)), bot + 1, 1, 4, 0, C.track);
+    if (!d.ok) { tx(c, 'No data', 120, 124, F.s14, C.dim, 'center'); }
+    else {
+      const el = WIN_S - d.sr, col = pctColor(d.s);
+      for (let m = 0; m <= WIN_S; m += 9) c.fillStyle = '#55534d', c.fillRect(Math.round(X(m)), Math.round(Y(m / 3)), 2, 2);   // ideal pace
+      const pts = history(d.s, el, Math.round(d.s * 131 + el * 7));
+      c.beginPath(); pts.forEach(([m, v], i) => i ? c.lineTo(X(m), Y(v)) : c.moveTo(X(m), Y(v)));
+      c.lineTo(X(el), bot); c.lineTo(X(0), bot); c.closePath(); c.fillStyle = mix(col, '#000000', 0.72); c.fill();
+      c.strokeStyle = col; c.lineWidth = 2; c.lineJoin = 'round';
+      c.beginPath(); pts.forEach(([m, v], i) => i ? c.lineTo(X(m), Y(v)) : c.moveTo(X(m), Y(v))); c.stroke();
+      rr(c, Math.round(X(el)), top - 4, 1, ch + 4, 0, '#3a3936');                     // now
+      // projection at the current rate
+      const rate = el > 0 ? d.s / el : 0, outM = rate > 0 ? el + (100 - d.s) / rate : Infinity;
+      const endM = Math.min(WIN_S, outM), endV = d.s + rate * (endM - el), out = outM <= WIN_S && el >= 15;
+      const pc = out ? C.red : C.green;
+      const steps = Math.max(1, Math.floor(Math.hypot(X(endM) - X(el), Y(endV) - Y(d.s)) / 5));
+      if (el >= 15) for (let i = 1; i <= steps; i++) { const k = i / steps; c.fillStyle = pc; c.fillRect(Math.round(X(el + (endM - el) * k)) - 1, Math.round(Y(d.s + (endV - d.s) * k)) - 1, 2, 2); }
+      c.fillStyle = C.text; c.beginPath(); c.arc(X(el), Y(d.s), 3, 0, Math.PI * 2); c.fill();
+      if (el < 15) tx(c, 'Too early to tell', x0 + 2, top + 2, F.s14, C.dim);
+      else if (out) {
+        const lx = X(outM), lbl = `out ~${atClock(d, outM - el)}`;
+        rr(c, Math.round(lx) - 3, top - 3, 6, 6, 3, C.red);
+        tx(c, lbl, x0 + 2, top + 2, F.s14, C.red);
+      } else tx(c, `~${Math.round(endV)}% at reset`, x0 + 2, top + 2, F.s14, C.green);
+    }
+    rr(c, 8, 192, 224, 40, 8, C.panel);
+    tx(c, 'Weekly', 18, 197, F.s14, C.dim);
+    tx(c, d.ok ? fmtReset(d.wr) : '---', 18 + tw(c, 'Weekly  ', F.s14), 197, F.s14, C.dim);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '--%', 222, 197, F.s14, d.ok ? C.text : C.dim, 'right');
+    bar(c, 18, 219, 204, 6, d.ok ? d.w : 0, pctColor(d.w), 3);
+  }
+},
+{
+  id:'mood', wave:1, tag:'Phương án J', name:'J · Clawd tâm trạng',
+  desc:'Clawd to gấp ba ở giữa, vẻ mặt theo mức dùng: thong thả, bận rộn (một giọt mồ hôi), “running hot” (run, mồ hôi túa), vừa reset thì nhảy cẫng, mất dữ liệu thì đi tìm. Số liệu thu gọn thành hai thanh mảnh ở đáy.',
+  pros:['**Đáng yêu nhất**, hợp làm quà — kiểu Tamagotchi','Cảm xúc báo động nhanh hơn con số: Clawd đổ mồ hôi là biết','Có thể dùng thẳng animation sẵn trong clawd.pak cho mỗi mood'],
+  cons:['Thông tin ít nhất: chỉ % và thời gian reset 5-hour','Sprite phóng ×3 trông thô hơn bản vẽ gốc nếu không có frame lớn'],
+  cost:'Phóng sprite ×3 (nearest) + chọn animation theo mood: laptop / racing car / trumpet / jumping happy / magnifier. ~1,5 KB, không font mới.',
+  draw(c, d, now) {
+    const p = pace(d.s, d.sr, WIN_S);
+    const mood = !d.ok ? 'lost' : p.t < 0.05 ? 'fresh' : Math.max(d.s, d.w) >= 80 ? 'hot' : d.s >= 50 ? 'busy' : 'chill';
+    const M = { chill:['Chilling', C.green], busy:['Busy busy', C.amber], hot:['Running hot!', C.red],
+                fresh:['Fresh start!', C.green], lost:['No data yet', C.dim] }[mood];
+    // speech bubble
+    rr(c, 8, 6, 134, 42, 10, C.panel);
+    poly(c, [[60, 47], [76, 47], [80, 58]], C.panel);
+    rr(c, 18, 15, 6, 6, 3, M[1]);
+    tx(c, M[0], 30, 9, F.s14, C.text);
+    tx(c, d.ok ? `reset in ${fmtReset(d.sr)}` : 'is the app on?', 18, 27, F.s14, C.dim);
+    tx(c, d.clock, 232, 6, F.t34, C.text, 'right');
+    // big Clawd
+    let bx = 72, by = 62, sh = 72;
+    if (mood === 'chill') by += Math.round(2 * Math.sin(now / 600));
+    if (mood === 'busy') by += Math.floor(now / 250) % 2 ? 2 : 0;
+    if (mood === 'hot') bx += [0, 2, 0, -2][Math.floor(now / 90) % 4];
+    if (mood === 'fresh') { const j = Math.abs(Math.sin(now / 260)); by -= Math.round(14 * j); sh = 72 - Math.round(24 * j); }
+    rr(c, 120 - sh / 2, 179, sh, 4, 2, C.track);
+    if (imgs.clawd?.complete) { c.imageSmoothingEnabled = false; c.save(); if (!d.ok) c.globalAlpha = 0.55; c.drawImage(imgs.clawd, bx, by - 6, 96, 120); c.restore(); }
+    const drop = (x, y) => { poly(c, [[x, y - 7], [x - 4, y + 1], [x + 4, y + 1]], '#6a9bcc'); rr(c, x - 4, y - 1, 8, 7, 4, '#6a9bcc'); };
+    if (mood === 'busy') drop(bx + 100, by + 18 + (now / 40) % 14);
+    if (mood === 'hot') { drop(bx - 6, by + 12 + (now / 30) % 18); drop(bx + 102, by + 22 + (now / 25 + 9) % 18); drop(bx + 92, by + 2 + (now / 35 + 4) % 14); }
+    if (mood === 'fresh') for (const [sx, sy, ph] of [[bx - 12, by + 10, 0], [bx + 104, by + 30, 1], [bx + 96, by - 4, 2]]) {
+      if (Math.floor(now / 300 + ph) % 3 === 0) continue;
+      rr(c, sx - 1, sy - 6, 2, 12, 1, C.text); rr(c, sx - 6, sy - 1, 12, 2, 1, C.text);
+    }
+    if (mood === 'lost') tx(c, '?', 182, 76 + Math.round(3 * Math.sin(now / 400)), F.s24, C.dim, 'center');
+    // two thin rows
+    const row = (y, label, pct) => {
+      tx(c, label, 12, y, F.s14, C.dim);
+      bar(c, 38, y + 6, 150, 6, d.ok ? pct : 0, pctColor(pct), 3);
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--', 228, y, F.s14, d.ok ? C.text : C.dim, 'right');
+    };
+    row(192, '5h', d.s); row(214, '7d', d.w);
+  }
+},
+{
+  id:'night', wave:1, tag:'Phương án K', name:'K · Ban đêm (ambient)',
+  desc:'Cho đầu giường hoặc bàn làm việc buổi tối: chỉ giờ to, màu xám tối, hai sợi chỉ mảnh cho 5-hour và weekly. Clawd ngủ ở dưới. Tự bật theo khung giờ (vd 22:00–07:00) cùng mức đèn nền thấp.',
+  pros:['**Không chói**, không gây chú ý — để cả đêm được','Vẫn còn tín hiệu: sợi chỉ chuyển cam khi ≥ 80%','Giờ to đọc được từ giường'],
+  cons:['Gần như không có số liệu: đây là chế độ nghỉ, không phải dashboard','Cần thêm cài đặt khung giờ đêm trên app'],
+  cost:'Dùng chung **dấu “:”** của Styrene 48 với H; thêm usage.night (giờ bắt đầu/kết thúc) vào Settings, dùng lại cơ chế giới hạn độ sáng sẵn có (clawdUiDim). ~1 KB.',
+  draw(c, d, now) {
+    const N = { text:'#8a887f', dim:'#4f4e49', line:'#222220', hot:'#9a5a42' };
+    tx(c, d.clock, 120, 62, F.s48, N.text, 'center');
+    tx(c, d.ok ? `5h ${Math.round(d.s)}%  ·  7d ${Math.round(d.w)}%` : 'no data', 120, 122, F.s14, N.dim, 'center');
+    const line = (y, pct) => {
+      rr(c, 52, y, 136, 2, 1, N.line);
+      if (d.ok && pct > 0) rr(c, 52, y, Math.max(2, Math.round(136 * Math.min(100, pct) / 100)), 2, 1, pct >= 80 ? N.hot : N.dim);
+    };
+    line(150, d.s); line(158, d.w);
+    if (imgs.clawd?.complete) { c.save(); c.globalAlpha = 0.32; c.imageSmoothingEnabled = false; c.drawImage(imgs.clawd, 104, 188); c.restore(); }
+    for (const off of [0, 0.5]) {
+      const ph = (now / 2400 + off) % 1;
+      c.save(); c.globalAlpha = 0.6 * (1 - ph);
+      tx(c, off ? 'Z' : 'z', 140 + ph * 14, 196 - ph * 26, F.s14, N.dim);
+      c.restore();
+    }
+  }
+},
+// ============ new: L–Q, Clawd always on screen ============
+{
+  id:'climb', wave:2, tag:'Phương án L', name:'L · Clawd leo cột',
+  desc:'Hai cột như hai toà tháp: trái là 5-hour, phải là weekly. Clawd đứng trên đỉnh phần đã dùng của cột 5-hour; dùng càng nhiều thì Clawd leo càng cao, chạm vạch “limit” là hết. Vạch trắng ngang mỗi cột là mức thời gian đã trôi: Clawd đứng cao hơn vạch tức là đang dùng nhanh hơn thời gian.',
+  pros:['**Độ cao của Clawd** chính là con số: liếc từ xa vẫn biết','Vạch thời gian cho biết nhịp mà không cần chữ “pace”','Lá cờ trên cột weekly giữ hai cửa sổ cạnh nhau'],
+  cons:['Clawd che mất phần trên cột 5-hour khi gần 100%','Cột cao 100 px nên chênh vài % khó thấy'],
+  cost:'Cột vẽ bằng ClawdShape có sẵn; Clawd di chuyển theo chiều dọc bằng cơ chế xoá/vẽ lại như **ClawdWalker**. ~1 KB, không font mới.',
+  draw(c, d, now) {
+    tx(c, d.clock, 10, 4, F.t34, C.text);
+    const top = 96, bot = 194, hgt = bot - top;
+    for (let x = 14; x < 228; x += 6) c.fillStyle = mix(C.accent, '#000000', 0.35), c.fillRect(x, top - 1, 3, 1);
+    tx(c, 'limit', 120, top - 17, F.s14, C.accent, 'center');
+    const col = (cx, pct, reset, win, label) => {
+      const x = cx - 30, w = 60, fh = d.ok ? Math.round(hgt * Math.min(100, pct) / 100) : 0;
+      rr(c, x, top, w, hgt, 8, C.panel);
+      if (fh > 0) rr(c, x, bot - fh, w, fh, 8, pctColor(pct));
+      if (d.ok) rr(c, x - 5, bot - Math.round(hgt * pace(pct, reset, win).t) - 1, w + 10, 2, 1, C.text);
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--%', cx, 199, F.s24, d.ok ? C.text : C.dim, 'center');
+      tx(c, `${label} · ${d.ok ? fmtReset(reset) : '---'}`, cx, 223, F.s14, C.dim, 'center');
+      return bot - fh;
+    };
+    const t1 = col(60, d.s, d.sr, WIN_S, '5h'), t2 = col(180, d.w, d.wr, WIN_W, '7d');
+    if (d.ok) {                                   // flag on the weekly column
+      rr(c, 179, t2 - 22, 2, 22, 1, C.dim);
+      poly(c, [[181, t2 - 22], [197, t2 - 16], [181, t2 - 10]], C.text);
+    }
+    const over = d.ok && d.s / 100 > pace(d.s, d.sr, WIN_S).t + 0.05;
+    const hop = d.ok ? (Math.floor(now / (over ? 160 : 420)) % 2 ? 2 : 0) : 0;
+    clawdS(c, 44, t1 - 40 - hop, 1, d.ok ? 1 : 0.5);
+    if (over) sweat(c, 82, t1 - 30 + (now / 40) % 12);
+    if (!d.ok) tx(c, '?', 86, t1 - 52, F.s24, C.dim);
+  }
+},
+{
+  id:'sign', wave:2, tag:'Phương án M', name:'M · Clawd giơ bảng',
+  desc:'Clawd to (×2) đứng dưới đáy, giơ một tấm bảng giấy ghi % 5-hour thật to — như cổ động viên. Bảng màu kem chữ đen nên khác hẳn các màn tối. Hai bên Clawd là weekly và nhịp. Khi ≥ 80%, Clawd lắc bảng liên tục.',
+  pros:['**Số to nhất** trong các phương án (Styrene 48 trên nền sáng), đọc từ xa rất rõ','Hài hước, có cá tính — hợp làm quà','Bảng rung là cảnh báo không cần đọc chữ'],
+  cons:['Nền kem sáng: chói vào ban đêm (nên tự đổi sang K lúc tối)','Weekly và nhịp chữ nhỏ ở hai bên'],
+  cost:'Sprite ×2 (phóng nearest), Styrene 48 đã có. Hai que + bảng là hình chữ nhật. ~1 KB.',
+  draw(c, d, now) {
+    tx(c, d.clock, 120, 2, F.t34, C.text, 'center');
+    const hot = d.ok && d.s >= 80;
+    const jig = hot ? [0, -3, 0, 2][Math.floor(now / 110) % 4] : Math.round(Math.sin(now / 800));
+    const by = 44 + jig, bw = 176, bh = 96, bx = 120 - bw / 2, ink = '#141413', faint = '#6b6a64';
+    rr(c, 86, by + bh - 6, 4, 60, 1, '#8a6a4a'); rr(c, 150, by + bh - 6, 4, 60, 1, '#8a6a4a');
+    rr(c, bx, by, bw, bh, 6, '#f0eee6');
+    tx(c, '5-HOUR USED', 120, by + 8, F.s14, faint, 'center');
+    tx(c, d.ok ? `${Math.round(d.s)}%` : '--%', 120, by + 25, F.s48, !d.ok ? '#a8a69c' : hot ? C.red : ink, 'center');
+    tx(c, d.ok ? `resets ${atClock(d, d.sr)}` : 'no data yet', 120, by + 76, F.s14, faint, 'center');
+    clawdS(c, 88, 154 + (jig < 0 ? 1 : 0), 2, d.ok ? 1 : 0.5);
+    // left: weekly
+    tx(c, 'Weekly', 8, 162, F.s14, C.dim);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '--%', 8, 180, F.s24, d.ok ? pctColor(d.w) : C.dim);
+    tx(c, d.ok ? fmtReset(d.wr) : '---', 8, 210, F.s14, C.dim);
+    // right: pace + forecast
+    const p = pace(d.s, d.sr, WIN_S), f = forecast(d.s, d.sr, WIN_S, d.clock);
+    const short = !d.ok ? '' : f.text.startsWith('Out at') ? 'out ' + f.text.slice(7) : f.text === 'Lasts until reset' ? 'will last' : f.text === 'Limit reached' ? 'limit hit' : 'too early';
+    tx(c, 'Pace', 232, 162, F.s14, C.dim, 'right');
+    tx(c, d.ok ? p.label : '---', 232, 184, F.s14, d.ok ? p.color : C.dim, 'right');
+    tx(c, short, 232, 210, F.s14, d.ok ? f.color : C.dim, 'right');
+  }
+},
+{
+  id:'cookie', wave:2, tag:'Phương án N', name:'N · Clawd gặm bánh quy',
+  desc:'Cửa sổ 5-hour là một chiếc bánh quy; phần đã bị gặm (từ 12 giờ theo chiều kim đồng hồ) chính là % đã dùng. Clawd ngồi cạnh nhai, vụn bánh rơi. Weekly là hộp bánh nhỏ ở đáy. Reset = “bánh mới lúc 16:19”.',
+  pros:['**Ẩn dụ ai cũng hiểu**: bánh còn bao nhiêu thì còn bấy nhiêu','Hình quạt đọc % dễ hơn vòng mảnh (B)','Rất dễ thương, ra chất Clawd'],
+  cons:['Màu bánh (nâu) lệch khỏi bảng màu Claude','Thêm hàm tô hình quạt'],
+  cost:'**Hàm tô quạt** mới (quét theo hàng, dùng bảng sin/cos có sẵn của ClawdArc) + vết cắn = vài hình tròn. ~2 KB.',
+  draw(c, d, now) {
+    const used = d.ok ? Math.min(100, d.s) : 0;
+    tx(c, d.ok ? `${Math.round(used)}%` : '--%', 10, 6, F.s24, d.ok ? C.text : C.dim);
+    tx(c, 'eaten', 16 + tw(c, d.ok ? `${Math.round(used)}%` : '--%', F.s24), 14, F.s14, C.dim);
+    tx(c, d.ok ? `new cookie ${atClock(d, d.sr)}` : 'no cookie data', 10, 34, F.s14, C.dim);
+    tx(c, d.clock, 232, 4, F.t34, C.text, 'right');
+    const cookie = (cx, cy, r, pct, big) => {
+      const dough = '#c4915c', edge = '#9c6b3a', chip = '#4a2f1c', plate = big ? '#1a1918' : C.panel;
+      c.fillStyle = plate; c.beginPath(); c.arc(cx, cy, r + (big ? 4 : 0), 0, Math.PI * 2); c.fill();
+      if (!d.ok) return;
+      const a0 = rad(-90 + 360 * pct / 100), a1 = rad(270);
+      if (pct < 100) {
+        for (const [rr_, col] of [[r, edge], [r - (big ? 4 : 2), dough]]) { c.fillStyle = col; c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, rr_, a0, a1); c.closePath(); c.fill(); }
+        if (pct > 0 && big) for (const k of [0.32, 0.62, 0.9]) {        // bite marks along both cut edges
+          for (const [a, s] of [[a0, 1], [a1, -1]]) {
+            const px = cx + Math.cos(a) * r * k + Math.cos(a + s * Math.PI / 2) * 3, py = cy + Math.sin(a) * r * k + Math.sin(a + s * Math.PI / 2) * 3;
+            c.fillStyle = plate; c.beginPath(); c.arc(px, py, 6, 0, Math.PI * 2); c.fill();
+          }
+        }
+        const chips = big ? [[30, .55], [75, .3], [110, .7], [160, .45], [205, .72], [240, .35], [290, .62], [330, .4], [20, .85], [185, .15]] : [[60, .5], [180, .5], [300, .5]];
+        for (const [deg, rf] of chips) {
+          if (deg / 360 * 100 < pct + 4) continue;
+          const a = rad(deg - 90), s = big ? 7 : 3;
+          rr(c, cx + Math.cos(a) * r * rf - s / 2, cy + Math.sin(a) * r * rf - s / 2, s, s, 2, chip);
+        }
+      }
+    };
+    cookie(96, 120, 56, used, true);
+    // Clawd nibbling on the right, crumbs falling
+    const chew = d.ok ? (Math.floor(now / 220) % 2) : 0;
+    c.fillStyle = '#1a1918'; c.beginPath(); c.ellipse(190, 180, 24, 4, 0, 0, Math.PI * 2); c.fill();
+    clawdS(c, 174, 138 - chew * 2, 1, d.ok ? 1 : 0.5);
+    if (d.ok && used > 0 && used < 100) for (let i = 0; i < 3; i++) {
+      const ph = (now / 900 + i / 3) % 1;
+      rr(c, 160 + i * 5 - ph * 6, 140 + ph * 36, 3, 3, 1, '#c4915c');
+    }
+    if (!d.ok) tx(c, '?', 96, 106, F.s24, C.dim, 'center');
+    // weekly box
+    rr(c, 8, 192, 224, 40, 8, C.panel);
+    cookie(30, 212, 13, d.ok ? Math.min(100, d.w) : 0, false);
+    tx(c, d.ok ? `Weekly ${Math.round(d.w)}% eaten` : 'Weekly ---', 52, 196, F.s14, C.text);
+    tx(c, d.ok ? `new box in ${fmtReset(d.wr)}` : '---', 52, 213, F.s14, C.dim);
+  }
+},
+{
+  id:'race', wave:2, tag:'Phương án O', name:'O · Clawd đua với đồng hồ',
+  desc:'Mỗi cửa sổ là một làn đua về đích (cờ ca-rô = 100%). Clawd chạy theo % đã dùng; biểu tượng đồng hồ dưới làn chạy theo thời gian đã trôi. Clawd vượt lên trước đồng hồ tức là đốt nhanh hơn thời gian — sẽ về đích (hết) trước lúc reset.',
+  pros:['**Hai Clawd chạy** nên màn hình lúc nào cũng sống','So Clawd với đồng hồ là thấy nhịp, kể cả người chưa từng nghe “pace”','Câu kết luận vui: “Clawd outruns the clock”'],
+  cons:['Hai làn chiếm hết chỗ, không còn chỗ cho dự báo giờ hết','Clawd 32 px che chữ nếu đặt chữ trên làn'],
+  cost:'Dùng lại **ClawdWalker** (đi bộ trên sàn, đã có ở layout pixel) cho hai Clawd + biểu tượng đồng hồ bằng ClawdArc. ~1 KB.',
+  draw(c, d, now) {
+    tx(c, d.clock, 120, 2, F.t34, C.text, 'center');
+    const lane = (y, label, pct, reset, win, k) => {
+      const x0 = 12, run = 214 - x0 - 34, p = pace(pct, reset, win);
+      tx(c, `${label} ${d.ok ? Math.round(pct) + '%' : '--%'}`, 12, y - 62, F.s14, C.text);
+      tx(c, d.ok ? `${fmtReset(reset)} left` : '---', 228, y - 62, F.s14, C.dim, 'right');
+      for (let x = x0; x < 228; x += 4) c.fillStyle = C.track, c.fillRect(x, y, 2, 2);
+      for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) c.fillStyle = (i + j) % 2 ? C.text : '#3a3936', c.fillRect(216 + j * 6, y - 30 + i * 6, 6, 6);
+      if (d.ok) {                                // the clock icon runs with time
+        const gx = x0 + 16 + run * p.t, gy = y + 10;
+        arc(c, gx, gy, 6, 0, Math.PI * 2, 1.5, C.dim);
+        c.strokeStyle = C.dim; c.lineWidth = 1.5; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx, gy - 4); c.moveTo(gx, gy); c.lineTo(gx + 3, gy); c.stroke();
+      }
+      const cx = x0 + run * (d.ok ? Math.min(100, pct) / 100 : 0);
+      const bob = d.ok && Math.floor(now / 150 + k) % 2 ? 1 : 0;
+      clawdS(c, cx, y - 40 - bob, 1, d.ok ? 1 : 0.5);
+      return { p, diff: pct - p.t * 100 };
+    };
+    const a = lane(104, '5-hour', d.s, d.sr, WIN_S, 0);
+    lane(184, 'Weekly', d.w, d.wr, WIN_W, 1);
+    if (d.ok) {
+      const v = a.p.t < 0.05 ? ['And they\'re off!', C.green] : a.diff > 5 ? ['Clawd outruns the clock', C.red]
+              : a.diff < -5 ? ['Clawd paces himself', C.green] : ['Neck and neck', C.amber];
+      rr(c, 12, 219, 7, 7, 4, v[1]); tx(c, v[0], 25, 214, F.s14, v[1]);
+    } else tx(c, 'Waiting for the start…', 12, 214, F.s14, C.dim);
+  }
+},
+{
+  id:'tank', wave:2, tag:'Phương án P', name:'P · Clawd nổi trong bể nước',
+  desc:'Bể nước là phần 5-hour còn lại: dùng đến đâu nước rút đến đó, Clawd nổi lềnh bềnh trên mặt nước có sóng và bọt. Còn ≤ 20% thì nước ngả đỏ; cạn thì Clawd ngồi dưới đáy. Ống nhỏ bên phải là weekly.',
+  pros:['**Mực nước** đọc được từ xa, lại chuyển động êm — hợp đồng hồ để bàn','Nước đổi màu là cảnh báo rất rõ','Clawd trôi qua lại nên không bao giờ đứng yên'],
+  cons:['Vẽ sóng liên tục tốn hơn (chỉ vẽ lại dải mặt nước ~176×12 px)','Như G, đây là % còn lại — ngược với số trong app'],
+  cost:'Tô theo hàng với mép trên là sóng (bảng sin có sẵn), bọt là chấm. Chỉ vẽ lại dải quanh mặt nước mỗi khung hình. ~1,5 KB.',
+  draw(c, d, now) {
+    const left = d.ok ? Math.max(0, 100 - d.s) : 0, wl = d.ok ? Math.max(0, 100 - d.w) : 0, low = d.ok && left <= 20;
+    const water = low ? '#5a2a24' : '#23415c', surf = low ? C.red : '#6a9bcc';
+    tx(c, d.ok ? `${Math.round(left)}%` : '--%', 10, 8, F.s24, d.ok ? (low ? C.red : C.text) : C.dim);
+    tx(c, 'left', 16 + tw(c, d.ok ? `${Math.round(left)}%` : '--%', F.s24), 16, F.s14, C.dim);
+    tx(c, d.clock, 232, 4, F.t34, C.text, 'right');
+    const x0 = 12, x1 = 190, top = 48, bot = 200;
+    rr(c, x0, top, x1 - x0, bot - top, 10, '#3a3936'); rr(c, x0 + 2, top + 2, x1 - x0 - 4, bot - top - 4, 8, C.bg);
+    const ih = bot - top - 8 - 34, lvl = bot - 4 - ih * left / 100;   // 34 px headroom: Clawd floats above a full tank
+    const wave = x => lvl + (left > 0 ? 2.2 * Math.sin(x / 11 + now / 380) : 0);
+    const fx = x0 + 14 + (x1 - x0 - 60) * (0.5 + 0.5 * Math.sin(now / 3200));
+    clawdS(c, fx, Math.max(top + 4, Math.min(bot - 4 - 40, wave(fx + 16) - 30 + Math.sin(now / 380 + 1) * 1.5)), 1, d.ok ? 1 : 0.5);
+    c.save(); c.beginPath(); c.roundRect(x0 + 2, top + 2, x1 - x0 - 4, bot - top - 4, 8); c.clip();
+    if (d.ok && left > 0) {
+      c.fillStyle = water; c.beginPath(); c.moveTo(x0, bot);
+      for (let x = x0; x <= x1; x += 2) c.lineTo(x, wave(x));
+      c.lineTo(x1, bot); c.closePath(); c.fill();
+      c.strokeStyle = surf; c.lineWidth = 2; c.beginPath();
+      for (let x = x0; x <= x1; x += 2) x === x0 ? c.moveTo(x, wave(x)) : c.lineTo(x, wave(x)); c.stroke();
+      for (let i = 0; i < 4; i++) {                // bubbles
+        const ph = (now / 2600 + i * 0.27) % 1, by = bot - 8 - ph * (bot - 8 - lvl);
+        if (by > lvl + 4) { c.strokeStyle = surf; c.lineWidth = 1; c.beginPath(); c.arc(40 + i * 38 + Math.sin(ph * 9) * 3, by, 2 + i % 2, 0, Math.PI * 2); c.stroke(); }
+      }
+    }
+    c.restore();
+    if (!d.ok) tx(c, '?', fx + 40, 150, F.s24, C.dim);
+    // weekly tube
+    rr(c, 200, top, 26, bot - top, 8, '#3a3936'); rr(c, 202, top + 2, 22, bot - top - 4, 6, C.bg);
+    const th = Math.round((bot - top - 8) * wl / 100);
+    if (th > 0) rr(c, 204, bot - 4 - th, 18, th, 4, wl <= 20 ? '#5a2a24' : '#23415c'), rr(c, 204, bot - 4 - th, 18, 2, 1, wl <= 20 ? C.red : '#6a9bcc');
+    tx(c, d.ok ? `refills at ${atClock(d, d.sr)} (${fmtReset(d.sr)})` : 'no data', 12, 208, F.s14, C.dim);
+    tx(c, d.ok ? `${Math.round(wl)}%` : '--', 213, 208, F.s14, d.ok ? C.text : C.dim, 'center');
+    tx(c, '5-hour', 12, 224, F.s14, C.dim); tx(c, '7d', 213, 224, F.s14, C.dim, 'center');
+  }
+},
+{
+  id:'rpg', wave:2, tag:'Phương án Q', name:'Q · RPG (HP / MP)',
+  desc:'Màn đấu kiểu Pokémon: Clawd ×2 đứng trên bệ, khung trạng thái “CLAWD” có thanh HP = phần 5-hour còn lại và MP = phần weekly còn lại. Hộp thoại dưới đáy gõ từng chữ: “CLAWD has 58 HP. Full heal 16:19.” HP thấp thì Clawd nhấp nháy như bị đánh.',
+  pros:['**Cực kỳ dễ nhớ** với dân game; HP thấp = phải nghỉ','Hộp thoại nói luôn giờ hồi đầy, không cần đọc số','Tận dụng font mono và sprite pixel, hợp phong cách Clawd'],
+  cons:['% còn lại (HP) ngược với số trong app','Chữ mono 18 nhiều, kém “sang” hơn Tiempos'],
+  cost:'DejaVu Mono 18 + sprite ×2 + khung chữ nhật; hiệu ứng gõ chữ chỉ vẽ lại hộp thoại. ~1,5 KB, không font mới.',
+  draw(c, d, now) {
+    const M = F.m18, hp = d.ok ? Math.round(Math.max(0, 100 - d.s)) : 0, mp = d.ok ? Math.round(Math.max(0, 100 - d.w)) : 0;
+    tx(c, d.clock, 8, 6, M, C.dim);
+    c.fillStyle = '#2a2a28'; c.beginPath(); c.ellipse(186, 126, 44, 9, 0, 0, Math.PI * 2); c.fill();
+    const hurt = d.ok && hp <= 20 && Math.floor(now / 260) % 2;
+    clawdS(c, 154, 44 + (Math.floor(now / 520) % 2), 2, !d.ok ? 0.45 : hurt ? 0.35 : 1);
+    rr(c, 6, 30, 136, 110, 6, C.text); rr(c, 8, 32, 132, 106, 5, C.bg);
+    tx(c, 'CLAWD', 16, 38, M, C.text);
+    const hpCol = hp > 50 ? C.green : hp > 20 ? '#d4a017' : C.red;
+    tx(c, 'HP', 16, 62, M, '#d4a017'); bar(c, 44, 68, 88, 8, hp, hpCol, 2);
+    tx(c, d.ok ? `${hp}/100` : '--/100', 132, 80, M, C.text, 'right');
+    tx(c, 'MP', 16, 106, M, '#6a9bcc'); bar(c, 44, 112, 88, 8, mp, '#6a9bcc', 2);
+    // dialog box
+    rr(c, 4, 148, 232, 88, 6, C.text); rr(c, 7, 151, 226, 82, 4, C.bg);
+    const p = pace(d.s, d.sr, WIN_S);
+    const lines = !d.ok ? ['CLAWD lost the', 'signal...', 'Is the app on?']
+      : p.t < 0.05 ? ['CLAWD feels', 'refreshed!', `HP ${hp}  MP ${mp}`]
+      : hp <= 20 ? ['CLAWD is tired!', `Full heal ${atClock(d, d.sr)}.`, 'Rest soon.']
+      : [`CLAWD has ${hp} HP.`, `Full heal ${atClock(d, d.sr)}.`, `MP full ${atClock(d, d.wr, true)}`];
+    let n = animate ? Math.floor((now % 9000) / 45) : 999;
+    lines.forEach((s, i) => { const part = s.slice(0, Math.max(0, n)); n -= s.length; tx(c, part, 16, 158 + i * 22, M, C.text); });
+    if (n > 0 && Math.floor(now / 400) % 2) poly(c, [[214, 216], [226, 216], [220, 223]], C.text);
+  }
+},
+// ============ new: R–W, each its own style and palette (Clawd stays) ============
+{
+  id:'gameboy', wave:3, tag:'Phương án R', name:'R · Game Boy (4 sắc xanh)',
+  desc:'Bảng màu 4 sắc của Game Boy đời đầu (#0f380f → #9bbc0f), không dùng màu nào khác. Clawd cũng đổi sang xanh. Thanh dùng là các ô “pin” như máu trong game; khung thoại dưới đáy ghi giờ reset, mũi tên ▶ nhấp nháy.',
+  pros:['**Nhận ra ngay**, cực hợp với Clawd pixel art','Ít màu nên tương phản đều, đọc tốt dưới ánh sáng phòng','Màn sáng nhưng dịu (xanh vàng), không chói như nền trắng'],
+  cons:['Không có đỏ để báo nguy: thay bằng nhấp nháy số %','Màu xanh vàng có thể lệch trên tấm ST7789 nếu không chỉnh gain'],
+  cost:'Bảng màu 4 sắc riêng cho layout; Clawd vẽ bằng palette khác qua **clawdRenderCells** (đã nhận palette). Font mono 32 cần thêm “%”. ~1 KB.',
+  draw(c, d, now) {
+    const G = ['#0f380f', '#306230', '#8bac0f', '#9bbc0f'];
+    c.fillStyle = G[3]; c.fillRect(0, 0, W, H);
+    rr(c, 0, 0, W, 26, 0, G[0]);
+    tx(c, d.clock, 8, 4, F.m18, G[3]); tx(c, 'USAGE', 232, 4, F.m18, G[2], 'right');
+    clawdTint(c, 12, 36 + (Math.floor(now / 500) % 2) * 2, 2, { body: G[1], eye: G[0] });
+    rr(c, 14, 118, 60, 4, 2, G[2]);
+    tx(c, '5-HOUR', 92, 36, F.m18, G[1]);
+    const hot = d.ok && d.s >= 80, blink = hot && Math.floor(now / 400) % 2;
+    tx(c, d.ok ? `${Math.round(d.s)}%` : '--%', 90, 56, F.m32, blink ? G[2] : G[0]);
+    const pips = (x, y, n, pw, ph, gap, pct) => {
+      const on = d.ok ? Math.round(pct / 100 * n) : 0;
+      for (let i = 0; i < n; i++) rr(c, x + i * (pw + gap), y, pw, ph, 0, i < on ? G[0] : G[2]);
+    };
+    pips(92, 96, 10, 12, 12, 2, d.s);
+    tx(c, 'WEEKLY', 12, 128, F.m18, G[1]);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '--%', 228, 128, F.m18, G[0], 'right');
+    pips(12, 150, 20, 9, 10, 2, d.w);
+    rr(c, 6, 170, 228, 64, 4, G[0]); rr(c, 9, 173, 222, 58, 2, G[3]);
+    tx(c, d.ok ? `RESET ${atClock(d, d.sr)}` : 'NO SIGNAL...', 18, 180, F.m18, G[0]);
+    tx(c, d.ok ? `WEEK  ${atClock(d, d.wr, true).toUpperCase()}` : 'IS THE APP ON?', 18, 204, F.m18, G[0]);
+    if (Math.floor(now / 450) % 2) poly(c, [[214, 204], [214, 218], [222, 211]], G[0]);
+  }
+},
+{
+  id:'synth', wave:3, tag:'Phương án S', name:'S · Synthwave neon',
+  desc:'Nền tím than, mặt trời sọc cam–hồng lặn ở chân trời, lưới phối cảnh hồng chạy về phía người xem. Clawd là bóng neon xanh cyan đứng trước mặt trời. Hai thanh neon ở trên; khi ≥ 80% mặt trời chuyển đỏ.',
+  pros:['**Ấn tượng nhất** về không khí, đẹp khi đặt trên bàn setup có đèn RGB','Lưới chạy liên tục nên màn hình có chuyển động mà không phải vẽ Clawd lại','Thông tin vẫn gọn ở nửa trên'],
+  cons:['Nhiều màu bão hoà, mỏi mắt nếu nhìn lâu','Gradient phải làm bằng các dải màu (banding) vì không có framebuffer'],
+  cost:'Gradient = 8–12 dải ClawdShape; lưới = các đường 1 px (ngang + chéo). Chỉ vẽ lại nửa dưới mỗi khung hình. Glow chữ thay bằng viền 1 px tối. ~2 KB.',
+  draw(c, d, now) {
+    const sky = ['#12002b', '#1a0436', '#230842', '#2e0c4f', '#3b105c', '#4a1466'];
+    sky.forEach((col, i) => { c.fillStyle = col; c.fillRect(0, i * 28, W, 28); });
+    const hot = d.ok && d.s >= 80, cyan = '#00e5ff', pink = '#ff2fd0';
+    c.save(); c.shadowColor = cyan; c.shadowBlur = 8;
+    tx(c, d.clock, 120, 4, F.s48, '#b8f6ff', 'center'); c.restore();
+    const nb = (y, label, pct) => {
+      tx(c, label, 16, y, F.s14, '#ff9ae6');
+      c.strokeStyle = cyan; c.lineWidth = 1; c.strokeRect(44.5, y + 3.5, 148, 9);
+      if (d.ok) { c.save(); c.shadowColor = pink; c.shadowBlur = 6; rr(c, 46, y + 5, Math.round(145 * Math.min(100, pct) / 100), 6, 0, hot && label === '5H' ? '#ff3b3b' : pink); c.restore(); }
+      tx(c, d.ok ? `${Math.round(pct)}%` : '--', 228, y, F.s14, '#e9e0ff', 'right');
+    };
+    nb(60, '5H', d.s); nb(80, '7D', d.w);
+    tx(c, d.ok ? `reset ${atClock(d, d.sr)}  ·  week ${atClock(d, d.wr, true)}` : 'no signal', 120, 100, F.s14, '#a98bdf', 'center');
+    // sun
+    const hz = 172, sr = 50, cx = 120;
+    const sun = hot ? ['#ff6a3d', '#ff3b3b', '#d61f5a'] : ['#ffd23f', '#ff8c42', '#ff2fd0'];
+    c.save(); c.beginPath(); c.arc(cx, hz, sr, Math.PI, 0); c.closePath(); c.clip();
+    for (let y = hz - sr; y < hz; y++) { const k = (y - (hz - sr)) / sr; c.fillStyle = k < .5 ? mix(sun[0], sun[1], k * 2) : mix(sun[1], sun[2], (k - .5) * 2); c.fillRect(cx - sr, y, sr * 2, 1); }
+    c.fillStyle = '#3b105c'; for (let i = 0; i < 5; i++) { const y = hz - 22 + i * 5; c.fillRect(cx - sr, y, sr * 2, 1 + i * 0.6); }
+    c.restore();
+    // grid
+    c.fillStyle = '#12002b'; c.fillRect(0, hz, W, H - hz);
+    c.strokeStyle = pink; c.lineWidth = 1;
+    const sc = (now / 1400) % 1;
+    for (let i = 0; i < 8; i++) { const k = ((i + sc) / 8) ** 2, y = Math.round(hz + 2 + k * (H - hz)); c.globalAlpha = 0.35 + 0.65 * k; c.beginPath(); c.moveTo(0, y + .5); c.lineTo(W, y + .5); c.stroke(); }
+    c.globalAlpha = 1;
+    for (let i = -6; i <= 6; i++) { c.beginPath(); c.moveTo(cx + i * 8, hz); c.lineTo(cx + i * 70, H); c.stroke(); }
+    rr(c, 0, hz, W, 1, 0, '#ff9ae6');
+    c.save(); c.shadowColor = cyan; c.shadowBlur = 10;
+    clawdTint(c, 104, hz - 38 + (d.ok && Math.floor(now / 350) % 2 ? -1 : 0), 1, { body: d.ok ? cyan : '#3a6d78', eye: '#12002b' });
+    c.restore();
+  }
+},
+{
+  id:'paper', wave:3, tag:'Phương án T', name:'T · Tờ báo (nền giấy sáng)',
+  desc:'Giao diện sáng duy nhất: nền giấy kem, chữ mực, số to bằng serif Tiempos như trang nhất một tờ báo. Clawd đứng ở cột bên như ảnh minh hoạ. Đoạn “tin” bằng câu văn nói luôn dự báo: “At this pace it runs out at ~14:41”.',
+  pros:['**Sang và điềm tĩnh**, hợp phòng sáng / bàn làm việc ban ngày','Câu văn đầy đủ dễ hiểu hơn badge, không cần biết thuật ngữ','Cam Claude đậm hơn để đủ tương phản trên nền sáng'],
+  cons:['Nền sáng chói vào ban đêm — nên tự chuyển sang màn tối theo giờ','Cần **Tiempos 56** chữ số (~5 KB, có thể để LittleFS)'],
+  cost:'Bảng màu sáng (renderer đã trộn chữ AA với màu nền bất kỳ). Font Tiempos 56 chỉ 0–9 % (~5 KB) — nặng nhất nhóm này, nên nạp từ LittleFS. Câu dự báo dùng lại forecast() của layout Pace.',
+  draw(c, d, now) {
+    const P = { bg:'#f4efe6', ink:'#1f1e1b', mute:'#6b655a', rule:'#d3cabb', track:'#e4dccd', acc:'#b5532f', red:'#b3261e', green:'#4d6b3a' };
+    c.fillStyle = P.bg; c.fillRect(0, 0, W, H);
+    tx(c, 'Usage', 10, 6, F.t34, P.ink);
+    tx(c, `${DOW[d.dow]} ${d.clock}`, 230, 20, F.s14, P.mute, 'right');
+    rr(c, 10, 46, 220, 2, 0, P.ink); rr(c, 10, 50, 220, 1, 0, P.ink);
+    tx(c, '5-HOUR WINDOW', 10, 58, F.s14, P.acc);
+    tx(c, d.ok ? `${Math.round(d.s)}%` : '—', 8, 72, F.t56, d.ok ? (d.s >= 80 ? P.red : P.ink) : P.mute);
+    rr(c, 10, 134, 132, 4, 2, P.track);
+    if (d.ok) rr(c, 10, 134, Math.max(2, Math.round(132 * Math.min(100, d.s) / 100)), 4, 2, d.s >= 80 ? P.red : P.ink);
+    if (d.ok) rr(c, 10 + Math.round(132 * pace(d.s, d.sr, WIN_S).t) - 1, 130, 2, 12, 1, P.acc);
+    rr(c, 152, 58, 1, 84, 0, P.rule);
+    clawdTint(c, 164, 60, 2, { body: d.ok ? '#d97757' : '#c9bfae' });
+    rr(c, 10, 150, 220, 1, 0, P.rule);
+    let l1, l2, col = P.ink;
+    if (!d.ok) { l1 = 'No dispatch from the app yet.'; l2 = 'Is the desktop app running?'; col = P.mute; }
+    else {
+      const f = forecast(d.s, d.sr, WIN_S, d.clock), el = WIN_S - d.sr;
+      if (el < WIN_S * 0.05) { l1 = 'A fresh window just opened.'; l2 = `It resets again at ${atClock(d, d.sr)}.`; }
+      else if (f.text.startsWith('Out at')) { l1 = `At this pace: out at ${f.text.slice(7)},`; l2 = `before the ${atClock(d, d.sr)} reset.`; col = P.red; }
+      else { l1 = 'At this pace it lasts until the'; l2 = `reset at ${atClock(d, d.sr)}, near ${Math.min(99, Math.round(d.s / Math.max(0.05, el / WIN_S)))}%.`; }
+    }
+    tx(c, l1, 10, 158, F.s14, col); tx(c, l2, 10, 176, F.s14, col);
+    rr(c, 10, 200, 220, 1, 0, P.rule);
+    tx(c, 'Weekly', 10, 207, F.s14, P.acc);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '—', 62, 207, F.s14, P.ink);
+    tx(c, d.ok ? `resets ${atClock(d, d.wr, true)}` : '', 230, 207, F.s14, P.mute, 'right');
+    rr(c, 10, 228, 220, 3, 1, P.track);
+    if (d.ok) rr(c, 10, 228, Math.max(2, Math.round(220 * Math.min(100, d.w) / 100)), 3, 1, d.w >= 80 ? P.red : P.ink);
+  }
+},
+{
+  id:'blueprint', wave:3, tag:'Phương án U', name:'U · Bản vẽ kỹ thuật (blueprint)',
+  desc:'Nền xanh blueprint có lưới, mọi thứ là nét trắng như bản vẽ kỹ thuật: thanh 5-hour là một hình chữ nhật, phần đã dùng được gạch chéo, kích thước ghi bằng đường dóng có mũi tên. Clawd là nét viền trắng kèm chú thích “CLAWD MK.I”. Khung tên góc phải ghi giờ reset.',
+  pros:['**Độc đáo**, hợp dân kỹ thuật / maker — đúng tinh thần một món đồ tự chế','Gạch chéo phân biệt dùng/còn mà không cần màu','Đường dóng ghi cả % đã dùng lẫn % còn lại'],
+  cons:['Chỉ hai sắc (xanh/trắng): cảnh báo dựa vào chữ “OVER” và nét đỏ duy nhất','Nhiều nét mảnh 1 px, cần nhìn gần'],
+  cost:'Gạch chéo = mẫu (x + y) % 5 trong vòng tô theo band (rẻ); Clawd viền = sprite tính viền khi nạp. Lưới vẽ 1 lần. ~1,5 KB, không font mới.',
+  draw(c, d, now) {
+    const B = { bg:'#0d3b7a', minor:'#164a8f', major:'#2559a3', line:'#eaf2ff', note:'#9cc7ff', warn:'#ff8a7a' };
+    c.fillStyle = B.bg; c.fillRect(0, 0, W, H);
+    for (let x = 0; x < W; x += 10) { c.fillStyle = x % 40 ? B.minor : B.major; c.fillRect(x, 0, 1, H); }
+    for (let y = 0; y < H; y += 10) { c.fillStyle = y % 40 ? B.minor : B.major; c.fillRect(0, y, W, 1); }
+    const arrowDim = (x0, x1, y, label, col, above) => {
+      c.strokeStyle = col; c.lineWidth = 1; c.beginPath(); c.moveTo(x0, y + .5); c.lineTo(x1, y + .5); c.stroke();
+      poly(c, [[x0, y + .5], [x0 + 5, y - 2.5], [x0 + 5, y + 3.5]], col); poly(c, [[x1, y + .5], [x1 - 5, y - 2.5], [x1 - 5, y + 3.5]], col);
+      const lw = tw(c, label, F.s14) / 2;
+      tx(c, label, Math.min(236 - lw, Math.max(4 + lw, (x0 + x1) / 2)), above ? y - 16 : y + 3, F.s14, col, 'center');
+    };
+    const hatchBar = (x, y, w, h, pct) => {
+      const fx = x + Math.round(w * (d.ok ? Math.min(100, pct) : 0) / 100);
+      c.save(); c.beginPath(); c.rect(x, y, fx - x, h); c.clip();
+      c.strokeStyle = B.line; c.lineWidth = 1; for (let k = -h; k < w; k += 5) { c.beginPath(); c.moveTo(x + k, y + h); c.lineTo(x + k + h, y); c.stroke(); }
+      c.restore();
+      c.strokeStyle = B.line; c.lineWidth = 1; c.strokeRect(x + .5, y + .5, w - 1, h - 1);
+      if (fx > x && fx < x + w) rr(c, fx, y, 1, h, 0, B.line);
+      return fx;
+    };
+    tx(c, 'FIG. 1  5-HOUR WINDOW', 8, 4, F.s14, B.note);
+    const over = d.ok && d.s / 100 > pace(d.s, d.sr, WIN_S).t + 0.05;
+    const fx = hatchBar(16, 46, 208, 22, d.s);
+    if (d.ok) {
+      arrowDim(16, fx, 36, `${Math.round(d.s)}% USED`, over ? B.warn : B.line, true);
+      arrowDim(fx, 224, 76, `${Math.round(100 - d.s)}% LEFT`, B.note, false);
+      const tx_ = 16 + Math.round(208 * pace(d.s, d.sr, WIN_S).t);
+      for (let y = 42; y < 72; y += 4) rr(c, tx_, y, 1, 2, 0, B.warn);
+    } else tx(c, 'NO DATA', 120, 50, F.s14, B.note, 'center');
+    tx(c, 'FIG. 2  WEEKLY', 8, 104, F.s14, B.note);
+    tx(c, d.ok ? `${Math.round(d.w)}%` : '--', 224, 104, F.s14, B.line, 'right');
+    hatchBar(16, 124, 208, 14, d.w);
+    clawdTint(c, 16, 156, 2, { outline: B.line, fill: B.bg }, 'bp');
+    c.strokeStyle = B.note; c.lineWidth = 1; c.beginPath(); c.moveTo(70, 168.5); c.lineTo(84, 152.5); c.lineTo(92, 152.5); c.stroke();
+    tx(c, 'CLAWD MK.I', 94, 145, F.s14, B.note);
+    c.strokeStyle = B.line; c.strokeRect(90.5, 166.5, 146, 66);
+    rr(c, 91, 188, 145, 1, 0, B.line); rr(c, 91, 210, 145, 1, 0, B.line);
+    tx(c, d.ok ? `RESET ${atClock(d, d.sr)}` : 'RESET ---', 96, 170, F.s14, over ? B.warn : B.line);
+    tx(c, d.ok ? `WEEK ${atClock(d, d.wr, true).toUpperCase()}` : 'WEEK ---', 96, 192, F.s14, B.line);
+    tx(c, `DRAWN ${d.clock}  1:1`, 96, 214, F.s14, B.note);
+  }
+},
+{
+  id:'pastel', wave:3, tag:'Phương án V', name:'V · Pastel kawaii',
+  desc:'Nền hồng sữa, hai thanh kẹo dẻo bo tròn (hồng cho 5-hour, tím lavender cho weekly), chữ tím xám thay vì đen. Clawd má hồng, có trái tim bay bay và sao lấp lánh. Khi ≥ 80% kẹo chuyển cam san hô và Clawd đổ mồ hôi.',
+  pros:['**Dễ thương, nhẹ nhàng** — hợp làm quà cho người không phải dân code','Thanh dày 22 px, đọc từ xa tốt','Màu pastel dịu hơn nhiều so với cam/đỏ bão hoà'],
+  cons:['Pastel trên nền sáng tương phản thấp: chữ % phải dùng tím đậm','Màn sáng, ban đêm vẫn chói'],
+  cost:'Bảng màu sáng; trái tim = 2 đĩa ClawdArc + 1 tam giác; má hồng = 2 ClawdShape đè lên sprite. ~1 KB.',
+  draw(c, d, now) {
+    const K = { bg:'#fff4f8', ink:'#5b4b6b', mute:'#a596b5', pink:'#ff8fab', pinkT:'#ffe1ea', lav:'#a98bff', lavT:'#ece6ff', mint:'#7fd6b3', butter:'#ffd36e', coral:'#ff6b6b' };
+    c.fillStyle = K.bg; c.fillRect(0, 0, W, H);
+    tx(c, d.clock, 12, 4, F.t34, K.ink);
+    const p = pace(d.s, d.sr, WIN_S), hot = d.ok && d.s >= 80;
+    const badge = !d.ok ? ['no data', K.mute] : hot ? ['running hot', K.coral] : p.label === 'Over pace' ? ['a bit fast', K.coral] : ['all good', K.mint];
+    const bw = tw(c, badge[0], F.s14) + 22;
+    rr(c, 228 - bw, 12, bw, 22, 11, badge[1]); tx(c, badge[0], 228 - bw + 11, 15, F.s14, '#ffffff');
+    const by = 50 + Math.round(2 * Math.sin(now / 500));
+    clawdTint(c, 14, by, 2, { body: '#f08a6a' });
+    rr(c, 14 + 4, by + 34, 10, 5, 3, '#ffb3c7'); rr(c, 14 + 50, by + 34, 10, 5, 3, '#ffb3c7');
+    if (hot) sweat(c, 84, by + 14 + (now / 40) % 12);
+    const heart = (x, y, s, col) => { c.fillStyle = col; c.beginPath(); c.arc(x - s / 2, y, s / 2, 0, Math.PI * 2); c.arc(x + s / 2, y, s / 2, 0, Math.PI * 2); c.fill(); poly(c, [[x - s, y + 1], [x + s, y + 1], [x, y + s * 1.4]], col); };
+    const ph = (now / 2200) % 1;
+    if (d.ok) { c.save(); c.globalAlpha = 1 - ph; heart(80, 60 - ph * 16, 5, K.pink); c.restore(); }
+    for (const [sx, sy, o] of [[214, 56, 0], [196, 120, 1], [100, 128, 2]]) {
+      if (Math.floor(now / 350 + o) % 3 === 0) continue;
+      rr(c, sx - 1, sy - 5, 2, 10, 1, K.butter); rr(c, sx - 5, sy - 1, 10, 2, 1, K.butter);
+    }
+    tx(c, '5-hour', 96, 58, F.s14, K.mute);
+    tx(c, d.ok ? `${Math.round(d.s)}%` : '--%', 94, 74, F.s48, hot ? K.coral : K.ink);
+    tx(c, d.ok ? `back at ${atClock(d, d.sr)}` : 'waiting…', 12, 146, F.s14, K.mute);
+    tx(c, d.ok ? fmtReset(d.sr) : '', 228, 146, F.s14, K.mute, 'right');
+    const pill = (y, pct, fill, track) => {
+      rr(c, 12, y, 216, 22, 11, track);
+      if (d.ok && pct > 0) rr(c, 12, y, Math.max(22, Math.round(216 * Math.min(100, pct) / 100)), 22, 11, fill);
+      if (d.ok) rr(c, 20, y + 5, Math.max(0, Math.round(216 * Math.min(100, pct) / 100) - 28), 4, 2, 'rgba(255,255,255,.45)');
+    };
+    pill(164, d.s, hot ? K.coral : K.pink, K.pinkT);
+    tx(c, 'weekly', 12, 192, F.s14, K.mute);
+    tx(c, d.ok ? `${Math.round(d.w)}% · ${fmtReset(d.wr)}` : '--', 228, 192, F.s14, K.ink, 'right');
+    pill(210, d.w, d.w >= 80 ? K.coral : K.lav, K.lavT);
+  }
+},
+{
+  id:'onebit', wave:3, tag:'Phương án W', name:'W · 1-bit (kiểu Playdate / e-ink)',
+  desc:'Chỉ hai màu: mực than và giấy xám ấm, như máy Playdate hay màn e-ink. Không có màu để báo nguy nên dùng hoa văn: ô đặc = đã dùng, ô chấm lưới (dither) = thời gian đã trôi. Phần chấm lộ ra sau phần đặc là bạn đang dùng chậm hơn thời gian. Dải đáy đảo màu ghi nhịp.',
+  pros:['**Tối giản, tinh tế** — rất khác mọi phương án còn lại','Dither cho thấy nhịp ngay trên một thanh, không cần vạch','Hợp người mù màu: không dựa vào màu'],
+  cons:['Không có cảnh báo màu: “OVER PACE” chỉ bằng chữ và dải nhấp nháy','Dither 1 px trông rung nếu tấm nền có ghosting'],
+  cost:'2 màu; dither = mẫu (x + y) & 1 trong vòng tô band. Clawd vẽ palette 2 màu. Font mono 36 đã có (cần thêm “%”). ~1 KB.',
+  draw(c, d, now) {
+    const O = { bg:'#b1afa8', ink:'#312f28' };
+    c.fillStyle = O.bg; c.fillRect(0, 0, W, H);
+    tx(c, d.clock, 120, 2, F.m36, O.ink, 'center');
+    for (let x = 8; x < 232; x += 4) rr(c, x, 46, 2, 2, 0, O.ink);
+    tx(c, '5H', 10, 58, F.m18, O.ink);
+    tx(c, d.ok ? `${Math.round(d.s)}%` : '--%', 8, 78, F.m36, O.ink);
+    tx(c, d.ok ? `RST ${atClock(d, d.sr)}` : 'NO DATA', 10, 120, F.m18, O.ink);
+    clawdTint(c, 160, 56 + (Math.floor(now / 600) % 2), 2, { body: d.ok ? O.ink : '#77746b', eye: O.bg });
+    const bar = (x, y, w, h, pct, win, reset) => {
+      c.strokeStyle = O.ink; c.lineWidth = 1; c.strokeRect(x + .5, y + .5, w - 1, h - 1);
+      if (!d.ok) return;
+      const iw = w - 4, used = Math.round(iw * Math.min(100, pct) / 100), tt = Math.round(iw * pace(pct, reset, win).t);
+      c.fillStyle = O.ink;
+      for (let yy = y + 2; yy < y + h - 2; yy++) for (let xx = x + 2 + used; xx < x + 2 + tt; xx++) if ((xx + yy) % 2 === 0) c.fillRect(xx, yy, 1, 1);
+      rr(c, x + 2, y + 2, used, h - 4, 0, O.ink);
+    };
+    bar(8, 146, 224, 18, d.s, WIN_S, d.sr);
+    tx(c, d.ok ? `7D ${Math.round(d.w)}%` : '7D --%', 10, 170, F.m18, O.ink);
+    tx(c, d.ok ? atClock(d, d.wr, true).toUpperCase() : '', 230, 170, F.m18, O.ink, 'right');
+    bar(8, 192, 224, 12, d.w, WIN_W, d.wr);
+    const p = pace(d.s, d.sr, WIN_S), over = d.ok && d.s / 100 > p.t + 0.05;
+    const inv = over && Math.floor(now / 500) % 2;
+    rr(c, 0, 212, W, 28, 0, inv ? O.bg : O.ink);
+    if (inv) { c.strokeStyle = O.ink; c.strokeRect(.5, 212.5, W - 1, 27); }
+    const msg = !d.ok ? '* WAITING FOR APP' : p.t < 0.05 ? '* FRESH WINDOW' : over ? '! OVER PACE' : '* ON TRACK';
+    tx(c, msg, 120, 217, F.m18, inv ? O.ink : O.bg, 'center');
+  }
+},
+];
+
+// ---- page ----
+const grid = document.getElementById('grid');
+// h(tag, attrs, ...children); strings may use **bold** and !!ok!! markers
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === 'class' ? (e.className = v) : e.setAttribute(k, v);
+  for (const k of kids.flat()) e.append(typeof k === 'string' ? rich(k) : k);
+  return e;
+}
+function rich(s) {
+  const f = document.createDocumentFragment();
+  for (const part of s.split(/(\*\*.*?\*\*|!!.*?!!)/)) {
+    if (part.startsWith('**')) f.append(h('b', {}, part.slice(2, -2)));
+    else if (part.startsWith('!!')) f.append(h('span', { class: 'ok' }, part.slice(2, -2)));
+    else if (part) f.append(document.createTextNode(part));
+  }
+  return f;
+}
+const views = DESIGNS.map(dz => {
+  const cv = h('canvas', { width: W, height: H, 'aria-label': `${dz.name} preview` });
+  const el = h('article', { class: 'card' + (dz.base ? ' base' : '') },
+    h('div', {}, h('span', { class: 'tag' }, dz.tag), h('h2', {}, dz.name)),
+    h('div', { class: 'device' }, cv),
+    h('p', {}, dz.desc),
+    h('ul', {},
+      dz.pros.map(x => h('li', { class: 'ok' }, '+ ', h('span', { style: 'color:var(--dim)' }, x))),
+      dz.cons.map(x => h('li', { class: 'warn' }, '− ', h('span', { style: 'color:var(--dim)' }, x)))),
+    dz.base ? h('div', { class: 'real' },
+      h('img', { src: 'assets/current-usage@2x.png', alt: 'Ảnh chụp renderer firmware thật' }),
+      'Ảnh chụp renderer thật (tools/clawd_preview) để đối chiếu độ khớp của bản vẽ canvas.') : [],
+    h('div', { class: 'cost' }, 'Firmware: ', dz.cost));
+  grid.appendChild(el);
+  return { dz, ctx: cv.getContext('2d'), cv, el };
+});
+function applyShow() {
+  const want = { old: 0, w1: 1, w2: 2, w3: 3 }[show];
+  for (const v of views) v.el.hidden = want !== undefined && (v.dz.wave || 0) !== want;
+}
+applyShow();
+
+function data() {
+  if (state !== 'custom') return STATES[state];
+  const v = id => +document.getElementById(id).value;
+  const d = STATES.custom;
+  Object.assign(d, { s: v('i-s'), sr: v('i-sr'), w: v('i-w'), wr: v('i-wr') * 60 });
+  document.getElementById('o-s').textContent = d.s + '%';
+  document.getElementById('o-sr').textContent = fmtReset(d.sr);
+  document.getElementById('o-w').textContent = d.w + '%';
+  document.getElementById('o-wr').textContent = fmtReset(d.wr);
+  return d;
+}
+function setScale() {
+  for (const v of views) { v.cv.style.width = W * scale + 'px'; v.cv.style.height = H * scale + 'px'; }
+  grid.style.setProperty('--colw', Math.max(330, W * scale + 70) + 'px');
+}
+let frozen = 0;
+function render() {
+  const d = data(), now = animate ? performance.now() : frozen;
+  for (const v of views) {
+    const c = v.ctx; c.setTransform(1,0,0,1,0,0);
+    c.fillStyle = C.bg; c.fillRect(0, 0, W, H);
+    v.dz.draw(c, d, now);
+  }
+}
+function loop() { render(); if (animate) setTimeout(() => requestAnimationFrame(loop), 50); }
+
+function radio(groupId, attr, fn) {
+  const g = document.getElementById(groupId);
+  g.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    fn(b.dataset[attr]); render();
+  });
+}
+radio('g-state', 'state', s => { state = s; document.getElementById('sliders').classList.toggle('on', s === 'custom'); });
+radio('g-scale', 'scale', s => { scale = +s; setScale(); });
+radio('g-show', 'show', s => { show = s; applyShow(); });
+document.getElementById('anim').addEventListener('click', e => {
+  animate = !animate; e.target.setAttribute('aria-pressed', animate); e.target.textContent = animate ? 'Bật' : 'Tắt';
+  frozen = performance.now(); if (animate) loop();
+});
+document.getElementById('sliders').addEventListener('input', render);
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { animate = false; const b = document.getElementById('anim'); b.setAttribute('aria-pressed', false); b.textContent = 'Tắt'; }
+
+Promise.all([
+  ...['clawd'].map(k => new Promise(r => { const i = new Image(); i.onload = r; i.onerror = r; i.src = `assets/${k}.png`; imgs[k] = i; })),
+  document.fonts.load(F.s14), document.fonts.load(F.s24), document.fonts.load(F.s48), document.fonts.load(F.s56),
+  document.fonts.load(F.t34), document.fonts.load(F.t56), document.fonts.load(F.m32), document.fonts.load(F.m18), document.fonts.load(F.m36),
+]).then(() => { setScale(); render(); if (animate) loop(); });
+</script>
+</body>
+</html>
