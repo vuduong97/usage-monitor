@@ -31,5 +31,11 @@ to Anthropic, and the desk animations are rendered from clawd-on-desk art (All
 Rights Reserved, personal use only). None of it may be published, which is why
 this repository stays private and the generated packs are git-ignored.
 
+The firmware feed (feed/) delivers the firmware and these packs, encrypted, to
+anyone running Clawd desktop. Before deploying it, record here the licence that
+allows that distribution, as a line "Feed licence: <owner, scope, date>".
+tools/release.sh refuses to publish to Cloudflare without that line. The feed
+limits access; it is not a licence.
+
 Claude, Claude Code and Clawd are trademarks of Anthropic. This project is not
 affiliated with or endorsed by Anthropic or GeekMagic.

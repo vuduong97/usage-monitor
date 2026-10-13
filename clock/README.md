@@ -13,6 +13,8 @@ Anthropic's: generated on this Mac and never committed. Origins: `NOTICE`.
 firmware/        PlatformIO project (envs: clawd, clawd_loader), src/, tests/, tools/
 tools/desk/      clawd-on-desk SVG -> build/desk/desk.pak (gitignored)
 tools/flash.sh   build + size check + OTA a clock
+tools/release.sh build + test + encrypt + publish a release to the firmware feed (feed/README.md)
+feed/            the feed: Cloudflare Worker over a private R2 bucket, release packer
 tools/provision.sh  stock clock -> clawd clock ready to gift
 tools/stock_fs.sh   back up / delete / restore the stock firmware's files on the clock
 PROTOCOL.md      HTTP + mDNS contract with the desktop app (identical copy in both repos)
