@@ -16,6 +16,12 @@ const ORDER = [
   'gameboy', 'synth', 'paper', 'blueprint', 'pastel', 'onebit',
   // Batch A: retro computers & devices
   'ambercrt', 'vt100tui', 'mac84', 'win95', 'biossetup', 'c64', 'zxspec', 'casiolcd', 'calc', 'hifivfd',
+  // Batch C: games & toys
+  'tetris', 'pinballdmd', 'pacmaze', 'jrpgstatus', 'hiscore', 'invaders', 'eggpet', 'platformer', 'chessclock', 'racinghud',
+  // Batch D: instruments & gauges
+  'vumeter', 'scope', 'pfd', 'fuel', 'monitor', 'rack', 'weather', 'powerbank', 'lab', 'sonar',
+  // Batch E: interface styles
+  'hairline', 'widget', 'tonal', 'brutal', 'soft', 'oled', 'ink', 'tufte', 'frost', 'bigtype',
 ];
 const MAX_PACK = 20 * 1024;
 
