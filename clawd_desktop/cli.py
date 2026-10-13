@@ -95,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     st.add_argument("--clock", default="", help="http://<clock>; default: the remembered clock")
     st.add_argument("--key", default="", help="keychain entry for its web password (its name)")
     st.add_argument("--piped", action="store_true", help=argparse.SUPPRESS)
+    st.add_argument("--tab", default="", choices=["", "update"], help="open on this tab")
     a = ap.parse_args(argv)
 
     if a.cmd in (None, "tray"):
@@ -116,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         clock, key = a.clock, a.key
         if not clock:
             clock, key = remembered_clock()
-        return settings_app.main(clock, key or clock, a.piped)
+        return settings_app.main(clock, key or clock, a.piped, a.tab)
     if a.cmd == "cleanup":
         autostart.disable()
         hooks.apply(False)

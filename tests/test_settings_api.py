@@ -3,6 +3,7 @@ login, style packs and the update job."""
 import hashlib
 import json
 import time
+import zlib
 
 import pytest
 
@@ -32,6 +33,8 @@ class FakeApi:
         self.saved = []
         self.uploads = 0
         self.styles = []                  # packs sent (their bytes), "" for a clear
+        self.packs = []                   # clawd/desk packs sent (their kind)
+        self.style_crc = ""               # what /api/style reports for the installed pack
         self.after = NEW_HEAP             # what the clock runs after an update
         self.status_ = {"mode": "sta", "connected": True, "ssid": "Home", "rssi": -58}
 
@@ -81,6 +84,16 @@ class FakeApi:
         self.heap_["style"] = sid
         return {"api": 1, "active": True, "id": sid}
 
+    def upload_pack(self, kind, data):
+        self.packs.append(kind)
+        self.heap_["pakCrc" if kind == "clawdpak" else "deskCrc"] = f"{zlib.crc32(data):08x}"
+        self.heap_["pak" if kind == "clawdpak" else "desk"] = 17
+        return {"ok": True, "anims": 1, "crc": f"{zlib.crc32(data):08x}"}
+
+    def style(self):
+        return {"api": 1, "active": bool(self.heap_.get("style")), "id": self.heap_.get("style", ""),
+                "crc": self.style_crc}
+
     def clear_style(self):
         self._check()
         self.styles.append("")
@@ -100,7 +113,7 @@ class Keys:
         return True
 
 
-def bridge(tmp_path, heap=None, password=None, bundle=None):
+def bridge(tmp_path, heap=None, password=None, bundle=None, feed=None):
     made = []
 
     def factory(base, auth=None):
@@ -110,7 +123,7 @@ def bridge(tmp_path, heap=None, password=None, bundle=None):
     keys = Keys()
     notes = []
     b = sa.SettingsApi("http://10.0.0.5", "clawd", notify=notes.append, api_factory=factory,
-                       bundle=bundle, store=ClockStore(tmp_path / "clock.json"), keychain=keys)
+                       bundle=bundle, store=ClockStore(tmp_path / "clock.json"), keychain=keys, feed=feed)
     return b, made, keys, notes
 
 
@@ -289,7 +302,7 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
     assert public == sorted(["state", "login", "preview", "save", "scan", "reboot", "factory_reset",
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
                              "set_hooks", "open_log", "open_web", "set_clock", "usage_preview",
-                             "clawd_pak"])
+                             "clawd_pak", "check_update"])
 
 
 def test_main_screen_is_handed_to_the_engine():
@@ -359,3 +372,54 @@ def test_window_asks_the_trays_newer_address_first(tmp_path):
     ClockStore(tmp_path / "clock.json").save({"name": "clawd", "host": "192.168.1.48", "port": 80})
     s = b.state()
     assert s["ok"] and s["app"]["clock"] == "http://192.168.1.48" and calls == []
+
+
+FEED_HEAP = {**STYLED_HEAP, "fwSeq": 5, "style": "synth"}
+
+
+def wait_job(b):
+    for _ in range(500):
+        if not b.job()["running"]:
+            break
+        time.sleep(0.01)
+    return b.job()
+
+
+def test_feed_release_is_offered_installed_with_its_packs_and_style(tmp_path, monkeypatch):
+    from tests.feedkit import DESK, FakeFeed
+    monkeypatch.setattr(sa.ota, "SETTLE", 0)
+    monkeypatch.setattr(sa.ota, "CRC_WAIT", 0)          # the clock never finishes its checksum here
+    ff = FakeFeed()
+    ff.publish(6, notes="Màn chờ có IP")
+    b, made, _k, _n = bridge(tmp_path, heap=FEED_HEAP, feed=ff.client())
+    made[0].after = {**FEED_HEAP, "fwSeq": 6, "pakCrc": "", "deskCrc": "", "pak": 17, "desk": 0}
+    s = b.state()
+    fw_ = s["fw"]
+    assert fw_["update"] == "available" and fw_["bundle"]["source"] == "feed" and fw_["bundle"]["seq"] == 6
+    assert fw_["bundle"]["notes"] == "Màn chờ có IP" and fw_["plan"]["fw"] == "need"
+    assert [p["id"] for p in fw_["styles"]["packs"]] == ["synth", "paper"] and fw_["styles"]["state"] == "ready"
+    assert not any("firmware.bin" in c for c in ff.calls)       # only the style packs so far
+    assert b.update(None, None)["ok"]
+    j = wait_job(b)
+    assert j["done"] and not j["error"], j
+    assert made[0].uploads == 1 and made[0].packs == ["clawdpak", "deskpak"]   # CRC not known in time: sent
+    assert made[0].styles and made[0].heap_["deskCrc"] == f"{zlib.crc32(DESK):08x}"   # synth re-sent (CRC differs)
+    st = b.state()
+    assert st["fw"]["update"] == "current"
+
+
+def test_feed_older_than_the_bundle_is_ignored_and_errors_show(tmp_path, bundle):
+    from tests.feedkit import FakeFeed
+    ff = FakeFeed()
+    ff.publish(1)
+    b, _m, _k, _n = bridge(tmp_path, heap=FEED_HEAP, bundle=bundle, feed=ff.client())
+    assert b.state()["fw"]["bundle"]["source"] == "app"
+    ff.channels.clear()
+    ff.releases.clear()
+    broken = FakeFeed().client()
+    broken._http.headers["authorization"] = "Bearer nope"
+    b2, _m, _k, _n = bridge(tmp_path, heap=FEED_HEAP, feed=broken)
+    s = b2.state()
+    assert s["fw"]["update"] == "none" and s["fw"]["feedError"]
+    assert b2.update(None, None)["code"] == "bad"
+    assert b2.check_update()["fw"]["feedError"]

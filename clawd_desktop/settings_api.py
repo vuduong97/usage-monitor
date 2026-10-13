@@ -25,10 +25,11 @@ from pathlib import Path
 from typing import Any
 
 import clawd_desktop.preview as pv
-from clawd_desktop import __version__, autostart, creds, firmware, hooks, ota, paths
+from clawd_desktop import __version__, autostart, creds, feed as fd, firmware, hooks, ota, paths
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
 from clawd_desktop.discovery import ClockStore, manual_clock
 
+FEED_RECHECK = 600      # the window asks the feed again after this long (s)
 PAK_RETRY_S = 300       # after a failed /clawd.pak read, wait this long before asking again
 HOSTNAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")
 HHMM = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
@@ -129,12 +130,14 @@ class SettingsApi:
                  notify: Callable[[dict], None] = lambda _m: None,
                  api_factory: Callable[..., ClockApi] = ClockApi,
                  bundle: firmware.Bundle | None = None,
+                 feed: fd.Feed | None = None,
                  store: ClockStore | None = None,
                  keychain=creds,
                  remember_screen: Callable[[int], None] = paths.set_clock_screen,
                  renderer: pv.Renderer | None = None,
                  payload_source: Callable[[], tuple[dict, float] | None] = paths.usage_payload,
-                 now: Callable[[], float] = time.time) -> None:
+                 now: Callable[[], float] = time.time, tab: str = "") -> None:
+        self._tab = tab if tab in ("update",) else ""   # the page opens on this tab once
         self._renderer = renderer              # draws the clock's screen (None: the page approximates)
         self._payload_source = payload_source  # the last usage payload the engine sent
         self._now = now
@@ -144,6 +147,10 @@ class SettingsApi:
         self._notify = notify                  # tell the tray (rescan, set host, refresh)
         self._factory = api_factory
         self._bundle = bundle
+        self._feed = feed                      # newer firmware + packs than the bundle (feed.py)
+        self._release: fd.Release | None = None
+        self._feed_at = 0.0                    # last feed check (monotonic)
+        self._feed_error = ""
         self._store = store or ClockStore(paths.CLOCK_FILE)
         self._keychain = keychain
         self._window: Any = None               # set by settings_app, for file dialogs
@@ -172,15 +179,60 @@ class SettingsApi:
         self._connect(c.base, name or self._key)    # the same clock keeps its saved login
         return True
 
+    @property
+    def _src(self) -> firmware.Bundle | None:
+        """What an update installs and the gallery offers: the feed's release when it is
+        newer than the bundled firmware, else the bundle."""
+        return self._release or self._bundle
+
+    def _check_feed(self, force: bool = False) -> None:
+        """Ask the feed for its newest release (at most every FEED_RECHECK s) and keep it,
+        with its style packs, when it is newer than the bundle. Failures only show as text."""
+        if self._feed is None or self._job["running"]:
+            return
+        now = time.monotonic()
+        if not force and self._feed_at and now - self._feed_at < FEED_RECHECK:
+            return
+        self._feed_at = now
+        try:
+            m = self._feed.latest()
+            self._feed_error = ""
+        except fd.FeedError as e:
+            self._feed_error = str(e)
+            print(f"[settings] {e}", flush=True)
+            return
+        if m is None or (self._bundle is not None and m.seq <= self._bundle.seq):
+            self._release = None
+            return
+        if self._release is not None and self._release.seq == m.seq:
+            return
+        rel = fd.make_release(m)
+        try:                                   # the gallery needs the packs; a few hundred KB
+            rel = self._feed.fetch(rel, fd.STYLE_KINDS)
+        except fd.FeedError as e:
+            print(f"[settings] style packs from the feed: {e}", flush=True)
+        self._release = rel
+
     def _bundle_info(self) -> dict | None:
-        b = self._bundle
-        return None if b is None else {"seq": b.seq, "size": b.size, "commit": b.commit, "styleApi": b.style_api}
+        b = self._src
+        if b is None:
+            return None
+        out = {"seq": b.seq, "size": b.size, "commit": b.commit, "styleApi": b.style_api,
+               "source": "feed" if isinstance(b, fd.Release) else "app"}
+        if isinstance(b, fd.Release):
+            out.update(notes=b.notes, date=b.date[:10],
+                       packs={f.kind: f.size for f in b.manifest.files if f.kind in fd.PACK_KINDS})
+        return out
 
     def _fw_info(self) -> dict:
-        h = self._heap
-        packs = self._bundle.styles if self._bundle else ()
-        return {"update": firmware.update_state(h, self._bundle),
-                "styles": {"state": firmware.style_state(h, self._bundle),
+        h, src = self._heap, self._src
+        packs = src.styles if src else ()
+        state = firmware.update_state(h, src)
+        plan = fd.plan(h, src)
+        if state == "current" and any(plan.get(k) == "need" for k in fd.PACK_KINDS):
+            state = "packs"                    # same image, but a pack differs or is missing
+        return {"update": state, "plan": plan, "feedError": self._feed_error,
+                "styles": {"state": firmware.style_state(h, src),
                            "active": firmware.clock_style(h) or pv.CLASSIC,
                            "packs": [{"id": p.id, "name": p.name, "light": p.light} for p in packs]},
                 "seq": firmware.clock_seq(h), "bundle": self._bundle_info()}
@@ -190,7 +242,7 @@ class SettingsApi:
         ValueError for anything else."""
         if style is None:
             return None
-        packs = self._bundle.styles if self._bundle else ()
+        packs = self._src.styles if self._src else ()
         if not isinstance(style, str) or (style != pv.CLASSIC and style not in {p.id for p in packs}):
             raise ValueError("unknown style")
         return style
@@ -200,7 +252,7 @@ class SettingsApi:
         if style == pv.CLASSIC:
             view = self._api.clear_style()
         else:
-            packs = self._bundle.styles if self._bundle else ()            # _style_arg checked it
+            packs = self._src.styles if self._src else ()                  # _style_arg checked it
             pack = next(p for p in packs if p.id == style)
             view = self._api.install_style(pack.read())
         self._heap = {**self._heap, "style": str(view.get("id") or "")}
@@ -226,14 +278,16 @@ class SettingsApi:
                 self._heap = self._api.heap()
             except ClockError as e2:
                 return {**_err(e2), "app": self._app_info()}
+        self._check_feed()
         try:
             cfg = self._api.config()
         except ClockError as e:
             return {**_err(e), "heap": self._heap, "fw": self._fw_info(), "app": self._app_info()}
         self._cfg = cfg
         self._mirror_screen(cfg)
+        tab, self._tab = self._tab, ""
         return {"ok": True, "heap": self._heap, "config": cfg, "fw": self._fw_info(),
-                "net": self._net(), "app": self._app_info()}
+                "net": self._net(), "app": self._app_info(), **({"tab": tab} if tab else {})}
 
     def _net(self) -> dict | None:
         """The network the clock is on now ({ssid, rssi}), for the WiFi tab's "in use" mark.
@@ -279,7 +333,7 @@ class SettingsApi:
         from `payload` (None: no data yet).
         """
         motion = motion if isinstance(motion, bool) else True     # the page is untrusted input
-        known = [pv.CLASSIC] + [p.id for p in (self._bundle.styles if self._bundle else ())]
+        known = [pv.CLASSIC] + [p.id for p in (self._src.styles if self._src else ())]
         if not isinstance(styles, list) or not styles or not all(isinstance(i, str) and i in known for i in styles):
             styles = known
         stored = self._payload_source()
@@ -356,7 +410,7 @@ class SettingsApi:
             return _fail("bad", f"Giá trị không hợp lệ ({e}).")
         if style == (firmware.clock_style(self._heap) or pv.CLASSIC):
             style = None
-        if style is not None and firmware.style_state(self._heap, self._bundle) != "ready":
+        if style is not None and firmware.style_state(self._heap, self._src) != "ready":
             return _fail("bad", "Firmware trên đồng hồ chưa vẽ được kiểu này: cập nhật firmware trước.")
         try:
             if style is not None:
@@ -446,10 +500,11 @@ class SettingsApi:
 
     # ---- firmware update (runs in the background; the page polls job()) ----------------
     def update(self, edited: Any = None, style: Any = None) -> dict:
-        """Install the bundled firmware in the background, then save `edited` and show
-        `style` (None: leave both)."""
-        if self._bundle is None:
-            return _fail("bad", "Bản app này không kèm firmware.")
+        """Install the newest firmware and packs (the feed's release, else the bundled
+        firmware) in the background, then save `edited` and show `style` (None: leave both)."""
+        if self._src is None:
+            return _fail("bad", "Chưa có bản firmware nào để cài (app không kèm firmware, "
+                                "và chưa đọc được nguồn cập nhật).")
         try:
             changes = self._diff(edited) if edited is not None else {}
             style = self._style_arg(style)
@@ -465,23 +520,52 @@ class SettingsApi:
     def _run_update(self, changes: dict, style: str | None) -> None:
         def step(s: str) -> None:
             self._job["step"] = s
-        bundle = self._bundle                  # update() only starts this thread with one
+        src = self._src                        # update() only starts this thread with one
         try:
-            if bundle is None:
-                raise ValueError("no bundled firmware")
-            heap = ota.install_then_save(self._api, bundle, changes, progress=step,
-                                         need_style_api=bundle.style_api if style else 0)
+            if src is None:
+                raise ValueError("no firmware to install")
+            need = src.style_api if style else 0
+            if isinstance(src, fd.Release) and self._feed is not None:
+                step("download")
+                src = self._feed.fetch(src, set(fd.needed(self._api.heap(), src)) | fd.STYLE_KINDS,
+                                       progress=lambda *_a: step("download"))
+                self._release = src
+                heap = ota.install_release(self._api, src, changes, progress=step, need_style_api=need)
+            else:
+                heap = ota.install_then_save(self._api, src, changes, progress=step, need_style_api=need)
             self._heap = heap
             if style and style != (firmware.clock_style(heap) or pv.CLASSIC):
                 self._apply_style(style)
+            else:
+                self._refresh_style(src)
             with contextlib.suppress(ClockError):
                 self._cfg = self._api.config()
             self._mirror_screen(self._cfg)
-            self._job.update(done=True)
-        except (ClockError, ValueError, OSError) as e:
+            self._job.update(done=True, step="done")
+        except (ClockError, fd.FeedError, ValueError, OSError) as e:
             self._job.update(error=_err(e)["error"] if isinstance(e, ClockError) else f"Lỗi: {e}")
         finally:
             self._job["running"] = False
+
+    def _refresh_style(self, src: firmware.Bundle) -> None:
+        """The clock's style pack, re-sent when the release carries a different build of it."""
+        sid = firmware.clock_style(self._heap)
+        pack = next((p for p in src.styles if p.id == sid), None) if sid else None
+        if pack is None:
+            return
+        with contextlib.suppress(ClockError, OSError, ValueError):
+            if str(self._api.style().get("crc") or "") != f"{pack.crc:08x}":
+                self._job["step"] = "style"
+                self._apply_style(sid)
+
+    def check_update(self) -> dict:
+        """Ask the feed now (the Update tab's button); the clock's heap is read again too."""
+        if self._job["running"]:
+            return _fail("busy", "Đang cập nhật rồi.")
+        with contextlib.suppress(ClockError):
+            self._heap = self._api.heap()
+        self._check_feed(force=True)
+        return {"ok": True, "fw": self._fw_info(), "heap": self._heap, "feed": self._feed is not None}
 
     def job(self) -> dict:
         return {"ok": True, **{k: v for k, v in self._job.items() if k != "started"}}

@@ -5,6 +5,7 @@ in the tray process), started by the tray's "Cài đặt…" item, so it costs
 nothing while closed. The tray talks to it over the child's stdin/stdout:
 
   tray -> window   "show"                         bring the window forward
+                   "show update"                  ... on the Update tab
   window -> tray   {"cmd": "refresh"}             autostart/hooks changed
                    {"cmd": "set_clock", "host": "10.0.0.5" | ""}   typed clock / search again
 
@@ -20,7 +21,7 @@ import threading
 import time
 from pathlib import Path
 
-from clawd_desktop import APP_NAME, firmware, paths, preview
+from clawd_desktop import APP_NAME, feed, firmware, paths, preview
 from clawd_desktop.settings_api import SettingsApi
 
 UI_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)) / "clawd_desktop" / "ui"
@@ -31,10 +32,10 @@ def log(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] [settings] {msg}", flush=True)
 
 
-def command(clock: str, key: str) -> list[str]:
+def command(clock: str, key: str, tab: str = "") -> list[str]:
     """How the tray starts this window (frozen app: the same binary)."""
     head = [sys.executable] if paths.frozen() else [sys.executable, "-m", "clawd_desktop"]
-    return head + ["settings", "--piped", "--clock", clock, "--key", key]
+    return head + ["settings", "--piped", "--clock", clock, "--key", key] + (["--tab", tab] if tab else [])
 
 
 class Channel:
@@ -87,7 +88,7 @@ def _watch_ui(win) -> None:
                 log(f"reload failed: {e!r}")
 
 
-def main(clock: str, key: str, piped: bool) -> int:
+def main(clock: str, key: str, piped: bool, tab: str = "") -> int:
     pipe_out = sys.stdout                  # the tray reads commands here; keep it before logging moves stdout
     if paths.frozen() or not sys.stdout or not sys.stdout.isatty():
         paths.open_log()                    # started by hand in a terminal: log there (as the tray does)
@@ -98,7 +99,9 @@ def main(clock: str, key: str, piped: bool) -> int:
     bundle = firmware.load_bundle()
     renderer = preview.load_renderer(firmware_commit=bundle.commit if bundle else "")
     log("preview: " + (f"firmware renderer {renderer.commit or '?'}" if renderer else "no renderer, approximate canvas"))
-    api = SettingsApi(clock, key, notify=chan.send, bundle=bundle, renderer=renderer)
+    source = feed.from_settings()
+    log("update feed: " + (f"{source.url} ({source.channel})" if source else "none"))
+    api = SettingsApi(clock, key, notify=chan.send, bundle=bundle, renderer=renderer, feed=source, tab=tab)
     win = webview.create_window(
         f"{APP_NAME} · Cài đặt", url=str(UI_DIR / "index.html"), js_api=api,
         width=WIDTH, height=HEIGHT, min_size=(720, 540), background_color="#141413",
@@ -117,8 +120,11 @@ def main(clock: str, key: str, piped: bool) -> int:
 
     def listen() -> None:                   # "show" from the tray
         for line in sys.stdin:
-            if line.strip() == "show":
+            words = line.split()
+            if words[:1] == ["show"]:
                 try:
+                    if words[1:] == ["update"]:
+                        win.evaluate_js("window.clawdShowTab && window.clawdShowTab('update')")
                     win.restore()
                     win.show()
                     _front()
