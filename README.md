@@ -174,7 +174,9 @@ so SHA-256 với `SHA256SUMS` của release, và trên mac kiểm tra chữ ký,
 và **Team ID trùng với app đang chạy**. Xong thì tray và tab Cập nhật hiện *Khởi động lại để
 cập nhật*; chỉ khi người dùng bấm mới thay app (mac: script nền chờ app thoát, thay bundle,
 mở lại; Windows: chạy bộ cài im lặng đè lên bản cũ). Không thay khi đang cập nhật firmware
-cho đồng hồ. Mac chạy từ ổ đĩa `.dmg` hoặc thư mục không ghi được thì chỉ báo có bản mới.
+cho đồng hồ. Mac chạy từ ổ đĩa `.dmg`, thư mục không ghi được, hoặc bản chỉ ký ad-hoc (không có Team ID để
+đối chiếu) thì chỉ báo có bản mới. Giới hạn đã biết: trên Windows bộ cài chưa ký (Authenticode),
+nên SHA-256 chỉ chứng minh file đúng với `SHA256SUMS` của cùng release, không chứng minh ai tạo ra nó.
 Trạng thái nằm trong `~/.config/claude-usage-monitor/app-update/`; `auto_update = off`
 trong file config tắt việc tự kiểm tra (nút *Kiểm tra bản mới* vẫn dùng được),
 `update_repo = owner/name` đổi repo. Bản cài đầu tiên có tính năng này phải cài tay; từ đó trở đi

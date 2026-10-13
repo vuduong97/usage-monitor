@@ -68,6 +68,10 @@ class UpdateError(Exception):
     pass
 
 
+NO_TEAM = ("Bản này chỉ có chữ ký ad-hoc (không có Team ID) nên không tự cập nhật được. "
+           "Hãy cài bản chính thức một lần, từ đó app sẽ tự cập nhật.")
+
+
 def log(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] [app-update] {msg}", flush=True)
 
@@ -310,7 +314,9 @@ def check_bundle(new: Path, version: str, running: Path | None, run: Runner = su
     if r.returncode != 0:
         raise UpdateError("chữ ký của bản mới không hợp lệ")
     want = bundle_team(running, run) if running is not None else None
-    if want and bundle_team(new, run) != want:
+    if not want:
+        raise UpdateError(NO_TEAM)               # nothing to match the new signature against
+    if bundle_team(new, run) != want:
         raise UpdateError("bản mới không cùng Team ID với app đang chạy")
 
 
@@ -391,6 +397,7 @@ class Updater:
         self._run, self._now = run, now
         self._system, self._arch = (system, arch) if system else this_platform()
         self._frozen, self._exe = frozen, executable
+        self._team: str | None = None          # the running app's Team ID ("": none), read once
         self._tried = 0.0                      # when this process last asked GitHub
         self._lock = threading.Lock()          # the state below
         self._work = threading.Lock()          # one check/download at a time
@@ -399,7 +406,16 @@ class Updater:
 
     # ---- what the page and the tray read ---------------------------------------
     def _can(self) -> tuple[bool, str]:
-        return can_apply(self._frozen, self._system, self._exe)
+        ok, why = can_apply(self._frozen, self._system, self._exe)
+        if ok and self._system == "mac":
+            if self._team is None:                 # asked once: codesign is not free
+                try:
+                    self._team = bundle_team(running_bundle(self._exe), self._run) or ""   # type: ignore[arg-type]
+                except UpdateError:
+                    self._team = ""
+            if not self._team:
+                return False, NO_TEAM
+        return ok, why
 
     def state(self) -> dict:
         ok, why = self._can()

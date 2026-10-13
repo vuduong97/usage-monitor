@@ -2,6 +2,7 @@
 its checks, the staged update, the macOS bundle checks, and the swap script run for real."""
 import hashlib
 import io
+import json
 import os
 import plistlib
 import re
@@ -397,9 +398,22 @@ def test_mac_refuses_a_bad_bundle(tmp_path, kw, why):
     assert st["status"] == "error" and why in st["error"] and up.staged() is None
 
 
-def test_mac_an_ad_hoc_running_app_has_no_team_to_match(tmp_path):
-    up, *_ = mac_setup(tmp_path, running_team=None, new_team="ABCDE12345")
-    assert up.check()["status"] == "ready"
+def test_mac_an_ad_hoc_running_app_does_not_self_update(tmp_path):
+    """No Team ID to match the new signature against: it only announces, and downloads nothing."""
+    up, gh, _r, _c = mac_setup(tmp_path, running_team=None, new_team="ABCDE12345")
+    st = up.check()
+    assert st["status"] == "available" and not st["canApply"] and "ad-hoc" in st["why"]
+    assert not any(c.endswith(ZIP_NAME) for c in gh.calls) and up.apply()[0] is False
+    # and the check itself refuses a running app without a team, even when reached directly
+    new = tmp_path / "x" / "Clawd.app"
+    (new / "Contents").mkdir(parents=True)
+    (new / "Contents" / "Info.plist").write_bytes(plistlib.dumps(
+        {"CFBundleIdentifier": au.BUNDLE_ID, "CFBundleShortVersionString": "0.2.0"}))
+    ok = lambda cmd, **kw: SimpleNamespace(returncode=0, stdout="", stderr="TeamIdentifier=not set\n")  # noqa: E731
+    with pytest.raises(au.UpdateError, match="ad-hoc"):
+        au.check_bundle(new, "0.2.0", None, ok)
+    with pytest.raises(au.UpdateError, match="ad-hoc"):
+        au.check_bundle(new, "0.2.0", tmp_path, ok)                  # a running app that has no team
 
 
 def test_mac_apply_starts_the_swap_script(tmp_path, monkeypatch):
@@ -432,7 +446,7 @@ def swap_env(tmp_path, ditto_ok=True):
     (apps / "Clawd.app" / "version").write_text("old")
     (stage / "Clawd.app").mkdir(parents=True)
     (stage / "Clawd.app" / "version").write_text("new")
-    (stage / "ready.json").write_text("{}")
+    (stage / "ready.json").write_text(json.dumps({"version": "0.2.0", "sha256": "0" * 64, "path": "Clawd.app"}))
     (stage / "swap.sh").write_text(au.MAC_SWAP)
     return apps / "Clawd.app", stage, {**os.environ, "PATH": f"{bin_}:{os.environ['PATH']}"}
 
@@ -484,6 +498,12 @@ def test_swap_script_leaves_the_old_app_when_the_copy_fails(tmp_path):
     assert (app / "version").read_text() == "old" and [p.name for p in app.parent.iterdir()] == ["Clawd.app"]
     assert (stage / "failed").read_text().strip() == "0.2.0" and (stage / "ready.json").exists()
     assert (tmp_path / "opened").read_text().strip() == str(app)                  # the old app starts again
+    # the next start still finds the staged update and the marker: it reports the failure, it does not tidy it away
+    up = au.Updater(None, stage, "0.1.0", system="mac", frozen=True)
+    assert up.staged() is not None
+    st = up.state()
+    assert st["status"] == "error" and "trang phát hành" in st["error"] and not st["canApply"]
+    assert (stage / "failed").exists()
 
 
 # ---- the firmware-install marker -----------------------------------------------------------------
