@@ -9,3 +9,10 @@ dist/
 clawd_desktop/firmware/
 clawd_desktop/renderer/
 clawd_desktop/_feed_build.py
+
+# Secrets never go in this public repo (gh secret set -f .env reads them from here)
+.env
+.env.*
+*.p12
+*.p8
+*.pem
