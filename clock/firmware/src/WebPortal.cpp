@@ -15,6 +15,9 @@
 #include "Clock.h"
 #include "SettingsTransaction.h"
 #include "CrashLog.h"
+#if defined(CLAWD_ESP8266)
+#include "PakCrc.h"
+#endif
 
 // Defined in main.cpp — re-init every mode + force a repaint after a config change.
 extern void appInvalidate();
@@ -292,6 +295,10 @@ static void handleHeap() {
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();
   o["desk"] = deskPackCount();          // 0 = /desk.pak missing or invalid
+#if defined(CLAWD_ESP8266)
+  o["pakCrc"] = pakCrcHex(PAK_CLAWD);   // zlib CRC-32 of the pack file, "" while unknown
+  o["deskCrc"] = pakCrcHex(PAK_DESK);
+#endif
   o["onDesk"] = clawdUiOnDesk();
   o["onStyle"] = clawdUiOnStyle();
   o["deskAnim"] = clawdUiDeskAnimName();   // what the desk player shows now (variants too)
@@ -322,6 +329,7 @@ static void handleHeap() {
 //   curl -F "file=@data/clawd.pak" http://<ip>/api/clawdpak
 static File g_pakUpload;
 static bool g_pakFailed = false;
+static uint32_t g_pakCrc = 0;      // CRC-32 of what streamed in so far
 static const char* g_pakTmp = "/clawd.pak.tmp";
 static void pakUpload();
 static void handleClawdPakUpload() { g_pakTmp = "/clawd.pak.tmp"; pakUpload(); }
@@ -337,6 +345,9 @@ static void handleDeskPakUpload() {
     clawdUiDeskReleased();
     LittleFS.remove(DESK_PACK_PATH);
     LittleFS.remove(g_pakTmp);
+#if defined(CLAWD_ESP8266)
+    pakCrcForget(PAK_DESK);
+#endif
   }
   pakUpload();
 }
@@ -352,10 +363,12 @@ static void pakUpload() {
   }
   if (up.status == UPLOAD_FILE_START) {
     g_pakFailed = false;
+    g_pakCrc = 0;
     g_pakUpload = LittleFS.open(g_pakTmp, "w");
     if (!g_pakUpload) g_pakFailed = true;
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (g_pakUpload && g_pakUpload.write(up.buf, up.currentSize) != up.currentSize) g_pakFailed = true;
+    g_pakCrc = styleCrc32(up.buf, up.currentSize, g_pakCrc);
   } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
     if (g_pakUpload) g_pakUpload.close();
     if (up.status == UPLOAD_FILE_ABORTED) g_pakFailed = true;
@@ -372,9 +385,16 @@ static void handleClawdPakDone() {
   } else {
     LittleFS.remove("/clawd.pak.tmp");
   }
+#if defined(CLAWD_ESP8266)
+  if (ok) pakCrcSet(PAK_CLAWD, g_pakCrc);
+  else pakCrcForget(PAK_CLAWD);
+#endif
   JsonDocument doc;
   doc["ok"] = ok;
   doc["anims"] = clawdPackCount();
+#if defined(CLAWD_ESP8266)
+  doc["crc"] = pakCrcHex(PAK_CLAWD);
+#endif
   sendJson(doc, ok ? 200 : 500);
 }
 // Same for the desk animations (/desk.pak, clawd-home tools/desk):
@@ -389,9 +409,16 @@ static void handleDeskPakDone() {
   } else {
     LittleFS.remove("/desk.pak.tmp");
   }
+#if defined(CLAWD_ESP8266)
+  if (ok) pakCrcSet(PAK_DESK, g_pakCrc);
+  else pakCrcForget(PAK_DESK);
+#endif
   JsonDocument doc;
   doc["ok"] = ok;
   doc["anims"] = deskPackCount();
+#if defined(CLAWD_ESP8266)
+  doc["crc"] = pakCrcHex(PAK_DESK);
+#endif
   sendJson(doc, ok ? 200 : 500);
 }
 
@@ -552,6 +579,7 @@ static void handleFsPutDone() {
   String p;
   if (!fsPathArg(p)) return;
   if (g_fsPutFailed) LittleFS.remove(p);
+  if (pakCrcIndex(p.c_str()) >= 0) pakCrcForget((uint8_t)pakCrcIndex(p.c_str()));   // checksummed in the background
   File f = LittleFS.open(p, "r");
   JsonDocument doc;
   doc["ok"] = !g_fsPutFailed && f;
@@ -565,6 +593,7 @@ static void handleFsRm() {
   if (!fsPathArg(p)) return;
   if (p == DESK_PACK_PATH) clawdUiDeskReleased();
   const bool ok = LittleFS.remove(p);
+  if (pakCrcIndex(p.c_str()) >= 0) pakCrcForget((uint8_t)pakCrcIndex(p.c_str()));
   JsonDocument doc;
   doc["ok"] = ok;
   sendJson(doc, ok ? 200 : 404);

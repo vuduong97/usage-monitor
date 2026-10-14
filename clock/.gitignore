@@ -24,3 +24,8 @@ firmware/.stock-backup/
 .pio/
 # clangd index
 firmware/.cache/
+# Firmware feed: wrangler state, release output and keys (never commit)
+.wrangler/
+rel/
+key.b64
+.dev.vars

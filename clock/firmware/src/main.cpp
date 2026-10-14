@@ -20,6 +20,9 @@
 #include "ClawdUi.h"
 uint32_t webLastHeapMs();   // WebPortal: when /api/heap was last answered
 #include "features/clawd/StyleStore.h"
+#if defined(CLAWD_ESP8266)
+#include "PakCrc.h"
+#endif
 
 // ---- mode -------------------------------------------------------------------
 // The one compiled-in feature owns its fetch/render/dirty tracking; main.cpp
@@ -201,6 +204,9 @@ void loop() {
   netLoop();
   partEnd(0, partT);
   webPortalLoop();
+#if defined(CLAWD_ESP8266)
+  pakCrcService();      // background CRC of the packs for /api/heap (a few ms at most)
+#endif
   partEnd(1, partT);
 
   if (webPortalRebootDue()) {

@@ -2,7 +2,7 @@
 
 The firmware of the Clawd desk clock: the JUZIPi "Smart Weather Clock" / SD Pro
 (ESP8266, 240x240 ST7789, WiFi only). Keep the repo private: it embeds
-Anthropic's Clawd art and the Styrene/Tiempos fonts. Origins are in `NOTICE`.
+Anthropic's Clawd art and the Styrene/Tiempos fonts.
 
 Build: `cd firmware && pio run -e clawd` (the clock), `-e clawd_loader` (a tiny
 OTA trampoline for stock clocks whose updater is too small, e.g. the "ultra").
@@ -94,7 +94,7 @@ curl -F "file=@config.json;filename=config.json" $H/upload
 curl -F "update=@.pio/build/clawd/firmware.bin;filename=SDP_clawd.bin" $H/update_ota
 ```
 
-To update this firmware later, use `curl -F "firmware=@.pio/build/clawd/firmware.bin" $H/update`, or the System tab. To replace the pack in place, use `curl -F "file=@data/clawd.pak" $H/api/clawdpak`.
+To update this firmware later, use `curl -F "firmware=@.pio/build/clawd/firmware.bin" $H/update`, or the System tab. For other people's clocks, publish a release to the firmware feed (`tools/release.sh`, `feed/README.md`); Clawd desktop then offers it. To replace the pack in place, use `curl -F "file=@data/clawd.pak" $H/api/clawdpak`.
 
 ## Back to stock (verified 2026-10-11)
 
@@ -129,6 +129,12 @@ The Clawd desktop app finds the clock over mDNS (`_clawd._tcp`, TXT `id`, `ver`,
 - `loopMaxMs`: the longest `loop()` pass over the last 1–2 minutes; `loopPartsMs` splits it into `[net, web, screen]`. A style install shows ~1–2 s in web: the upload, the slot copy and the LittleFS rename all run inside the request handler
 - `pak` (animations loaded; 0 means `/clawd.pak` is missing), `splash`, `anim`
 - `desk` (animations in `/desk.pak`), `onDesk`, `fsTotal`, `fsUsed`
+- `pakCrc`, `deskCrc`: the CRC-32 of `/clawd.pak` and `/desk.pak`, or `""` while unknown (`src/PakCrc.cpp`).
+  - Each is kept in a sidecar `<pack>.crc` (`"<hex> <size>"`) so it survives a reboot.
+  - It is set by the pack upload handlers while they stream.
+  - It is dropped by `fs/put` and `fs/rm` on the pack.
+  - It is recomputed in 3 ms slices from `loop()` starting 30 s after boot whenever the sidecar is missing or its size is stale. `desk.pak` takes about a minute.
+  - The firmware feed (`feed/README.md`) uses these to send only the packs that changed.
 - `contFree`: the least free `loop()` stack seen so far (of 4 KB)
 - `crash` (only after one): the last crash since power on, from `custom_crash_callback` in RTC memory (`src/CrashLog.cpp`): count, reason, exccause, epc, excvaddr and the code addresses found on the stack (feed them to `addr2line`). On this core a panic/abort/stack overflow restarts as "Software/System restart", like `ESP.restart()`; with the record, `reset` then reads `Crash (panic/abort/stack)`.
 - `deskStats`: over the last 128 desk frames, `drawP50`/`drawP95`/`drawMax` (µs to decode and push one frame) and `lateP95` (µs a frame started after its time)
@@ -162,4 +168,4 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `tools/gzip_webui.py` | Writes `src/webui.h` (gzip) from `src/webui.html`, the single web UI source. |
 | `tests/host/run.sh` | Host test: applies a config with dead keys through `Settings.cpp` and the save/load path, and compares with `fixtures/expected.json`. |
 
-Build (`pio run -e clawd`, style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).
+Build (`pio run -e clawd`, pack CRCs, fwSeq 6): 501,520 B image. Before (style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).
