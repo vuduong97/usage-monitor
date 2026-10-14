@@ -15,6 +15,8 @@ PAYLOAD_FILE = CONFIG_DIR / "usage_payload.json"   # the last usage payload sent
 LOG_FILE = CONFIG_DIR / "clawd-desktop.log"
 PAK_FILE = CONFIG_DIR / "clawd.pak"           # the clock's Clawd sprites, read from the clock (preview)
 HOOK_SCRIPT = CONFIG_DIR / "clawd-event.sh"  # copied here so app updates never break hooks
+OTA_BUSY_FILE = CONFIG_DIR / "ota.busy"      # exists while the settings window installs firmware on the clock
+OTA_BUSY_STALE = 900.0                        # ... unless nobody touched it for this long (s)
 LOG_MAX = 1_000_000
 
 
@@ -35,6 +37,28 @@ def save_prefs(data: dict) -> None:
     tmp = PREFS_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, indent=2))
     tmp.replace(PREFS_FILE)
+
+
+def set_ota_busy(on: bool, path: Path | None = None) -> None:
+    """Mark (or touch, or clear) a firmware install in progress. The tray reads it so an app
+    update never restarts the app in the middle of an upload to the clock."""
+    path = path or OTA_BUSY_FILE
+    try:
+        if on:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(str(time.time()))
+        else:
+            path.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def ota_busy(path: Path | None = None, now: float | None = None) -> bool:
+    try:
+        age = (time.time() if now is None else now) - (path or OTA_BUSY_FILE).stat().st_mtime
+    except OSError:
+        return False
+    return age < OTA_BUSY_STALE
 
 
 SCREEN_USAGE = 1                              # the clock's `usage.screen`: 0 auto, 1 usage, 2 clawd

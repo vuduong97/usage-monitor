@@ -234,7 +234,7 @@ function loop(now) {
 
 // ---------- render from state ----------
 function renderAll() {
-  renderConn(); renderDisplay(); renderGallery(); renderWifi(); renderUpdate(); renderApp(); renderBar();
+  renderConn(); renderDisplay(); renderGallery(); renderWifi(); renderAppUpdate(); renderUpdate(); renderApp(); renderBar();
 }
 function renderConn() {
   const dot = $('connDot'), t = $('connText');
@@ -398,6 +398,60 @@ async function doScan() {
   if (wifiOpen && wifiOpen.list === 'near' && !(scan.nets || []).some(n => n.ssid === wifiOpen.ssid)) wifiOpen = null;
   renderWifi();
 }
+// ---------- the app's own update (appupdate.py) ----------
+let appUpTimer = 0, appUpIdle = 0;
+function renderAppUpdate() {
+  const u = S && S.app && S.app.update;
+  $('appUpBox').classList.toggle('hide', !u);
+  if (!u) return;
+  const kv = $('appUpKv'); kv.replaceChildren();
+  const add = (k, v) => kv.append(el('span', null, k), el('span', null, v));
+  add('Đang chạy', `Clawd ${u.current}`);
+  if (u.version && u.status !== 'current') add('Bản mới', `Clawd ${u.version}`);
+  if (u.version && u.notes && u.status !== 'current') add('Ghi chú', u.notes.replace(/\s+/g, ' ').slice(0, 200));
+  const pct = Math.round((u.progress || 0) * 100);
+  const manual = u.version && !u.canApply && u.status !== 'checking' && u.status !== 'downloading';
+  $('appUpText').textContent = manual ? `Có bản ${u.version}. ${u.why} Bạn có thể tải bản cài đặt từ trang phát hành.` : {
+    checking: 'Đang hỏi GitHub xem có bản mới không…',
+    downloading: `Đang tải bản ${u.version || 'mới'}${pct ? ' · ' + pct + '%' : ''}…`,
+    ready: `Đã tải xong bản ${u.version} và kiểm tra tính toàn vẹn. Khởi động lại Clawd để dùng bản này (cài đặt và mật khẩu được giữ nguyên).`,
+    available: `Có bản ${u.version}.`,
+    current: `Clawd ${u.current} là bản mới nhất.`,
+    error: u.error || 'Không cập nhật được.',
+    idle: u.checked ? `Clawd ${u.current} là bản mới nhất.` : 'Chưa kiểm tra.',
+  }[u.status] || '';
+  $('appUpBar').classList.toggle('hide', u.status !== 'downloading');
+  $('appUpFill').style.width = pct + '%';
+  const btn = $('appUpBtn');
+  btn.textContent = manual ? 'Mở trang tải' : 'Khởi động lại để cập nhật';
+  btn.disabled = manual ? false : !(u.status === 'ready' && u.canApply) || busy;
+  $('appUpCheck').disabled = u.status === 'checking' || u.status === 'downloading';
+  pollAppUpdate();
+}
+function pollAppUpdate() {       // while it is checking or downloading, ask again every second
+  clearTimeout(appUpTimer);
+  const u = S && S.app && S.app.update;
+  if (!u) return;
+  const active = u.status === 'checking' || u.status === 'downloading';
+  if (!active && !(u.status === 'idle' && !u.checked && ++appUpIdle < 20)) return;
+  appUpTimer = setTimeout(async () => {
+    const r = api && await api.app_update();
+    if (r && r.ok && S && S.app) { S.app.update = r; renderAppUpdate(); }
+    else pollAppUpdate();
+  }, 1000);
+}
+$('appUpBtn').addEventListener('click', async () => {
+  const u = S && S.app && S.app.update; if (!u) return;
+  if (u.status === 'ready' && u.canApply) {
+    $('appUpBtn').disabled = true; msg('Đang khởi động lại để cập nhật…');
+    const r = await api.app_update_apply();
+    if (!r.ok) { msg(r.error, 'err'); renderAppUpdate(); }
+  } else api.app_update_page();
+});
+$('appUpCheck').addEventListener('click', async () => {
+  const r = await api.app_update_check();
+  if (r.ok && S && S.app) { S.app.update = r; appUpIdle = 0; renderAppUpdate(); } else if (!r.ok) msg(r.error, 'err');
+});
 function renderUpdate() {
   const kv = $('fwKv'); kv.replaceChildren();
   const h = (S && S.heap) || {}, fw = S && S.fw;

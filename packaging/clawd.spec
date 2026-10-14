@@ -67,6 +67,10 @@ a = Analysis(
     noarchive=False,
 )
 pyz = PYZ(a.pure)
+# macOS: CLAWD_SIGN_IDENTITY ("Developer ID Application: ...") signs every binary with the hardened
+# runtime, which notarization needs; without it build_mac.sh falls back to an ad-hoc signature.
+SIGN = os.environ.get("CLAWD_SIGN_IDENTITY") or None if sys.platform == "darwin" else None
+ENTITLEMENTS = str(ROOT / "packaging" / "entitlements.plist") if SIGN else None
 exe = EXE(
     pyz, a.scripts, [],
     exclude_binaries=True,
@@ -75,6 +79,8 @@ exe = EXE(
     icon=icon,
     upx=False,
     argv_emulation=False,
+    codesign_identity=SIGN,
+    entitlements_file=ENTITLEMENTS,
 )
 coll = COLLECT(exe, a.binaries, a.datas, name="Clawd", upx=False)
 
@@ -83,8 +89,10 @@ if sys.platform == "darwin":
         coll,
         name="Clawd.app",
         icon=icon,
-        bundle_identifier="vn.clawd.desktop",
+        bundle_identifier="vn.clawd.desktop",   # appupdate.BUNDLE_ID: a downloaded update must carry it
         version=__version__,
+        codesign_identity=SIGN,
+        entitlements_file=ENTITLEMENTS,
         info_plist={
             "CFBundleName": "Clawd",
             "CFBundleDisplayName": "Clawd",

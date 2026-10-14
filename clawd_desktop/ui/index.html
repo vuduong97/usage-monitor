@@ -624,6 +624,20 @@
       .steps span.done {
         background: var(--ok);
       }
+      .bar {
+        height: 4px;
+        border-radius: 4px;
+        background: var(--line);
+        overflow: hidden;
+        margin: 0 0 10px;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--acc);
+        transition: width 0.3s;
+      }
       .kv {
         display: grid;
         grid-template-columns: 130px 1fr;
@@ -924,7 +938,19 @@
           <!-- UPDATE -->
           <section data-pane="update" class="hide">
             <h2>Cập nhật &amp; bảo trì</h2>
-            <p class="sub">Firmware và gói hoạt hình mới nhất cho đồng hồ, cài qua Wi‑Fi.</p>
+            <p class="sub">
+              Bản mới của app Clawd, và firmware cùng gói hoạt hình cho đồng hồ (cài qua Wi‑Fi).
+            </p>
+            <div class="box" id="appUpBox">
+              <h3>Ứng dụng Clawd</h3>
+              <div class="kv" id="appUpKv"></div>
+              <p id="appUpText" style="margin: 10px 0"></p>
+              <div class="bar hide" id="appUpBar" aria-hidden="true"><i id="appUpFill"></i></div>
+              <div class="row">
+                <button class="btn" id="appUpBtn" disabled>Khởi động lại để cập nhật</button>
+                <button class="btn ghost small" id="appUpCheck">Kiểm tra bản mới</button>
+              </div>
+            </div>
             <div class="box">
               <h3>Firmware</h3>
               <div class="kv" id="fwKv"></div>

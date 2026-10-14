@@ -302,7 +302,8 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
     assert public == sorted(["state", "login", "preview", "save", "scan", "reboot", "factory_reset",
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
                              "set_hooks", "open_log", "open_web", "set_clock", "usage_preview",
-                             "clawd_pak", "check_update", "fw"])
+                             "clawd_pak", "check_update", "fw", "app_update", "app_update_check",
+                             "app_update_apply", "app_update_page"])
 
 
 def test_main_screen_is_handed_to_the_engine():

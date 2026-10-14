@@ -152,11 +152,35 @@ sh packaging/build_mac.sh                             # build Clawd.app + .dmg (
 ./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows)
 ```
 
-Phát hành: đẩy tag `vX.Y.Z` lên GitHub, workflow **Release** build `.dmg` (Apple silicon và
-Intel) và `.exe`, rồi đính vào một GitHub Release. Hai secret `CLAWD_FEED_URL` và
-`CLAWD_FEED_TOKEN` của repo cho bản build biết nguồn firmware. Thiếu hai secret này thì
-app vẫn chạy, nhưng không tự tìm được firmware mới. Nhớ tăng `__version__` trong
-`clawd_desktop/__init__.py`.
+Phát hành: tăng `__version__` trong `clawd_desktop/__init__.py` **và** `version` trong
+`pyproject.toml` (hai nơi phải giống nhau và giống tag), rồi đẩy tag `vX.Y.Z` lên GitHub.
+Workflow **Release** build `.dmg` + `.zip` (Apple silicon và Intel) và `-setup.exe`, tạo
+`SHA256SUMS`, rồi phát hành một GitHub Release (tag có dấu `-`, ví dụ `v1.2.3-rc1`, là
+prerelease: app không tự cập nhật lên). Hai secret `CLAWD_FEED_URL` và `CLAWD_FEED_TOKEN`
+cho bản build biết nguồn firmware; thiếu thì app vẫn chạy nhưng không tự tìm được firmware mới.
+
+Ký và notarize bản mac (tuỳ chọn nhưng nên có): thêm các secret `MACOS_CERT_P12` (file
+`.p12` của *Developer ID Application*, mã hoá base64), `MACOS_CERT_PASSWORD`,
+`MACOS_SIGN_IDENTITY` (`Developer ID Application: Tên (TEAMID)`), `APPLE_ID`, `APPLE_TEAM_ID`,
+`APPLE_APP_PASSWORD` (mật khẩu ứng dụng của Apple ID). Thiếu chúng thì build mac chỉ ký
+ad-hoc và workflow in một cảnh báo.
+
+### Tự cập nhật app
+
+App hỏi `api.github.com/repos/vuduong97/usage-monitor/releases/latest` (công khai, không token)
+sau khi mở 90 giây rồi mỗi 6 giờ; bản prerelease và draft bị bỏ qua. Có bản mới hơn thì app tải
+nền file hợp với máy (`Clawd-X.Y.Z-mac-<arm64|x86_64>.zip` hoặc `Clawd-X.Y.Z-windows-setup.exe`),
+so SHA-256 với `SHA256SUMS` của release, và trên mac kiểm tra chữ ký, bundle id, số phiên bản
+và **Team ID trùng với app đang chạy**. Xong thì tray và tab Cập nhật hiện *Khởi động lại để
+cập nhật*; chỉ khi người dùng bấm mới thay app (mac: script nền chờ app thoát, thay bundle,
+mở lại; Windows: chạy bộ cài im lặng đè lên bản cũ). Không thay khi đang cập nhật firmware
+cho đồng hồ. Mac chạy từ ổ đĩa `.dmg`, thư mục không ghi được, hoặc bản chỉ ký ad-hoc (không có Team ID để
+đối chiếu) thì chỉ báo có bản mới. Giới hạn đã biết: trên Windows bộ cài chưa ký (Authenticode),
+nên SHA-256 chỉ chứng minh file đúng với `SHA256SUMS` của cùng release, không chứng minh ai tạo ra nó.
+Trạng thái nằm trong `~/.config/claude-usage-monitor/app-update/`; `auto_update = off`
+trong file config tắt việc tự kiểm tra (nút *Kiểm tra bản mới* vẫn dùng được),
+`update_repo = owner/name` đổi repo. Bản cài đầu tiên có tính năng này phải cài tay; từ đó trở đi
+mới tự cập nhật.
 
 Cấu trúc:
 
@@ -172,6 +196,7 @@ clawd_desktop/
   clockapi.py    API cài đặt của đồng hồ (/api/config, /update, digest auth)
   firmware.py, ota.py   firmware đi kèm app và cách cài (tạm dừng gửi qua pause.py)
   feed.py        nguồn firmware: hỏi bản mới, tải, giải mã trong RAM, so CRC gói với đồng hồ
+  appupdate.py   tự cập nhật app: GitHub Releases, SHA-256, Team ID, thay app khi người dùng bấm
   hooks.py       thêm/gỡ hook Claude Code trong settings.json
   autostart.py   LaunchAgent (Mac) / HKCU Run (Windows)
 integrations/    extension pi và lệnh `clawd` (tuỳ chọn, cho người dùng nâng cao)

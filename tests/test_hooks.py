@@ -78,9 +78,10 @@ def test_merge_keeps_existing_hooks_and_is_idempotent():
 def test_merge_replaces_the_old_clawd_home_hook():
     old = json.loads(json.dumps(EXISTING))
     old["hooks"]["Stop"].append(OLD_CLAWD_HOME)
-    new = hooks.merge(old, hooks.handler("darwin", port=47913, script=Path("/new/clawd-event.sh")))
+    script = Path("/new/clawd-event.sh")
+    new = hooks.merge(old, hooks.handler("darwin", port=47913, script=script))
     stops = [g["hooks"][0]["command"] for g in new["hooks"]["Stop"]]
-    assert stops == ["node heartbeat.cjs", "'/new/clawd-event.sh'"]
+    assert stops == ["node heartbeat.cjs", f"'{script}'"]       # the path as the OS writes it (\\ on Windows)
 
 
 def test_windows_hook_is_async_curl_in_exec_form():
