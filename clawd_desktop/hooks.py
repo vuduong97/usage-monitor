@@ -27,14 +27,17 @@ EVENTS = list(events.CLAUDE_HOOK_EVENTS)
 MARKS = ("clawd-event", "/hook/claude")
 
 HOOK_SH = """#!/bin/sh
-# clawd-event.sh: Claude Code hook. Forwards the hook payload (stdin JSON) to the
-# Clawd desktop app on 127.0.0.1, which turns it into what the clock shows.
+# clawd-event.sh [agent] [event]: an agent hook (Claude Code, Codex, Gemini CLI,
+# Cursor, Copilot CLI). Forwards the hook payload (stdin JSON) to the Clawd
+# desktop app on 127.0.0.1, which turns it into what the clock shows. No
+# arguments = Claude Code (the hooks older versions installed).
 # Never blocks or fails the agent: app not running -> curl gives up at once
 # (refused) or after 0.3 s (stuck), and the script always exits 0 silently.
 port=${CLAWD_EVENT_PORT:-%(port)d}
+url="http://127.0.0.1:${port}/hook/${1:-claude}"
+[ -n "$2" ] && url="${url}?e=$2"
 curl -s -o /dev/null --max-time 0.3 --connect-timeout 0.2 \\
-  -H 'Content-Type: application/json' --data-binary @- \\
-  "http://127.0.0.1:${port}/hook/claude" >/dev/null 2>&1
+  -H 'Content-Type: application/json' --data-binary @- "$url" >/dev/null 2>&1
 exit 0
 """
 

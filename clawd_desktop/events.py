@@ -6,8 +6,9 @@ named animation from /desk.pak with an optional text line, countdown and
 brightness cap (POST /api/state, see the firmware's UsageClient.cpp).
 
 Sources, all on 127.0.0.1 (EventServer):
-  POST /hook/claude  raw Claude Code hook payload (integrations/claude)
-  POST /hook/pi      normalized pi extension event (integrations/pi)
+  POST /hook/<agent> one hook payload of that agent (clawd_desktop/agents): claude,
+                     codex, gemini, cursor, copilot raw; pi and opencode already shaped
+                     by their plugin. `?e=<event>` names the event when the payload does not.
   POST /poke         `clawd` CLI commands (integrations/cli)
   GET  /state        what the clock should show now + live sessions (debug)
 
@@ -179,19 +180,27 @@ VARIANTS = {
 WORKING_VARIANTS = ("building", "carrying", "typing boss")  # a tool with no action: "Working"
 WIZARD_TEXT = "Long task"
 DEBUG_TEXT = "Debugging"
+# Claude Code and pi names first; then Codex (apply_patch, update_plan), Gemini CLI
+# (run_shell_command, read_file, ...), Cursor (Shell, Delete) and Copilot CLI (view,
+# create, str_replace_editor, ...).
 TOOL_ACTIONS = {
-    **dict.fromkeys(("bash", "bashoutput", "bg_run"), "run"),
-    **dict.fromkeys(("read", "notebookread", "ls", "read_symbol", "read_enclosing"), "read"),
-    **dict.fromkeys(("edit", "multiedit", "write", "notebookedit"), "edit"),
-    **dict.fromkeys(("grep", "glob", "find", "symbol_search"), "search"),
-    **dict.fromkeys(("webfetch", "websearch", "web_fetch", "batch_web_fetch"), "browse"),
-    **dict.fromkeys(("todowrite", "todo"), "plan"),
+    **dict.fromkeys(("bash", "bashoutput", "bg_run", "shell", "run_shell_command", "powershell",
+                     "exec_command"), "run"),
+    **dict.fromkeys(("read", "notebookread", "ls", "read_symbol", "read_enclosing", "read_file",
+                     "read_many_files", "list_directory", "view"), "read"),
+    **dict.fromkeys(("edit", "multiedit", "write", "notebookedit", "apply_patch", "write_file",
+                     "replace", "create", "str_replace_editor", "delete"), "edit"),
+    **dict.fromkeys(("grep", "glob", "find", "symbol_search", "search_file_content", "rg"), "search"),
+    **dict.fromkeys(("webfetch", "websearch", "web_fetch", "batch_web_fetch", "web_search",
+                     "google_web_search"), "browse"),
+    **dict.fromkeys(("todowrite", "todo", "update_plan", "write_todos", "update_todo"), "plan"),
 }
 
 
 # Tools an agent uses to ask the user something: the clock shows Clawd looking left
 # and right with a "?" (react left/right) instead of the plain notification.
-QUESTION_TOOLS = {"ask_user_question", "ask_user", "question", "askuserquestion"}
+QUESTION_TOOLS = {"ask_user_question", "ask_user", "question", "askuserquestion",
+                  "request_user_input"}
 QUESTION_SEQ = ("react left", "react right")
 # What the clock says while a question is open. The question itself never shows
 # (it never even leaves the hook): one phrase is picked per question, at random,
@@ -496,8 +505,8 @@ CLAUDE_HOOK_EVENTS = sorted([*_CLAUDE_SIMPLE, "PreToolUse", "PermissionRequest",
 
 def claude_event(p) -> dict | None:
     """Map one Claude Code hook payload (its stdin JSON) onto a tracker event."""
-    if not isinstance(p, dict):
-        return None
+    if not isinstance(p, dict) or "cursor_version" in p:
+        return None          # Cursor running Claude Code's hooks: its own adapter reports it
     name = p.get("hook_event_name")
     sid = p.get("session_id")
     if not isinstance(name, str) or not isinstance(sid, str) or not sid:
@@ -1067,7 +1076,8 @@ class EventServer:
         parts = (await r.readline()).decode("latin1").split()
         if len(parts) < 2:
             return 400, {"ok": False}
-        method, path = parts[0], parts[1].split("?", 1)[0]
+        method, target = parts[0], parts[1]
+        path, _, query = target.partition("?")
         headers = {}
         while True:
             h = (await r.readline()).decode("latin1")
@@ -1098,13 +1108,17 @@ class EventServer:
             if res.get("ok"):
                 self.brain.wake.set()
             return (200 if res.get("ok") else 400), res
-        if path == "/hook/claude":
-            ev = claude_event(p)
-        elif path == "/hook/pi":
-            ev = pi_event(p)
-        else:
+        if not path.startswith("/hook/"):
             return 404, {"ok": False}
-        if ev and self.brain.tracker.ingest(ev, now):
+        from clawd_desktop import agents        # lazy: the adapters import this module
+        hint = urllib.parse.parse_qs(query).get("e", [""])[0][:40]
+        evs = agents.normalize(path[len("/hook/"):], p, hint)
+        if evs is None:
+            return 404, {"ok": False}
+        changed = False
+        for ev in evs:
+            changed = self.brain.tracker.ingest(ev, now) or changed
+        if changed:
             self.brain.wake.set()
         return 200, {"ok": True}
 

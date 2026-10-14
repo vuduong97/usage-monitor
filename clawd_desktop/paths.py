@@ -24,6 +24,14 @@ def frozen() -> bool:
     return bool(getattr(sys, "frozen", False))
 
 
+def integration(rel: str) -> Path:
+    """A file the app copies into an agent (integrations/pi/clawd-home.ts, the opencode
+    plugin): bundled into the frozen app (packaging/clawd.spec), else the repo's copy."""
+    if frozen():
+        return Path(getattr(sys, "_MEIPASS", ".")) / "clawd_desktop" / "integrations" / rel
+    return Path(__file__).resolve().parent.parent / "integrations" / rel
+
+
 def load_prefs() -> dict:
     try:
         data = json.loads(PREFS_FILE.read_text())
