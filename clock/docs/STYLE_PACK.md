@@ -117,7 +117,7 @@ How the two copies are kept in step:
 
 ```sh
 cd firmware
-node tools/style/build.js <Clawdmeter>/firmware/src     # writes styles/*.pak + styles/index.json
+node tools/style/build.js <clawd-home>/firmware/src     # writes styles/*.pak + styles/index.json
 ```
 
 The argument is the reference firmware's `src`, which holds the LVGL font `.c`
@@ -191,7 +191,7 @@ Porting works like this:
   `fresh` bit does not need live data, so a fresh-only op also needs `ok`.
 
 ```sh
-node tools/style/build.js <Clawdmeter>/firmware/src
+node tools/style/build.js <clawd-home>/firmware/src
 CLAWD_STYLES_ONLY=1 [CLAWD_STYLE_ONLY=<id>] sh tools/clawd_preview/run.sh /tmp/cp
 python3 tools/style/compare.py "<sheet>.html" /tmp/cp /tmp/cmp [<id> ...]
 ```

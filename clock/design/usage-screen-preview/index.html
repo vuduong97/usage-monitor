@@ -256,7 +256,7 @@ function clawdTint(c, x, y, s, o, key) {
 }
 function sweat(c, x, y) { c.fillStyle = '#6a9bcc'; c.beginPath(); c.moveTo(x, y - 7); c.lineTo(x - 4, y + 1); c.lineTo(x + 4, y + 1); c.fill(); c.beginPath(); c.arc(x, y + 2, 4, 0, Math.PI * 2); c.fill(); }
 
-// whimsical status line (Clawdmeter spinner)
+// whimsical status line
 const SPIN = ['·','✻','✽','✶','✳','✢'], SPIN_MS = [260,130,130,130,130,260];
 const MSG = ['Perusing','Envisioning','Clauding','Noodling','Percolating','Reticulating','Simmering','Vibing'];
 function statusText(d, now) {
@@ -278,7 +278,7 @@ function header(c, d) {          // mascot window + Tiempos clock (current firmw
 const DESIGNS = [
 {
   id:'base', tag:'Đã có · layout 0', name:'0 · Classic (firmware)', base:true,
-  desc:'Bố cục Clawdmeter compact đang chạy: hai thẻ Current / Weekly, đồng hồ Tiempos, dòng trạng thái spinner.',
+  desc:'Bố cục compact đang chạy: hai thẻ Current / Weekly, đồng hồ Tiempos, dòng trạng thái spinner.',
   pros:['**Quen thuộc**, đã chạy ổn trên máy','Đọc được mọi con số'],
   cons:['Hai thẻ nặng ký như nhau: mắt không biết nhìn đâu trước','Không cho biết đang dùng **nhanh hay chậm** so với thời gian'],
   cost:'!!Không đổi gì.!!',
