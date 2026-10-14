@@ -149,6 +149,10 @@ static bool toClawdData(const Doc& d, ClawdData& c) {
   if (rd && rd->isStr) strncpy(c.resetDate, rd->str.c_str(), sizeof(c.resetDate) - 1);
   c.clockEpoch = (long)numOr(d, "t", 0);
   c.clockFmt = (int)numOr(d, "tf", 24);
+#ifdef CLAWD_HAS_SOURCE
+  const Val* src = d.get("src");       // firmware fwSeq 7+: whose usage ("codex", "off")
+  if (src && src->isStr) strncpy(c.source, src->str.c_str(), sizeof(c.source) - 1);
+#endif
   return true;
 }
 

@@ -76,6 +76,8 @@ def main() -> int:
     cxx = os.environ.get("CXX", "c++")
     cmd = [cxx, "-std=c++17", "-O2", "-Wall", "-Wextra", "-Wno-unused-function", "-Wno-missing-field-initializers",
            f"-I{clawd}", str(MAIN), *[str(clawd / n) for n in SOURCES], "-o", str(exe)]
+    if "source[" in (clawd / "ClawdUi.h").read_text(encoding="utf-8"):
+        cmd.insert(1, "-DCLAWD_HAS_SOURCE")      # firmware that labels whose usage it shows (src)
     if sys.platform == "win32":
         cmd += ["-static"]
     print(" ".join(cmd))

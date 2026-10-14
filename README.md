@@ -11,7 +11,9 @@ Không cần nhập địa chỉ IP, không cần sửa file cấu hình.
 
 - Đồng hồ Clawd (đã được cài sẵn phần mềm clawd).
 - Máy Mac (macOS 11 trở lên) hoặc Windows 10/11, **cùng mạng WiFi với đồng hồ**.
-- Claude Code đã đăng nhập trên máy đó (gõ `claude` một lần, đăng nhập tài khoản Claude Pro/Max).
+- Ít nhất một coding agent trên máy đó: Claude Code, pi, Codex CLI, Gemini CLI, Cursor, opencode
+  hoặc Copilot CLI. Muốn đồng hồ hiện mức dùng thì cần Claude Code đã đăng nhập (Pro/Max) hoặc
+  Codex CLI (gói Plus/Pro).
 
 ## Bước 1: cho đồng hồ vào WiFi nhà bạn
 
@@ -77,13 +79,25 @@ Chấm nhỏ trên biểu tượng cho biết tình trạng:
 | vàng | Đang tìm hoặc đang kết nối đồng hồ |
 | đỏ | Có việc cần bạn làm: bấm vào biểu tượng để xem |
 
-Trong vòng 1–2 phút, đồng hồ hiện mức dùng Claude của bạn. Ứng dụng tự mở cùng máy tính.
+Lần mở đầu tiên, app mở **thiết lập ban đầu** (4 bước):
+
+1. **Đồng hồ**: các đồng hồ app thấy trong mạng (mDNS); chọn một, hoặc nhập IP. Không thấy
+   sau vài giây thì app chỉ cách cho đồng hồ vào WiFi (Bước 1 ở trên).
+2. **Agent**: các agent có trên máy, đánh dấu sẵn. Chưa bấm **Tiếp** thì app chưa sửa gì.
+3. **Usage**: đồng hồ hiện usage của Claude, của Codex CLI, hay không hiện.
+4. **Xong**: những việc còn lại (ví dụ Codex: gõ `/hooks` trong Codex và tin cậy hook của Clawd).
+
+Đóng giữa chừng cũng được: menu tray hiện **● Hoàn tất thiết lập…** cho tới khi xong, và tab
+**App → Chạy lại…** mở lại bất cứ lúc nào. Người nâng cấp từ 0.1.x chỉ thấy hai bước mới
+(Agent, Usage). Cài một agent mới sau này thì menu tray hỏi một lần **● Tìm thấy …: nối với
+Clawd…**; bỏ qua là không hỏi lại. Ứng dụng tự mở cùng máy tính.
 
 Bấm biểu tượng → **Cài đặt…** để mở cửa sổ cài đặt (mọi thứ ở một chỗ, không cần mở
 trang web của đồng hồ):
 
 - **Hiển thị**: độ sáng, xoay màn hình, màn hình chính, hoạt hình Clawd, múi giờ, chế độ đêm.
-- **Usage**: chọn kiểu màn hình usage, xem trước bằng mức dùng thật của bạn, có Clawd chuyển
+- **Usage**: chọn nguồn usage (Claude: mọi tài khoản hoặc một tài khoản; Codex CLI; không hiện)
+  và kiểu màn hình usage, xem trước bằng mức dùng thật của bạn, có Clawd chuyển
   động như trên đồng hồ (bản không kèm firmware vẽ gần đúng, lấy hình Clawd từ chính đồng hồ
   của bạn và giữ trong `~/.config/claude-usage-monitor/clawd.pak`). Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
 - **Wi‑Fi**: các mạng đồng hồ nhớ (tối đa 4, theo thứ tự ưu tiên), tìm mạng quanh đồng hồ,
@@ -93,9 +107,12 @@ trang web của đồng hồ):
   bản mới, menu tray hiện **● Có firmware mới**. Bấm **Kiểm tra bản mới** để hỏi ngay. Chỉ
   những gói khác với đồng hồ mới được gửi. Tab này cũng có sao lưu / khôi phục, khởi động
   lại và xoá cài đặt.
-- **App**: mở cùng máy tính, Clawd phản ứng khi dùng Claude Code (thêm vài dòng "hook"
-  vào `~/.claude/settings.json`, có sao lưu file cũ, tắt đi là gỡ đúng các dòng đó), chọn
-  đồng hồ, mở nhật ký.
+- **Agent**: mỗi agent một công tắc, kèm những gì agent đó báo được cho Clawd (suy nghĩ,
+  công cụ, subagent, lỗi, cần bạn) và nhãn **Beta** cho agent chưa thử thật trên máy loại này.
+  Bật là app thêm vài dòng "hook" vào cấu hình của agent (có sao lưu file cũ, file hỏng thì
+  không đụng), tắt là gỡ đúng các dòng đó. **Ngắt kết nối tất cả** gỡ hết (nhất là trên Mac,
+  nơi không có trình gỡ cài đặt). Agent chạy trong WSL chưa được hỗ trợ.
+- **App**: mở cùng máy tính, chạy lại thiết lập ban đầu, chọn đồng hồ, mở nhật ký.
 
 Đổi xong bấm **Lưu vào đồng hồ**: app gửi một lần, chỉ những gì đã đổi. Nếu đồng hồ có mật
 khẩu trang cài đặt (in trên thẻ đi kèm), app hỏi một lần rồi nhớ trong Keychain (Mac) /
@@ -132,11 +149,12 @@ phút một lần, một máy); biểu tượng chuyển đỏ và nhắc nhập
 
 ## Gỡ cài đặt
 
-- **Mac**: bấm biểu tượng → **Thoát**. Mở Terminal, chạy
-  `/Applications/Clawd.app/Contents/MacOS/Clawd cleanup` (gỡ tự chạy và hook Claude Code),
-  rồi kéo **Clawd** từ Applications vào Thùng rác.
+- **Mac**: **Cài đặt… → Agent → Ngắt kết nối tất cả**, rồi bấm biểu tượng → **Thoát** và kéo
+  **Clawd** từ Applications vào Thùng rác. Hoặc chạy
+  `/Applications/Clawd.app/Contents/MacOS/Clawd cleanup` (gỡ tự chạy và mọi hook / extension
+  của Clawd trong các agent).
 - **Windows**: **Cài đặt → Ứng dụng**, chọn **Clawd** → **Gỡ cài đặt**. Trình gỡ tự tắt
-  ứng dụng, gỡ tự chạy và hook Claude Code.
+  ứng dụng, gỡ tự chạy và mọi hook / extension của Clawd trong các agent.
 
 ## Dành cho người phát triển
 
@@ -193,7 +211,10 @@ Cấu trúc:
 ```
 clawd_desktop/
   usage.py       đọc token Claude Code, hỏi mức dùng, gửi lên đồng hồ (từ daemon cũ)
-  events.py      nhận hook Claude Code / pi, quyết định Clawd làm gì (POST /api/state)
+  events.py      nhận hook của các agent (/hook/<agent>), quyết định Clawd làm gì (POST /api/state)
+  agents/        mỗi agent một module: tìm trên máy, thêm/gỡ hook an toàn, đọc payload
+  firstrun.py    thiết lập ban đầu: bước nào xong, agent nào đã hỏi
+  codex_usage.py mức dùng Codex CLI, đọc từ log phiên của chính Codex (không gọi mạng)
   discovery.py   tìm đồng hồ: mDNS _clawd._tcp, địa chỉ đã nhớ, địa chỉ nhập tay (không quét mạng)
   engine.py      chạy tất cả trong một luồng nền, báo trạng thái cho tray
   tray.py        biểu tượng + menu tiếng Việt
@@ -203,9 +224,9 @@ clawd_desktop/
   firmware.py, ota.py   firmware đi kèm app và cách cài (tạm dừng gửi qua pause.py)
   feed.py        nguồn firmware: hỏi bản mới, tải, giải mã trong RAM, so CRC gói với đồng hồ
   appupdate.py   tự cập nhật app: GitHub Releases, SHA-256, Team ID, thay app khi người dùng bấm
-  hooks.py       thêm/gỡ hook Claude Code trong settings.json
+  hooks.py       hook Claude Code trong settings.json, và script clawd-event.sh dùng chung
   autostart.py   LaunchAgent (Mac) / HKCU Run (Windows)
-integrations/    extension pi và lệnh `clawd` (tuỳ chọn, cho người dùng nâng cao)
+integrations/    extension pi, plugin opencode (app chép vào agent) và lệnh `clawd`
 packaging/       PyInstaller, DMG, Inno Setup
 PROTOCOL.md      giao thức giữa máy tính và đồng hồ
 ```
