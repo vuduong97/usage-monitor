@@ -431,9 +431,12 @@ function renderAppUpdate() {
   }[u.status] || '';
   $('appUpBar').classList.toggle('hide', u.status !== 'downloading');
   $('appUpFill').style.width = pct + '%';
-  const btn = $('appUpBtn');
+  // Shown only when there is something to do: a disabled "restart to update" next to
+  // "Clawd X is the latest" reads as a pending update.
+  const btn = $('appUpBtn'), ready = u.status === 'ready' && u.canApply;
+  btn.classList.toggle('hide', !manual && !ready);
   btn.textContent = manual ? 'Mở trang tải' : 'Khởi động lại để cập nhật';
-  btn.disabled = manual ? false : !(u.status === 'ready' && u.canApply) || busy;
+  btn.disabled = manual ? false : !ready || busy;
   $('appUpCheck').disabled = u.status === 'checking' || u.status === 'downloading';
   pollAppUpdate();
 }
@@ -482,7 +485,9 @@ function renderUpdate() {
     none: (fw && fw.feedError) ? 'Chưa đọc được nguồn cập nhật. Kiểm tra mạng rồi thử lại.' : 'Chưa có bản firmware nào để cài.',
     incompatible: 'Đồng hồ này không chạy firmware Clawd nên app không cập nhật được.',
   }[st] || '';
-  $('fwBtn').disabled = busy || (st !== 'available' && st !== 'packs') || !S || !S.ok;
+  const fwTodo = st === 'available' || st === 'packs';
+  $('fwBtn').classList.toggle('hide', !fwTodo);      // nothing to install: no greyed-out "Update"
+  $('fwBtn').disabled = busy || !fwTodo || !S || !S.ok;
   $('fwBtn').textContent = st === 'packs' ? 'Cập nhật gói hoạt hình' : 'Cập nhật firmware';
   $('fwCheck').disabled = busy || !S || !S.ok;
 }
