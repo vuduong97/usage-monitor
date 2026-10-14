@@ -158,11 +158,13 @@ function uptime(s) { if (s < 3600) return Math.floor(s / 60) + ' phút'; if (s <
 
 // ---------- tabs ----------
 function showTab(t) {
+  if (t === 'setup') { window.clawdOpenSetup && window.clawdOpenSetup(); return; }   // setup.js
   tab = t;
   history.replaceState(null, '', '#' + t);   // a reload (live reload in `make dev`) reopens this tab
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('[data-pane]').forEach(p => p.classList.toggle('hide', p.dataset.pane !== t));
   if (t === 'usage') refreshLive();
+  if (t === 'agents' && window.clawdLoadAgents) window.clawdLoadAgents();
   if (t === 'wifi' && !scan.nets && !scan.err) doScan();   // the clock's scan blocks it ~3 s: once per window
 }
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
@@ -487,7 +489,6 @@ function renderUpdate() {
 function renderApp() {
   const a = S && S.app; if (!a) return;
   setSw('autostart', a.autostart); $('autostart').disabled = !a.autostartSupported;
-  setSw('hooks', a.hooks);
   $('clockAddr').textContent = a.clock ? a.clock.replace(/^https?:\/\//, '') : 'chưa có';
   $('manualHost').placeholder = a.manual || '192.168.1.48';
   $('appVer').textContent = `Clawd ${a.version}`;
@@ -609,7 +610,6 @@ $('facOk').addEventListener('click', async () => {
 
 // ---------- app tab ----------
 $('autostart').addEventListener('click', async () => { const r = await api.set_autostart(!(S.app && S.app.autostart)); if (r.ok) { S.app = r.app; renderApp(); } else msg(r.error, 'err'); });
-$('hooks').addEventListener('click', async () => { const r = await api.set_hooks(!(S.app && S.app.hooks)); if (r.ok) { S.app = r.app; renderApp(); } else msg(r.error, 'err'); });
 $('logBtn').addEventListener('click', () => api.open_log());
 $('webBtn').addEventListener('click', () => api.open_web());
 $('rescanBtn').addEventListener('click', async () => { msg('Đang thử lại đồng hồ…'); $('rescanBtn').disabled = true; const r = await api.set_clock(''); $('rescanBtn').disabled = false; apply(r); });

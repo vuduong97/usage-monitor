@@ -306,7 +306,13 @@ class SettingsApi:
 
     # ---- reading -----------------------------------------------------------------
     def state(self) -> dict:
-        """Everything the page shows: heap (no login), config, firmware and app facts."""
+        """Everything the page shows: heap (no login), config, firmware and app facts. The
+        tab the window was opened on rides on the first answer, clock or not."""
+        r = self._state()
+        tab, self._tab = self._tab, ""
+        return {**r, "tab": tab} if tab else r
+
+    def _state(self) -> dict:
         if self._updater is not None:
             self._updater.check_async()           # the app's own update: needs no clock, never blocks
         self._follow_store()     # the tray's latest find first: waiting out a gone address takes ~60 s
@@ -328,9 +334,8 @@ class SettingsApi:
             return {**_err(e), "heap": self._heap, "fw": self._fw_info(), "app": self._app_info()}
         self._cfg = cfg
         self._mirror_screen(cfg)
-        tab, self._tab = self._tab, ""
         return {"ok": True, "heap": self._heap, "config": cfg, "fw": self._fw_info(),
-                "net": self._net(), "app": self._app_info(), **({"tab": tab} if tab else {})}
+                "net": self._net(), "app": self._app_info()}
 
     def fw(self) -> dict:
         """The firmware/packs facts alone: the page asks again while `feedBusy` is true, to pick

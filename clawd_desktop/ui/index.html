@@ -719,6 +719,131 @@
       .warn {
         color: var(--warnfg);
       }
+      /* ---- Agent tab ---- */
+      .ag {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .ag .nm {
+        flex: 1;
+        min-width: 0;
+      }
+      .ag .nm b {
+        font-weight: 500;
+      }
+      .ag .st {
+        font-size: 12px;
+        color: var(--dim);
+      }
+      .ag .st.err {
+        color: var(--bad);
+      }
+      .sig {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .ag.off .nm {
+        color: var(--mute);
+      }
+      /* ---- setup wizard ---- */
+      .wiz {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 4;
+        display: none;
+        grid-template-rows: auto 1fr auto;
+      }
+      .wiz.on {
+        display: grid;
+      }
+      .wiz header {
+        justify-content: space-between;
+      }
+      .wsteps {
+        display: flex;
+        gap: 18px;
+        font-size: 12px;
+        color: var(--mute);
+      }
+      .wsteps span.on {
+        color: var(--text);
+      }
+      .wsteps span.done {
+        color: var(--okfg);
+      }
+      .wbody {
+        padding: 22px 48px;
+        overflow: auto;
+      }
+      .wbody h2 {
+        font: 400 24px var(--serif);
+        margin: 0 0 4px;
+      }
+      .opt {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        width: 100%;
+        text-align: left;
+        color: var(--text);
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        background: var(--card);
+      }
+      .opt[aria-checked="true"] {
+        border-color: var(--acc);
+      }
+      .opt[aria-disabled="true"] {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .opt .ck {
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid var(--mute);
+        border-radius: 4px;
+        flex: none;
+        margin-top: 3px;
+      }
+      .opt[role="radio"] .ck {
+        border-radius: 50%;
+      }
+      .opt[aria-checked="true"] .ck {
+        background: var(--acc);
+        border-color: var(--acc);
+      }
+      .opt .nm {
+        flex: 1;
+      }
+      .opt small {
+        display: block;
+        color: var(--dim);
+        font-size: 12px;
+      }
+      .guide {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 16px;
+        align-items: center;
+      }
+      .guide ol {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--dim);
+        font-size: 13px;
+      }
+      .guide li {
+        margin-bottom: 4px;
+      }
       @media (prefers-reduced-motion: reduce) {
         * {
           transition: none !important;
@@ -771,6 +896,9 @@
       <symbol id="trash" viewBox="0 0 24 24">
         <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
       </symbol>
+      <symbol id="bot" viewBox="0 0 24 24">
+        <rect x="4" y="8" width="16" height="11" rx="3" /><path d="M12 4v4M9 13h.01M15 13h.01M2 13v2M22 13v2" />
+      </symbol>
       <symbol id="refresh" viewBox="0 0 24 24">
         <path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4" />
       </symbol>
@@ -787,6 +915,9 @@
           </button>
           <button role="tab" data-tab="wifi">
             <svg class="i"><use href="#wifi" /></svg>Wi‑Fi
+          </button>
+          <button role="tab" data-tab="agents">
+            <svg class="i"><use href="#bot" /></svg>Agent
           </button>
           <button role="tab" data-tab="update">
             <svg class="i"><use href="#dl" /></svg>Cập nhật
@@ -914,6 +1045,11 @@
           <!-- USAGE -->
           <section data-pane="usage" class="hide">
             <h2>Màn hình Usage</h2>
+            <div class="f">
+              <span>Nguồn usage<small>Đồng hồ hiện một nguồn</small></span
+              ><select id="usageSrc" aria-label="Nguồn usage"></select>
+            </div>
+            <p class="note" id="usageSrcNote" style="margin: 8px 0 14px"></p>
             <p class="sub">Chọn kiểu màn hình usage.</p>
             <div
               class="gal"
@@ -933,6 +1069,23 @@
               Mạng quanh đây<span id="scanCtl"></span>
             </div>
             <div class="wn" id="near"></div>
+          </section>
+
+          <!-- AGENTS -->
+          <section data-pane="agents" class="hide">
+            <h2>Agent</h2>
+            <p class="sub">
+              Clawd phản ứng khi các agent này làm việc. Bật: Clawd thêm một hook nhỏ vào cấu hình
+              của agent (có sao lưu). Tắt: gỡ đúng phần đó, không đụng gì khác.
+            </p>
+            <div id="agentList"></div>
+            <p class="note warn hide" id="wslNote">
+              Agent chạy trong WSL chưa được hỗ trợ: chỉ agent chạy thẳng trên Windows mới nối được.
+            </p>
+            <div class="row" style="margin-top: 14px">
+              <button class="btn ghost small" id="agentsRescan">Quét lại</button
+              ><button class="btn danger small" id="disconnectAll">Ngắt kết nối tất cả</button>
+            </div>
           </section>
 
           <!-- UPDATE -->
@@ -1007,13 +1160,15 @@
               ></button>
             </div>
             <div class="f">
-              <span>Clawd phản ứng<small>khi bạn dùng Claude Code</small></span
-              ><button
-                class="sw"
-                role="switch"
-                id="hooks"
-                aria-label="Clawd phản ứng khi dùng Claude Code"
-              ></button>
+              <span>Agent<small>Clawd phản ứng khi agent làm việc</small></span>
+              <div class="row">
+                <span id="agentSum" style="font-size: 12px; color: var(--dim)"></span
+                ><button class="btn ghost small" id="goAgents">Chọn agent…</button>
+              </div>
+            </div>
+            <div class="f">
+              <span>Thiết lập ban đầu</span>
+              <div class="row"><button class="btn ghost small" id="rerunSetup">Chạy lại…</button></div>
             </div>
             <div class="f">
               <span>Đồng hồ</span>
@@ -1114,7 +1269,26 @@
       </div>
     </div>
 
+    <div class="wiz" id="wiz" role="dialog" aria-modal="true" aria-labelledby="wizTitle">
+      <header>
+        <div class="wsteps" id="wizSteps"></div>
+        <button class="ib" id="wizClose" title="Để sau" aria-label="Để sau">
+          <svg class="i"><use href="#x" /></svg>
+        </button>
+      </header>
+      <div class="wbody" id="wizBody"></div>
+      <footer>
+        <span class="msg" id="wizMsg"></span>
+        <span class="row" style="flex-wrap: nowrap"
+          ><button class="btn ghost" id="wizBack">Quay lại</button
+          ><button class="btn ghost" id="wizSkip">Bỏ qua</button
+          ><button class="btn" id="wizNext">Tiếp</button></span
+        >
+      </footer>
+    </div>
+
     <script src="preview.js"></script>
     <script src="app.js"></script>
+    <script src="setup.js"></script>
   </body>
 </html>
