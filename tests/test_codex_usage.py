@@ -2,6 +2,7 @@
 import asyncio
 import json
 import os
+from pathlib import Path
 
 import pytest
 
@@ -105,7 +106,7 @@ def test_poll_active_follows_the_source(prefs, monkeypatch):
     monkeypatch.setattr(usage, "poll_claude", fake)
     prefs("claude:/x/work")
     p, _ = asyncio.run(usage.poll_active())
-    assert "src" not in p and str(seen[-1]) == "/x/work"
+    assert "src" not in p and Path(seen[-1]) == Path("/x/work")
     prefs("claude")
     asyncio.run(usage.poll_active())
     assert seen[-1] is None

@@ -48,7 +48,8 @@ def make(home, clocks=None, base=""):
     return b, notes, mdns
 
 
-def test_agents_lists_found_and_marks_them_offered(home):
+def test_agents_lists_found_and_marks_them_offered(home, monkeypatch):
+    monkeypatch.setattr(sa, "_has_wsl", lambda: False)        # GitHub's Windows runners have wsl.exe
     (home / ".codex").mkdir()
     b, _, _ = make(home)
     r = b.agents()

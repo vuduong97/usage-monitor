@@ -59,7 +59,7 @@ def test_hook_agents_install_and_remove_cleanly(tmp_path, aid, rel, existing):
         if k != "hooks":
             assert data[k] == v
     text = json.dumps(data)
-    assert f"'{SCRIPT}' {aid} " in text
+    assert json.dumps(f"'{SCRIPT}' {aid} ")[1:-1] in text      # JSON escapes Windows backslashes
     before = f.read_text()
     a.install()
     assert f.read_text() == before                                        # idempotent
