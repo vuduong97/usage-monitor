@@ -35,11 +35,14 @@ bool usageFresh(uint32_t withinMs) {
 //   ok   = false is the daemon's "no data" beat: accepted, the screen goes idle
 //          once the last good data ages out. The chime/beep keys (c, b) are
 //   ignored — the clock has no speaker.
+//   src  = whose usage: absent = Claude, "codex" = Codex CLI (labels the cards);
+//          "off" with ok = false = the user shows no usage: time and Clawd only
 static void usageFilter(JsonDocument& f) {
   f["s"] = true; f["sr"] = true; f["w"] = true;
   f["wr"] = true; f["st"] = true; f["ok"] = true;
   f["acct"] = true; f["tp"] = true; f["rd"] = true;
   f["t"] = true; f["tf"] = true; f["m"] = true; f["x"] = true;
+  f["src"] = true;
 }
 
 // Forward a payload to the Clawd screens.
@@ -58,6 +61,7 @@ static void forwardToClawd(JsonDocument& doc, bool ok) {
   c.clockFmt        = doc["tf"] | 24;
   strlcpy(c.alertMsg, doc["m"] | "", sizeof(c.alertMsg));
   c.alertClear      = doc["x"] | false;
+  strlcpy(c.source, doc["src"] | "", sizeof(c.source));
   clawdUiPayload(c);
 }
 

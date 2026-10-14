@@ -500,6 +500,23 @@ int main(int argc, char** argv) {
     clawdUiDeskStats(ds);
     printf("desk frames drawn: %u\n", (unsigned)ds.total);
   }
+  // Usage from Codex CLI labels the cards; "off" shows the time and Clawd, never "No data".
+  ClawdData cx = base();
+  strcpy(cx.source, "codex");
+  clawdUiPayload(cx);
+  run(1500, CLAWD_SCREEN_AUTO, -1);
+  shot(dir, "13-codex");
+  ClawdData off = base();
+  off.ok = false;
+  strcpy(off.source, "off");
+  clawdUiPayload(off);
+  run(1500, CLAWD_SCREEN_USAGE, -1);
+  shot(dir, "14-usage-off");
+  run(CLAWD_DATA_FRESH_MS + 1000, CLAWD_SCREEN_USAGE, -1);
+  shot(dir, "14b-usage-off-later");
+  clawdUiPayload(base());
+  run(1500, CLAWD_SCREEN_AUTO, -1);
+
   const int bad = checkVariants() + bandBad + styleBad + waitBad;
   printf("pixels pushed: %ld\n", g_pushed);
   return bad ? 1 : 0;

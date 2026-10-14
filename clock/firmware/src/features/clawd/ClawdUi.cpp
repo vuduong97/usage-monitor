@@ -54,6 +54,7 @@ static ClawdMini   g_mini;
 static ClawdData g_data;
 static bool      g_received = false;     // any ok payload since boot
 static bool      g_lastOk = false;
+static bool      g_usageOff = false;     // the app says: show no usage (src "off")
 static uint32_t  g_lastDataMs = 0;
 static uint32_t  g_firstDataMs = 0;
 static int       g_rateGroup = 0;
@@ -274,7 +275,8 @@ static void drawPanels() {
       {&CF_STYRENE_24, pct, (int16_t)cx, (int16_t)(PANEL1_Y + PAD_Y), CLAWD_TEXT},
       {&CF_STYRENE_14, reset, (int16_t)cx, (int16_t)(PANEL1_Y + PAD_Y + RESET_DY), CLAWD_DIM},
   };
-  drawPanel(PANEL1_Y, "Current", d.sessionPct, pctColor(d.sessionPct), ex, 2);
+  const bool codex = strcmp(d.source, "codex") == 0;     // Claude's cards keep their names
+  drawPanel(PANEL1_Y, codex ? "Codex 5h" : "Current", d.sessionPct, pctColor(d.sessionPct), ex, 2);
 
   const int w = (int)(d.weeklyPct + 0.5f);
   snprintf(pct2, sizeof(pct2), "%d%%", w);
@@ -283,7 +285,7 @@ static void drawPanels() {
       {&CF_STYRENE_24, pct2, (int16_t)cx, (int16_t)(PANEL2_Y + PAD_Y), CLAWD_TEXT},
       {&CF_STYRENE_14, reset, (int16_t)cx, (int16_t)(PANEL2_Y + PAD_Y + RESET_DY), CLAWD_DIM},
   };
-  drawPanel(PANEL2_Y, "Weekly", d.weeklyPct, pctColor(d.weeklyPct), ex2, 2);
+  drawPanel(PANEL2_Y, codex ? "Codex week" : "Weekly", d.weeklyPct, pctColor(d.weeklyPct), ex2, 2);
 }
 
 // ---- title / clock -----------------------------------------------------------------
@@ -352,7 +354,7 @@ static void tickStatus(uint32_t now, bool force) {
   }
   const char* word;
   if (!g_received)                     word = "Waiting";
-  else if (!dataFresh(now))            word = (g_msgIdx & 1) ? "No data" : "Listening";
+  else if (!dataFresh(now) && !g_usageOff) word = (g_msgIdx & 1) ? "No data" : "Listening";
   else if (now - g_firstDataMs < 5000) word = "Connected";
   else {
     const char* p = MESSAGES;
@@ -647,6 +649,19 @@ static void drawIdleAddr() {
   strcpy(g_addrDrawn, ip);
 }
 
+// The wall clock the app sends with every payload (t / tf).
+static void setClock(const ClawdData& d) {
+  if (d.clockEpoch > 0) {
+    g_clockEpoch = d.clockEpoch;
+    g_clockBaseMs = clawdNow();
+    g_clockFmt = d.clockFmt == 12 ? 12 : 24;
+    g_dirtyTitle = true;
+  } else if (g_clockEpoch) {
+    g_clockEpoch = 0;
+    g_dirtyTitle = true;
+  }
+}
+
 void clawdUiPayload(const ClawdData& d) {
   const uint32_t now = clawdNow();
   g_lastOk = d.ok;
@@ -660,21 +675,23 @@ void clawdUiPayload(const ClawdData& d) {
     g_mascot.setAttention(true);
     if (!wasOn) g_statusDrawn[0] = 0;
   }
+  const bool off = !d.ok && strcmp(d.source, "off") == 0;
+  if (off != g_usageOff) {
+    g_usageOff = off;
+    g_dirtyAll = true;
+  }
+  if (off) {             // no usage on purpose: the time and Clawd, no "No data"
+    g_received = true;
+    setClock(d);
+    return;
+  }
   if (!d.ok) return;     // "no data" beat: keep the last numbers, go idle when stale
 
   g_data = d;
   if (!g_received) g_firstDataMs = now;
   g_received = true;
   g_lastDataMs = now;
-  if (d.clockEpoch > 0) {
-    g_clockEpoch = d.clockEpoch;
-    g_clockBaseMs = now;
-    g_clockFmt = d.clockFmt == 12 ? 12 : 24;
-    g_dirtyTitle = true;
-  } else if (g_clockEpoch) {
-    g_clockEpoch = 0;
-    g_dirtyTitle = true;
-  }
+  setClock(d);
   if (!d.enterprise) clawdRateSample(d.sessionPct);
   const int g = clawdRateGroup();
   if (g != g_rateGroup) {
@@ -802,6 +819,7 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   View want;
   if (deskLive(now))                       want = VIEW_DESK;
   else if (g_alert)                        want = fresh ? VIEW_USAGE : VIEW_IDLE;
+  else if (g_usageOff)                     want = VIEW_IDLE;     // time + Clawd, whatever the screen setting
   else if (screen == CLAWD_SCREEN_SPLASH)  want = VIEW_SPLASH;
   else if (screen == CLAWD_SCREEN_USAGE)   want = fresh ? VIEW_USAGE : VIEW_IDLE;
   else                                     want = fresh ? VIEW_USAGE : VIEW_SPLASH;
@@ -810,7 +828,8 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   // (cloud, IP, "Waiting") shows. An alert keeps the classic screen (its line
   // and the waving mascot), and so does an Enterprise account (spending /
   // period cards).
-  if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !g_alert && g_received && !g_data.enterprise)
+  if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !g_alert && g_received && !g_data.enterprise
+      && !g_usageOff)
     want = VIEW_STYLE;
   if (styleGeneration() != g_styleGen) {   // a pack was installed or removed
     g_styleGen = styleGeneration();

@@ -46,7 +46,8 @@ Send every ~60 s. The clock goes back to "no data" if nothing arrives for a whil
 | `t` | current local time as epoch seconds (the clock has no RTC) |
 | `tf` | 12 or 24 hour clock |
 | `m`, `x` | alert line to show; `x: true` clears it |
-| `ok` | `false` = "no data" (not logged in / no token); other keys ignored |
+| `src` | whose usage: absent = Claude, `codex` = Codex CLI (the cards read "Codex 5h" / "Codex week"); `off` with `ok: false` = the user shows no usage: the time and Clawd, never "No data" (`fwSeq` 7) |
+| `ok` | `false` = "no data" (not logged in / no token); other keys ignored except `t`/`tf` with `src: off` |
 
 Reply: `200 {"ok":true}`, or `400` for a malformed body.
 

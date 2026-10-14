@@ -21,6 +21,8 @@ struct ClawdData {
   int   clockFmt;            // 12 or 24
   char  alertMsg[128];       // attention message, "" = none
   bool  alertClear;          // the session moved on: end the alert
+  char  source[8];           // whose usage: "" = Claude (the default), "codex"; "off" with
+                             // ok = false: the user shows no usage (time + Clawd only)
 };
 
 // What the daemon wants on screen right now (POST /api/state): a full-screen
