@@ -11,7 +11,9 @@ firmware repo's tools/release.sh to a private bucket behind a small Worker
 
 Every file is `nonce(12) | ciphertext | tag(16)` with AAD "clawd-fw/<seq>/<name>".
 It is decrypted in memory and checked against the manifest's size and SHA-256;
-nothing decrypted is written to disk. The result is a `Release`, which the rest
+nothing decrypted is written to disk. The encrypted files are kept in a cache
+directory per release (`cache_dir`), so the next window only asks for the grant
+(the key) and decrypts; they are useless without it. The result is a `Release`, which the rest
 of the app treats like the bundled firmware (`firmware.Bundle`), plus the packs.
 
 The URL and token come from CLAWD_FEED_URL / CLAWD_FEED_TOKEN, the config file
@@ -21,23 +23,29 @@ written by packaging, git-ignored). Without both, there is no feed.
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import json
 import os
 import re
+import shutil
+import threading
 import zlib
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 import httpx
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from clawd_desktop import firmware, usage
+from clawd_desktop import firmware, paths, usage
 
 TIMEOUT = 30.0
 DOWNLOAD_TIMEOUT = 180.0
+DOWNLOAD_WORKERS = 8                        # files fetched at once; each is a small request, mostly latency
+CACHE_DIR = paths.CONFIG_DIR / "feed-cache"
 CHECK_EVERY = 6 * 3600.0                    # the tray's background check
 KINDS = {"fw", "clawdpak", "deskpak", "styles", "style"}
 PACK_KINDS = ("clawdpak", "deskpak")
@@ -202,8 +210,9 @@ def make_release(m: Manifest, blobs: dict | None = None) -> Release:
 
 class Feed:
     def __init__(self, url: str, token: str, channel: str = "stable",
-                 transport: httpx.BaseTransport | None = None) -> None:
+                 transport: httpx.BaseTransport | None = None, cache_dir: Path | None = None) -> None:
         self.url = url.rstrip("/")
+        self.cache_dir = cache_dir             # encrypted files of the newest release; None: no cache
         self.channel = channel if channel in ("stable", "beta") else "stable"
         self._http = httpx.Client(timeout=TIMEOUT, transport=transport,
                                   headers={"authorization": f"Bearer {token}"}, follow_redirects=False)
@@ -250,24 +259,75 @@ class Feed:
                 raise ValueError
         except (KeyError, TypeError, ValueError) as e:
             raise FeedError("feed: bad grant") from e
-        blobs = dict(rel.blobs)
-        total, done = sum(f.enc for f in want), 0
         for f in want:
             u = urls.get(f.name)
             if not isinstance(u, str) or not u.startswith("/v1/file/"):
                 raise FeedError(f"feed: no URL for {f.name}")
-            progress(f.kind, done, total)
-            blob = self._get("GET", u, timeout=DOWNLOAD_TIMEOUT).content
-            if len(blob) != f.enc:
-                raise FeedError(f"{f.name}: {len(blob)} B, the manifest says {f.enc}")
-            data = decrypt(key, m.seq, f.name, blob)
-            if len(data) != f.size or hashlib.sha256(data).hexdigest() != f.sha256 \
-                    or f"{zlib.crc32(data):08x}" != f.crc:
-                raise FeedError(f"{f.name}: does not match the manifest")
-            blobs[f.name] = data
-            done += f.enc
+        blobs = dict(rel.blobs)
+        total, done = sum(f.enc for f in want), 0
+        progress(want[0].kind, 0, total)
+        with ThreadPoolExecutor(max_workers=min(DOWNLOAD_WORKERS, len(want))) as pool:
+            jobs = {pool.submit(self._load, key, m.seq, f, urls[f.name]): f for f in want}
+            for j in as_completed(jobs):       # the first failure ends the fetch
+                f = jobs[j]
+                blobs[f.name] = j.result()
+                done += f.enc
+                progress(f.kind, done, total)
         progress("", total, total)
         return make_release(m, blobs)
+
+    def _load(self, key: bytes, seq: int, f: FeedFile, url: str) -> bytes:
+        """One file, checked: from the cache when it is there and still decrypts, else downloaded."""
+        blob = self._cache_read(seq, f)
+        if blob is not None:
+            try:
+                return self._open(key, seq, f, blob)
+            except FeedError:
+                self._cache_drop(seq, f)       # damaged or from another key: fetch it again
+        blob = self._get("GET", url, timeout=DOWNLOAD_TIMEOUT).content
+        data = self._open(key, seq, f, blob)
+        self._cache_write(seq, f, blob)
+        return data
+
+    @staticmethod
+    def _open(key: bytes, seq: int, f: FeedFile, blob: bytes) -> bytes:
+        if len(blob) != f.enc:
+            raise FeedError(f"{f.name}: {len(blob)} B, the manifest says {f.enc}")
+        data = decrypt(key, seq, f.name, blob)
+        if len(data) != f.size or hashlib.sha256(data).hexdigest() != f.sha256 \
+                or f"{zlib.crc32(data):08x}" != f.crc:
+            raise FeedError(f"{f.name}: does not match the manifest")
+        return data
+
+    # ---- cache of the encrypted files (best effort: a failure only means a download) ------
+    def _cache_path(self, seq: int, f: FeedFile) -> Path | None:
+        return self.cache_dir / str(seq) / f.name.replace("/", "__") if self.cache_dir else None
+
+    def _cache_read(self, seq: int, f: FeedFile) -> bytes | None:
+        p = self._cache_path(seq, f)
+        try:
+            return p.read_bytes() if p else None
+        except OSError:
+            return None
+
+    def _cache_drop(self, seq: int, f: FeedFile) -> None:
+        p = self._cache_path(seq, f)
+        if p:
+            with contextlib.suppress(OSError):
+                p.unlink()
+
+    def _cache_write(self, seq: int, f: FeedFile, blob: bytes) -> None:
+        root, p = self.cache_dir, self._cache_path(seq, f)
+        if root is None or p is None:
+            return
+        with contextlib.suppress(OSError):         # best effort: the next window downloads again
+            p.parent.mkdir(parents=True, exist_ok=True)
+            tmp = p.with_name(f".{p.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+            tmp.write_bytes(blob)
+            os.replace(tmp, p)
+            for old in root.iterdir():             # only the newest release is worth keeping
+                if old.is_dir() and old.name != str(seq):
+                    shutil.rmtree(old, ignore_errors=True)
 
 
 def _build_defaults() -> tuple[str, str]:
@@ -286,7 +346,7 @@ def from_settings() -> Feed | None:
     if not url or not token or not url.startswith(("https://", "http://127.0.0.1", "http://localhost")):
         return None
     channel = os.environ.get("CLAWD_FEED_CHANNEL") or usage.read_config_value("feed_channel") or "stable"
-    return Feed(url, token, channel)
+    return Feed(url, token, channel, cache_dir=CACHE_DIR)
 
 
 # ---- what a clock needs from a release -----------------------------------------------

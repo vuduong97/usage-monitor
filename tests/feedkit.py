@@ -16,7 +16,7 @@ from tests.test_firmware_ota import make_pack
 IMAGE = b"\xe9" + b"\x07" * 2047
 CLAWD = b"CLWD\x01\x00\x11\x00" + b"c" * 500
 DESK = b"CLDK\x03\x00\x1f\x00" + b"d" * 3000
-TOKEN = "tok"
+TOKEN = "tok"  # noqa: S105  (a fixture for the fake Worker, not a secret)
 
 
 def crc(data: bytes) -> str:
@@ -84,6 +84,7 @@ class FakeFeed:
                                              "urls": {n: f"/v1/file/{seq}/{n}?exp=1&sig=ok" for n in blobs}})
         return httpx.Response(404)
 
-    def client(self, channel="stable"):
+    def client(self, channel="stable", cache_dir=None):
         from clawd_desktop import feed
-        return feed.Feed("https://fw.test", TOKEN, channel, transport=httpx.MockTransport(self.handler))
+        return feed.Feed("https://fw.test", TOKEN, channel, transport=httpx.MockTransport(self.handler),
+                         cache_dir=cache_dir)

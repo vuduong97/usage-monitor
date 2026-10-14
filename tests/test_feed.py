@@ -196,3 +196,45 @@ def test_release_without_styles_and_a_bad_style_index():
     bad = [f if f[0] != "styles/index.json" else (f[0], f[1], b"{not json") for f in release_files()]
     ff.publish(7, files=bad)
     assert fetched(ff, 7).styles == ()
+
+
+def test_encrypted_files_are_cached_per_release_and_reused(tmp_path):
+    ff = FakeFeed()
+    ff.publish(6)
+    f = ff.client(cache_dir=tmp_path)
+    m = f.latest()
+    assert m is not None
+    rel = f.fetch(feed.make_release(m), feed.STYLE_KINDS)
+    files = [c for c in ff.calls if c.startswith("GET /v1/file/")]
+    assert len(files) == 3
+    cached = {p.name: p.read_bytes() for p in (tmp_path / "6").iterdir()}
+    assert sorted(cached) == ["styles__index.json", "styles__paper.pak", "styles__synth.pak"]
+    assert all(b"synth" not in b and b"paper" not in b for b in cached.values())   # still encrypted
+    ff.calls.clear()
+    again = ff.client(cache_dir=tmp_path)
+    rel2 = again.fetch(feed.make_release(m), feed.STYLE_KINDS)
+    assert [p.id for p in rel2.styles] == [p.id for p in rel.styles]
+    assert not [c for c in ff.calls if c.startswith("GET /v1/file/")]        # only the key was asked for
+    assert any(c == "POST /v1/grant" for c in ff.calls)
+
+
+def test_a_damaged_cache_file_is_downloaded_again_and_old_releases_are_dropped(tmp_path):
+    ff = FakeFeed()
+    ff.publish(6)
+    f = ff.client(cache_dir=tmp_path)
+    m = f.latest()
+    assert m is not None
+    f.fetch(feed.make_release(m), feed.STYLE_KINDS)
+    victim = tmp_path / "6" / "styles__synth.pak"
+    data = victim.read_bytes()
+    victim.write_bytes(data[:-1] + bytes([data[-1] ^ 1]))                    # same size, wrong tag
+    ff.calls.clear()
+    rel = f.fetch(feed.make_release(m), feed.STYLE_KINDS)
+    assert [c for c in ff.calls if c.startswith("GET /v1/file/")] == ["GET /v1/file/6/styles/synth.pak"]
+    assert [p.id for p in rel.styles] == ["synth", "paper"]
+    ff.publish(7)
+    g = ff.client(cache_dir=tmp_path)
+    m7 = g.latest()
+    assert m7 is not None
+    g.fetch(feed.make_release(m7), feed.STYLE_KINDS)
+    assert [p.name for p in tmp_path.iterdir()] == ["7"]

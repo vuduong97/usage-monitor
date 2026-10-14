@@ -2,7 +2,7 @@
 """Claude Usage Tracker Daemon (BLE) — macOS port of claude-usage-daemon.sh.
 
 Polls Claude API rate-limit headers and writes a JSON payload to the
-ESP32 "Clawdmeter" peripheral over a custom GATT service. Uses
+ESP32 "Clawd" peripheral over a custom GATT service. Uses
 bleak (CoreBluetooth backend on macOS).
 
 The same payload can also be pushed over WiFi: every `http_targets` entry in
@@ -41,7 +41,7 @@ except ImportError:        # pragma: no cover - exercised by the packaged app
 
 from clawd_desktop import events as clawd_events
 
-DEVICE_NAME = "Clawdmeter"
+DEVICE_NAME = "Clawd"
 SERVICE_UUID = "4c41555a-4465-7669-6365-000000000001"
 RX_CHAR_UUID = "4c41555a-4465-7669-6365-000000000002"
 REQ_CHAR_UUID = "4c41555a-4465-7669-6365-000000000004"
@@ -105,7 +105,7 @@ USAGE_HEADERS_TEMPLATE = {
 # account's token (`$TOKEN$` is substituted proxy-side), so the Claude token
 # never leaves the proxy. The management key lives only in the macOS Keychain.
 CLIPROXY_DEFAULT_URL = "http://localhost:8317"
-CLIPROXY_KEYCHAIN_SERVICE = "clawdmeter-cliproxy"
+CLIPROXY_KEYCHAIN_SERVICE = "clawd-cliproxy"
 CLIPROXY_AUTH_FILES_PATH = "/v0/management/auth-files"
 CLIPROXY_API_CALL_PATH = "/v8/management/requests/api-call"
 CLIPROXY_ACCOUNTS_TTL = 300      # re-list proxy accounts every 5 minutes
@@ -336,7 +336,7 @@ async def _get_cb_manager():
 
 
 async def retrieve_connected_macos(skip_addr: str | None = None):
-    """Return a BLEDevice for a system-connected 'Clawdmeter', or None.
+    """Return a BLEDevice for a system-connected 'Clawd', or None.
 
     Two-step lookup, strongest signal first:
 
@@ -1362,7 +1362,7 @@ def unpair_macos() -> bool:
         return False
 
     # Each line looks like:
-    #   address: 28-84-85-55-5c-3d, ... name: "Clawdmeter", ...
+    #   address: 28-84-85-55-5c-3d, ... name: "Clawd", ...
     addr = None
     for line in out.splitlines():
         if f'name: "{DEVICE_NAME}"' in line:

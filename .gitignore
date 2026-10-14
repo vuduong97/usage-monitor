@@ -9,3 +9,4 @@ dist/
 clawd_desktop/firmware/
 clawd_desktop/renderer/
 clawd_desktop/_feed_build.py
+.pi

@@ -187,9 +187,8 @@ function paintPreview(now) {
   img.classList.toggle('hide', !url);
   cv.classList.toggle('hide', Boolean(url));
   if (url) setShot(img, url); else PV.paint(cv, packOf(style), data, t);
-  const br = edit ? edit.brightness : 70;
+  // The preview keeps full brightness: the slider only changes what the clock does.
   for (const e of [cv, img]) {
-    e.style.filter = `brightness(${(0.25 + br / 100 * 0.85).toFixed(2)})`;
     e.style.transform = `rotate(${(edit ? edit.rotation : 0) * 90}deg)`;
   }
   const name = (packOf(style) || { name:'Hiện tại' }).name;
@@ -583,6 +582,25 @@ function apply(r) {
   renderAll();
   if (r.tab) showTab(r.tab);                 // the tray's "new firmware" item opens the Update tab
   if (r.ok && tab === 'wifi' && !scan.nets && !scan.busy) doScan();   // opened on #wifi before the clock answered
+  if (r.ok && r.fw && r.fw.feedBusy) watchFeed();
+}
+// The update feed is read in the background (settings_api._kick_feed), so the window shows the
+// clock at once with the packs the app carries. Ask again until the feed is done, then show
+// what it brought (a newer release, its packs).
+let feedWatch = false;
+async function watchFeed() {
+  if (feedWatch) return;
+  feedWatch = true;
+  try {
+    for (let i = 0; i < 120 && S && S.fw && S.fw.feedBusy; i++) {   // up to about 90 s
+      await new Promise(res => setTimeout(res, 750));
+      const r = await api.fw();
+      if (r && r.ok && S) S.fw = r.fw;
+    }
+  } catch (err) { console.warn('feed check failed', err); }
+  finally { feedWatch = false; }
+  if (S && S.fw) S.fw.feedBusy = false;
+  renderGallery(); renderUpdate(); refreshLive();
 }
 async function load() { msg('Đang đọc cài đặt từ đồng hồ…'); apply(await api.state()); }
 

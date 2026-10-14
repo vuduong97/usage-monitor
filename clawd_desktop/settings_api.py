@@ -151,6 +151,9 @@ class SettingsApi:
         self._release: fd.Release | None = None
         self._feed_at = 0.0                    # last feed check (monotonic)
         self._feed_error = ""
+        self._feed_lock = threading.Lock()     # one feed check at a time
+        self._feed_pending = False             # a background check is running (the page waits for it)
+        self._feed_thread: threading.Thread | None = None
         self._store = store or ClockStore(paths.CLOCK_FILE)
         self._keychain = keychain
         self._window: Any = None               # set by settings_app, for file dialogs
@@ -188,14 +191,43 @@ class SettingsApi:
     def _check_feed(self, force: bool = False) -> None:
         """Ask the feed for its newest release (at most every FEED_RECHECK s) and keep it,
         with its style packs, when it is newer than the bundle. Failures only show as text."""
-        if self._feed is None or self._job["running"]:
+        feed = self._feed
+        if feed is None or self._job["running"]:
             return
+        if not self._feed_lock.acquire(blocking=force):    # the background check is on it
+            return
+        try:
+            self._check_feed_locked(feed, force)
+        finally:
+            self._feed_lock.release()
+
+    def _feed_due(self) -> bool:
+        return self._feed is not None and not self._job["running"] and not (
+            self._feed_at and time.monotonic() - self._feed_at < FEED_RECHECK)
+
+    def _kick_feed(self) -> None:
+        """Check the feed in the background: reading the packs takes seconds, and the window
+        must show the clock (and the packs the app carries) without waiting for them."""
+        if self._feed_pending or not self._feed_due():
+            return
+        self._feed_pending = True
+
+        def run() -> None:
+            try:
+                self._check_feed()
+            finally:
+                self._feed_pending = False
+
+        self._feed_thread = threading.Thread(target=run, name="clawd-feed-check", daemon=True)
+        self._feed_thread.start()
+
+    def _check_feed_locked(self, feed: fd.Feed, force: bool) -> None:
         now = time.monotonic()
         if not force and self._feed_at and now - self._feed_at < FEED_RECHECK:
             return
         self._feed_at = now
         try:
-            m = self._feed.latest()
+            m = feed.latest()
             self._feed_error = ""
         except fd.FeedError as e:
             self._feed_error = str(e)
@@ -208,7 +240,7 @@ class SettingsApi:
             return
         rel = fd.make_release(m)
         try:                                   # the gallery needs the packs; a few hundred KB
-            rel = self._feed.fetch(rel, fd.STYLE_KINDS)
+            rel = feed.fetch(rel, fd.STYLE_KINDS)
         except fd.FeedError as e:
             print(f"[settings] style packs from the feed: {e}", flush=True)
         self._release = rel
@@ -219,7 +251,7 @@ class SettingsApi:
             return None
         out = {"seq": b.seq, "size": b.size, "commit": b.commit, "styleApi": b.style_api,
                "source": "feed" if isinstance(b, fd.Release) else "app"}
-        if isinstance(b, fd.Release):
+        if isinstance(b, fd.Release) and b.manifest is not None:
             out.update(notes=b.notes, date=b.date[:10],
                        packs={f.kind: f.size for f in b.manifest.files if f.kind in fd.PACK_KINDS})
         return out
@@ -231,7 +263,7 @@ class SettingsApi:
         plan = fd.plan(h, src)
         if state == "current" and any(plan.get(k) == "need" for k in fd.PACK_KINDS):
             state = "packs"                    # same image, but a pack differs or is missing
-        return {"update": state, "plan": plan, "feedError": self._feed_error,
+        return {"update": state, "plan": plan, "feedError": self._feed_error, "feedBusy": self._feed_pending,
                 "styles": {"state": firmware.style_state(h, src),
                            "active": firmware.clock_style(h) or pv.CLASSIC,
                            "packs": [{"id": p.id, "name": p.name, "light": p.light} for p in packs]},
@@ -278,7 +310,7 @@ class SettingsApi:
                 self._heap = self._api.heap()
             except ClockError as e2:
                 return {**_err(e2), "app": self._app_info()}
-        self._check_feed()
+        self._kick_feed()                          # in the background: the page polls fw() meanwhile
         try:
             cfg = self._api.config()
         except ClockError as e:
@@ -288,6 +320,11 @@ class SettingsApi:
         tab, self._tab = self._tab, ""
         return {"ok": True, "heap": self._heap, "config": cfg, "fw": self._fw_info(),
                 "net": self._net(), "app": self._app_info(), **({"tab": tab} if tab else {})}
+
+    def fw(self) -> dict:
+        """The firmware/packs facts alone: the page asks again while `feedBusy` is true, to pick
+        up the feed's release when the background check finishes."""
+        return {"ok": True, "fw": self._fw_info()}
 
     def _net(self) -> dict | None:
         """The network the clock is on now ({ssid, rssi}), for the WiFi tab's "in use" mark.

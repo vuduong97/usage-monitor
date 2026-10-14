@@ -302,7 +302,7 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
     assert public == sorted(["state", "login", "preview", "save", "scan", "reboot", "factory_reset",
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
                              "set_hooks", "open_log", "open_web", "set_clock", "usage_preview",
-                             "clawd_pak", "check_update"])
+                             "clawd_pak", "check_update", "fw"])
 
 
 def test_main_screen_is_handed_to_the_engine():
@@ -385,6 +385,14 @@ def wait_job(b):
     return b.job()
 
 
+def feed_settled(b):
+    """state() reads the feed in the background: wait for that, then ask for the firmware facts."""
+    t = b._feed_thread
+    if t is not None:
+        t.join(10)
+    return b.fw()["fw"]
+
+
 def test_feed_release_is_offered_installed_with_its_packs_and_style(tmp_path, monkeypatch):
     from tests.feedkit import DESK, FakeFeed
     monkeypatch.setattr(sa.ota, "SETTLE", 0)
@@ -393,8 +401,8 @@ def test_feed_release_is_offered_installed_with_its_packs_and_style(tmp_path, mo
     ff.publish(6, notes="Màn chờ có IP")
     b, made, _k, _n = bridge(tmp_path, heap=FEED_HEAP, feed=ff.client())
     made[0].after = {**FEED_HEAP, "fwSeq": 6, "pakCrc": "", "deskCrc": "", "pak": 17, "desk": 0}
-    s = b.state()
-    fw_ = s["fw"]
+    b.state()
+    fw_ = feed_settled(b)
     assert fw_["update"] == "available" and fw_["bundle"]["source"] == "feed" and fw_["bundle"]["seq"] == 6
     assert fw_["bundle"]["notes"] == "Màn chờ có IP" and fw_["plan"]["fw"] == "need"
     assert [p["id"] for p in fw_["styles"]["packs"]] == ["synth", "paper"] and fw_["styles"]["state"] == "ready"
@@ -413,13 +421,43 @@ def test_feed_older_than_the_bundle_is_ignored_and_errors_show(tmp_path, bundle)
     ff = FakeFeed()
     ff.publish(1)
     b, _m, _k, _n = bridge(tmp_path, heap=FEED_HEAP, bundle=bundle, feed=ff.client())
-    assert b.state()["fw"]["bundle"]["source"] == "app"
+    b.state()
+    assert feed_settled(b)["bundle"]["source"] == "app"
     ff.channels.clear()
     ff.releases.clear()
     broken = FakeFeed().client()
     broken._http.headers["authorization"] = "Bearer nope"
     b2, _m, _k, _n = bridge(tmp_path, heap=FEED_HEAP, feed=broken)
-    s = b2.state()
+    b2.state()
+    s = {"fw": feed_settled(b2)}
     assert s["fw"]["update"] == "none" and s["fw"]["feedError"]
     assert b2.update(None, None)["code"] == "bad"
     assert b2.check_update()["fw"]["feedError"]
+
+
+def test_state_does_not_wait_for_a_slow_feed(tmp_path, bundle, monkeypatch):
+    """The window shows the clock and the bundled packs at once; the feed's release (with its
+    packs) arrives later, and the page picks it up through fw() while `feedBusy` is true."""
+    import threading
+
+    from tests.feedkit import FakeFeed
+    ff = FakeFeed()
+    ff.publish(6, notes="mới")
+    client = ff.client()
+    gate, entered = threading.Event(), threading.Event()
+    real = client.fetch
+
+    def slow_fetch(rel, kinds, progress=lambda *_a: None):
+        entered.set()
+        assert gate.wait(10)                                 # the packs are still downloading
+        return real(rel, kinds, progress)
+    monkeypatch.setattr(client, "fetch", slow_fetch)
+    b, _m, _k, _n = bridge(tmp_path, heap=FEED_HEAP, bundle=bundle, feed=client)
+    s = b.state()                                            # returns while the download waits
+    assert s["ok"] and s["fw"]["feedBusy"] and s["fw"]["bundle"]["source"] == "app"
+    assert entered.wait(10) and b.fw()["fw"]["feedBusy"]
+    gate.set()
+    fw_ = feed_settled(b)
+    assert not fw_["feedBusy"] and fw_["bundle"]["source"] == "feed" and fw_["bundle"]["notes"] == "mới"
+    b.state()                                                # asked again within the recheck time: no new check
+    assert not b.fw()["fw"]["feedBusy"]
