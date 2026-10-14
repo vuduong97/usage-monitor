@@ -24,14 +24,18 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 import clawd_desktop.preview as pv
 from clawd_desktop import __version__, appupdate, autostart, creds, feed as fd, firmware, hooks, ota, paths
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
-from clawd_desktop.discovery import ClockStore, looks_like_subnet, manual_clock, parse_subnet
+from clawd_desktop.discovery import ClockStore, manual_clock, stored_clock
 
 FEED_RECHECK = 600      # the window asks the feed again after this long (s)
 PAK_RETRY_S = 30        # after a failed /clawd.pak read, wait this long before asking again
-SEARCH_WAIT = 150       # "search again" waits this long (s) for the tray: local scan + subnets + wide sweep
+SEARCH_WAIT = 15        # "Tìm lại" waits this long (s): the saved address again, or an mDNS answer
+PROBE_TIMEOUT = 3.0     # one quick GET /api/heap to that one address per try (never a scan)
+TYPE_IP = "Nhập IP hiện trên màn hình đồng hồ (lúc khởi động) vào ô Nhập địa chỉ rồi bấm Dùng."
 HOSTNAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")
 HHMM = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
@@ -175,14 +179,10 @@ class SettingsApi:
         """The window gets its clock once, when it opens; the tray keeps looking and saves
         where it finds the clock (another network, a new DHCP lease) in clock.json. Use that
         address when it differs from ours. True if it switched."""
-        d = self._store.load()
-        typed = str(d.get("manual_host") or "")
-        c = manual_clock(typed) if typed else (
-            manual_clock(f"{d['host']}:{d.get('port') or 80}") if d.get("host") else None)
+        c = stored_clock(self._store.load())
         if c is None or c.base.rstrip("/") == self._base:
             return False
-        name = str(d.get("name") or "")
-        self._connect(c.base, name or self._key)    # the same clock keeps its saved login
+        self._connect(c.base, c.name or self._key)    # the same clock keeps its saved login
         return True
 
     @property
@@ -306,7 +306,7 @@ class SettingsApi:
             self._updater.check_async()           # the app's own update: needs no clock, never blocks
         self._follow_store()     # the tray's latest find first: waiting out a gone address takes ~60 s
         if not self._base:
-            return {**_fail("noclock", "Chưa tìm thấy đồng hồ."), "app": self._app_info()}
+            return {**_fail("noclock", f"Chưa có đồng hồ. {TYPE_IP}"), "app": self._app_info()}
         try:
             self._heap = self._api.heap()
         except ClockError as e:
@@ -688,37 +688,39 @@ class SettingsApi:
         return {"ok": True}
 
     def set_clock(self, raw: str) -> dict:
-        """Use the clock at this address (typed by hand), or "" to search again."""
+        """Use the clock at this address (typed by hand), or "" for "Tìm lại": the saved address
+        again (the tray unpins a typed one so mDNS may replace it), or where mDNS finds the clock
+        meanwhile. Only that one address is ever asked: there is no network scan."""
         if not isinstance(raw, str):
             return _fail("bad", "Địa chỉ không hợp lệ.")
         raw = raw.strip()
-        subnet = looks_like_subnet(raw)          # 10.97.40.0/24: search there, nothing to connect to yet
-        if subnet and parse_subnet(raw) is None:
-            return _fail("bad", f"“{raw}” không phải dải mạng dùng được (ví dụ 10.97.40.0/24).")
-        c = manual_clock(raw) if raw and not subnet else None
-        if raw and not subnet and c is None:
+        c = manual_clock(raw) if raw else None
+        if raw and c is None:
             return _fail("bad", f"“{raw}” không phải địa chỉ hợp lệ.")
-        t0 = time.time_ns()
         self._notify({"cmd": "set_clock", "host": raw})
         if c is not None:
             self._connect(c.base, raw)
             return self.state()
-        deadline = time.monotonic() + SEARCH_WAIT  # wait for the tray to find one and save it
-        while time.monotonic() < deadline:
-            time.sleep(1.0)
-            try:
-                fresh = self._store.path.stat().st_mtime_ns >= t0
-            except OSError:
-                fresh = False
-            d = self._store.load()
-            if fresh and d.get("host") and not d.get("manual_host"):
-                port = int(d.get("port") or 80)
-                base = f"http://{d['host']}" + (f":{port}" if port != 80 else "")
-                self._connect(base, d.get("name") or d["host"])
+        deadline = time.monotonic() + SEARCH_WAIT
+        while True:
+            c = stored_clock(self._store.load())     # re-read: the tray may move it (mDNS)
+            if c is not None and answers(c.base):
+                self._connect(c.base, c.name or c.host)
                 return self.state()
-        return _fail("offline", "Chưa tìm thấy đồng hồ nào trong mạng. Nhập địa chỉ IP của đồng hồ "
-                                "(hoặc cả dải mạng, ví dụ 10.97.40.0/24) rồi bấm Dùng.")
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(1.0)
+        where = f"Đồng hồ ở {c.host} không trả lời." if c is not None else "Chưa có địa chỉ đồng hồ."
+        return _fail("offline", f"{where} {TYPE_IP}")
 
+
+def answers(base: str) -> bool:
+    """One quick GET /api/heap (no login needed; 401 still means a clock is there)."""
+    try:
+        r = httpx.get(base + "/api/heap", timeout=PROBE_TIMEOUT)
+    except httpx.HTTPError:
+        return False
+    return r.status_code in (200, 401)
 
 def initial_edit(cfg: dict) -> dict:
     """The page's starting copy of the editable settings."""

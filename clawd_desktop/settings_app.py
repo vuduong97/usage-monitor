@@ -57,21 +57,13 @@ class Channel:
                 except (OSError, ValueError, AttributeError):
                     pass
         if msg.get("cmd") == "set_clock":
-            from clawd_desktop.discovery import (
-                SUBNETS,
-                ClockStore,
-                looks_like_subnet,
-                parse_subnet,
-                with_subnet,
-            )
+            from clawd_desktop.discovery import ClockStore
             store = ClockStore(paths.CLOCK_FILE)
-            keep = {SUBNETS: store.load()[SUBNETS]} if SUBNETS in store.load() else {}   # learned subnets stay
             host = str(msg.get("host") or "")
-            if looks_like_subnet(host):
-                net = parse_subnet(host)
-                store.save({SUBNETS: with_subnet(keep.get(SUBNETS), net)} if net else keep)
+            if host:
+                store.save({"manual_host": host})
             else:
-                store.save({**keep, "manual_host": host} if host else keep)
+                store.unpin()                       # "Tìm lại": keep the address, let mDNS replace it
         return False
 
 

@@ -308,16 +308,34 @@ def test_set_clock_by_hand_reconnects_and_tells_the_tray(tmp_path):
     assert b.set_clock("bad host:99999")["code"] == "bad"
 
 
-def test_set_clock_with_a_subnet_searches_there_instead_of_connecting(tmp_path, monkeypatch):
-    monkeypatch.setattr(sa, "SEARCH_WAIT", 0)                  # do not wait for a tray that is not there
+def test_retry_asks_only_the_saved_address_then_says_to_type_the_ip(tmp_path, monkeypatch):
+    monkeypatch.setattr(sa, "SEARCH_WAIT", 0)
+    asked = []
+    monkeypatch.setattr(sa, "answers", lambda base: (asked.append(base), False)[1])
     b, made, _k, notes = bridge(tmp_path)
+    ClockStore(tmp_path / "clock.json").save({"name": "clawd", "host": "10.97.40.207", "port": 80})
     n = len(made)
-    r = b.set_clock("10.97.40.0/24")
-    assert notes == [{"cmd": "set_clock", "host": "10.97.40.0/24"}]
-    assert r["code"] == "offline" and "IP" in r["error"]       # not found: it asks for the address
-    assert len(made) == n                                       # no clock built from "10.97.40.0"
-    assert b.set_clock("10.0.0.0/8")["code"] == "bad" and b.set_clock("10.1.1.1/xx")["ok"] is True
-    assert len(notes) == 2                                      # the bad subnet was never sent
+    r = b.set_clock("")
+    assert notes == [{"cmd": "set_clock", "host": ""}]
+    assert asked == ["http://10.97.40.207"]                    # one host, nothing else
+    assert r["code"] == "offline" and "10.97.40.207" in r["error"] and "Nhập IP" in r["error"]
+    assert len(made) == n                                       # no reconnect to a dead address
+
+
+def test_retry_connects_when_the_saved_clock_answers(tmp_path, monkeypatch):
+    monkeypatch.setattr(sa, "answers", lambda base: True)
+    b, made, _k, _n = bridge(tmp_path)
+    ClockStore(tmp_path / "clock.json").save({"name": "clawd", "host": "10.97.40.207", "port": 80})
+    r = b.set_clock("")
+    assert r["ok"] and made[-1].base == "http://10.97.40.207"
+
+
+def test_retry_with_no_address_says_to_type_one(tmp_path, monkeypatch):
+    monkeypatch.setattr(sa, "SEARCH_WAIT", 0)
+    monkeypatch.setattr(sa, "answers", lambda base: pytest.fail("nothing to ask"))
+    b, _m, _k, _n = bridge(tmp_path)
+    r = b.set_clock("")
+    assert r["code"] == "offline" and "Nhập IP" in r["error"]
 
 
 def test_private_state_is_not_exposed_to_the_page(tmp_path):

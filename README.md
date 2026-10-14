@@ -112,16 +112,19 @@ lại đồng hồ, nhập địa chỉ, mở nhật ký (`~/.config/claude-usag
 gửi cho người tặng đồng hồ nếu có lỗi) và trang web của đồng hồ đều nằm trong tab **App**
 của cửa sổ cài đặt. Khi không thấy đồng hồ, menu hiện thêm **Nhập địa chỉ đồng hồ…** (dùng
 được cả khi cửa sổ cài đặt không mở được): nhập IP mà đồng hồ hiện lúc khởi động (ví dụ
-`192.168.1.48`). Tìm khắp mạng mà không ra, Clawd tự hiện hộp hỏi địa chỉ này (một lần, không
-hỏi lại cho đến khi bạn bấm **Tìm lại**). Có thể nhập cả dải mạng của đồng hồ, ví dụ
-`10.97.40.0/24`: Clawd quét dải đó và nhớ lại, nên đồng hồ đổi IP trong dải vẫn tự tìm thấy.
+`192.168.1.48`).
+
+Clawd **không quét mạng**. Nó tìm đồng hồ bằng mDNS (đồng hồ tự trả lời khi cùng mạng WiFi với máy
+tính) và nhớ địa chỉ đã dùng. Khi đồng hồ không trả lời, Clawd chỉ thử lại đúng địa chỉ đó (mỗi
+phút một lần, một máy); biểu tượng chuyển đỏ và nhắc nhập IP mới nếu đồng hồ đã đổi địa chỉ.
+**Tìm lại** giữ địa chỉ cũ, thử lại ngay và để mDNS thay nó nếu đồng hồ ở mạng khác.
 
 ## Gặp vấn đề
 
 | Hiện tượng | Cách xử lý |
 | --- | --- |
 | "Không thấy đồng hồ" | Đồng hồ và máy tính phải cùng một WiFi (không dùng mạng khách). Thử **Cài đặt… → App → Tìm lại**, hoặc **Nhập địa chỉ đồng hồ…** |
-| Máy cắm dây LAN, đồng hồ ở WiFi công ty (hai dải IP khác nhau, vd `10.97.36.x` và `10.97.40.x`) | mDNS không đi qua router nên Clawd phải quét. Nó quét mạng của máy, rồi các dải từng thấy đồng hồ, rồi (nhiều nhất 30 phút một lần) cả dải `/20` quanh máy (khoảng 30–60 giây). Không ra thì Clawd hỏi địa chỉ: nhập IP của đồng hồ, hoặc dải của nó (`10.97.40.0/24`). Công ty chặn hẳn máy dây tới WiFi thì không có cách nào ngoài dùng chung một mạng |
+| Máy cắm dây LAN, đồng hồ ở WiFi công ty (hai dải IP khác nhau, vd `10.97.36.x` và `10.97.40.x`) | mDNS không đi qua router nên Clawd không tự thấy đồng hồ. Nhập một lần IP mà đồng hồ hiện lúc khởi động (**Nhập địa chỉ đồng hồ…**). Nhờ IT giữ cố định IP cho đồng hồ (DHCP reservation) để khỏi phải nhập lại khi nó đổi IP |
 | Lúc được lúc mất, nhất là ở công ty, quán cà phê, khách sạn | Nhiều mạng công ty / mạng khách chặn các thiết bị nói chuyện với nhau (đồng hồ vẫn vào WiFi, vẫn hiện IP, nhưng máy tính không tới được). Ứng dụng không vượt qua được: dùng WiFi nhà, hoặc phát WiFi từ điện thoại rồi cho cả máy tính và đồng hồ vào đó (thêm mạng này trong trang cài đặt đồng hồ, mục WiFi) |
 | "Chưa đăng nhập Claude" | Mở Terminal (Mac) hoặc PowerShell (Windows), gõ `claude`, đăng nhập. Ứng dụng tự nhận trong 1 phút |
 | Đồng hồ hiện SETUP MODE | Đồng hồ không vào được WiFi (đổi mật khẩu WiFi, router mới...). Làm lại Bước 1 |
@@ -191,7 +194,7 @@ Cấu trúc:
 clawd_desktop/
   usage.py       đọc token Claude Code, hỏi mức dùng, gửi lên đồng hồ (từ daemon cũ)
   events.py      nhận hook Claude Code / pi, quyết định Clawd làm gì (POST /api/state)
-  discovery.py   tìm đồng hồ: mDNS _clawd._tcp, quét mạng /24, địa chỉ nhập tay
+  discovery.py   tìm đồng hồ: mDNS _clawd._tcp, địa chỉ đã nhớ, địa chỉ nhập tay (không quét mạng)
   engine.py      chạy tất cả trong một luồng nền, báo trạng thái cho tray
   tray.py        biểu tượng + menu tiếng Việt
   settings_app.py  cửa sổ cài đặt (pywebview, tiến trình riêng), trang ở ui/

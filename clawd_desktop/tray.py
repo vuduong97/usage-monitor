@@ -21,11 +21,7 @@ FEED_FIRST = 60.0       # first firmware feed check after start (s)
 FEED_RETRY = 1800.0     # after a failed check
 FRESH = 180.0      # a push this recent counts as "connected"
 ADDRESS_PROMPT = ("Địa chỉ IP của đồng hồ (hiện trên màn hình đồng hồ lúc khởi động), "
-                  "ví dụ 192.168.1.48. Hoặc cả dải mạng của nó, ví dụ 10.97.40.0/24:")
-LOST_PROMPT = ("Clawd chưa tìm thấy đồng hồ trong mạng. Nhập địa chỉ IP của đồng hồ (hiện trên "
-               "màn hình đồng hồ lúc khởi động), ví dụ 192.168.1.48. Hoặc cả dải mạng của nó, "
-               "ví dụ 10.97.40.0/24:")
-LOCAL_NETWORK_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork"
+                  "ví dụ 192.168.1.48:")
 
 
 def log(msg: str) -> None:
@@ -60,20 +56,22 @@ def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
         where = ", ".join(snap.get("config_targets") or [])
         return ("ok" if connected else "busy",
                 ("Đã kết nối · " if connected else "Đang gửi tới · ") + where, detail)
-    if clock is None:
-        if snap.get("lan_blocked"):
-            if sys.platform == "darwin":
-                return "error", "macOS đang chặn Clawd: bật Clawd trong Cài đặt → Mạng cục bộ", detail
-            return "error", "Máy tính chặn Clawd vào mạng: cho phép Clawd trong Tường lửa", detail
-        if snap.get("scanning"):
-            return "busy", "Đang dò tìm đồng hồ trong mạng…", detail
-        return "error", "Không thấy đồng hồ: cùng WiFi chưa? (mạng công ty/mạng khách có thể chặn)", detail
+    if clock is None:      # nothing to try: no address saved and mDNS silent (there is no scan)
+        return "error", "Không thấy đồng hồ: nhập IP hiện trên màn hình đồng hồ (Nhập địa chỉ đồng hồ…)", detail
     name = clock.name or clock.host    # the address lives in Cài đặt
     if connected:
         return "ok", f"Đã kết nối · {name}", detail
     if snap.get("failing"):
-        return "error", f"Đồng hồ {name} không trả lời", detail
+        return "error", f"Đồng hồ {name} không trả lời: đổi IP thì nhập IP mới (Nhập địa chỉ đồng hồ…)", detail
     return "busy", f"Đang kết nối {name}…", detail
+
+
+def lost(snap: dict, now: float | None = None) -> bool:
+    """The clock is not reached (none known, or no push got through lately): the menu offers
+    to type its address. Not for `http_targets` from the config file."""
+    now = time.time() if now is None else now
+    last_ok = snap.get("last_ok")
+    return not snap.get("manual_config") and not (last_ok and now - last_ok < FRESH)
 
 
 # =============================================================================
@@ -179,12 +177,9 @@ class Tray:
                 M(lambda _i: f"● Có firmware mới (#{self.fw_new})", self.open_update,
                   visible=lambda _i: bool(self.fw_new)),
                 M("Cài đặt…", self.open_settings, default=True),
-                # Only while something is wrong. Everything else (rescan, address,
-                # log, the clock's web page, version) lives in the settings window.
-                M("Mở cài đặt Mạng cục bộ…", lambda: open_path(LOCAL_NETWORK_PANE),
-                  visible=lambda _i: sys.platform == "darwin"
-                  and bool(self.engine.snapshot().get("lan_blocked"))),
-                # Rescue that works without the settings window (e.g. no WebView2).
+                # Only while the clock is not answering. Everything else (retry, address,
+                # log, the clock's web page, version) lives in the settings window; this one
+                # works without it too (e.g. no WebView2).
                 M("Nhập địa chỉ đồng hồ…", self.manual, visible=lambda _i: self._lost()),
                 pystray.Menu.SEPARATOR,
                 M(f"Thoát {APP_NAME}", self.quit),
@@ -218,7 +213,6 @@ class Tray:
             title = f"{APP_NAME}: {head}" + (f"\n{detail}" if detail else "")
             self.on_main(lambda: (setattr(self.icon, "title", title[:120]), self.icon.update_menu()))
         self._sync_app_update()
-        self._ask_when_lost()
         if self._popover is not None:
             self.on_main(self._popover.push)     # a no-op while the panel is closed
 
@@ -280,28 +274,15 @@ class Tray:
 
     # ---- menu actions ------------------------------------------------------------
     def _lost(self) -> bool:
-        snap = self.engine.snapshot()
-        return (snap.get("clock") is None and not snap.get("scanning")
-                and not snap.get("manual_config"))
+        return lost(self.engine.snapshot())
 
     def manual(self) -> None:
-        self._ask_address(ADDRESS_PROMPT)
-
-    def _ask_address(self, prompt: str) -> None:
         def ask() -> None:
-            text = ask_text(prompt)
-            if text and not self.engine.finder.use_address(text):
+            text = ask_text(ADDRESS_PROMPT)
+            if text and self.engine.finder.set_manual(text) is None:
                 alert(f"“{text}” không phải địa chỉ hợp lệ.")
             self.refresh()
         threading.Thread(target=ask, daemon=True).start()
-
-    def _ask_when_lost(self) -> None:
-        """A whole search (mDNS, the local network, the subnets seen before, the wider network)
-        found nothing: ask for the address once instead of leaving the icon red."""
-        if self.engine.snapshot().get("needs_manual"):
-            self.engine.finder.manual_prompted()
-            log("No clock found anywhere: asking for its address")
-            self._ask_address(LOST_PROMPT)
 
     def open_update(self) -> None:
         self._open_window("update")
@@ -415,9 +396,9 @@ class Tray:
             if cmd == "set_clock":
                 host = str(msg.get("host") or "")
                 if host:
-                    self.engine.finder.use_address(host)
+                    self.engine.finder.set_manual(host)
                 else:
-                    self.engine.finder.forget()
+                    self.engine.finder.retry()       # "Tìm lại": same address, again now
                 self.refresh()
             elif cmd == "app_update_apply":
                 self._restart_for_update()

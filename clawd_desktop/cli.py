@@ -2,7 +2,7 @@
 
   Clawd                     tray app (default)
   Clawd run                 headless: same work, logs to the terminal (Ctrl+C stops)
-  Clawd find                list the clocks on this network (mDNS, then a LAN scan)
+  Clawd find                list the clocks that answer mDNS on this network (no port scan)
   Clawd hooks on|off        install / remove the Claude Code hooks
   Clawd autostart on|off    start at login, or not
   Clawd cleanup             what the uninstaller runs: autostart off, hooks off
@@ -55,9 +55,7 @@ def _find(seconds: float) -> int:
         for c in clocks:
             print(f"mDNS  {c.name:<20} {c.base:<28} v{c.version}")
         if not clocks:
-            print("mDNS: nothing; scanning the local network…")
-            for c in await discovery.scan_lan():
-                print(f"scan  {'':<20} {c.base:<28} v{c.version}")
+            print("mDNS: nothing. Type the IP the clock shows on its screen in Cài đặt → App → Nhập địa chỉ.")
     asyncio.run(go())
     return 0
 

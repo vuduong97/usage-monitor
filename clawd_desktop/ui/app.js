@@ -612,7 +612,7 @@ $('autostart').addEventListener('click', async () => { const r = await api.set_a
 $('hooks').addEventListener('click', async () => { const r = await api.set_hooks(!(S.app && S.app.hooks)); if (r.ok) { S.app = r.app; renderApp(); } else msg(r.error, 'err'); });
 $('logBtn').addEventListener('click', () => api.open_log());
 $('webBtn').addEventListener('click', () => api.open_web());
-$('rescanBtn').addEventListener('click', async () => { msg('Đang tìm đồng hồ trong mạng…'); $('rescanBtn').disabled = true; const r = await api.set_clock(''); $('rescanBtn').disabled = false; apply(r); });
+$('rescanBtn').addEventListener('click', async () => { msg('Đang thử lại đồng hồ…'); $('rescanBtn').disabled = true; const r = await api.set_clock(''); $('rescanBtn').disabled = false; apply(r); });
 $('manualBtn').addEventListener('click', async () => { const v = $('manualHost').value.trim(); if (!v) return; msg('Đang kết nối…'); apply(await api.set_clock(v)); });
 
 // ---------- login ----------

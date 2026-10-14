@@ -1,7 +1,6 @@
-"""Clock discovery: mDNS first, the remembered clock, LAN scan, manual address."""
+"""Clock discovery: mDNS, the remembered clock, a typed address. Never a network scan."""
 import asyncio
-
-import httpx
+import inspect
 
 from clawd_desktop import discovery as dsc
 from clawd_desktop.discovery import Clock, ClockFinder, ClockStore
@@ -37,125 +36,158 @@ class Now:
         return self.t
 
 
-def make(tmp_path, clocks=(), scan=(), manual=(), saved=None, there=(), local="10.0.0.2"):
-    """`scan`: what the local-network scan finds. `there`: clocks that answer a probe of an explicit
-    host list (learned subnets, wide sweep); every list probed is kept in `f.probes`."""
+def make(tmp_path, clocks=(), manual=(), saved=None):
     store = ClockStore(tmp_path / "clock.json")
     if saved is not None:
         store.save(saved)
-    calls = []
-    probes = []
-
-    async def scanner():
-        calls.append(1)
-        return list(scan)
-
-    async def probe(hosts):
-        probes.append(list(hosts))
-        return [c for c in there if c.host in set(hosts)]
     now = Now()
-    f = ClockFinder(store, manual=lambda: list(manual), browser=FakeBrowser(clocks),
-                    scanner=scanner, clock=now, probe=probe, local_ip=lambda: local)
-    f.probes = probes
-    return f, store, now, calls
+    f = ClockFinder(store, manual=lambda: list(manual), browser=FakeBrowser(clocks), clock=now)
+    return f, store, now
 
 
 def step(f):
     asyncio.run(f.step())
 
 
+def drop(f, url):
+    for _ in range(dsc.FAIL_LIMIT):
+        f.report(url, False)
+
+
 A = Clock(host="10.0.0.7", name="clawd", version="2.16.0")
 
 
+def test_there_is_no_port_scan_anywhere():
+    src = inspect.getsource(dsc)
+    for gone in ("scan_lan", "open_connection", "httpx", "ip_network", '"subnets"'):
+        assert gone not in src, gone
+
+
 def test_first_mdns_clock_is_used_and_remembered(tmp_path):
-    f, store, _now, calls = make(tmp_path, clocks=[A])
+    f, store, _now = make(tmp_path, clocks=[A])
     assert f.targets() == []
     step(f)
     assert f.targets() == ["http://10.0.0.7/api/usage"]
     assert store.load() == {"name": "clawd", "host": "10.0.0.7", "port": 80, "version": "2.16.0"}
-    assert calls == []
 
 
 def test_saved_clock_is_tried_at_once_then_follows_its_new_address(tmp_path):
-    f, store, _now, _ = make(tmp_path, saved={"name": "clawd", "host": "192.168.1.48", "port": 80})
+    f, store, _now = make(tmp_path, saved={"name": "clawd", "host": "192.168.1.48", "port": 80})
     assert f.targets() == ["http://192.168.1.48/api/usage"]      # before mDNS answers
-    f.browser.set(Clock(host="192.168.1.48", name="clawd"))
+    f.browser.set(Clock(host="192.168.1.60", name="clawd"))      # the router gave it a new IP
     step(f)
-    assert f.targets() == ["http://192.168.1.48/api/usage"]
-    assert store.load()["host"] == "192.168.1.48"
+    assert f.targets() == ["http://192.168.1.60/api/usage"]
+    assert store.load()["host"] == "192.168.1.60"
 
 
 def test_remembered_clock_wins_over_another_one(tmp_path):
     other = Clock(host="10.0.0.9", name="aaa-neighbour")
-    f, _store, _now, _ = make(tmp_path, clocks=[other, A], saved={"name": "clawd", "host": "1.2.3.4"})
+    f, _store, _now = make(tmp_path, clocks=[other, A], saved={"name": "clawd", "host": "1.2.3.4"})
     step(f)
     assert f.targets() == ["http://10.0.0.7/api/usage"]
 
 
 def test_config_http_targets_bypass_discovery(tmp_path):
-    f, store, _now, calls = make(tmp_path, clocks=[A], manual=["http://192.168.0.5/api/usage"])
+    f, store, _now = make(tmp_path, clocks=[A], manual=["http://192.168.0.5/api/usage"])
     step(f)
     assert f.targets() == ["http://192.168.0.5/api/usage"]
-    assert store.load() == {} and calls == []
+    assert store.load() == {}
 
 
-def test_failing_clock_is_dropped_and_found_again_by_scan(tmp_path):
-    f, store, now, calls = make(tmp_path, saved={"host": "10.0.0.7"},
-                                scan=[Clock(host="10.0.0.50", version="2.16.0", source="scan")])
-    url = "http://10.0.0.7/api/usage"
+def test_a_silent_clock_is_only_ever_retried_at_its_own_address(tmp_path):
+    f, store, now = make(tmp_path, saved={"host": "10.97.40.207"})
+    url = "http://10.97.40.207/api/usage"
     for _ in range(dsc.FAIL_LIMIT - 1):
         f.report(url, False)
     assert f.targets() == [url]
     f.report(url, False)
-    assert f.targets() == []                      # stop polling for a screen that is not there
-    step(f)                                       # too soon after start: no scan yet
-    assert calls == [] and f.targets() == []
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert calls == [1]
-    assert f.targets() == ["http://10.0.0.50/api/usage"]
-    f.report("http://10.0.0.50/api/usage", True)
-    assert store.load()["host"] == "10.0.0.50"
-
-
-def test_dropped_clock_is_retried_after_the_hold(tmp_path):
-    f, _store, now, _calls = make(tmp_path, saved={"host": "10.0.0.7"})
-    for _ in range(dsc.FAIL_LIMIT):
-        f.report("http://10.0.0.7/api/usage", False)
-    step(f)
-    assert f.targets() == []
+    assert f.targets() == []                      # stop pushing to a screen that is not there
+    for _ in range(10):                           # a long outage: only that one address, now and then
+        now.t += dsc.BAD_HOLD / 2
+        step(f)
+        assert f.targets() in ([], [url])
+        if f.targets():
+            drop(f, url)
+    assert store.load()["host"] == "10.97.40.207"
     now.t += dsc.BAD_HOLD + 1
     step(f)
-    assert f.targets() == ["http://10.0.0.7/api/usage"]
+    assert f.targets() == [url]
 
 
-def test_scanned_clock_takes_its_mdns_name_later(tmp_path):
-    f, store, now, _ = make(tmp_path, scan=[Clock(host="10.0.0.7", source="scan")])
-    now.t += dsc.SCAN_AFTER
+def test_scanless_status_has_no_scan_fields(tmp_path):
+    f, _store, _now = make(tmp_path, clocks=[A])
+    d = f.describe()
+    assert d["clock"] is None and d["failing"]
+    assert not {"scanning", "lan_blocked", "needs_manual"} & set(d)
     step(f)
-    assert f.current.source == "scan"
-    f.browser.set(A)
-    step(f)
-    assert f.current == A and store.load()["name"] == "clawd"
+    f.report(A.usage_url, True)
+    d = f.describe()
+    assert d["clock"] == A and not d["failing"] and d["last_ok"]
 
 
-def test_manual_address_and_forget(tmp_path):
-    f, store, _now, _ = make(tmp_path, clocks=[A])
+def test_typed_address_wins_over_mdns_and_failures_and_restarts(tmp_path):
+    f, store, _now = make(tmp_path, clocks=[A])
     assert f.set_manual("not a host:99999") is None
     c = f.set_manual(" 192.168.1.80 ")
-    assert c.source == "manual" and f.targets() == ["http://192.168.1.80/api/usage"]
+    assert c is not None and c.source == "manual" and f.targets() == ["http://192.168.1.80/api/usage"]
     step(f)
     assert f.targets() == ["http://192.168.1.80/api/usage"]     # mDNS does not override it
-    for _ in range(dsc.FAIL_LIMIT + 2):
-        f.report("http://192.168.1.80/api/usage", False)
+    drop(f, "http://192.168.1.80/api/usage")
+    drop(f, "http://192.168.1.80/api/usage")
     assert f.targets() == ["http://192.168.1.80/api/usage"]     # nor do failures
-    # a new app start keeps the typed address
-    f2 = ClockFinder(store, browser=FakeBrowser([A]), scanner=None)
-    assert f2.targets() == ["http://192.168.1.80/api/usage"]
-    f.forget()
-    assert f.targets() == [] and store.load() == {"subnets": ["192.168.1.0/24"]}   # the address is gone, where it lives is not
+    f2 = ClockFinder(store, browser=FakeBrowser([A]))
+    assert f2.targets() == ["http://192.168.1.80/api/usage"]    # a new app start keeps it
+
+
+def test_retry_keeps_the_address_and_tries_it_at_once(tmp_path):
+    f, store, now = make(tmp_path, saved={"name": "clawd", "host": "10.97.40.207", "port": 80})
+    url = "http://10.97.40.207/api/usage"
+    drop(f, url)
+    step(f)
+    assert f.targets() == []                      # on hold for BAD_HOLD
+    f.retry()                                     # "Tìm lại"
+    assert f.targets() == [url]                   # no wait, and nothing forgotten
+    assert store.load()["host"] == "10.97.40.207" and store.load()["name"] == "clawd"
+    now.t += 1
+    step(f)
+    assert f.targets() == [url]
+
+
+def test_retry_unpins_a_typed_address_so_mdns_may_replace_it_later(tmp_path):
+    f, store, _now = make(tmp_path, clocks=[A])
+    f.set_manual("10.97.40.207")
+    f.retry()
+    assert store.load() == {"name": "", "host": "10.97.40.207", "port": 80, "version": ""}
+    assert f.current is not None and f.current.source == "saved"
+    step(f)
+    assert f.targets() == ["http://10.97.40.207/api/usage"]     # still tried first
+    drop(f, "http://10.97.40.207/api/usage")                     # but it is gone (another network)
+    step(f)
+    assert f.targets() == ["http://10.0.0.7/api/usage"]          # mDNS takes over
+    assert store.load()["host"] == "10.0.0.7"
+
+
+def test_retry_with_nothing_saved_only_listens_to_mdns(tmp_path):
+    f, store, _now = make(tmp_path)
+    f.retry()
+    assert f.targets() == [] and store.load() == {}
+    f.browser.set(A)
     step(f)
     assert f.targets() == ["http://10.0.0.7/api/usage"]
+
+
+def test_old_scan_keys_are_dropped_from_clock_json(tmp_path):
+    saved = {"name": "", "host": "10.97.40.207", "port": 80, "version": "2.16.0", "subnets": ["10.97.40.0/24"]}
+    f, store, _now = make(tmp_path, saved=saved)
+    f.report("http://10.97.40.207/api/usage", True)
+    assert store.load() == {"name": "", "host": "10.97.40.207", "port": 80, "version": "2.16.0"}
+
+
+def test_stored_clock_reads_clock_json():
+    assert dsc.stored_clock({}) is None
+    assert dsc.stored_clock({"manual_host": "10.0.0.5:8080", "host": "10.0.0.6"}).base == "http://10.0.0.5:8080"
+    c = dsc.stored_clock({"host": "10.0.0.6", "port": "x", "name": "clawd"})
+    assert (c.base, c.name, c.source) == ("http://10.0.0.6", "clawd", "saved")
 
 
 def test_manual_clock_parsing():
@@ -163,193 +195,3 @@ def test_manual_clock_parsing():
     assert dsc.manual_clock("http://10.0.0.5/whatever").usage_url == "http://10.0.0.5/api/usage"
     assert dsc.manual_clock("") is None and dsc.manual_clock(":80") is None
     assert dsc.manual_clock("h:abc") is None
-
-
-def test_scan_candidates_follow_the_netmask():
-    wide = dsc.scan_candidates("10.97.44.245", 23)          # office /23: both halves
-    assert len(wide) == 509 and "10.97.45.12" in wide and "10.97.44.245" not in wide
-    assert len(dsc.scan_candidates("10.1.2.3", 16)) == 1021   # capped at a /22
-    assert len(dsc.scan_candidates("192.168.1.20", 28)) == 13
-    assert dsc.local_prefix(None) == 24
-
-
-def test_scan_candidates_cover_the_slash_24():
-    hosts = dsc.scan_candidates("192.168.1.20")
-    assert len(hosts) == 253 and "192.168.1.48" in hosts and "192.168.1.20" not in hosts
-    assert dsc.scan_candidates(None) == []
-
-
-def test_scan_lan_keeps_only_clawd_firmware():
-    def handler(req: httpx.Request) -> httpx.Response:
-        host = req.url.host
-        if host == "10.0.0.2":
-            return httpx.Response(200, json={"heap": 1, "pak": 17, "desk": 30, "version": "2.16.0"})
-        if host == "10.0.0.3":
-            return httpx.Response(200, json={"heap": 1})          # some other device
-        if host == "10.0.0.4":
-            return httpx.Response(401)
-        raise httpx.ConnectError("refused", request=req)
-    found = asyncio.run(dsc.scan_lan(["10.0.0.2", "10.0.0.3", "10.0.0.4", "10.0.0.5"],
-                                     transport=httpx.MockTransport(handler)))
-    assert found == [Clock(host="10.0.0.2", version="2.16.0", source="scan")]
-
-
-def test_describe_reports_state(tmp_path):
-    f, _store, _now, _ = make(tmp_path, clocks=[A])
-    d = f.describe()
-    assert d["clock"] is None and d["failing"] and d["needs_manual"] is False
-    step(f)
-    f.report(A.usage_url, True)
-    d = f.describe()
-    assert d["clock"] == A and not d["failing"] and d["last_ok"]
-
-
-def test_lan_blocked_heuristic():
-    import errno
-    from clawd_desktop.discovery import lan_blocked
-    assert lan_blocked([errno.EHOSTUNREACH] * 253)
-    assert not lan_blocked([errno.EHOSTUNREACH] * 250 + [errno.ECONNREFUSED])   # router answered
-    assert not lan_blocked([errno.EHOSTUNREACH] * 250 + [0])                    # something is open
-    assert not lan_blocked([None] * 200 + [errno.EHOSTUNREACH] * 53)            # timeouts: normal LAN
-    assert not lan_blocked([])
-
-
-def test_blocked_scan_is_reported_and_retried_sooner(tmp_path):
-    from clawd_desktop import discovery
-    blocked = discovery.ScanResult()
-    blocked.blocked = True
-    f, _store, now, calls = make(tmp_path)
-    f.scanner = lambda: asyncio.sleep(0, result=blocked)
-    now.t += discovery.SCAN_AFTER + 1
-    step(f)
-    assert f.describe()["lan_blocked"] is True
-    now.t += discovery.RESCAN_BLOCKED + 1
-    f.scanner = lambda: asyncio.sleep(0, result=discovery.ScanResult([A]))
-    step(f)
-    assert f.current is not None and f.current.host == A.host
-    assert f.describe()["lan_blocked"] is False
-
-
-# =============================================================================
-# Another subnet: learned subnets, the wide sweep, asking for the address
-# =============================================================================
-OFFICE_IP = "10.97.36.53"                       # a wired PC; the clock is on the WiFi subnet
-WIFI_CLOCK = Clock(host="10.97.40.207", version="2.16.0", source="scan")
-
-
-def test_subnet_helpers():
-    assert dsc.parse_subnet("10.97.40.0/24") == "10.97.40.0/24"
-    assert dsc.parse_subnet(" 10.97.40.7/24 ") == "10.97.40.0/24"
-    for bad in ("10.97.40.0", "10.0.0.0/8", "10.0.0.0/16", "8.8.8.0/24", "169.254.1.0/24",
-                "http://10.0.0.1/24", "fe80::/64", "10.0.0.0/31", "x/24", ""):
-        assert dsc.parse_subnet(bad) is None, bad
-    assert dsc.parse_subnet("10.97.40.0/22") == "10.97.40.0/22"
-    assert dsc.subnet_of("10.97.40.207") == "10.97.40.0/24"
-    assert dsc.subnet_of("clawd.local") is None and dsc.subnet_of("8.8.8.8") is None
-    assert dsc.subnet_of("fe80::1") is None and dsc.subnet_of("127.0.0.1") is None
-    assert dsc.looks_like_subnet("10.97.40.0/24") and dsc.looks_like_subnet("10.0.0.0/8")
-    assert not dsc.looks_like_subnet("10.0.0.5") and not dsc.looks_like_subnet("clawd.local:8080")
-    assert not dsc.looks_like_subnet("http://10.0.0.5/24") and not dsc.looks_like_subnet("10.0.0.5/foo")
-
-
-def test_subnet_list_is_newest_first_deduplicated_and_capped():
-    assert dsc.with_subnet(None, "10.0.1.0/24") == ["10.0.1.0/24"]
-    assert dsc.with_subnet(["10.0.2.0/24", "10.0.1.0/24"], "10.0.1.0/24") == ["10.0.1.0/24", "10.0.2.0/24"]
-    many = [f"10.0.{i}.0/24" for i in range(dsc.MAX_SUBNETS)]
-    out = dsc.with_subnet(many, "10.9.9.0/24")
-    assert len(out) == dsc.MAX_SUBNETS and out[0] == "10.9.9.0/24" and many[-1] not in out
-    assert dsc.with_subnet("garbage", "10.0.1.0/24") == ["10.0.1.0/24"]
-
-
-def test_wide_candidates_are_the_slash_20_around_us():
-    hosts = dsc.wide_candidates(OFFICE_IP)
-    assert len(hosts) == 4093 and "10.97.40.207" in hosts and OFFICE_IP not in hosts
-    assert "10.97.48.1" not in hosts                                  # past the /20
-    assert "10.97.40.207" not in dsc.wide_candidates(OFFICE_IP, skip=["10.97.40.207"])
-    assert dsc.wide_candidates(None) == [] and dsc.wide_candidates("8.8.8.8") == []
-
-
-def test_clock_on_another_subnet_is_found_by_the_wide_sweep_and_its_subnet_learned(tmp_path):
-    f, store, now, calls = make(tmp_path, there=[WIFI_CLOCK], local=OFFICE_IP)
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert calls == [1] and len(f.probes) == 1                 # local scan, then only the wide sweep
-    assert f.targets() == ["http://10.97.40.207/api/usage"]
-    assert store.load()["subnets"] == ["10.97.40.0/24"]
-    assert f.describe()["needs_manual"] is False
-
-
-def test_learned_subnet_is_swept_before_the_wide_sweep(tmp_path):
-    f, store, now, _ = make(tmp_path, local=OFFICE_IP,
-                            saved={"host": "10.97.40.207", "subnets": ["10.97.40.0/24"]},
-                            there=[Clock(host="10.97.40.99", source="scan")])
-    for _ in range(dsc.FAIL_LIMIT):                            # the DHCP lease changed: .207 is gone
-        f.report("http://10.97.40.207/api/usage", False)
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert len(f.probes) == 1 and len(f.probes[0]) == 254      # just that /24, no /20
-    assert f.targets() == ["http://10.97.40.99/api/usage"]
-    assert store.load()["host"] == "10.97.40.99" and store.load()["subnets"] == ["10.97.40.0/24"]
-
-
-def test_own_subnet_is_not_learned(tmp_path):
-    f, store, _now, _ = make(tmp_path, clocks=[Clock(host="10.97.36.9", name="clawd")], local=OFFICE_IP)
-    step(f)
-    assert f.targets() == ["http://10.97.36.9/api/usage"] and "subnets" not in store.load()
-
-
-def test_nothing_found_asks_for_the_address_once_and_sweeps_wide_rarely(tmp_path):
-    f, _store, now, calls = make(tmp_path, local=OFFICE_IP)
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert len(f.probes) == 1 and f.describe()["needs_manual"] is True
-    f.manual_prompted()                                         # the tray asked
-    assert f.describe()["needs_manual"] is False
-    now.t += dsc.RESCAN_EVERY + 1
-    step(f)
-    assert calls == [1, 1] and len(f.probes) == 1               # local rescan, no second wide sweep
-    assert f.describe()["needs_manual"] is False                # and no second question
-    now.t += dsc.WIDE_RETRY
-    step(f)
-    assert len(f.probes) == 2 and f.describe()["needs_manual"] is False
-    f.forget()                                                  # "search again": a fresh search may ask again
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert len(f.probes) == 3 and f.describe()["needs_manual"] is True
-
-
-def test_several_unknown_clocks_in_the_wide_sweep_are_not_guessed(tmp_path):
-    f, _store, now, _ = make(tmp_path, local=OFFICE_IP,
-                             there=[WIFI_CLOCK, Clock(host="10.97.41.5", source="scan")])
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert f.current is None and f.describe()["needs_manual"] is True
-
-
-def test_blocked_lan_does_not_sweep_further_or_ask(tmp_path):
-    blocked = dsc.ScanResult()
-    blocked.blocked = True
-    f, _store, now, _ = make(tmp_path, local=OFFICE_IP, there=[WIFI_CLOCK])
-    f.scanner = lambda: asyncio.sleep(0, result=blocked)
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert f.probes == [] and f.current is None and f.describe()["needs_manual"] is False
-
-
-def test_typed_subnet_searches_again_and_keeps_what_was_learned(tmp_path):
-    f, store, now, _ = make(tmp_path, local=OFFICE_IP, there=[WIFI_CLOCK],
-                            saved={"host": "10.1.1.1", "subnets": ["10.50.0.0/24"]})
-    assert f.use_address("10.0.0.0/8") is False and f.use_address("10.97.40.0/24") is True
-    assert store.load() == {"subnets": ["10.97.40.0/24", "10.50.0.0/24"]} and f.targets() == []
-    now.t += dsc.SCAN_AFTER
-    step(f)
-    assert f.targets() == ["http://10.97.40.207/api/usage"]
-    assert len(f.probes) == 1 and len(f.probes[0]) == 254 + 254   # both learned subnets, no /20
-
-
-def test_a_typed_address_learns_its_subnet_and_forget_keeps_it(tmp_path):
-    f, store, _now, _ = make(tmp_path, local=OFFICE_IP)
-    assert f.use_address("10.97.40.207") is True and f.use_address("not a host:99999") is False
-    assert store.load() == {"manual_host": "10.97.40.207", "subnets": ["10.97.40.0/24"]}
-    f.forget()
-    assert store.load() == {"subnets": ["10.97.40.0/24"]} and f.current is None
