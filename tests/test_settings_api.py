@@ -345,7 +345,10 @@ def test_private_state_is_not_exposed_to_the_page(tmp_path):
                              "export_backup", "import_backup", "update", "job", "busy", "set_autostart",
                              "set_hooks", "open_log", "open_web", "set_clock", "usage_preview",
                              "clawd_pak", "check_update", "fw", "app_update", "app_update_check",
-                             "app_update_apply", "app_update_page"])
+                             "app_update_apply", "app_update_page",
+                             "agents", "set_agent", "set_agents", "disconnect_all", "usage_sources",
+                             "set_usage_source", "setup_state", "finish_setup", "setup_clocks",
+                             "setup_use_clock", "close_mdns"])
 
 
 def test_main_screen_is_handed_to_the_engine():
