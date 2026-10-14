@@ -122,6 +122,17 @@ def test_an_agent_does_not_claim_another_agents_hooks(tmp_path):
     assert not r["codex"].ours({"command": "node /x/codex-helper.cjs"})
 
 
+def test_gemini_groups_have_no_matcher(tmp_path):
+    (tmp_path / ".gemini").mkdir()
+    (tmp_path / ".gemini/settings.json").write_text("{}")
+    a = reg(tmp_path)["gemini"]
+    a.prepare = lambda: None
+    a.install()
+    data = json.loads((tmp_path / ".gemini/settings.json").read_text())
+    assert all("matcher" not in g for groups in data["hooks"].values() for g in groups)   # "*" is not a valid regex
+    assert data["hooks"]["BeforeTool"][0]["hooks"][0]["timeout"] == 2000                  # milliseconds
+
+
 def test_gemini_needs_more_than_the_antigravity_folder(tmp_path):
     (tmp_path / ".gemini/antigravity-ide").mkdir(parents=True)
     assert not reg(tmp_path)["gemini"].found()

@@ -48,7 +48,7 @@ class Gemini(Agent):
     def install(self) -> str:
         self.prepare()
         add = {e: self.handler(e) for e in EVENTS}
-        edit_json(self.file(), lambda d: merge_groups(d, add, self.ours, matcher="*"))
+        edit_json(self.file(), lambda d: merge_groups(d, add, self.ours))   # no matcher: every tool / event
         return "Đã nối. " + self.note
 
     def uninstall(self) -> str:
