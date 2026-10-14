@@ -143,7 +143,7 @@ class SettingsApi:
                  renderer: pv.Renderer | None = None,
                  payload_source: Callable[[], tuple[dict, float] | None] = paths.usage_payload,
                  now: Callable[[], float] = time.time, tab: str = "") -> None:
-        self._tab = tab if tab in ("update",) else ""   # the page opens on this tab once
+        self._tab = tab if tab in ("update", "agents", "setup") else ""   # the page opens on this tab once
         self._renderer = renderer              # draws the clock's screen (None: the page approximates)
         self._payload_source = payload_source  # the last usage payload the engine sent
         self._now = now

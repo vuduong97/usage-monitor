@@ -5,7 +5,7 @@ in the tray process), started by the tray's "Cài đặt…" item, so it costs
 nothing while closed. The tray talks to it over the child's stdin/stdout:
 
   tray -> window   "show"                         bring the window forward
-                   "show update"                  ... on the Update tab
+                   "show <tab>"                   ... on that tab (update, agents, setup)
   window -> tray   {"cmd": "refresh"}             autostart/hooks changed
                    {"cmd": "app_update_apply"}      restart into the downloaded app version
                    {"cmd": "set_clock", "host": "10.0.0.5" | ""}   typed clock / search again
@@ -27,6 +27,7 @@ from clawd_desktop.settings_api import SettingsApi
 
 UI_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent)) / "clawd_desktop" / "ui"
 WIDTH, HEIGHT = 820, 600
+TABS = ("update", "agents", "setup")    # tabs the tray can open the window on
 
 
 def log(msg: str) -> None:
@@ -133,8 +134,8 @@ def main(clock: str, key: str, piped: bool, tab: str = "") -> int:
             words = line.split()
             if words[:1] == ["show"]:
                 try:
-                    if words[1:] == ["update"]:
-                        win.evaluate_js("window.clawdShowTab && window.clawdShowTab('update')")
+                    if len(words) == 2 and words[1] in TABS:
+                        win.evaluate_js(f"window.clawdShowTab && window.clawdShowTab('{words[1]}')")
                     win.restore()
                     win.show()
                     _front()

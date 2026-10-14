@@ -5,7 +5,7 @@
   Clawd find                list the clocks that answer mDNS on this network (no port scan)
   Clawd hooks on|off        install / remove the Claude Code hooks
   Clawd autostart on|off    start at login, or not
-  Clawd cleanup             what the uninstaller runs: autostart off, hooks off
+  Clawd cleanup             what the uninstaller runs: autostart off, every agent disconnected
   Clawd settings            the settings window (the tray's "Cài đặt…" starts it)
 """
 from __future__ import annotations
@@ -93,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     st.add_argument("--clock", default="", help="http://<clock>; default: the remembered clock")
     st.add_argument("--key", default="", help="keychain entry for its web password (its name)")
     st.add_argument("--piped", action="store_true", help=argparse.SUPPRESS)
-    st.add_argument("--tab", default="", choices=["", "update"], help="open on this tab")
+    st.add_argument("--tab", default="", choices=["", "update", "agents", "setup"], help="open on this tab")
     a = ap.parse_args(argv)
 
     if a.cmd in (None, "tray"):
@@ -117,8 +117,10 @@ def main(argv: list[str] | None = None) -> int:
             clock, key = remembered_clock()
         return settings_app.main(clock, key or clock, a.piped, a.tab)
     if a.cmd == "cleanup":
+        from clawd_desktop import agents
         autostart.disable()
-        hooks.apply(False)
+        for line in agents.uninstall_all():
+            print(f"[{time.strftime('%H:%M:%S')}] {line}")
         print(f"[{time.strftime('%H:%M:%S')}] cleanup done")
         return 0
     return 2

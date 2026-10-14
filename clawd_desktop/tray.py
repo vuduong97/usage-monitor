@@ -19,6 +19,7 @@ from clawd_desktop.engine import Engine, daemon_running
 REFRESH = 3.0
 FEED_FIRST = 60.0       # first firmware feed check after start (s)
 FEED_RETRY = 1800.0     # after a failed check
+AGENT_SCAN = 600.0      # look for newly installed coding agents this often (s)
 FRESH = 180.0      # a push this recent counts as "connected"
 ADDRESS_PROMPT = ("Địa chỉ IP của đồng hồ (hiện trên màn hình đồng hồ lúc khởi động), "
                   "ví dụ 192.168.1.48:")
@@ -136,21 +137,28 @@ def open_path(path: str) -> None:
 # First run
 # =============================================================================
 def first_run() -> None:
-    prefs = paths.load_prefs()
-    if prefs.get("first_run_done"):
-        return
-    if autostart.supported():
-        try:
-            autostart.enable()
-            log("Autostart enabled")
-        except OSError as e:
-            log(f"Autostart not enabled: {e}")
+    """Autostart on, once. Nothing of any agent is touched here: the setup wizard asks
+    first (firstrun.py). Plugin copies older than this app are refreshed and the hook
+    script rewritten, so an app update reaches agents already connected."""
+    from clawd_desktop import agents, firstrun
+    prefs = firstrun.load()
+    if not prefs.get("first_run_done"):
+        if autostart.supported():
+            try:
+                autostart.enable()
+                log("Autostart enabled")
+            except OSError as e:
+                log(f"Autostart not enabled: {e}")
+        prefs = firstrun.load()
+        prefs["first_run_done"] = True
+        paths.save_prefs(prefs)
     try:
-        hooks.apply(True)
-    except OSError as e:
-        log(f"Hooks not installed: {e}")
-    prefs["first_run_done"] = True
-    paths.save_prefs(prefs)
+        if sys.platform != "win32" and paths.HOOK_SCRIPT.exists():
+            hooks.write_script()
+        for aid in agents.refresh_plugins():
+            log(f"Updated the {aid} plugin")
+    except Exception as e:                  # never keep the app from starting
+        log(f"Agent refresh: {e!r}")
 
 
 # =============================================================================
@@ -176,6 +184,9 @@ class Tray:
                   visible=lambda _i: bool(self.app_new)),
                 M(lambda _i: f"● Có firmware mới (#{self.fw_new})", self.open_update,
                   visible=lambda _i: bool(self.fw_new)),
+                M("● Hoàn tất thiết lập…", self.open_setup, visible=lambda _i: bool(self.setup_left)),
+                M(lambda _i: f"● Tìm thấy {self._new_names()}: nối với Clawd…", self.open_agents,
+                  visible=lambda _i: bool(self.new_agents)),
                 M("Cài đặt…", self.open_settings, default=True),
                 # Only while the clock is not answering. Everything else (retry, address,
                 # log, the clock's web page, version) lives in the settings window; this one
@@ -190,6 +201,8 @@ class Tray:
         self.fw_new = 0                 # a newer release for the clock (feed.py), 0: none
         self.app_new = ""               # a newer app, downloaded and checked (appupdate.py), "": none
         self.updater = appupdate.updater()
+        self.setup_left: list[str] = []  # wizard steps not done yet (firstrun.py)
+        self.new_agents: list[str] = []  # agents installed since last offered, not connected
 
     # ---- main-thread helper for AppKit -----------------------------------------
     def on_main(self, fn) -> None:
@@ -355,6 +368,68 @@ class Tray:
     def open_settings(self) -> None:      # no arguments: pystray passes (icon, item) to more
         self._open_window("")
 
+    def open_setup(self) -> None:
+        self._open_window("setup")
+
+    def open_agents(self) -> None:
+        from clawd_desktop import firstrun
+        firstrun.mark_seen(self.new_agents)   # offered once: the item goes, whatever the answer
+        self.new_agents = []
+        self.on_main(self.icon.update_menu)
+        self._open_window("agents")
+
+    def _maybe_open_setup(self) -> None:
+        """Open the wizard by itself once per app version while steps are left."""
+        from clawd_desktop import firstrun
+        try:
+            if not firstrun.should_open():
+                return
+            firstrun.mark_shown()
+        except OSError as e:
+            log(f"Setup state: {e}")
+            return
+        log("Opening the setup wizard")
+        self._open_window("setup")
+
+    def _rescan(self) -> None:
+        from clawd_desktop import firstrun
+        try:
+            left = firstrun.pending()
+        except Exception as e:
+            log(f"Setup state: {e!r}")
+            return
+        if left != self.setup_left or ("agents" not in left and self.new_agents):
+            self.setup_left = left
+            self.new_agents = [i for i in self.new_agents if i not in firstrun.seen()]
+            self.on_main(self.icon.update_menu)
+
+    def _new_names(self) -> str:
+        from clawd_desktop import agents
+        reg = agents.registry()
+        return ", ".join(reg[i].name for i in self.new_agents if i in reg)
+
+    def _agent_loop(self) -> None:
+        """Keep the wizard item and the "new agent found" offer current."""
+        from clawd_desktop import agents, firstrun
+        wait = 2.0
+        while not self._stop.wait(wait):
+            wait = AGENT_SCAN
+            try:
+                left = firstrun.pending()
+                new: list[str] = []
+                if "agents" not in left:           # the wizard's Agent step offers them itself
+                    reg = agents.registry()
+                    installed = [i for i, a in reg.items() if _installed(a)]
+                    new = firstrun.new_agents(agents.found_ids(reg), installed)
+            except Exception as e:                 # never let a scan break the tray
+                log(f"Agent scan: {e!r}")
+                continue
+            if (left, new) != (self.setup_left, self.new_agents):
+                if new != self.new_agents and new:
+                    log(f"New agents found: {', '.join(new)}")
+                self.setup_left, self.new_agents = left, new
+                self.on_main(self.icon.update_menu)
+
     def _open_window(self, tab: str) -> None:
         """The settings window, in its own process (pywebview wants the main
         thread, which the tray holds). A second click brings it forward."""
@@ -362,7 +437,7 @@ class Tray:
         p = self._settings
         if p is not None and p.poll() is None and p.stdin is not None:
             try:
-                p.stdin.write(b"show update\n" if tab == "update" else b"show\n")
+                p.stdin.write(f"show {tab}\n".encode() if tab else b"show\n")
                 p.stdin.flush()
                 return
             except (OSError, ValueError):
@@ -402,6 +477,8 @@ class Tray:
                 self.refresh()
             elif cmd == "app_update_apply":
                 self._restart_for_update()
+            elif cmd == "setup":                    # a wizard step or an agent changed
+                threading.Thread(target=self._rescan, name="clawd-rescan", daemon=True).start()
 
     def quit(self) -> None:
         self._stop.set()
@@ -418,8 +495,17 @@ class Tray:
             threading.Thread(target=self._loop, name="clawd-tray", daemon=True).start()
             threading.Thread(target=self._feed_loop, name="clawd-feed", daemon=True).start()
             threading.Thread(target=self._app_update_loop, name="clawd-appupdate", daemon=True).start()
+            threading.Thread(target=self._agent_loop, name="clawd-agents", daemon=True).start()
             self.refresh()
+            self._maybe_open_setup()
         self.icon.run(setup=setup)
+
+
+def _installed(a) -> bool:
+    try:
+        return a.is_installed()
+    except Exception:
+        return False
 
 
 def main() -> int:

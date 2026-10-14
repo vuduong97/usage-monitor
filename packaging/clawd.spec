@@ -16,6 +16,9 @@ hidden = collect_submodules("zeroconf") + collect_submodules("clawd_desktop")
 # there AND the build asks for it. The firmware is private: a build with it is for clock
 # owners only, never a public GitHub Release, so it takes an explicit opt-in.
 datas = [(str(ROOT / "clawd_desktop" / "ui"), "clawd_desktop/ui")]
+# The plugin files the app copies into agents (clawd_desktop/agents, paths.integration).
+for rel in ("pi/clawd-home.ts", "opencode/clawd.js"):
+    datas.append((str(ROOT / "integrations" / rel), f"clawd_desktop/integrations/{Path(rel).parent}"))
 FIRMWARE = ROOT / "clawd_desktop" / "firmware"
 if os.environ.get("CLAWD_PRIVATE_FIRMWARE") == "1" and (FIRMWARE / "firmware.json").is_file():
     datas.append((str(FIRMWARE), "clawd_desktop/firmware"))
