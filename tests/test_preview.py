@@ -116,7 +116,10 @@ def test_parse_clip_reads_every_frame():
 @pytest.mark.parametrize("data", [b"", b"NOPE\x01\x00", clip_bytes([SPOT]),                       # frame 0 not whole
                                   clip_bytes([FULL])[:-1], clip_bytes([FULL]) + b"x",              # cut / trailing
                                   clip_bytes([FULL, (1, 239, 0, 2, 1, bytes(6))]),                 # off the screen
-                                  b"CLP1\x02\x00" + clip_bytes([FULL])[6:]])                       # count too high
+                                  b"CLP1\x02\x00" + clip_bytes([FULL])[6:]],                       # count too high
+                         # short ids: pytest puts the id in an environment variable, and a clip as the id
+                         # is longer than Windows allows (32767 characters)
+                         ids=["empty", "bad-magic", "frame0-partial", "cut", "trailing", "off-screen", "count-too-high"])
 def test_parse_clip_rejects_bad_data(data):
     with pytest.raises(ValueError):
         pv.parse_clip(data)

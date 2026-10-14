@@ -191,10 +191,14 @@ def test_a_redirect_to_a_foreign_host_is_refused(tmp_path):
 
 
 # ---- can this install replace itself --------------------------------------------------------
-def test_can_apply(tmp_path):
+def test_can_apply_by_platform():
     assert not au.can_apply(frozen=False, system="mac")[0]                         # from source
     assert au.can_apply(frozen=True, system="windows") == (True, "")
     assert not au.can_apply(frozen=True, system="linux")[0]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="checks macOS paths with POSIX semantics")
+def test_can_apply(tmp_path):
     apps = tmp_path / "Applications"
     apps.mkdir()
     exe = str(apps / "Clawd.app" / "Contents" / "MacOS" / "Clawd")
