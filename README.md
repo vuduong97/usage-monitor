@@ -112,13 +112,16 @@ lại đồng hồ, nhập địa chỉ, mở nhật ký (`~/.config/claude-usag
 gửi cho người tặng đồng hồ nếu có lỗi) và trang web của đồng hồ đều nằm trong tab **App**
 của cửa sổ cài đặt. Khi không thấy đồng hồ, menu hiện thêm **Nhập địa chỉ đồng hồ…** (dùng
 được cả khi cửa sổ cài đặt không mở được): nhập IP mà đồng hồ hiện lúc khởi động (ví dụ
-`192.168.1.48`).
+`192.168.1.48`). Tìm khắp mạng mà không ra, Clawd tự hiện hộp hỏi địa chỉ này (một lần, không
+hỏi lại cho đến khi bạn bấm **Tìm lại**). Có thể nhập cả dải mạng của đồng hồ, ví dụ
+`10.97.40.0/24`: Clawd quét dải đó và nhớ lại, nên đồng hồ đổi IP trong dải vẫn tự tìm thấy.
 
 ## Gặp vấn đề
 
 | Hiện tượng | Cách xử lý |
 | --- | --- |
 | "Không thấy đồng hồ" | Đồng hồ và máy tính phải cùng một WiFi (không dùng mạng khách). Thử **Cài đặt… → App → Tìm lại**, hoặc **Nhập địa chỉ đồng hồ…** |
+| Máy cắm dây LAN, đồng hồ ở WiFi công ty (hai dải IP khác nhau, vd `10.97.36.x` và `10.97.40.x`) | mDNS không đi qua router nên Clawd phải quét. Nó quét mạng của máy, rồi các dải từng thấy đồng hồ, rồi (nhiều nhất 30 phút một lần) cả dải `/20` quanh máy (khoảng 30–60 giây). Không ra thì Clawd hỏi địa chỉ: nhập IP của đồng hồ, hoặc dải của nó (`10.97.40.0/24`). Công ty chặn hẳn máy dây tới WiFi thì không có cách nào ngoài dùng chung một mạng |
 | Lúc được lúc mất, nhất là ở công ty, quán cà phê, khách sạn | Nhiều mạng công ty / mạng khách chặn các thiết bị nói chuyện với nhau (đồng hồ vẫn vào WiFi, vẫn hiện IP, nhưng máy tính không tới được). Ứng dụng không vượt qua được: dùng WiFi nhà, hoặc phát WiFi từ điện thoại rồi cho cả máy tính và đồng hồ vào đó (thêm mạng này trong trang cài đặt đồng hồ, mục WiFi) |
 | "Chưa đăng nhập Claude" | Mở Terminal (Mac) hoặc PowerShell (Windows), gõ `claude`, đăng nhập. Ứng dụng tự nhận trong 1 phút |
 | Đồng hồ hiện SETUP MODE | Đồng hồ không vào được WiFi (đổi mật khẩu WiFi, router mới...). Làm lại Bước 1 |
@@ -215,3 +218,24 @@ chặn trong CI). Xem `NOTICE`. Firmware chỉ vào bản build khi chạy `tool
 nên chỉ phát cho người dùng đồng hồ Clawd, đừng đính vào GitHub Release công khai. Cách
 phát cho mọi người là **nguồn firmware** (`feed/` trong clawd-home). App tải firmware ở
 dạng mã hoá, chỉ giải mã trong bộ nhớ rồi gửi thẳng lên đồng hồ, không ghi file nào ra đĩa.
+
+### Phát style pack mới (người dùng không cài lại app)
+
+Bản build chính thức biết nguồn firmware qua hai secret của repo này, `CLAWD_FEED_URL` và
+`CLAWD_FEED_TOKEN` (đặt một lần: `gh secret set CLAWD_FEED_URL`, rồi
+`gh secret set CLAWD_FEED_TOKEN < file-token`; không dán token vào lệnh hay chat). Thiếu
+chúng thì log cửa sổ Cài đặt ghi `update feed: none` và thư viện kiểu chỉ có "Hiện tại".
+Secret chỉ vào bản build mới: sau khi đặt, phát một bản app mới (tag `vX.Y.Z`).
+
+Từ đó, ra pack mới chỉ làm ở clawd-home, không đụng repo này:
+
+1. Viết `packs/<id>.js`, thêm id vào `ORDER` trong `firmware/tools/style/build.js`, rồi
+   `node firmware/tools/style/build.js <fw-src>`.
+2. Commit, tăng `CLAWD_FW_SEQ` trong `firmware/src/config.h` (không tự tăng; phải lớn hơn bản
+   đã phát hành), chạy `tools/release.sh --notes "..."` (lên kênh **beta**).
+3. Thử bằng `feed_channel = beta` trong file config của app, rồi `tools/release.sh --promote`
+   để lên **stable**.
+
+App hỏi nguồn mỗi 10 phút khi cửa sổ Cài đặt mở, tải pack (mã hoá, giải mã trong RAM). Đồng
+hồ đã chạy cùng `styleApi` dùng pack mới ngay, không phải cài lại firmware. Tab Cập nhật vẫn
+báo "có firmware mới" vì `seq` tăng.

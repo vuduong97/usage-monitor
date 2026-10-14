@@ -188,6 +188,18 @@ def test_a_style_the_clock_cannot_draw_is_not_sent(tmp_path, bundle):
     assert b.save(edited(), "classic")["ok"] and made[0].styles == []    # already classic: nothing to send
 
 
+def test_classic_is_restored_without_a_bundle_or_feed(tmp_path):
+    # the clock runs a pack, but this build carries none (no bundle, no feed): going back to the
+    # classic screen only deletes the clock's pack, so it must not be refused
+    b, made, _k, _n = bridge(tmp_path, heap={**STYLED_HEAP, "style": "synth"})
+    s = b.state()
+    assert s["fw"]["styles"] == {"state": "unavailable", "active": "synth", "packs": []}
+    assert b.save(edited(), "nope")["code"] == "bad" and made[0].styles == []
+    r = b.save(edited(), "classic")
+    assert r["ok"] and r["styleSent"] and made[0].styles == [""]
+    assert r["fw"]["styles"]["active"] == "classic"
+
+
 def test_a_style_is_sent_first_then_the_settings(tmp_path, bundle):
     b, made, _k, _n = bridge(tmp_path, heap=STYLED_HEAP, bundle=bundle)
     assert b.state()["fw"]["styles"]["state"] == "ready"
@@ -294,6 +306,18 @@ def test_set_clock_by_hand_reconnects_and_tells_the_tray(tmp_path):
     assert r["ok"] and made[-1].base == "http://192.168.1.48"
     assert notes == [{"cmd": "set_clock", "host": "192.168.1.48"}]
     assert b.set_clock("bad host:99999")["code"] == "bad"
+
+
+def test_set_clock_with_a_subnet_searches_there_instead_of_connecting(tmp_path, monkeypatch):
+    monkeypatch.setattr(sa, "SEARCH_WAIT", 0)                  # do not wait for a tray that is not there
+    b, made, _k, notes = bridge(tmp_path)
+    n = len(made)
+    r = b.set_clock("10.97.40.0/24")
+    assert notes == [{"cmd": "set_clock", "host": "10.97.40.0/24"}]
+    assert r["code"] == "offline" and "IP" in r["error"]       # not found: it asks for the address
+    assert len(made) == n                                       # no clock built from "10.97.40.0"
+    assert b.set_clock("10.0.0.0/8")["code"] == "bad" and b.set_clock("10.1.1.1/xx")["ok"] is True
+    assert len(notes) == 2                                      # the bad subnet was never sent
 
 
 def test_private_state_is_not_exposed_to_the_page(tmp_path):

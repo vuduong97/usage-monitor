@@ -12,6 +12,11 @@ Order of preference, re-evaluated every couple of seconds:
 4. When mDNS stays silent (mesh routers and guest networks often drop
    multicast), a scan of the local /24 for a host whose `GET /api/heap` looks
    like the clawd firmware.
+5. Still nothing: the subnets where a clock was seen before (clock.json `subnets`,
+   or typed as `10.97.40.0/24`), because an office often puts wired PCs and WiFi
+   devices on different subnets that route to each other but share no multicast.
+6. Last resort, at most once per WIDE_RETRY: the /20 around this machine.
+7. Nothing at all: `needs_manual` goes up once, and the tray asks for the address.
 
 Push results feed back through `report()`: a clock that fails FAIL_LIMIT pushes
 in a row is dropped for BAD_HOLD seconds, so the app stops polling the usage
@@ -20,9 +25,11 @@ API for a screen that is not there and looks for it again.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import errno
 import ipaddress
 import json
+import re
 import socket
 import threading
 import time
@@ -43,6 +50,11 @@ RESOLVE_TIMEOUT_MS = 4000
 SCAN_CONNECT_TIMEOUT = 0.6
 SCAN_HTTP_TIMEOUT = 12.0  # the clock answers HTTP slowly for a few minutes after boot
 SCAN_CONCURRENCY = 96
+SUBNETS = "subnets"       # clock.json: subnets (outside our own) where a clock was seen, newest first
+MAX_SUBNETS = 8
+HINT_MIN_PREFIX = 22      # a typed subnet is swept on every rescan: same cap as the local scan
+WIDE_PREFIX = 20          # last-resort sweep around this machine (4,094 hosts)
+WIDE_RETRY = 1800.0       # minimum gap between two wide sweeps
 
 
 def log(msg: str) -> None:
@@ -209,7 +221,7 @@ def local_ipv4() -> str | None:
     return None if ip.startswith("127.") else ip
 
 
-SCAN_MIN_PREFIX = 22      # never sweep more than a /22 (1,022 hosts, ~7 s)
+SCAN_MIN_PREFIX = 22      # never sweep more than a /22 (1,022 hosts, ~7 s) on the regular rescan
 
 
 def local_prefix(ip: str | None) -> int:
@@ -245,6 +257,79 @@ def scan_candidates(ip: str | None, prefix: int = 24) -> list[str]:
 def looks_like_clawd(body: object) -> bool:
     """`GET /api/heap` of the clawd firmware: unauthenticated, has the pack counters."""
     return isinstance(body, dict) and "desk" in body and "pak" in body and "version" in body
+
+
+def _private_v4(addr: ipaddress.IPv4Address) -> bool:
+    return addr.is_private and not addr.is_loopback and not addr.is_link_local
+
+
+def subnet_of(host: str) -> str | None:
+    """The /24 holding `host` when it is a private IPv4 literal, else None (names, public IPs)."""
+    try:
+        addr = ipaddress.ip_address(host)
+    except ValueError:
+        return None
+    if not isinstance(addr, ipaddress.IPv4Address) or not _private_v4(addr):
+        return None
+    return str(ipaddress.ip_network(f"{host}/24", strict=False))
+
+
+_CIDR = re.compile(r"[^/\s:]+/\d{1,2}")
+
+
+def looks_like_subnet(raw: str) -> bool:
+    """`a.b.c.d/nn`: meant as a subnet, so never read as a host (manual_clock would cut at the `/`)."""
+    return "://" not in raw and _CIDR.fullmatch(raw.strip()) is not None
+
+
+def parse_subnet(raw: str) -> str | None:
+    """`10.97.40.0/24` -> "10.97.40.0/24"; None for anything else, a public range or one
+    wider than a /22 (it would be swept on every rescan)."""
+    raw = raw.strip()
+    if "/" not in raw or "://" in raw:
+        return None
+    try:
+        net = ipaddress.ip_network(raw, strict=False)
+    except ValueError:
+        return None
+    if (not isinstance(net, ipaddress.IPv4Network) or not _private_v4(net.network_address)
+            or not HINT_MIN_PREFIX <= net.prefixlen <= 30):
+        return None
+    return str(net)
+
+
+def with_subnet(subnets: object, new: str) -> list[str]:
+    """`new` first, then the others, no duplicates, at most MAX_SUBNETS."""
+    old = [s for s in subnets if isinstance(s, str)] if isinstance(subnets, list) else []
+    return ([new] + [s for s in old if s != new])[:MAX_SUBNETS]
+
+
+def subnet_hosts(subnets: Iterable[str], skip: Iterable[str] = ()) -> list[str]:
+    """Every host of the given subnets, once, except the ones in `skip`."""
+    skip = set(skip)
+    seen: set[str] = set()
+    out: list[str] = []
+    for s in subnets:
+        try:
+            net = ipaddress.ip_network(s, strict=False)
+        except ValueError:
+            continue
+        if not isinstance(net, ipaddress.IPv4Network):
+            continue
+        for h in net.hosts():
+            h = str(h)
+            if h not in skip and h not in seen:
+                seen.add(h)
+                out.append(h)
+    return out
+
+
+def wide_candidates(ip: str | None, skip: Iterable[str] = ()) -> list[str]:
+    """The /20 around `ip` (minus `skip` and `ip` itself); [] for a missing or non-private address."""
+    if not ip or subnet_of(ip) is None:
+        return []
+    net = ipaddress.ip_network(f"{ip}/{WIDE_PREFIX}", strict=False)
+    return subnet_hosts([str(net)], set(skip) | {ip})
 
 
 class ScanResult(list):
@@ -328,11 +413,15 @@ class ClockFinder:
                  manual: Callable[[], list[str]] = lambda: [],
                  browser: MdnsBrowser | None = None,
                  scanner: Callable[[], "asyncio.Future[list[Clock]]"] | None = None,
-                 clock: Callable[[], float] = time.monotonic) -> None:
+                 clock: Callable[[], float] = time.monotonic,
+                 probe: Callable[[list[str]], asyncio.Future[list[Clock]]] | None = None,
+                 local_ip: Callable[[], str | None] = local_ipv4) -> None:
         self.store = store
         self.manual = manual              # `http_targets` from the config file
         self.browser = browser if browser is not None else MdnsBrowser()
-        self.scanner = scanner or scan_lan
+        self.scanner = scanner or scan_lan     # this machine's own network
+        self.probe = probe or scan_lan         # an explicit list of hosts (learned / wide sweeps)
+        self.local_ip = local_ip
         self.clock = clock
         self.current: Clock | None = None
         self.failures = 0
@@ -340,6 +429,9 @@ class ClockFinder:
         self.searching = True
         self.scanning = False
         self.lan_blocked = False
+        self.needs_manual = False             # a whole search found nothing: ask for the address
+        self._asked = False                   # ... and that was already asked since the last change
+        self._last_wide = -1e9
         self._bad: dict[str, float] = {}       # host -> retry after (monotonic)
         self._started = clock()
         self._last_scan = -1e9
@@ -376,6 +468,7 @@ class ClockFinder:
                 "failing": self.failures >= FAIL_LIMIT or (self.current is None and not cfg),
                 "scanning": self.scanning,
                 "lan_blocked": self.lan_blocked and self.current is None,
+                "needs_manual": self.needs_manual and self.current is None and not cfg,
             }
 
     # ---- feedback from the usage pushes -----------------------------------
@@ -408,21 +501,70 @@ class ClockFinder:
         with self._lock:
             data = self.store.load()
             data["manual_host"] = raw.strip()
+            subnets = self._learn(data, c.host)
+            if subnets:
+                data[SUBNETS] = subnets      # a later "search again" starts from where it lives
             self.store.save(data)
             self.current, self.failures = c, 0
+            self.needs_manual, self._asked = False, False
         log(f"Clock set by hand: {c.label}")
         return c
+
+    def _reset(self, subnets: list[str]) -> None:
+        """Drop the remembered and typed clock (keeping the learned subnets) and search afresh."""
+        self.store.save({SUBNETS: subnets} if subnets else {})
+        self.current, self.failures = None, 0
+        self._bad.clear()
+        self._mdns.clear()
+        self._seen_change = -1
+        self._last_scan = -1e9
+        self._last_wide = -1e9
+        self.needs_manual, self._asked = False, False
+        self._started = self.clock()
+
+    def add_subnet(self, raw: str) -> str | None:
+        """A typed `10.97.40.0/24`: sweep it too, and search again now. None when not a usable subnet."""
+        net = parse_subnet(raw)
+        if net is None:
+            return None
+        with self._lock:
+            self._reset(with_subnet(self.store.load().get(SUBNETS), net))
+        log(f"Subnet added to the search: {net}")
+        return net
+
+    def use_address(self, raw: str) -> bool:
+        """What the user typed: a subnet is swept, anything else is the clock's own address."""
+        if looks_like_subnet(raw):
+            return self.add_subnet(raw) is not None
+        return self.set_manual(raw) is not None
+
+    def manual_prompted(self) -> None:
+        """The tray has asked for the address: do not ask again until something changes."""
+        with self._lock:
+            self.needs_manual, self._asked = False, True
+
+    def _known_subnets(self, data: dict) -> list[str]:
+        known = data.get(SUBNETS)
+        return [s for s in known if isinstance(s, str)] if isinstance(known, list) else []
+
+    def _learn(self, data: dict, host: str) -> list[str]:
+        """`data`'s subnets plus the one holding `host`, unless our own scan covers it anyway."""
+        known = self._known_subnets(data)
+        net = subnet_of(host)
+        if net is None or net in known:
+            return known
+        _ip, covered = self._local_net()
+        return known if host in covered else with_subnet(known, net)
+
+    def _local_net(self) -> tuple[str | None, set[str]]:
+        """This machine's address and the hosts the regular scan already covers."""
+        ip = self.local_ip()
+        return ip, set(scan_candidates(ip, local_prefix(ip)))
 
     def forget(self) -> None:
         """'Tìm lại đồng hồ': drop the remembered and typed clock and search afresh."""
         with self._lock:
-            self.store.save({})
-            self.current, self.failures = None, 0
-            self._bad.clear()
-            self._mdns.clear()
-            self._seen_change = -1
-            self._last_scan = -1e9
-            self._started = self.clock()
+            self._reset(self._known_subnets(self.store.load()))
         log("Forgot the clock; searching again")
 
     # ---- the loop -------------------------------------------------------------
@@ -433,13 +575,17 @@ class ClockFinder:
         # A clock found by scan has no name: keep the old one only for the same address.
         name = c.name or (data.get("name", "") if data.get("host") == c.host else "")
         new = {"name": name, "host": c.host, "port": c.port, "version": c.version}
-        if {k: data.get(k) for k in new} != new:
+        subnets = self._learn(data, c.host)
+        if subnets:
+            new[SUBNETS] = subnets
+        if {k: data.get(k) for k in new} != new or (SUBNETS in data and SUBNETS not in new):
             self.store.save(new)
 
     def _adopt(self, c: Clock, why: str) -> None:
         if self.current != c:
             log(f"Clock {why}: {c.label}" + (f" v{c.version}" if c.version else ""))
         self.current, self.failures = c, 0
+        self.needs_manual, self._asked = False, False
         self._remember(c)
 
     async def _refresh_mdns(self) -> None:
@@ -491,29 +637,62 @@ class ClockFinder:
                 return True
             return False
 
+    def _pick(self, found: Iterable[Clock], wide: bool = False) -> Clock | None:
+        """The clock to use out of a sweep: the remembered address, else the first one.
+        After a wide sweep, several strangers are not guessed between (someone else's clock)."""
+        saved = self.store.load()
+        ok = [c for c in found if self._bad.get(c.host, 0) <= self.clock()]
+        mine = next((c for c in ok if c.host == saved.get("host")), None)
+        if mine is not None:
+            return replace(mine, name=saved.get("name", ""))
+        if wide and len(ok) > 1:
+            log("Several clocks answered the wide sweep, none of them remembered: "
+                + ", ".join(c.host for c in ok))
+            return None
+        return replace(ok[0], name="") if ok else None
+
     async def _scan(self, now: float) -> None:
         self._last_scan = now
         self.scanning = True
         log("No clock answered mDNS; scanning the local network")
         try:
             found = await self.scanner()
+            blocked = bool(getattr(found, "blocked", False))
+            if blocked and not self.lan_blocked:
+                log("The OS blocks access to the local network (macOS: Local Network permission)")
+            self.lan_blocked = blocked
+            pick = self._pick(found)
+            if pick is None and not blocked:
+                pick = await self._scan_further(now)
         finally:
             self.scanning = False
-        blocked = bool(getattr(found, "blocked", False))
-        if blocked and not self.lan_blocked:
-            log("The OS blocks access to the local network (macOS: Local Network permission)")
-        self.lan_blocked = blocked
         with self._lock:
             if self.current is not None:
                 return
-            saved = self.store.load()
-            ok = [c for c in found if self._bad.get(c.host, 0) <= self.clock()]
-            pick = next((c for c in ok if c.host == saved.get("host")), ok[0] if ok else None)
             if pick is not None:
-                self._adopt(replace(pick, name=saved.get("name", "") if pick.host == saved.get("host") else ""),
-                            "found by scan")
-            else:
-                log("LAN scan found no clock")
+                self._adopt(pick, "found by scan")
+                return
+            log("LAN scan found no clock")
+            if not blocked and not self._asked:
+                self.needs_manual = True      # the tray asks for the address, once
+
+    async def _scan_further(self, now: float) -> Clock | None:
+        """Past our own network: the subnets a clock was seen in, then (rarely) the /20 around us."""
+        ip, covered = self._local_net()
+        learned = subnet_hosts(self._known_subnets(self.store.load()), covered | {ip or ""})
+        if learned:
+            log(f"Scanning the subnets where a clock was seen ({len(learned)} hosts)")
+            pick = self._pick(await self.probe(learned))
+            if pick is not None:
+                return pick
+        if now - self._last_wide < WIDE_RETRY:
+            return None
+        wide = wide_candidates(ip, covered | set(learned))
+        if not wide:
+            return None
+        self._last_wide = now
+        log(f"Nothing yet; scanning the wider network ({len(wide)} hosts)")
+        return self._pick(await self.probe(wide), wide=True)
 
     async def step(self) -> None:
         if self.manual():
@@ -536,9 +715,7 @@ class ClockFinder:
                     await self.step()
                 except Exception as e:  # keep looking; the next tick retries
                     log(f"Clock discovery step failed: {e!r}")
-                try:
+                with contextlib.suppress(asyncio.TimeoutError):
                     await asyncio.wait_for(stop.wait(), timeout=TICK)
-                except asyncio.TimeoutError:
-                    pass
         finally:
             await asyncio.to_thread(self.browser.stop)

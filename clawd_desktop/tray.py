@@ -20,6 +20,11 @@ REFRESH = 3.0
 FEED_FIRST = 60.0       # first firmware feed check after start (s)
 FEED_RETRY = 1800.0     # after a failed check
 FRESH = 180.0      # a push this recent counts as "connected"
+ADDRESS_PROMPT = ("Địa chỉ IP của đồng hồ (hiện trên màn hình đồng hồ lúc khởi động), "
+                  "ví dụ 192.168.1.48. Hoặc cả dải mạng của nó, ví dụ 10.97.40.0/24:")
+LOST_PROMPT = ("Clawd chưa tìm thấy đồng hồ trong mạng. Nhập địa chỉ IP của đồng hồ (hiện trên "
+               "màn hình đồng hồ lúc khởi động), ví dụ 192.168.1.48. Hoặc cả dải mạng của nó, "
+               "ví dụ 10.97.40.0/24:")
 LOCAL_NETWORK_PANE = "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork"
 
 
@@ -213,6 +218,7 @@ class Tray:
             title = f"{APP_NAME}: {head}" + (f"\n{detail}" if detail else "")
             self.on_main(lambda: (setattr(self.icon, "title", title[:120]), self.icon.update_menu()))
         self._sync_app_update()
+        self._ask_when_lost()
         if self._popover is not None:
             self.on_main(self._popover.push)     # a no-op while the panel is closed
 
@@ -279,13 +285,23 @@ class Tray:
                 and not snap.get("manual_config"))
 
     def manual(self) -> None:
+        self._ask_address(ADDRESS_PROMPT)
+
+    def _ask_address(self, prompt: str) -> None:
         def ask() -> None:
-            text = ask_text("Địa chỉ IP của đồng hồ (hiện trên màn hình đồng hồ lúc khởi động), "
-                            "ví dụ 192.168.1.48:")
-            if text and self.engine.finder.set_manual(text) is None:
+            text = ask_text(prompt)
+            if text and not self.engine.finder.use_address(text):
                 alert(f"“{text}” không phải địa chỉ hợp lệ.")
             self.refresh()
         threading.Thread(target=ask, daemon=True).start()
+
+    def _ask_when_lost(self) -> None:
+        """A whole search (mDNS, the local network, the subnets seen before, the wider network)
+        found nothing: ask for the address once instead of leaving the icon red."""
+        if self.engine.snapshot().get("needs_manual"):
+            self.engine.finder.manual_prompted()
+            log("No clock found anywhere: asking for its address")
+            self._ask_address(LOST_PROMPT)
 
     def open_update(self) -> None:
         self._open_window("update")
@@ -399,7 +415,7 @@ class Tray:
             if cmd == "set_clock":
                 host = str(msg.get("host") or "")
                 if host:
-                    self.engine.finder.set_manual(host)
+                    self.engine.finder.use_address(host)
                 else:
                     self.engine.finder.forget()
                 self.refresh()

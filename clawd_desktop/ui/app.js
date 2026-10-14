@@ -138,14 +138,19 @@ function activeStyle() { return (S && S.fw && S.fw.styles && S.fw.styles.active)
 function styleChanged() { return Boolean(orig) && style !== activeStyle(); }
 function styles() {    // the gallery: the classic screen, then the packs the app carries
   const packs = (S && S.fw && S.fw.styles && S.fw.styles.packs) || [];
-  return [{ id:'classic', name:'Hiện tại', light:false }, ...packs];
+  const out = [{ id:'classic', name:'Hiện tại', light:false }, ...packs];
+  // The clock runs a pack this build does not carry (no bundle, no feed): show it as a card so the
+  // gallery matches the clock, and "Hiện tại" reads as a change away from it, not as the current one.
+  const act = activeStyle();
+  if (act !== 'classic' && !packs.some(p => p.id === act)) out.push({ id: act, name: act, light:false, running:true });
+  return out;
 }
 function packOf(id) { return id === 'classic' ? null : styles().find(p => p.id === id) || null; }
 function msg(text, kind = '') { const m = $('msg'); m.textContent = text; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 function setSeg(id, v) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === String(v)))); }
 function setSw(id, on) { $(id).setAttribute('aria-checked', String(!!on)); }
 function styleState(id) {   // 'ready' | 'update' (needs the bundled firmware) | 'unavailable'
-  if (id === 'classic') return 'ready';
+  if (id === 'classic' || id === activeStyle()) return 'ready';   // what the clock runs needs nothing
   return (S && S.fw && S.fw.styles && S.fw.styles.state) || 'unavailable';
 }
 function kb(n) { return (n / 1024).toFixed(1) + ' KB'; }
@@ -262,7 +267,9 @@ function renderDisplay() {
 }
 function renderGallery() {
   const g = $('gal'), items = styles();
-  if (g.children.length !== items.length) {          // the packs come with the first state
+  const key = items.map(L => L.id).join(',');
+  if (g.dataset.ids !== key) {                       // the packs come with the first state (or the running style changed)
+    g.dataset.ids = key;
     g.replaceChildren();
     items.forEach(L => {
       const b = el('button'); b.setAttribute('role', 'radio'); b.dataset.id = L.id;

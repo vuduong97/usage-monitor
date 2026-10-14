@@ -27,10 +27,11 @@ from typing import Any
 import clawd_desktop.preview as pv
 from clawd_desktop import __version__, appupdate, autostart, creds, feed as fd, firmware, hooks, ota, paths
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
-from clawd_desktop.discovery import ClockStore, manual_clock
+from clawd_desktop.discovery import ClockStore, looks_like_subnet, manual_clock, parse_subnet
 
 FEED_RECHECK = 600      # the window asks the feed again after this long (s)
-PAK_RETRY_S = 300       # after a failed /clawd.pak read, wait this long before asking again
+PAK_RETRY_S = 30        # after a failed /clawd.pak read, wait this long before asking again
+SEARCH_WAIT = 150       # "search again" waits this long (s) for the tray: local scan + subnets + wide sweep
 HOSTNAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")
 HHMM = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
@@ -452,7 +453,9 @@ class SettingsApi:
             return _fail("bad", f"Giá trị không hợp lệ ({e}).")
         if style == (firmware.clock_style(self._heap) or pv.CLASSIC):
             style = None
-        if style is not None and firmware.style_state(self._heap, self._src) != "ready":
+        # Back to the classic screen only deletes the clock's pack: it needs neither a bundle nor a
+        # feed (a clock that runs a pack already draws the style API; one that does not shows classic).
+        if style not in (None, pv.CLASSIC) and firmware.style_state(self._heap, self._src) != "ready":
             return _fail("bad", "Firmware trên đồng hồ chưa vẽ được kiểu này: cập nhật firmware trước.")
         try:
             if style is not None:
@@ -631,7 +634,7 @@ class SettingsApi:
         if self._updater is None:
             return _fail("bad", "Tự cập nhật app chưa bật.")
         self._updater.check_async(force=True)
-        return {"ok": True, **{**self._updater.state(), "status": "checking"}}
+        return {"ok": True, **self._updater.state(), "status": "checking"}
 
     def app_update_apply(self) -> dict:
         """Restart into the downloaded version. The tray owns the process that has to quit, so
@@ -689,15 +692,18 @@ class SettingsApi:
         if not isinstance(raw, str):
             return _fail("bad", "Địa chỉ không hợp lệ.")
         raw = raw.strip()
-        c = manual_clock(raw) if raw else None
-        if raw and c is None:
+        subnet = looks_like_subnet(raw)          # 10.97.40.0/24: search there, nothing to connect to yet
+        if subnet and parse_subnet(raw) is None:
+            return _fail("bad", f"“{raw}” không phải dải mạng dùng được (ví dụ 10.97.40.0/24).")
+        c = manual_clock(raw) if raw and not subnet else None
+        if raw and not subnet and c is None:
             return _fail("bad", f"“{raw}” không phải địa chỉ hợp lệ.")
         t0 = time.time_ns()
         self._notify({"cmd": "set_clock", "host": raw})
         if c is not None:
             self._connect(c.base, raw)
             return self.state()
-        deadline = time.monotonic() + 45          # wait for the tray to find one and save it
+        deadline = time.monotonic() + SEARCH_WAIT  # wait for the tray to find one and save it
         while time.monotonic() < deadline:
             time.sleep(1.0)
             try:
@@ -710,7 +716,8 @@ class SettingsApi:
                 base = f"http://{d['host']}" + (f":{port}" if port != 80 else "")
                 self._connect(base, d.get("name") or d["host"])
                 return self.state()
-        return _fail("offline", "Chưa tìm thấy đồng hồ nào trong mạng.")
+        return _fail("offline", "Chưa tìm thấy đồng hồ nào trong mạng. Nhập địa chỉ IP của đồng hồ "
+                                "(hoặc cả dải mạng, ví dụ 10.97.40.0/24) rồi bấm Dùng.")
 
 
 def initial_edit(cfg: dict) -> dict:
