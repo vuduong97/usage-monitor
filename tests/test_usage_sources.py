@@ -356,3 +356,22 @@ def test_unanswered_dir_backs_off_for_a_poll_interval(monkeypatch, _isolated):
         mod._BACKOFF[DIR] = 0                                  # interval elapsed
         _run(mod.poll_active(sel))
         assert poll.await_count == 2
+
+
+def test_cliproxy_key_falls_back_to_the_service_name_used_before_the_rename(monkeypatch):
+    import subprocess
+    from types import SimpleNamespace
+    seen = []
+
+    def fake_run(cmd, **kw):
+        seen.append(cmd[3])
+        if cmd[3] == usage.CLIPROXY_LEGACY_SERVICE:
+            return SimpleNamespace(stdout="old-key\n")
+        raise subprocess.CalledProcessError(44, cmd)
+    monkeypatch.setattr(usage.sys, "platform", "darwin")
+    monkeypatch.setattr(usage.subprocess, "run", fake_run)
+    assert usage.read_cliproxy_key() == "old-key"
+    assert seen == ["clawd-cliproxy", "clawdmeter-cliproxy"]
+    seen.clear()
+    monkeypatch.setattr(usage.subprocess, "run", lambda cmd, **kw: (_ for _ in ()).throw(subprocess.CalledProcessError(44, cmd)))
+    assert usage.read_cliproxy_key() is None

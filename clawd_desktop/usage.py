@@ -106,6 +106,7 @@ USAGE_HEADERS_TEMPLATE = {
 # never leaves the proxy. The management key lives only in the macOS Keychain.
 CLIPROXY_DEFAULT_URL = "http://localhost:8317"
 CLIPROXY_KEYCHAIN_SERVICE = "clawd-cliproxy"
+CLIPROXY_LEGACY_SERVICE = "clawdmeter-cliproxy"     # the name before the rename: keys saved then still work
 CLIPROXY_AUTH_FILES_PATH = "/v0/management/auth-files"
 CLIPROXY_API_CALL_PATH = "/v8/management/requests/api-call"
 CLIPROXY_ACCOUNTS_TTL = 300      # re-list proxy accounts every 5 minutes
@@ -749,21 +750,25 @@ async def poll_token(token: str) -> dict | None:
 
 
 def read_cliproxy_key() -> str | None:
-    """The CLIProxyAPI management key from the Keychain, or None."""
+    """The CLIProxyAPI management key from the Keychain (the current service name, else the
+    one used before the rename), or None."""
     if sys.platform != "darwin":
         return None
-    try:
-        out = subprocess.run(
-            ["security", "find-generic-password", "-s", CLIPROXY_KEYCHAIN_SERVICE, "-w"],
-            check=True, capture_output=True, text=True, timeout=10,
-        )
-    except subprocess.CalledProcessError:
-        return None
-    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
-        log(f"cliproxy: Keychain access error: {e}")
-        return None
-    key = _decode_keychain_blob(out.stdout).strip()
-    return key or None
+    for service in (CLIPROXY_KEYCHAIN_SERVICE, CLIPROXY_LEGACY_SERVICE):
+        try:
+            out = subprocess.run(
+                ["security", "find-generic-password", "-s", service, "-w"],
+                check=True, capture_output=True, text=True, timeout=10,
+            )
+        except subprocess.CalledProcessError:
+            continue
+        except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+            log(f"cliproxy: Keychain access error: {e}")
+            return None
+        key = _decode_keychain_blob(out.stdout).strip()
+        if key:
+            return key
+    return None
 
 
 def read_cliproxy_url() -> str:
