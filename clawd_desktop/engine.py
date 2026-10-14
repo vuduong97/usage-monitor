@@ -87,7 +87,9 @@ class Engine:
             paths.set_usage_payload(p, self.payload_at)   # the settings window draws the clock from it
         except OSError as e:
             log(f"Could not keep the usage payload for the settings window: {e}")
-        if p.get("ok") is False:
+        if p.get("src"):                  # Codex usage, or none: says nothing about a Claude login
+            self.token = None
+        elif p.get("ok") is False:
             self.token = False
         elif "s" in p or "w" in p:
             self.token = True
@@ -96,7 +98,10 @@ class Engine:
         # Only until the first usage payload: after that the payload says whether a
         # token works (it also counts accounts this check cannot see, e.g. cliproxy).
         while not stop.is_set() and self.payload is None:
-            found = await asyncio.to_thread(has_claude_token)
+            if usage.read_usage_source().startswith("claude"):
+                found = await asyncio.to_thread(has_claude_token)
+            else:
+                found = False                # Codex usage or none: no Claude login needed
             if self.payload is None:
                 self.token = found or None   # missing locally is not proof: wait for the poll
             try:

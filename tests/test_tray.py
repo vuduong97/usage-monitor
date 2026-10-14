@@ -22,6 +22,12 @@ def test_connected_with_usage_detail():
     assert detail == "Phiên 42% · Tuần 17%"
 
 
+def test_codex_usage_says_so():
+    _, _, detail = tray.status(snap(clock=A, last_ok=NOW, payload={"s": 5, "w": 9, "ok": True, "src": "codex"},
+                                    payload_at=NOW), NOW)
+    assert detail == "Codex · Phiên 5% · Tuần 9%"
+
+
 def test_old_usage_says_when():
     _, _, detail = tray.status(snap(clock=A, last_ok=NOW - 3600, payload={"s": 1, "w": 2},
                                     payload_at=NOW - 3600), NOW)

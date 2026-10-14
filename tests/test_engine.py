@@ -82,6 +82,17 @@ def test_no_token_payload_marks_token_missing(tmp_path):
     assert e.token is True
 
 
+
+def test_codex_or_no_usage_says_nothing_about_a_claude_login(tmp_path):
+    e = eng.Engine(ClockFinder(ClockStore(tmp_path / "clock.json"), browser=NoBrowser()))
+    e._on_payload({"ok": False, "src": "off"})
+    assert e.token is None
+    e._on_payload({"ok": False, "src": "codex"})
+    assert e.token is None
+    e._on_payload({"s": 3, "ok": True, "src": "codex"})
+    assert e.token is None
+
+
 def test_daemon_running_checks_the_state_endpoint(monkeypatch):
     def fake_get(url, timeout):
         assert url == "http://127.0.0.1:5555/state"

@@ -47,7 +47,8 @@ def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
     detail = ""
     at = snap.get("payload_at")
     if not _no(payload.get("ok")) and ("s" in payload or "w" in payload) and at:
-        detail = f"Phiên {payload.get('s', 0)}% · Tuần {payload.get('w', 0)}%"
+        detail = ("Codex · " if payload.get("src") == "codex" else "") + \
+            f"Phiên {payload.get('s', 0)}% · Tuần {payload.get('w', 0)}%"
         if now - at >= FRESH:          # only an old reading needs its time
             detail += time.strftime(" · lúc %H:%M", time.localtime(at))
 
