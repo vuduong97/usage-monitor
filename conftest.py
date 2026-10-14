@@ -27,3 +27,4 @@ def _private_payload_file(tmp_path, monkeypatch):
     from clawd_desktop import paths
     monkeypatch.setattr(paths, "PAYLOAD_FILE", tmp_path / "usage_payload.json")
     monkeypatch.setattr(paths, "PAK_FILE", tmp_path / "clawd.pak")
+    monkeypatch.setattr(paths, "RENDERER_DIR", tmp_path / "renderer-feed")

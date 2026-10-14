@@ -11,15 +11,27 @@ loop in an animated PNG, that the settings page can show.
 The renderer is only trusted when it was built from the firmware that ships in
 the app (same commit): otherwise the page falls back to its own approximate
 canvas, which it labels as such.
+
+A public build carries no renderer. It gets the one of the feed release instead
+(feed.py, `renderers` in the manifest): the same folder zipped per platform
+(`tools/build_preview.py --zip`), unpacked into the config folder by
+`unpack_renderer` and checked file by file each time a window loads it (`load_unpacked`).
+That program is the one thing from the feed that is kept decrypted on disk:
+an operating system only runs a program from a file.
 """
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
+import re
+import shutil
 import struct
 import subprocess
 import sys
 import time
+import zipfile
 import zlib
 from base64 import b64encode
 from collections import OrderedDict
@@ -33,6 +45,10 @@ FRAME_BYTES = W * H * 3
 RUN_TIMEOUT = 15          # seconds; a frame takes well under one, a clip about one
 CACHE_MAX = 32
 CLIP_MAGIC = b"CLP1"
+# What this app expects of clawd_render (its arguments, stdin, stdout, CLP1). preview.json
+# says which one a renderer speaks ("renderApi", absent = 1, tools/build_preview.py
+# RENDER_API); a feed renderer from a newer clawd_render.cpp is not run by an older app.
+RENDER_API = 1
 
 
 def preview_dir() -> Path:
@@ -165,6 +181,8 @@ def load_renderer(folder: Path | None = None, firmware_commit: str = "") -> Rend
     folder = folder or preview_dir()
     try:
         m = json.loads((folder / "preview.json").read_text())
+        if int(m.get("renderApi", 1)) != RENDER_API:
+            return None
         packs = load_styles(folder / "styles", int(m.get("styleApi", 0)))
         r = Renderer(exe=folder / str(m["exe"]), pak=folder / str(m["pak"]),
                      commit=str(m.get("commit", "")), styles={p.id: p.path for p in packs})
@@ -172,9 +190,90 @@ def load_renderer(folder: Path | None = None, firmware_commit: str = "") -> Rend
         return None
     if not r.exe.is_file() or not r.pak.is_file():
         return None
-    if firmware_commit and r.commit and r.commit != firmware_commit:
+    if firmware_commit and r.commit and not same_commit(r.commit, firmware_commit):
         return None
     return r
+
+
+def same_commit(a: str, b: str) -> bool:
+    """Two git hashes of one commit, either abbreviated (git picks the length per checkout)."""
+    a, b = a.lower(), b.lower()
+    n = min(len(a), len(b))
+    return a == b or (n >= 7 and a[:n] == b[:n])
+
+
+# ---- the renderer of a feed release, unpacked ---------------------------------------------
+# Only what build_preview.py puts in the folder; anything else in the zip rejects it.
+RENDERER_FILE = re.compile(r"preview\.json|clawd_render(\.exe)?|clawd\.pak|styles/(index\.json|[a-z0-9_-]{1,15}\.pak)")
+UNPACK_MAX = 64 * 1024 * 1024          # bytes, all files together
+UNPACK_FILES = 256
+MARK = ".files.json"                   # {"zip": sha256, "files": {name: sha256}}, written last
+
+
+def _sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def unpack_renderer(data: bytes, root: Path, sha256: str) -> Path:
+    """Unpack a renderer zip (already checked against the manifest's `sha256`) into
+    root/<sha256[:16]>, replacing what is there, and drop older ones. The folder.
+    ValueError when the zip is not a renderer, OSError when it cannot be written."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            infos = [i for i in z.infolist() if not i.is_dir()]
+            names = [i.filename for i in infos]
+            if (not infos or len(infos) > UNPACK_FILES or len(set(names)) != len(names)
+                    or not all(RENDERER_FILE.fullmatch(n) for n in names)
+                    or sum(i.file_size for i in infos) > UNPACK_MAX):
+                raise ValueError("not a renderer zip")
+            files = {i.filename: z.read(i) for i in infos}           # checks each file's CRC
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, EOFError, RuntimeError, NotImplementedError,
+            zlib.error) as e:                 # damaged, encrypted, or a compression zipfile lacks
+        raise ValueError(f"renderer zip: {e}") from e
+    try:
+        m = json.loads(files["preview.json"])
+        exe, pak = str(m["exe"]), str(m["pak"])
+    except (KeyError, ValueError, TypeError) as e:
+        raise ValueError("renderer zip without a usable preview.json") from e
+    if exe not in files or not exe.startswith("clawd_render") or pak != "clawd.pak" or pak not in files:
+        raise ValueError("renderer zip: preview.json names files it does not hold")
+    root.mkdir(parents=True, exist_ok=True)
+    folder = root / sha256[:16]
+    tmp = root / f".{folder.name}.{os.getpid()}.tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    (tmp / "styles").mkdir(parents=True)
+    try:
+        for name, body in files.items():
+            (tmp / name).write_bytes(body)
+        (tmp / exe).chmod(0o755)
+        (tmp / MARK).write_text(json.dumps({"zip": sha256, "files": {n: _sha(b) for n, b in files.items()}}))
+        if folder.exists():             # a damaged copy (load_unpacked refused it); Windows keeps a
+            shutil.rmtree(folder)       # running program's folder: OSError, the next window retries
+        os.replace(tmp, folder)
+    except OSError:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise
+    for old in root.iterdir():          # one release's renderer is enough (a running one may stay)
+        if old.is_dir() and old.name != folder.name:
+            shutil.rmtree(old, ignore_errors=True)
+    return folder
+
+
+def load_unpacked(root: Path, sha256: str, firmware_commit: str = "") -> Renderer | None:
+    """The renderer `unpack_renderer` left for this zip, every file checked against what was
+    unpacked (a damaged or changed file: None, so it is unpacked again)."""
+    folder = root / sha256[:16]
+    try:
+        mark = json.loads((folder / MARK).read_text())
+        files = mark["files"]
+        if mark["zip"] != sha256 or not isinstance(files, dict) or "preview.json" not in files:
+            return None
+        for name, digest in files.items():
+            if not RENDERER_FILE.fullmatch(name) or _sha((folder / name).read_bytes()) != digest:
+                return None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return load_renderer(folder, firmware_commit)
 
 
 def bmp_data_url(rgb: bytes) -> str:

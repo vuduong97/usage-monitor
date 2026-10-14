@@ -26,6 +26,10 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#ifdef _WIN32
+#include <fcntl.h>      // _O_BINARY
+#include <io.h>         // _setmode: stdout carries raw pixels
+#endif
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
 #include "ClawdUi.h"

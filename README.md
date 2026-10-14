@@ -169,6 +169,7 @@ uv run --python 3.12 python -m clawd_desktop find     # liệt kê đồng hồ 
 uv run --python 3.12 python -m clawd_desktop settings # mở cửa sổ cài đặt (đồng hồ đã nhớ)
 python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/firmware   # kèm firmware…
 python tools/build_preview.py --src ../clawd-home/firmware   # bộ vẽ màn hình đồng hồ cho cửa sổ Cài đặt (cần c++)
+python tools/build_preview.py --src … --zip out.zip   # …đóng thành zip cho nguồn firmware (clawd-home tools/fetch_renderer.sh)
 CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
 CLAWD_FEED_URL=https://… CLAWD_FEED_TOKEN=… sh packaging/build_mac.sh   # bản build biết nguồn firmware
 uv run python tools/feed_e2e.py --feed http://127.0.0.1:8799 --token test-token …   # thử nguồn firmware (xem đầu file)
@@ -182,6 +183,12 @@ Workflow **Release** build `.dmg` + `.zip` (Apple silicon và Intel) và `-setup
 `SHA256SUMS`, rồi phát hành một GitHub Release (tag có dấu `-`, ví dụ `v1.2.3-rc1`, là
 prerelease: app không tự cập nhật lên). Hai secret `CLAWD_FEED_URL` và `CLAWD_FEED_TOKEN`
 cho bản build biết nguồn firmware; thiếu thì app vẫn chạy nhưng không tự tìm được firmware mới.
+
+Xem trước màn hình usage: bản public không kèm bộ vẽ. Mỗi bản phát hành trên nguồn firmware
+có kèm bộ vẽ cho Windows và Mac (danh sách `renderers` trong manifest). App tải bộ vẽ đúng hệ
+điều hành, giải nén vào `~/.config/claude-usage-monitor/renderer/` và kiểm tra hash từng file
+mỗi lần mở cửa sổ Cài đặt. Nếu bản phát hành không có bộ vẽ hoặc đang offline, cửa sổ Cài đặt dùng
+bản xem trước gần đúng như trước.
 
 Ký và notarize bản mac (tuỳ chọn nhưng nên có): thêm các secret `MACOS_CERT_P12` (file
 `.p12` của *Developer ID Application*, mã hoá base64), `MACOS_CERT_PASSWORD`,

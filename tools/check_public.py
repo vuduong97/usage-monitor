@@ -11,6 +11,7 @@ BANNED = [
     (re.compile(r"(^|/)(clawd-on-desk|desk_assets|assets/clawd)(/|$)", re.I), "Clawd artwork"),
     (re.compile(r"(^|/)\.stock-backup(/|$)"), "stock clock backup"),
     (re.compile(r"(^|/)(firmware)(/|$)", re.I), "firmware source"),
+    (re.compile(r"(^|/)clawd_render(\.exe)?$|\.zip$", re.I), "compiled clock-screen renderer (feed only)"),
 ]
 MAX_BYTES = 512_000   # nothing in this repo should be big; a large blob is probably art
 

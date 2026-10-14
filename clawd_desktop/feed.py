@@ -16,6 +16,11 @@ directory per release (`cache_dir`), so the next window only asks for the grant
 (the key) and decrypts; they are useless without it. The result is a `Release`, which the rest
 of the app treats like the bundled firmware (`firmware.Bundle`), plus the packs.
 
+A release may also carry the clock-screen renderer the settings window previews with, one
+zip per platform, in the manifest's `renderers` list (not `files`: apps before it reject a
+row of a kind they do not know). `Feed.fetch_renderer` gets this platform's one the same
+way; preview.unpack_renderer puts it on disk, the one decrypted thing the app keeps there.
+
 The URL and token come from CLAWD_FEED_URL / CLAWD_FEED_TOKEN, the config file
 (`feed_url`, `feed_token`, `feed_channel`), or the build (`_feed_build.py`,
 written by packaging, git-ignored). Without both, there is no feed.
@@ -29,6 +34,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import threading
 import zlib
 from collections.abc import Callable
@@ -54,6 +60,18 @@ NAME_RE = re.compile(r"[a-z0-9][a-z0-9._-]{0,47}(/[a-z0-9][a-z0-9._-]{0,47})?")
 HEX64 = re.compile(r"[0-9a-f]{64}")
 HEX8 = re.compile(r"[0-9a-f]{8}")
 MAX_FILE = 4 * 1024 * 1024
+RENDERER_MAX = 32 * 1024 * 1024
+RENDERER_PLATFORMS = frozenset({"win-x64", "mac", "linux-x64"})
+
+
+def renderer_platform() -> str:
+    """This computer's key in `renderers`: "win-x64" (also Windows on Arm, which runs x64),
+    "mac" (one universal file), "linux-x64"."""
+    if sys.platform == "win32":
+        return "win-x64"
+    if sys.platform == "darwin":
+        return "mac"
+    return "linux-x64"
 
 
 class FeedError(Exception):
@@ -68,6 +86,7 @@ class FeedFile:
     enc: int
     sha256: str
     crc: str
+    platform: str = ""                      # a renderer's (RENDERER_PLATFORMS)
 
 
 @dataclass(frozen=True)
@@ -80,9 +99,13 @@ class Manifest:
     date: str = ""
     notes: str = ""
     commit: str = ""
+    renderers: tuple[FeedFile, ...] = ()
 
     def file(self, kind: str) -> FeedFile | None:
         return next((f for f in self.files if f.kind == kind), None)
+
+    def renderer(self, platform: str) -> FeedFile | None:
+        return next((f for f in self.renderers if f.platform == platform), None)
 
 
 def _int(v, lo: int, hi: int) -> int:
@@ -91,29 +114,54 @@ def _int(v, lo: int, hi: int) -> int:
     return v
 
 
+def _row(f: object, names: set, max_size: int, kinds) -> FeedFile:
+    """One file row, checked. ValueError when anything is off."""
+    if not isinstance(f, dict):
+        raise ValueError("bad file row")
+    name, kind = f.get("name"), f.get("kind")
+    if not isinstance(name, str) or not NAME_RE.fullmatch(name) or ".." in name or name in names:
+        raise ValueError(f"bad file name {name!r}")
+    if not isinstance(kind, str) or kind not in kinds:
+        raise ValueError(f"unknown kind {kind!r}")
+    size = _int(f.get("size"), 1, max_size)
+    sha, crc = f.get("sha256"), f.get("crc")
+    if not isinstance(sha, str) or not HEX64.fullmatch(sha) or not isinstance(crc, str) or not HEX8.fullmatch(crc):
+        raise ValueError(f"bad hash for {name}")
+    return FeedFile(name, str(kind), size, _int(f.get("enc"), size + 28, size + 28), sha, crc,
+                    str(f.get("platform") or ""))
+
+
+def _renderers(rows: object, names: set) -> tuple[FeedFile, ...]:
+    """The release's renderers, one per platform. A row that does not check out drops them
+    all (the preview falls back to its canvas) but never the release: the firmware and the
+    packs do not depend on them."""
+    if not isinstance(rows, list):
+        return ()
+    out: list[FeedFile] = []
+    try:
+        for f in rows:
+            r = _row(f, names | {o.name for o in out}, RENDERER_MAX, {"renderer"})
+            if r.platform not in RENDERER_PLATFORMS or any(o.platform == r.platform for o in out):
+                raise ValueError(f"bad renderer row {r.name}")
+            out.append(r)
+    except (ValueError, TypeError):
+        return ()
+    return tuple(out)
+
+
 def parse_manifest(d: object) -> Manifest:
     """The manifest, every field checked. ValueError when anything is off."""
     if not isinstance(d, dict) or d.get("v") != 1:
         raise ValueError("not a v1 manifest")
     files, names = [], set()
     for f in d.get("files") or []:
-        if not isinstance(f, dict):
-            raise ValueError("bad file row")
-        name, kind = f.get("name"), f.get("kind")
-        if not isinstance(name, str) or not NAME_RE.fullmatch(name) or ".." in name or name in names:
-            raise ValueError(f"bad file name {name!r}")
-        if kind not in KINDS:
-            raise ValueError(f"unknown kind {kind!r}")
-        size = _int(f.get("size"), 1, MAX_FILE)
-        sha, crc = f.get("sha256"), f.get("crc")
-        if not isinstance(sha, str) or not HEX64.fullmatch(sha) or not isinstance(crc, str) or not HEX8.fullmatch(crc):
-            raise ValueError(f"bad hash for {name}")
-        names.add(name)
-        files.append(FeedFile(name, kind, size, _int(f.get("enc"), size + 28, size + 28), sha, crc))
+        row = _row(f, names, MAX_FILE, KINDS)
+        names.add(row.name)
+        files.append(row)
     m = Manifest(seq=_int(d.get("seq"), 1, 1_000_000), variant=str(d.get("variant") or ""),
                  layouts=_int(d.get("layouts", 1), 1, 0xFFFF), style_api=_int(d.get("styleApi", 0), 0, 255),
                  files=tuple(files), date=str(d.get("date") or "")[:40], notes=str(d.get("notes") or "")[:2000],
-                 commit=str(d.get("commit") or "")[:40])
+                 commit=str(d.get("commit") or "")[:40], renderers=_renderers(d.get("renderers"), names))
     if m.file("fw") is None or sum(f.kind == "fw" for f in files) != 1:
         raise ValueError("a release has exactly one firmware image")
     return m
@@ -251,18 +299,7 @@ class Feed:
         want = [f for f in m.files if f.kind in set(kinds) and f.name not in rel.blobs]
         if not want:
             return rel
-        g = self._get("POST", "/v1/grant", json={"seq": m.seq}).json()
-        try:
-            key = base64.b64decode(g["key"], validate=True)
-            urls = g["urls"]
-            if len(key) != 32 or not isinstance(urls, dict):
-                raise ValueError
-        except (KeyError, TypeError, ValueError) as e:
-            raise FeedError("feed: bad grant") from e
-        for f in want:
-            u = urls.get(f.name)
-            if not isinstance(u, str) or not u.startswith("/v1/file/"):
-                raise FeedError(f"feed: no URL for {f.name}")
+        key, urls = self._grant(m.seq, want)
         blobs = dict(rel.blobs)
         total, done = sum(f.enc for f in want), 0
         progress(want[0].kind, 0, total)
@@ -275,6 +312,32 @@ class Feed:
                 progress(f.kind, done, total)
         progress("", total, total)
         return make_release(m, blobs)
+
+    def fetch_renderer(self, rel: Release, platform: str) -> tuple[FeedFile, bytes] | None:
+        """The release's renderer zip for `platform`, decrypted and checked; None when it has
+        none. FeedError like `fetch` (a Worker that does not sign renderers yet: no URL)."""
+        m = rel.manifest
+        f = m.renderer(platform) if m else None
+        if m is None or f is None:
+            return None
+        key, urls = self._grant(m.seq, [f])
+        return f, self._load(key, m.seq, f, urls[f.name])
+
+    def _grant(self, seq: int, want: list[FeedFile]) -> tuple[bytes, dict]:
+        """The release key and a signed URL for every file in `want`."""
+        g = self._get("POST", "/v1/grant", json={"seq": seq}).json()
+        try:
+            key = base64.b64decode(g["key"], validate=True)
+            urls = g["urls"]
+            if len(key) != 32 or not isinstance(urls, dict):
+                raise ValueError
+        except (KeyError, TypeError, ValueError) as e:
+            raise FeedError("feed: bad grant") from e
+        for f in want:
+            u = urls.get(f.name)
+            if not isinstance(u, str) or not u.startswith("/v1/file/"):
+                raise FeedError(f"feed: no URL for {f.name}")
+        return key, urls
 
     def _load(self, key: bytes, seq: int, f: FeedFile, url: str) -> bytes:
         """One file, checked: from the cache when it is there and still decrypts, else downloaded."""

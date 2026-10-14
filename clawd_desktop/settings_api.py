@@ -141,12 +141,14 @@ class SettingsApi:
                  keychain=creds,
                  remember_screen: Callable[[int], None] = paths.set_clock_screen,
                  renderer: pv.Renderer | None = None,
+                 renderer_dir: Path | None = None,
                  payload_source: Callable[[], tuple[dict, float] | None] = paths.usage_payload,
                  now: Callable[[], float] = time.time, tab: str = "",
                  agents_reg: dict | None = None, mdns_factory: Callable[[], MdnsBrowser] = MdnsBrowser) -> None:
         self._mdns_factory = mdns_factory
         self._tab = tab if tab in ("update", "agents", "setup") else ""   # the page opens on this tab once
         self._renderer = renderer              # draws the clock's screen (None: the page approximates)
+        self._renderer_dir = renderer_dir or paths.RENDERER_DIR   # where a feed release's renderer is unpacked
         self._payload_source = payload_source  # the last usage payload the engine sent
         self._now = now
         self._frames = pv.FrameCache()
@@ -252,6 +254,38 @@ class SettingsApi:
         except fd.FeedError as e:
             print(f"[settings] style packs from the feed: {e}", flush=True)
         self._release = rel
+        self._use_feed_renderer(feed, rel)
+
+    def _use_feed_renderer(self, feed: fd.Feed, rel: fd.Release) -> None:
+        """Preview with the renderer of the release the gallery now shows (its packs), when it
+        has one for this computer: the one unpacked before if it still checks out, else
+        downloaded once. Without it the page keeps what it had (a bundled renderer, or its
+        canvas)."""
+        m, plat = rel.manifest, fd.renderer_platform()
+        f = m.renderer(plat) if m else None
+        if m is None or f is None:
+            return
+        commit = m.commit.removesuffix("-dirty")
+        r = pv.load_unpacked(self._renderer_dir, f.sha256, commit)
+        if r is None:
+            try:
+                got = feed.fetch_renderer(rel, plat)
+                if got is None:
+                    return
+                pv.unpack_renderer(got[1], self._renderer_dir, f.sha256)
+            except (fd.FeedError, OSError, ValueError) as e:
+                print(f"[settings] renderer from the feed: {e}", flush=True)
+                return
+            r = pv.load_unpacked(self._renderer_dir, f.sha256, commit)
+            if r is None:
+                print(f"[settings] renderer from the feed (release {m.seq}) does not match it", flush=True)
+                return
+        # Both at once, in this order of reads in usage_preview: a frame of the renderer before
+        # never lands in this one's cache.
+        self._frames = pv.FrameCache()
+        self._renderer = r
+        print(f"[settings] preview: feed renderer {r.commit or '?'} (release {m.seq}, {len(r.styles)} styles)",
+              flush=True)
 
     def _bundle_info(self) -> dict | None:
         b = self._src
@@ -394,22 +428,22 @@ class SettingsApi:
         now = self._now()
         live = pv.live_payload(payload, now)
         out: dict = {"ok": True, "exact": False, "payload": live, "sentAt": sent_at, "now": now}
-        r = self._renderer
-        if r is None:
+        r, cache = self._renderer, self._frames   # once: the feed thread may swap both meanwhile
+        if r is None or cache is not self._frames:
             return out
         frames: dict[str, str] = {}
         for i in dict.fromkeys(styles):
             if i != pv.CLASSIC and i not in r.styles:
                 continue
             key = pv.frame_key(i, live, int(now // 60), "clip" if motion else "still")
-            url = self._frames.get(key)
+            url = cache.get(key)
             if url is None:
                 try:
                     url = pv.apng_data_url(r.clip(i, live)) if motion else pv.bmp_data_url(r.draw(i, live))
                 except (OSError, ValueError, subprocess.SubprocessError) as e:
                     print(f"[settings] preview renderer failed: {e}", flush=True)
                     return out                 # the page falls back to its canvas
-                self._frames.put(key, url)
+                cache.put(key, url)
             frames[i] = url
         out.update(exact=True, frames=frames)
         return out

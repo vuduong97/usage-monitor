@@ -19,6 +19,7 @@ OTA_BUSY_FILE = CONFIG_DIR / "ota.busy"      # exists while the settings window 
 OTA_BUSY_STALE = 900.0                        # ... unless nobody touched it for this long (s)
 LOG_MAX = 1_000_000
 
+RENDERER_DIR = CONFIG_DIR / "renderer"        # the feed release's clock-screen renderer, unpacked (preview)
 
 def frozen() -> bool:
     return bool(getattr(sys, "frozen", False))
