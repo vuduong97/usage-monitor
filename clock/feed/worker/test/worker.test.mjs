@@ -91,3 +91,26 @@ test("rate limit", async () => {
   const limited = { ...env, RL: { limit: async () => ({ success: false }) } };
   assert.equal((await handle(req("/v1/latest", { headers: auth }), limited)).status, 429);
 });
+
+test("grant also signs the release's renderers, never a bad name among them", async () => {
+  const m = {
+    v: 1, seq: 8, files: [{ name: "firmware.bin" }],
+    renderers: [{ name: "renderer/win-x64.zip", platform: "win-x64" }, { name: "../evil.zip" }],
+  };
+  const e = fakeEnv(
+    { "rel/8/manifest.json": JSON.stringify(m), "rel/8/renderer/win-x64.zip.enc": new Uint8Array([9, 9]) },
+    { "key:8": "a2V5" },
+  );
+  const g = await (await handle(req("/v1/grant", { method: "POST", headers: auth, body: "{\"seq\":8}" }), e, T0)).json();
+  assert.deepEqual(Object.keys(g.urls).sort(), ["firmware.bin", "renderer/win-x64.zip"]);
+  const f = await handle(req(g.urls["renderer/win-x64.zip"]), e, T0 + 1000);
+  assert.equal(f.status, 200);
+  assert.deepEqual(new Uint8Array(await f.arrayBuffer()), new Uint8Array([9, 9]));
+});
+
+test("grant: a manifest whose renderers is not a list still grants its files", async () => {
+  const m = { v: 1, seq: 9, files: [{ name: "firmware.bin" }], renderers: "nope" };
+  const e = fakeEnv({ "rel/9/manifest.json": JSON.stringify(m) }, { "key:9": "a2V5" });
+  const g = await (await handle(req("/v1/grant", { method: "POST", headers: auth, body: "{\"seq\":9}" }), e, T0)).json();
+  assert.deepEqual(Object.keys(g.urls), ["firmware.bin"]);
+});

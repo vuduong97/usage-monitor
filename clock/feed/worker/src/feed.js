@@ -7,6 +7,7 @@
 //
 //   GET  /v1/latest?channel=stable|beta     -> the channel's manifest (JSON)
 //   POST /v1/grant {"seq": N}               -> {seq, key, expires, urls: {name: url}}
+//                                              (the manifest's files and its renderers)
 //   GET  /v1/file/<seq>/<name>?exp=&sig=    -> the encrypted file (rel/<seq>/<name>.enc)
 //
 // Bindings (wrangler.toml): BUCKET (R2), KEYS (KV: "key:<seq>" -> base64 key),
@@ -95,7 +96,8 @@ async function grant(req, env, now) {
   if (!m || !Array.isArray(m.files) || !key) return fail(404, "no release");
   const urls = {};
   let expires = 0;
-  for (const f of m.files) {
+  const rows = [...m.files, ...(Array.isArray(m.renderers) ? m.renderers : [])];
+  for (const f of rows) {
     if (!f || typeof f.name !== "string" || !NAME_RE.test(f.name)) continue;
     const s = await signFile(env, seq, f.name, now);
     urls[f.name] = s.url;

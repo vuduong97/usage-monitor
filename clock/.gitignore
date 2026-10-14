@@ -13,6 +13,9 @@ node_modules/
 package-lock.json
 # Generated from clawd-on-desk artwork (All Rights Reserved) — personal use only, NEVER commit
 build/desk/
+# The desktop app's clock-screen renderer zips (tools/fetch_renderer.sh): compiled from the
+# private drawing code, they only ever go to the encrypted feed
+build/renderer/
 *.desk.pak
 desk.pak
 firmware/data/desk.pak

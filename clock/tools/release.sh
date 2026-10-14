@@ -10,6 +10,7 @@
 # --private (publish to Cloudflare without feed/LICENCE: only while no public app holds
 # the feed token, i.e. the owner's own test).
 # Env: DESK_PAK (default build/desk/desk.pak), CLAWD_PAK (default firmware/data/clawd.pak),
+#      RENDERER_DIR (default build/renderer: <platform>.zip, from tools/fetch_renderer.sh),
 #      FEED_BUCKET (default clawd-fw), WRANGLER (default "npx -y wrangler@4").
 #
 set -eu
@@ -20,6 +21,8 @@ bucket=${FEED_BUCKET:-clawd-fw}
 WRANGLER=${WRANGLER:-"npx -y wrangler@4"}
 DESK_PAK=${DESK_PAK:-"$root/build/desk/desk.pak"}
 CLAWD_PAK=${CLAWD_PAK:-"$fw/data/clawd.pak"}
+RENDERER_DIR=${RENDERER_DIR:-"$root/build/renderer"}
+RENDERER_PLATFORMS="win-x64 mac"   # what tools/fetch_renderer.sh builds (the app also knows linux-x64)
 
 notes="" stable=0 promote=0 pseq="" dirty=0 tests=1 where="--remote" private=0
 while [ $# -gt 0 ]; do
@@ -87,6 +90,30 @@ if [ "$seq" -le "$published" ]; then
 fi
 [ -f "$DESK_PAK" ] || { echo "release: no $DESK_PAK (build it with tools/desk, or set DESK_PAK)" >&2; exit 1; }
 
+# The settings window's clock-screen renderer, one zip per platform (clawd-desktop's
+# tools/build_preview.py --zip, built by .github/workflows/renderer.yml). Each must be built
+# from this very commit and fwSeq: the app previews this release's style packs with it.
+# Without them the release still goes out; the app then shows its approximate preview.
+head=$(git -C "$root" rev-parse HEAD)
+set --                              # the options are read: "$@" now holds the --renderer arguments
+for p in $RENDERER_PLATFORMS linux-x64; do
+  z="$RENDERER_DIR/$p.zip"
+  [ -f "$z" ] || continue
+  info=$(python3 -c 'import json,sys,zipfile; m=json.loads(zipfile.ZipFile(sys.argv[1]).read("preview.json")); print(m.get("commit",""), m.get("fwSeq",0))' "$z") ||
+    { echo "release: $z is not a renderer zip" >&2; exit 1; }
+  rc=${info% *} rseq=${info#* }
+  case "$head" in
+    "$rc"*) ;;
+    *) echo "release: $z was built from ${rc:-an unknown commit}, this is $head (tools/fetch_renderer.sh)" >&2; exit 1 ;;
+  esac
+  [ ${#rc} -ge 7 ] || { echo "release: $z records no usable commit (${rc:-none})" >&2; exit 1; }
+  [ "$rseq" = "$seq" ] || { echo "release: $z is for fwSeq $rseq, this is $seq" >&2; exit 1; }
+  set -- "$@" --renderer "$p=$z"
+done
+for p in $RENDERER_PLATFORMS; do
+  [ -f "$RENDERER_DIR/$p.zip" ] || echo "release: no renderer for $p ($RENDERER_DIR/$p.zip): that platform's app previews approximately" >&2
+done
+
 echo "== build fwSeq $seq"
 (cd "$fw" && pio run -e clawd -s)
 if [ $tests = 1 ]; then
@@ -104,7 +131,7 @@ echo "== pack"
 commit=$(git -C "$root" rev-parse --short HEAD)
 [ $dirty = 1 ] && [ -n "$(git -C "$root" status --porcelain --untracked-files=no)" ] && commit="$commit-dirty"
 node "$root/feed/release.mjs" pack --src "$fw" --fw "$fw/.pio/build/clawd/firmware.bin" \
-  --clawd "$CLAWD_PAK" --desk "$DESK_PAK" --out "$tmp/out" --notes "$notes" --commit "$commit" > "$tmp/files"
+  --clawd "$CLAWD_PAK" --desk "$DESK_PAK" --out "$tmp/out" --notes "$notes" --commit "$commit" "$@" > "$tmp/files"
 
 echo "== upload ($(wc -l < "$tmp/files" | tr -d ' ') files)"
 while read -r f; do put "$f" "$tmp/out/$f" application/octet-stream; done < "$tmp/files"

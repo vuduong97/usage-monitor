@@ -29,7 +29,11 @@ Clawd.app ──Bearer app token──▶ Worker clawd-fw-feed
   release. The format is `nonce(12) | ciphertext | tag(16)` with AAD
   `clawd-fw/<seq>/<name>`. The key lives only in KV, never in the bucket, the
   manifest or the app. The app decrypts in memory and checks size, SHA-256 and CRC-32
-  against the manifest. Nothing decrypted is written to disk.
+  against the manifest. Nothing decrypted is written to disk, with one exception: the
+  clock-screen renderer (below). An operating system runs a program only from a file, so the
+  app unpacks it into `~/.config/claude-usage-monitor/renderer/` and checks every file's
+  hash each time a settings window loads it. It is the compiled, stripped drawing code. It is not source, and it
+  is no more than `firmware.bin` already carries.
 - **Limits, honestly.**
   - The app token ships inside a public app, so someone who digs it out can call the
     feed like the app does.
@@ -52,6 +56,22 @@ Clawd.app ──Bearer app token──▶ Worker clawd-fw-feed
            {"name": "styles/index.json", "kind": "styles", …}, {"name": "styles/synth.pak", "kind": "style", …}]}
 ```
 
+A release can also list the settings window's clock-screen renderer, one zip per platform,
+in its own list. Apps from before this list refuse any `files` row of a kind they do not
+know, but they ignore a key they do not know. That is why the renderers are not in `files`:
+
+```json
+"renderers": [{"name": "renderer/win-x64.zip", "kind": "renderer", "platform": "win-x64", "size": "\u2026",
+               "enc": "\u2026", "sha256": "\u2026", "crc": "\u2026"},
+              {"name": "renderer/mac.zip", "kind": "renderer", "platform": "mac", "\u2026": "\u2026"}]
+```
+
+Each zip is clawd-desktop's `tools/build_preview.py --zip` output: `clawd_render[.exe]`,
+`clawd.pak`, `styles/` and `preview.json` (which records the commit and fwSeq). The
+renderer is built from this release's commit, so its pixels and style packs are exactly
+what this firmware draws. `/v1/grant` signs the renderers too. With an older Worker the app
+gets no URL for them and falls back to its approximate preview.
+
 The app installs the firmware when `seq` is above the clock's `fwSeq` (it never
 downgrades). Then it sends each pack whose CRC-32 differs from `pakCrc` / `deskCrc`
 in the clock's `/api/heap` (firmware 6+), and re-sends the clock's active style pack
@@ -60,6 +80,7 @@ when the release has a different build of it.
 ## Releasing
 
 ```sh
+tools/fetch_renderer.sh                      # renderer zips of HEAD (Actions: Windows + macOS) -> build/renderer/
 tools/release.sh --notes "Màn chờ hiện IP"   # build + tests + encrypt + upload -> beta
 tools/release.sh --promote                   # beta's release -> stable (what users get)
 tools/release.sh --stable --notes "…"        # straight to both
@@ -69,6 +90,9 @@ tools/release.sh --stable --notes "…"        # straight to both
 - `CLAWD_FW_SEQ` must be above every published release, or the script stops.
 - It runs the host test, the Worker test and the preview checks (`--skip-tests` skips them).
 - It needs `build/desk/desk.pak` (or `DESK_PAK=`).
+- It adds every `build/renderer/<platform>.zip` (or `RENDERER_DIR=`). Each zip must be built from HEAD with this fwSeq, or the script stops. A missing platform only prints a warning; that platform's app then shows its approximate preview. `tools/fetch_renderer.sh` builds the zips with `.github/workflows/renderer.yml`, so the commit must be pushed first; `tools/fetch_renderer.sh` builds with clawd-desktop `main` (or `DESKTOP_REF=`). That workflow checks out the public clawd-desktop repo for `build_preview.py`. The Mac program is signed ad hoc. To sign it with the app's Developer ID, add a keychain-import step to the workflow and set `CLAWD_SIGN_IDENTITY`.
+- With `--dirty`, the firmware comes from the working tree but the renderer comes from HEAD as GitHub built it. Keep `--dirty` releases to the beta channel.
+- A release with renderers needs the Worker that signs them (`npx wrangler deploy` in `feed/worker` once, after this change). An older Worker still serves the release, but without previews.
 - Publishing to Cloudflare needs a `Feed licence: <owner, scope, date>` line in `feed/LICENCE`, because the art and fonts reach every app user. `--private` skips that check. Use it only for the owner's own test, while no public app holds the feed token.
 - The manifest is uploaded last, so a client never sees a release with missing files.
 - To put your own clock on beta, add `feed_channel = beta` in `~/.config/claude-usage-monitor/config`.

@@ -3,7 +3,11 @@
 //
 //   node feed/release.mjs pack --src firmware --fw firmware/.pio/build/clawd/firmware.bin \
 //        --clawd firmware/data/clawd.pak --desk build/desk/desk.pak --out /tmp/rel \
-//        [--notes "..."] [--commit abc1234]
+//        [--notes "..."] [--commit abc1234] [--renderer win-x64=build/renderer/win-x64.zip ...]
+//
+// --renderer (repeatable): the settings window's clock-screen renderer for one platform, the
+// zip clawd-desktop's tools/build_preview.py --zip makes. It goes in the manifest's own
+// `renderers` list, not `files`: apps from before it refuse a file of a kind they do not know.
 //
 // Writes <out>/rel/<seq>/<name>.enc (AES-256-GCM: 12-byte nonce | ciphertext | 16-byte tag,
 // AAD "clawd-fw/<seq>/<name>"), <out>/rel/<seq>/manifest.json and <out>/key.b64 (the
@@ -15,6 +19,8 @@ import { parseArgs } from "node:util";
 
 export const OTA_MAX = 524_288;
 export const VARIANT = "esp8266-clawd";
+export const RENDERER_MAX = 32 * 1024 * 1024;        // the app's feed.RENDERER_MAX
+export const RENDERER_PLATFORMS = ["win-x64", "mac", "linux-x64"];   // the app's feed.RENDERER_PLATFORMS
 
 // zlib CRC-32 (what the clock reports for its packs and the style index uses).
 const TABLE = (() => {
@@ -94,24 +100,46 @@ export function collect({ src, fw, clawd, desk, styleApi }) {
   return out;
 }
 
-export function pack({ src, fw, clawd, desk, out, notes = "", commit = "", date = new Date().toISOString(), key }) {
+// The renderer zips, checked: [{name, kind, platform, data}]. `specs`: "platform=path" strings.
+export function collectRenderers(specs = []) {
+  const out = [];
+  for (const s of specs) {
+    const i = s.indexOf("=");
+    check(i > 0, `--renderer ${s}: give platform=path`);
+    const platform = s.slice(0, i), path = s.slice(i + 1);
+    check(RENDERER_PLATFORMS.includes(platform), `--renderer: unknown platform ${platform} (${RENDERER_PLATFORMS.join(", ")})`);
+    check(!out.some((r) => r.platform === platform), `--renderer: ${platform} given twice`);
+    const data = readFileSync(path);
+    check(data.length > 0 && data.length <= RENDERER_MAX, `${path}: ${data.length} B (max ${RENDERER_MAX})`);
+    check(data.readUInt32LE(0) === 0x04034b50, `${path}: not a zip`);
+    out.push({ name: `renderer/${platform}.zip`, kind: "renderer", platform, data });
+  }
+  return out;
+}
+
+export function pack({ src, fw, clawd, desk, out, notes = "", commit = "", date = new Date().toISOString(), key,
+                       renderer = [] }) {
   const meta = fromSource(src);
   const files = collect({ src, fw, clawd, desk, styleApi: meta.styleApi });
+  const renderers = collectRenderers(renderer);
   key = key || randomBytes(32);
   const dir = join(out, "rel", String(meta.seq));
   const manifest = {
     v: 1, seq: meta.seq, date, notes, variant: VARIANT, layouts: meta.layouts, styleApi: meta.styleApi, commit,
     files: [],
   };
-  for (const f of files) {
+  if (renderers.length) manifest.renderers = [];
+  for (const f of [...files, ...renderers]) {
     const blob = encrypt(key, meta.seq, f.name, f.data);
     const path = join(dir, f.name + ".enc");
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, blob);
-    manifest.files.push({
+    const row = {
       name: f.name, kind: f.kind, size: f.data.length, enc: blob.length,
       sha256: createHash("sha256").update(f.data).digest("hex"), crc: crc32(f.data),
-    });
+    };
+    if (f.platform) manifest.renderers.push({ ...row, platform: f.platform });
+    else manifest.files.push(row);
   }
   writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   writeFileSync(join(out, "key.b64"), key.toString("base64"));
@@ -124,7 +152,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { values: a } = parseArgs({
     args: rest,
     options: { src: { type: "string" }, fw: { type: "string" }, clawd: { type: "string" }, desk: { type: "string" },
-               out: { type: "string" }, notes: { type: "string", default: "" }, commit: { type: "string", default: "" } },
+               out: { type: "string" }, notes: { type: "string", default: "" }, commit: { type: "string", default: "" },
+               renderer: { type: "string", multiple: true, default: [] } },
   });
   try {
     if (cmd === "seq") {
@@ -132,7 +161,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     } else if (cmd === "pack") {
       for (const k of ["src", "fw", "clawd", "desk", "out"]) check(a[k], `--${k} is required`);
       const m = pack(a);
-      for (const f of m.files) console.log(`rel/${m.seq}/${f.name}.enc`);
+      for (const f of [...m.files, ...(m.renderers || [])]) console.log(`rel/${m.seq}/${f.name}.enc`);
     } else {
       throw new Error("usage: release.mjs seq --src DIR | pack --src DIR --fw BIN --clawd PAK --desk PAK --out DIR");
     }
