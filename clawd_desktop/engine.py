@@ -69,6 +69,7 @@ class Engine:
         self._ready = threading.Event()
         self.pause = pause or PauseReader()
         self._paused: str | None = None
+        self._publisher: usage.Publisher | None = None
 
     def targets(self) -> list[str]:
         """The clocks to push to: none while the settings window holds a pause
@@ -133,6 +134,7 @@ class Engine:
         log("=== Clawd desktop (usage + agent events over WiFi) ===")
         publisher = usage.Publisher(http=TrackingSinks(self.finder.report),
                                     targets=self.targets)
+        self._publisher = publisher
         tasks = [asyncio.create_task(self.finder.run(stop)),
                  asyncio.create_task(publisher.run(stop)),
                  asyncio.create_task(self._watch_token(stop)),
@@ -197,6 +199,17 @@ class Engine:
             self._loop.call_soon_threadsafe(self._stop.set)
         if self._thread is not None:
             self._thread.join(timeout)
+
+    def poll_now(self) -> None:
+        """Ask for usage and send it now (the usage source changed). Any thread."""
+        pub, loop = self._publisher, self._loop
+        if pub is None or loop is None:
+            return
+
+        def go() -> None:
+            pub.force = True
+            pub.wake.set()
+        loop.call_soon_threadsafe(go)
 
     def call(self, fn, *args) -> None:
         """Run a finder action from the tray thread (it is lock-protected)."""

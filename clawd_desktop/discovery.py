@@ -283,6 +283,15 @@ class ClockFinder:
         log(f"Clock set by hand: {c.label}")
         return c
 
+    def use(self, c: Clock) -> None:
+        """The clock the user picked from the ones mDNS sees (setup wizard): remembered by
+        name, not pinned, so a new DHCP address follows it."""
+        with self._lock:
+            self.store.save({"name": c.name, "host": c.host, "port": c.port, "version": c.version})
+            self.current, self.failures = c, 0
+            self._bad.pop(c.host, None)
+        log(f"Clock picked: {c.label}")
+
     def retry(self) -> None:
         """'Tìm lại': keep the address, try it again now and let mDNS replace it. A typed
         address loses its pin (it would win over mDNS forever), not its value."""

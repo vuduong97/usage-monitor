@@ -475,6 +475,18 @@ class Tray:
                 else:
                     self.engine.finder.retry()       # "Tìm lại": same address, again now
                 self.refresh()
+            elif cmd == "use_clock":                # picked in the setup wizard (mDNS)
+                from clawd_desktop.discovery import Clock
+                try:
+                    c = Clock(host=str(msg["host"]), port=int(msg.get("port") or 80),
+                              name=str(msg.get("name") or ""), version=str(msg.get("version") or ""),
+                              source="mdns")
+                except (KeyError, TypeError, ValueError):
+                    continue
+                self.engine.finder.use(c)
+                self.refresh()
+            elif cmd == "usage_source":
+                self.engine.poll_now()
             elif cmd == "app_update_apply":
                 self._restart_for_update()
             elif cmd == "setup":                    # a wizard step or an agent changed

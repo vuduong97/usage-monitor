@@ -27,9 +27,9 @@ from typing import Any
 import httpx
 
 import clawd_desktop.preview as pv
-from clawd_desktop import __version__, appupdate, autostart, creds, feed as fd, firmware, hooks, ota, paths
+from clawd_desktop import __version__, agents, appupdate, autostart, creds, feed as fd, firmware, firstrun, hooks, ota, paths
 from clawd_desktop.clockapi import AuthNeeded, ClockApi, ClockError, config_diff
-from clawd_desktop.discovery import ClockStore, manual_clock, stored_clock
+from clawd_desktop.discovery import Clock, ClockStore, MdnsBrowser, manual_clock, stored_clock
 
 FEED_RECHECK = 600      # the window asks the feed again after this long (s)
 PAK_RETRY_S = 30        # after a failed /clawd.pak read, wait this long before asking again
@@ -142,7 +142,9 @@ class SettingsApi:
                  remember_screen: Callable[[int], None] = paths.set_clock_screen,
                  renderer: pv.Renderer | None = None,
                  payload_source: Callable[[], tuple[dict, float] | None] = paths.usage_payload,
-                 now: Callable[[], float] = time.time, tab: str = "") -> None:
+                 now: Callable[[], float] = time.time, tab: str = "",
+                 agents_reg: dict | None = None, mdns_factory: Callable[[], MdnsBrowser] = MdnsBrowser) -> None:
+        self._mdns_factory = mdns_factory
         self._tab = tab if tab in ("update", "agents", "setup") else ""   # the page opens on this tab once
         self._renderer = renderer              # draws the clock's screen (None: the page approximates)
         self._payload_source = payload_source  # the last usage payload the engine sent
@@ -168,6 +170,9 @@ class SettingsApi:
         self._job: dict = {"running": False}
         self._heap: dict = {}
         self._cfg: dict = {}
+        self._agents = agents_reg                # the coding agents (agents.registry())
+        self._mdns: MdnsBrowser | None = None    # started by the wizard's clock step
+        self._mdns_seen: dict[str, Clock] = {}   # instance name -> resolved clock
         self._connect(base, key)
 
     # ---- plumbing --------------------------------------------------------------
@@ -294,7 +299,7 @@ class SettingsApi:
 
     def _app_info(self) -> dict:
         return {"version": __version__, "autostart": autostart.is_enabled(),
-                "autostartSupported": autostart.supported(), "hooks": hooks.is_installed(),
+                "autostartSupported": autostart.supported(), "hooks": _safe(hooks.is_installed),
                 "log": str(paths.LOG_FILE), "clock": self._base, "key": self._key,
                 "manual": self._store.load().get("manual_host", ""),
                 **({"update": self._updater.state()} if self._updater is not None else {})}
@@ -673,7 +678,7 @@ class SettingsApi:
 
     def set_hooks(self, on: bool) -> dict:
         hooks.apply(bool(on))
-        self._notify({"cmd": "refresh"})
+        self._notify({"cmd": "setup"})
         if on and not hooks.is_installed():
             return _fail("error", "Máy này chưa có Claude Code (thư mục ~/.claude).")
         return {"ok": True, "app": self._app_info()}
@@ -712,6 +717,164 @@ class SettingsApi:
             time.sleep(1.0)
         where = f"Đồng hồ ở {c.host} không trả lời." if c is not None else "Chưa có địa chỉ đồng hồ."
         return _fail("offline", f"{where} {TYPE_IP}")
+
+
+    # ---- coding agents (the Agent tab and the wizard's Agent step) ----------------------
+    def _reg(self) -> dict:
+        return self._agents if self._agents is not None else agents.registry()
+
+    def agents(self) -> dict:
+        """Every agent Clawd knows, whether it is on this machine and connected. The ones
+        shown count as offered, so the tray stops offering them."""
+        infos = agents.infos(self._reg())
+        firstrun.mark_seen(i["id"] for i in infos if i["found"])
+        return {"ok": True, "agents": infos, "wsl": _has_wsl()}
+
+    def set_agent(self, aid: str, on: bool) -> dict:
+        a = self._reg().get(str(aid))
+        if a is None:
+            return _fail("bad", "Không biết agent này.")
+        try:
+            msg = a.install() if on else a.uninstall()
+        except (agents.AgentError, OSError) as e:
+            return {**_fail("error", str(e)), "agents": agents.infos(self._reg())}
+        self._notify({"cmd": "setup"})
+        return {"ok": True, "msg": msg, "agents": agents.infos(self._reg())}
+
+    def set_agents(self, ids: Any) -> dict:
+        """The wizard's Agent step: connect the ticked agents, disconnect the unticked ones
+        that are connected; nothing else is touched. Errors are listed, the rest still go."""
+        want = {str(i) for i in ids} if isinstance(ids, list) else set()
+        errors = []
+        for aid, a in self._reg().items():
+            try:
+                on = _safe(a.is_installed)
+                if aid in want and not on:
+                    a.install()
+                elif aid not in want and on:
+                    a.uninstall()
+            except (agents.AgentError, OSError) as e:
+                errors.append(f"{a.name}: {e}")
+        self._notify({"cmd": "setup"})
+        out = {"ok": not errors, "agents": agents.infos(self._reg())}
+        return {**out, "error": "\n".join(errors)} if errors else out
+
+    def disconnect_all(self) -> dict:
+        lines = agents.uninstall_all(self._reg())
+        self._notify({"cmd": "setup"})
+        return {"ok": True, "msg": "\n".join(lines), "agents": agents.infos(self._reg())}
+
+    # ---- the usage source ----------------------------------------------------------------
+    def usage_sources(self) -> dict:
+        """What the clock's usage screen can show, and the current choice (usage.py)."""
+        from clawd_desktop import codex_usage, usage
+        dirs = [d for d in usage.read_config_dirs() if d.is_dir()]
+        cliproxy = usage.read_onoff_setting("cliproxy") == "on"
+        opts = []
+        if len(dirs) > 1 or cliproxy:
+            opts.append({"id": "claude", "label": "Claude: mọi tài khoản",
+                         "detail": "Tự hiện tài khoản đang dùng nhiều nhất.", "ok": True})
+            opts += [{"id": f"claude:{d}", "label": f"Claude: {d.name}", "detail": str(d), "ok": True}
+                     for d in dirs]
+        else:
+            opts.append({"id": "claude", "label": "Claude Code", "ok": bool(dirs),
+                         "detail": str(dirs[0]) if dirs else "Chưa thấy Claude Code trên máy này."})
+        codex_ok = codex_usage.available()
+        codex_now = codex_usage.read() if codex_ok else None
+        opts.append({"id": "codex", "label": "Codex CLI", "ok": codex_ok,
+                     "detail": ("Theo lượt Codex gần nhất trên máy này." if codex_now else
+                                "Gói Codex này chưa có giới hạn 5 giờ / tuần để hiện." if codex_ok else
+                                "Chưa thấy Codex CLI trên máy này.")})
+        opts.append({"id": "off", "label": "Không hiện usage", "ok": True,
+                     "detail": "Đồng hồ chỉ hiện giờ và Clawd."})
+        return {"ok": True, "options": opts, "current": usage.read_usage_source()}
+
+    def set_usage_source(self, value: str) -> dict:
+        from clawd_desktop import usage
+        ids = {o["id"] for o in self.usage_sources()["options"]}
+        if value not in ids:
+            return _fail("bad", "Nguồn usage không hợp lệ.")
+        prefs = paths.load_prefs()
+        if value == "claude":
+            prefs.pop("usage_source", None)        # the default: also what older versions did
+        else:
+            prefs["usage_source"] = value
+        paths.save_prefs(prefs)
+        self._notify({"cmd": "usage_source"})
+        return {"ok": True, "current": usage.read_usage_source()}
+
+    # ---- the setup wizard ------------------------------------------------------------------
+    def setup_state(self) -> dict:
+        prefs = firstrun.load()
+        left = firstrun.pending(prefs)
+        return {"ok": True, "steps": list(firstrun.STEPS), "pending": left,
+                "fresh": "clock" in left, "app": self._app_info()}
+
+    def finish_setup(self, steps: Any) -> dict:
+        """Steps done or skipped (each step saves its own choice first)."""
+        firstrun.mark_done(str(s) for s in steps) if isinstance(steps, list) else None
+        self._notify({"cmd": "setup"})
+        return self.setup_state()
+
+    def setup_clocks(self) -> dict:
+        """The wizard's clock step, asked every ~2 s: clocks mDNS sees, and whether the one
+        the app uses now answers. mDNS only: nothing on the network is scanned."""
+        if self._mdns is None:
+            self._mdns = self._mdns_factory()
+            if not self._mdns.start():
+                log("mDNS unavailable in the settings window")
+        names = self._mdns.names()
+        for n in names:
+            if n not in self._mdns_seen:
+                c = self._mdns.resolve(n)
+                if c is not None:
+                    self._mdns_seen[n] = c
+        for n in list(self._mdns_seen):
+            if n not in names:
+                del self._mdns_seen[n]
+        self._follow_store()
+        cur = stored_clock(self._store.load())
+        current = None
+        if cur is not None:
+            current = {**_clock_dict(cur), "answers": answers(cur.base)}
+        return {"ok": True, "clocks": [_clock_dict(c) for c in self._mdns_seen.values()],
+                "current": current}
+
+    def setup_use_clock(self, name: str) -> dict:
+        """Use the clock mDNS found under this name (remembered by name)."""
+        c = next((c for c in self._mdns_seen.values() if c.name == name), None)
+        if c is None:
+            return _fail("gone", "Không còn thấy đồng hồ này. Thử lại hoặc nhập IP.")
+        self._notify({"cmd": "use_clock", "name": c.name, "host": c.host, "port": c.port,
+                      "version": c.version})
+        self._connect(c.base, c.name)
+        return {"ok": True, "current": {**_clock_dict(c), "answers": answers(c.base)}}
+
+    def close_mdns(self) -> None:
+        if self._mdns is not None:
+            self._mdns.stop()
+            self._mdns = None
+
+
+def _clock_dict(c: Clock) -> dict:
+    return {"name": c.name, "host": c.host, "port": c.port, "version": c.version, "base": c.base}
+
+
+def _safe(fn: Callable[[], bool]) -> bool:
+    try:
+        return bool(fn())
+    except Exception:            # a config that does not parse: not installed, as far as we can tell
+        return False
+
+
+def _has_wsl() -> bool:
+    import shutil
+    import sys
+    return sys.platform == "win32" and shutil.which("wsl.exe") is not None
+
+
+def log(msg: str) -> None:
+    print(f"[{time.strftime('%H:%M:%S')}] [settings] {msg}", flush=True)
 
 
 def answers(base: str) -> bool:

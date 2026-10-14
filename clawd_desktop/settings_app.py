@@ -9,6 +9,9 @@ nothing while closed. The tray talks to it over the child's stdin/stdout:
   window -> tray   {"cmd": "refresh"}             autostart/hooks changed
                    {"cmd": "app_update_apply"}      restart into the downloaded app version
                    {"cmd": "set_clock", "host": "10.0.0.5" | ""}   typed clock / search again
+                   {"cmd": "use_clock", "name", "host", "port", "version"}  picked in the wizard
+                   {"cmd": "usage_source"}        send usage from the newly chosen source now
+                   {"cmd": "setup"}               a wizard step or an agent changed (tray items)
 
 Started by hand (no tray) it works the same; set_clock then edits clock.json
 directly, which the next tray start picks up.
@@ -57,6 +60,10 @@ class Channel:
                     return True
                 except (OSError, ValueError, AttributeError):
                     pass
+        if msg.get("cmd") == "use_clock":
+            from clawd_desktop.discovery import ClockStore
+            ClockStore(paths.CLOCK_FILE).save({k: msg.get(k, "") for k in ("name", "host", "port", "version")})
+            return False
         if msg.get("cmd") == "set_clock":
             from clawd_desktop.discovery import ClockStore
             store = ClockStore(paths.CLOCK_FILE)
@@ -149,6 +156,7 @@ def main(clock: str, key: str, piped: bool, tab: str = "") -> int:
         threading.Thread(target=_watch_ui, args=(win,), name="clawd-settings-dev", daemon=True).start()
         log("dev: live reload on " + str(UI_DIR))
     webview.start(_front, private_mode=True, debug=dev())
+    api.close_mdns()
     log("window closed")
     return 0
 
