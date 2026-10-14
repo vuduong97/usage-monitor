@@ -966,8 +966,41 @@ async def _poll_dir(d: Path) -> tuple[dict | None, bool]:
     return payload, True
 
 
+def read_usage_source() -> str:
+    """Which usage the clock shows (the setup wizard / Usage tab, desktop.json):
+    "claude" (every Claude Code dir + CLIProxyAPI, the busiest plan; the default),
+    "claude:<config dir>" (that one account), "codex" (Codex CLI) or "off"."""
+    from clawd_desktop import paths
+    raw = paths.load_prefs().get("usage_source")
+    if not isinstance(raw, str) or not raw:
+        return "claude"
+    if raw in ("claude", "codex", "off") or (raw.startswith("claude:") and len(raw) > 7):
+        return raw
+    return "claude"
+
+
 async def poll_active(selector: PlanSelector = _SELECTOR) -> tuple[dict | None, bool]:
-    """Poll every source; return ``(active_payload, all_dead)``.
+    """The usage source the user chose (read_usage_source); see poll_claude. Payloads
+    carry "src" ("codex", "off") except Claude's, which stay as they always were."""
+    source = read_usage_source()
+    if source == "off":
+        out: dict = {"ok": False, "src": "off"}
+        add_clock_fields(out)               # the clock still keeps time
+        return out, False
+    if source == "codex":
+        from clawd_desktop import codex_usage
+        payload = codex_usage.read()
+        if payload is None:
+            return None, True
+        add_chime_field(payload)
+        add_clock_fields(payload)
+        return payload, False
+    only = Path(source[len("claude:"):]).expanduser() if source.startswith("claude:") else None
+    return await poll_claude(selector, only)     # no "src": the clock reads that as Claude
+
+
+async def poll_claude(selector: PlanSelector = _SELECTOR, only: Path | None = None) -> tuple[dict | None, bool]:
+    """Poll every Claude source; return ``(active_payload, all_dead)``.
 
     Sources are each configured Claude Code config dir and, with
     ``cliproxy = on``, every active Claude account in CLIProxyAPI. Each is a
@@ -982,7 +1015,7 @@ async def poll_active(selector: PlanSelector = _SELECTOR) -> tuple[dict | None, 
     Pure free-ride: a 401 (TokenExpired) means that token has expired and only
     its owner (Claude Code, CLIProxyAPI) can re-seed it — we never refresh it.
     """
-    dirs = read_config_dirs()
+    dirs = [only] if only is not None else read_config_dirs()
     payloads: dict = {}
     any_live = False
     now = time.time()
@@ -995,7 +1028,7 @@ async def poll_active(selector: PlanSelector = _SELECTOR) -> tuple[dict | None, 
         if payload is not None:
             _BACKOFF.pop(d, None)
             payloads[d] = payload
-    if read_onoff_setting("cliproxy") == "on":
+    if only is None and read_onoff_setting("cliproxy") == "on":
         proxy_payloads, proxy_live = await _CLIPROXY.poll()
         any_live = any_live or proxy_live
         payloads.update(proxy_payloads)
@@ -1243,9 +1276,13 @@ class Publisher:
         elif dead:
             # No live token in any config dir (missing, or a 401/expired token)
             # -> show "No data" now instead of stale numbers.
-            log("No usable token; signalling no-data to device \u2014 run "
-                "`claude login` or use the CLI to let Claude Code renew it")
-            out = {"ok": False, **extra}
+            source = read_usage_source()
+            if source == "codex":
+                log("No Codex usage yet (no rate limits in ~/.codex/sessions); signalling no-data")
+            else:
+                log("No usable token; signalling no-data to device \u2014 run "
+                    "`claude login` or use the CLI to let Claude Code renew it")
+            out = {"ok": False, **({"src": "codex"} if source == "codex" else {}), **extra}
         else:
             # A live token that didn't answer usefully this cycle -> stay
             # silent. poll_active backs that source off for a poll interval,
