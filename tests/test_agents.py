@@ -114,6 +114,27 @@ def test_broken_config_is_never_touched(tmp_path):
     assert a.info()["error"]
 
 
+def test_user_hooks_keep_their_place_and_a_shared_group_survives(tmp_path):
+    f = tmp_path / ".codex/hooks.json"
+    f.parent.mkdir()
+    mine = {"type": "command", "command": "echo mine"}
+    f.write_text(json.dumps({"hooks": {"Stop": [{"hooks": [mine]}, {"hooks": [{"command": "echo two"}]}]}}))
+    a = reg(tmp_path)["codex"]
+    a.prepare = lambda: None
+    a.install()
+    stop = json.loads(f.read_text())["hooks"]["Stop"]
+    assert stop[0]["hooks"] == [mine] and stop[1]["hooks"] == [{"command": "echo two"}]   # ours go last
+    assert a.ours(stop[2]["hooks"][0])
+    a.install()                                   # reinstall: still exactly one of ours, at the end
+    stop = json.loads(f.read_text())["hooks"]["Stop"]
+    assert len(stop) == 3 and a.ours(stop[2]["hooks"][0])
+    stop[2]["hooks"].append({"command": "echo added by the user"})   # user adds to our group
+    f.write_text(json.dumps({"hooks": {"Stop": stop}}))
+    a.uninstall()
+    stop = json.loads(f.read_text())["hooks"]["Stop"]
+    assert [g["hooks"] for g in stop] == [[mine], [{"command": "echo two"}], [{"command": "echo added by the user"}]]
+
+
 def test_an_agent_does_not_claim_another_agents_hooks(tmp_path):
     r = reg(tmp_path)
     codex_hook = {"command": r["codex"].posix_command("Stop"), "commandWindows": r["codex"].windows_command("Stop")}

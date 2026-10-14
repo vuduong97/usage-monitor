@@ -156,8 +156,15 @@ def merge_groups(data: dict, add: dict[str, dict] | None, ours: Callable[[Any], 
         groups = table[event]
         if not isinstance(groups, list):
             continue
-        kept = [g for g in groups
-                if not (isinstance(g, dict) and any(ours(h) for h in g.get("hooks") or []))]
+        kept = []
+        for g in groups:      # drop our handlers; a group keeps its place while anything else is in it
+            hs = g.get("hooks") if isinstance(g, dict) else None
+            if isinstance(hs, list) and any(ours(h) for h in hs):
+                rest = [h for h in hs if not ours(h)]
+                if not rest:
+                    continue
+                g = {**g, "hooks": rest}
+            kept.append(g)
         if kept:
             table[event] = kept
         else:

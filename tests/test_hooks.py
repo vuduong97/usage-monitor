@@ -61,6 +61,7 @@ class LiveServer:
         asyncio.run_coroutine_threadsafe(self.server.close(), self.loop).result(5)
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.thread.join(5)
+        self.loop.close()      # else GC closes it later and pytest may warn at a random test
 
 
 # ---- settings merge ------------------------------------------------------------
