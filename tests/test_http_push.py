@@ -56,6 +56,23 @@ def test_ble_setting_defaults_on(tmp_path):
         assert d.read_onoff_setting("ble", default="on") == "off"
 
 
+def test_clock_time_sent_by_default(tmp_path):
+    """The clock has no RTC and NTP may be blocked: without a config the payload carries the time."""
+    missing = tmp_path / "none" / "config"
+    with patch.object(d, "CONFIG_FILE", missing):
+        p = {}
+        d.add_clock_fields(p)
+    assert isinstance(p.get("t"), int) and p.get("tf") in (12, 24)
+    with _config(tmp_path, "clock = 12\n"):
+        p = {}
+        d.add_clock_fields(p)
+    assert p["tf"] == 12
+    with _config(tmp_path, "clock = off\n"):
+        p = {}
+        d.add_clock_fields(p)
+    assert p == {}
+
+
 def test_http_sinks_delivers_to_every_target():
     seen, transport = _recording_transport()
     sinks = d.HttpSinks(transport=transport)

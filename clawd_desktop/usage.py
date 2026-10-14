@@ -480,8 +480,9 @@ def read_chime_setting() -> str:
 def read_clock_setting() -> str:
     """Read the `clock` option from the config file. One of: off|auto|12|24.
 
-    Defaults to "off" (no clock; the device keeps showing "Usage") so existing
-    setups are unaffected until the user opts in.
+    Defaults to "auto": the clock has no RTC, and on networks that block NTP the
+    time the app sends is its only clock, so without it the title stays empty.
+    `clock = off` in the config drops the time.
     """
     try:
         if CONFIG_FILE.exists():
@@ -496,7 +497,7 @@ def read_clock_setting() -> str:
                         return val
     except OSError:
         pass
-    return "off"
+    return "auto"
 
 
 def add_chime_field(payload: dict) -> None:
@@ -530,7 +531,7 @@ def detect_hour_format() -> int:
 
 
 def add_clock_fields(payload: dict) -> None:
-    """Add wall-clock fields to the payload when the config opts in.
+    """Add wall-clock fields to the payload unless the config says `clock = off`.
 
     "t"  = local wall-clock epoch (UTC epoch shifted by the tz offset) so the
            device can show the time without an RTC.
@@ -604,7 +605,7 @@ async def poll_api(token: str) -> dict | None:
             "ok": True,
         }
     add_chime_field(payload)   # adds "c":1 iff the config opts in
-    add_clock_fields(payload)   # adds "t" + "tf" iff the config opts in
+    add_clock_fields(payload)   # adds "t" + "tf" unless the config says clock = off
     return payload
 
 
