@@ -139,3 +139,34 @@ def test_read_clock_screen_uses_the_clocks_config(tmp_path, monkeypatch):
     assert e.read_clock_screen() is None                 # no clock yet
     e.finder.current = Clock(host="10.0.0.5")
     assert e.read_clock_screen() == 1
+
+
+def test_sync_screen_survives_a_failed_prefs_write(tmp_path, monkeypatch):
+    """desktop.json busy in the other process: the next sync still runs (it used to end
+    the task for good, leaving the engine on a stale main screen)."""
+    from typing import Any, cast
+
+    from clawd_desktop import engine as eng_mod
+    monkeypatch.setattr(eng_mod, "SCREEN_SYNC_RETRY", 0.01)
+    no_mdns = cast(Any, NoBrowser())
+    e = eng_mod.Engine(ClockFinder(ClockStore(tmp_path / "clock.json"), browser=no_mdns))
+    monkeypatch.setattr(e, "read_clock_screen", lambda: 1)
+    calls = []
+
+    def set_screen(s):
+        calls.append(s)
+        if len(calls) == 1:
+            raise PermissionError(13, "Access is denied")
+    monkeypatch.setattr(eng_mod.paths, "set_clock_screen", set_screen)
+
+    async def go():
+        stop = asyncio.Event()
+        task = asyncio.create_task(e._sync_screen(stop))
+        for _ in range(200):
+            await asyncio.sleep(0.01)
+            if len(calls) >= 2:
+                break
+        stop.set()
+        await task
+    asyncio.run(go())
+    assert calls[:2] == [1, 1]

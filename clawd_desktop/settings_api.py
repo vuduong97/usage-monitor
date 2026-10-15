@@ -833,12 +833,15 @@ class SettingsApi:
         ids = {o["id"] for o in self.usage_sources()["options"]}
         if value not in ids:
             return _fail("bad", "Nguồn usage không hợp lệ.")
-        prefs = paths.load_prefs()
-        if value == "claude":
-            prefs.pop("usage_source", None)        # the default: also what older versions did
-        else:
-            prefs["usage_source"] = value
-        paths.save_prefs(prefs)
+        def change(prefs: dict) -> None:
+            if value == "claude":
+                prefs.pop("usage_source", None)    # the default: also what older versions did
+            else:
+                prefs["usage_source"] = value
+        try:
+            paths.update_prefs(change)
+        except OSError as e:
+            return _fail("io", f"Không lưu được lựa chọn: {e}")
         self._notify({"cmd": "usage_source"})
         return {"ok": True, "current": usage.read_usage_source()}
 

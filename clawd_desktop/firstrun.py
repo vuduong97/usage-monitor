@@ -30,10 +30,9 @@ def migrate(prefs: dict) -> dict:
 
 def load() -> dict:
     prefs = paths.load_prefs()
-    new = migrate(prefs)
-    if new is not prefs:
-        paths.save_prefs(new)
-    return new
+    if migrate(prefs) is prefs:
+        return prefs
+    return paths.update_prefs(migrate)
 
 
 def pending(prefs: dict | None = None) -> list[str]:
@@ -42,14 +41,14 @@ def pending(prefs: dict | None = None) -> list[str]:
 
 
 def mark_done(steps: Iterable[str]) -> list[str]:
-    prefs = load()
-    done = list(prefs["setup_done"])
-    for s in steps:
-        if s in STEPS and s not in done:
-            done.append(s)
-    prefs["setup_done"] = done
-    paths.save_prefs(prefs)
-    return pending(prefs)
+    steps = list(steps)
+
+    def change(prefs: dict) -> dict:
+        prefs = migrate(prefs)
+        done = list(prefs["setup_done"])
+        done += [s for s in dict.fromkeys(steps) if s in STEPS and s not in done]
+        return {**prefs, "setup_done": done}
+    return pending(paths.update_prefs(change))
 
 
 def should_open(prefs: dict | None = None) -> bool:
@@ -59,9 +58,7 @@ def should_open(prefs: dict | None = None) -> bool:
 
 
 def mark_shown() -> None:
-    prefs = load()
-    prefs["setup_shown"] = __version__
-    paths.save_prefs(prefs)
+    paths.update_prefs(lambda prefs: {**migrate(prefs), "setup_shown": __version__})
 
 
 def seen() -> set[str]:
@@ -69,11 +66,15 @@ def seen() -> set[str]:
 
 
 def mark_seen(ids: Iterable[str]) -> None:
-    prefs = load()
-    now = sorted(seen() | set(ids))
-    if now != sorted(prefs.get("agents_seen") or []):
-        prefs["agents_seen"] = now
-        paths.save_prefs(prefs)
+    ids = set(ids)
+
+    def change(prefs: dict) -> dict:
+        prefs = migrate(prefs)
+        had = {str(x) for x in prefs.get("agents_seen") or []}
+        if had | ids == had:
+            return prefs
+        return {**prefs, "agents_seen": sorted(had | ids)}
+    paths.update_prefs(change)
 
 
 def new_agents(found: Iterable[str], installed: Iterable[str]) -> list[str]:

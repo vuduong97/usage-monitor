@@ -163,9 +163,7 @@ def first_run() -> None:
                 log("Autostart enabled")
             except OSError as e:
                 log(f"Autostart not enabled: {e}")
-        prefs = firstrun.load()
-        prefs["first_run_done"] = True
-        paths.save_prefs(prefs)
+        paths.update_prefs(lambda p: {**firstrun.migrate(p), "first_run_done": True})
     try:
         if sys.platform != "win32" and paths.HOOK_SCRIPT.exists():
             hooks.write_script()

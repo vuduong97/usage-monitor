@@ -18,6 +18,7 @@ from clawd_desktop.discovery import ClockFinder, ClockStore
 
 TOKEN_CHECK_EVERY = 60.0
 SCREEN_SYNC_EVERY = 300.0
+SCREEN_SYNC_RETRY = 15.0     # after a failed sync (desktop.json busy in the settings window)
 
 
 def log(msg: str) -> None:
@@ -128,12 +129,17 @@ class Engine:
         # The settings window tells the engine when it saves; this covers a change
         # made on the clock's web page, and the first run after an update.
         while not stop.is_set():
-            if not self.pause.reason():
-                s = await asyncio.to_thread(self.read_clock_screen)
-                if s is not None:
-                    await asyncio.to_thread(paths.set_clock_screen, s)
+            wait = SCREEN_SYNC_EVERY
+            try:
+                if not self.pause.reason():
+                    s = await asyncio.to_thread(self.read_clock_screen)
+                    if s is not None:
+                        await asyncio.to_thread(paths.set_clock_screen, s)
+            except Exception as e:      # keep the loop alive: a dead sync leaves a stale screen
+                log(f"Main screen sync failed: {e!r}")
+                wait = SCREEN_SYNC_RETRY
             with contextlib.suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(stop.wait(), timeout=SCREEN_SYNC_EVERY)
+                await asyncio.wait_for(stop.wait(), timeout=wait)
 
     async def run(self, stop: asyncio.Event) -> None:
         log("=== Clawd desktop (usage + agent events over WiFi) ===")

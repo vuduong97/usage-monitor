@@ -2,9 +2,14 @@
 so an existing `~/.config/claude-usage-monitor/config` keeps working."""
 from __future__ import annotations
 
+import contextlib
+import copy
 import json
+import os
 import sys
+import threading
 import time
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 CONFIG_DIR = Path.home() / ".config" / "claude-usage-monitor"
@@ -14,12 +19,13 @@ PREFS_FILE = CONFIG_DIR / "desktop.json"     # app preferences (first run, toggl
 PAYLOAD_FILE = CONFIG_DIR / "usage_payload.json"   # the last usage payload sent to the clock
 LOG_FILE = CONFIG_DIR / "clawd-desktop.log"
 PAK_FILE = CONFIG_DIR / "clawd.pak"           # the clock's Clawd sprites, read from the clock (preview)
+RENDERER_DIR = CONFIG_DIR / "renderer"        # the feed release's clock-screen renderer, unpacked (preview)
 HOOK_SCRIPT = CONFIG_DIR / "clawd-event.sh"  # copied here so app updates never break hooks
 OTA_BUSY_FILE = CONFIG_DIR / "ota.busy"      # exists while the settings window installs firmware on the clock
 OTA_BUSY_STALE = 900.0                        # ... unless nobody touched it for this long (s)
 LOG_MAX = 1_000_000
+PREFS_IO_WAIT = 5.0                           # how long desktop.json may stay locked or busy (s)
 
-RENDERER_DIR = CONFIG_DIR / "renderer"        # the feed release's clock-screen renderer, unpacked (preview)
 
 def frozen() -> bool:
     return bool(getattr(sys, "frozen", False))
@@ -33,19 +39,122 @@ def integration(rel: str) -> Path:
     return Path(__file__).resolve().parent.parent / "integrations" / rel
 
 
-def load_prefs() -> dict:
+# desktop.json is written by two processes: the tray's engine and the settings window.
+# Every read-modify-write runs under a lock file (update_prefs), so neither drops a key
+# the other just saved. On Windows a file being replaced (or still open in the other
+# process) answers PermissionError for a moment: that is waited out, never read as empty.
+
+def _retrying(op: Callable[[], object], deadline: float) -> object:
+    while True:
+        try:
+            return op()
+        except PermissionError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.02)
+
+
+def _read_prefs() -> dict:
+    """desktop.json, {} when missing or corrupt. Raises OSError when it is there but
+    stays unreadable: callers that write must not take that for an empty file."""
     try:
-        data = json.loads(PREFS_FILE.read_text())
-        return data if isinstance(data, dict) else {}
-    except (OSError, ValueError):
+        text = _retrying(PREFS_FILE.read_text, time.monotonic() + PREFS_IO_WAIT)
+    except FileNotFoundError:
+        return {}
+    try:
+        data = json.loads(str(text))
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _write_prefs(data: dict) -> None:
+    PREFS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    # one temp file per writer: a shared name let two processes write the same one
+    tmp = PREFS_FILE.with_name(f"{PREFS_FILE.stem}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        tmp.write_text(json.dumps(data, indent=2))
+        _retrying(lambda: tmp.replace(PREFS_FILE), time.monotonic() + PREFS_IO_WAIT)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            tmp.unlink()
+        raise
+
+
+def _lock_byte(fd: int) -> bool:
+    if sys.platform == "win32":
+        import msvcrt
+        os.lseek(fd, 0, os.SEEK_SET)
+        try:
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        except OSError:
+            return False
+        return True
+    import fcntl
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return False
+    return True
+
+
+def _unlock_byte(fd: int) -> None:
+    if sys.platform == "win32":
+        import msvcrt
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(fd, fcntl.LOCK_UN)
+
+
+@contextlib.contextmanager
+def _prefs_lock() -> Iterator[None]:
+    """Exclusive across processes and threads (each holder opens its own handle);
+    not reentrant. TimeoutError (an OSError) after PREFS_IO_WAIT."""
+    path = PREFS_FILE.with_suffix(".lock")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        deadline = time.monotonic() + PREFS_IO_WAIT
+        while not _lock_byte(fd):
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"{PREFS_FILE.name} is locked by another Clawd process")
+            time.sleep(0.02)
+        try:
+            yield
+        finally:
+            _unlock_byte(fd)
+    finally:
+        os.close(fd)
+
+
+def load_prefs() -> dict:
+    """For reading only ({} when it cannot be read); changes go through update_prefs."""
+    try:
+        return _read_prefs()
+    except OSError:
         return {}
 
 
+def update_prefs(change: Callable[[dict], dict | None]) -> dict:
+    """Read desktop.json, apply `change` (edit the dict in place, or return a new one),
+    write it back if anything changed, all under the lock; returns the result. Raises
+    OSError, writing nothing, when the file cannot be read or the lock not taken."""
+    with _prefs_lock():
+        prefs = _read_prefs()
+        before = copy.deepcopy(prefs)
+        out = change(prefs)
+        new = prefs if out is None else out
+        if new != before or not PREFS_FILE.exists():
+            _write_prefs(new)
+        return new
+
+
 def save_prefs(data: dict) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    tmp = PREFS_FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, indent=2))
-    tmp.replace(PREFS_FILE)
+    """Replace all of desktop.json with `data` (update_prefs to change some keys)."""
+    with _prefs_lock():
+        _write_prefs(data)
 
 
 def set_ota_busy(on: bool, path: Path | None = None) -> None:
@@ -82,10 +191,7 @@ def clock_screen() -> int | None:
 
 
 def set_clock_screen(screen: int) -> None:
-    prefs = load_prefs()
-    if prefs.get("clock_screen") != screen:
-        prefs["clock_screen"] = screen
-        save_prefs(prefs)
+    update_prefs(lambda prefs: prefs.__setitem__("clock_screen", screen))
 
 
 # The keys the clock's /api/usage reads for its usage screen. Alerts (m, x) and the
