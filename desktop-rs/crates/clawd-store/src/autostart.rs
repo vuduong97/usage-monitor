@@ -11,6 +11,7 @@
 //! 0.1.4 (`{localappdata}\Programs\Clawd\Clawd.exe`, `/Applications/Clawd.app/Contents/MacOS/
 //! Clawd`), so no migration step exists.
 
+use std::io;
 use std::path::PathBuf;
 
 use clawd_contracts::{AppPaths, OsStoreNames, Platform};
@@ -58,18 +59,20 @@ impl Autostart {
         todo!("phase 03")
     }
 
-    /// `autostart.enable(platform)`: write the plist / Run value. False where unsupported.
-    pub fn enable(&self) -> bool {
+    /// `autostart.enable(platform)`: write the plist / Run value. `Ok(false)` where unsupported;
+    /// `Err` carries the OS error text Python's `OSError` showed (`settings_api` returns it to the
+    /// page, `first_run` logs it).
+    pub fn enable(&self) -> io::Result<bool> {
         todo!("phase 03")
     }
 
-    /// `autostart.disable(platform)`: remove them. False where unsupported.
-    pub fn disable(&self) -> bool {
+    /// `autostart.disable(platform)`: remove them. `Ok(false)` where unsupported.
+    pub fn disable(&self) -> io::Result<bool> {
         todo!("phase 03")
     }
 
     /// `autostart.set_enabled(on, platform)`.
-    pub fn set_enabled(&self, on: bool) -> bool {
+    pub fn set_enabled(&self, on: bool) -> io::Result<bool> {
         todo!("phase 03")
     }
 }
