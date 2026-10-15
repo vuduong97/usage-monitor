@@ -32,7 +32,7 @@ pub mod sinks;
 use std::sync::Arc;
 
 use clawd_config::CommandRunner;
-use clawd_contracts::AppPaths;
+use clawd_contracts::{AppPaths, Clock, SystemClock};
 
 pub use cliproxy::CliProxySource;
 pub use oauth::{poll_api, poll_token, poll_usage_endpoint, usage_from_oauth_usage, PollError};
@@ -40,16 +40,41 @@ pub use payload::{
     add_chime_field, add_clock_fields, encode_payload, take_attention_flag, take_clears, to_ascii,
     Attention,
 };
-pub use publisher::{PayloadHook, Publisher};
+pub use publisher::{PayloadHook, PollFn, Publisher};
 pub use selector::{
     poll_active, poll_active_payload, poll_claude, PlanKey, PlanSelector, PollState,
 };
 pub use sinks::{HttpSinks, ResultHook};
 
-/// What the poller needs from its surroundings: where the config lives, and how to run
-/// `security`/`defaults`. Replaces the module globals (`CONFIG_FILE`, ...) of `usage.py`.
+/// What the poller needs from its surroundings: where the config lives, how to run
+/// `security`/`defaults`, which Anthropic URLs to call and what time it is. Replaces the module
+/// globals (`CONFIG_FILE`, `USAGE_URL`, ...) and the `MockTransport`/`time.time` monkeypatching
+/// of the Python tests, so the poller can run offline against the testkit's fake server.
+///
+/// `#[non_exhaustive]`: build it with [`UsageEnv::new`] and assign the fields you override, so
+/// a field added later never breaks a caller.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct UsageEnv {
     pub paths: AppPaths,
     pub runner: Arc<dyn CommandRunner>,
+    /// The Haiku probe endpoint; default [`oauth::API_URL`].
+    pub api_url: String,
+    /// The read-only usage endpoint; default [`oauth::USAGE_URL`].
+    pub usage_url: String,
+    /// Wall clock for poll scheduling, attention freshness, `t` (default `SystemClock`).
+    pub clock: Arc<dyn Clock>,
+}
+
+impl UsageEnv {
+    /// Production defaults: the real Anthropic URLs and the system clock.
+    pub fn new(paths: AppPaths, runner: Arc<dyn CommandRunner>) -> Self {
+        Self {
+            paths,
+            runner,
+            api_url: oauth::API_URL.to_owned(),
+            usage_url: oauth::USAGE_URL.to_owned(),
+            clock: Arc::new(SystemClock),
+        }
+    }
 }

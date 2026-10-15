@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use clawd_contracts::{StopRx, TargetsFn, UsagePayload};
+use clawd_contracts::{BoxFuture, StopRx, TargetsFn, UsagePayload};
 
 use crate::sinks::HttpSinks;
 use crate::UsageEnv;
@@ -20,6 +20,10 @@ pub const TICK: f64 = 5.0;
 /// `paths.set_usage_payload`).
 pub type PayloadHook = Arc<dyn Fn(&UsagePayload) + Send + Sync>;
 
+/// Replaces the whole poll (`usage.poll_active`): returns `(payload, all_dead)`. Tests inject a
+/// canned one (Python `test_engine` monkeypatches `usage.poll_active`).
+pub type PollFn = Arc<dyn Fn() -> BoxFuture<(Option<UsagePayload>, bool)> + Send + Sync>;
+
 /// `usage.Publisher`. Shared (`Arc`) between its own [`Self::run`] loop and the engine
 /// (`resend` from `BootWatch`, `request_poll` from settings), hence `&self` everywhere.
 pub struct Publisher {
@@ -29,6 +33,11 @@ pub struct Publisher {
 impl Publisher {
     /// `Publisher(http, targets)`: `targets` `None` = `read_http_targets` from the config file.
     pub fn new(env: UsageEnv, http: HttpSinks, targets: Option<TargetsFn>) -> Self {
+        todo!("phase 07")
+    }
+
+    /// Use `poll` instead of [`crate::poll_active`] (tests; the real one is the default).
+    pub fn with_poller(self, poll: PollFn) -> Self {
         todo!("phase 07")
     }
 
