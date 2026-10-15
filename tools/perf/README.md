@@ -55,7 +55,7 @@ so the detector can be checked by eye. Trigger:
   script waits until no `msedgewebview2.exe` of the run is left (matched by the run's isolated user-data dir, so other
   apps' WebView2 processes are never counted) and records how long that took.
 
-Not measured on this path: a real mouse click, a reboot-cold disk cache, Windows 10, mac. Tauri runs also do the
+Not measured on this path: a real mouse click, a reboot-cold disk cache, Windows 10, mac. The windows are visible while measured; do not run it on a desktop somebody is working on unless `-Quiet` is acceptable (it removes focus stealing only). Tauri runs also do the
 `SetProcessWorkingSetSize(-1,-1)` experiment at the end (`window.trim_after`, `trim_after_10s`);
 `-TrimAfterDestroy` runs the app with trimming after every destroyed window.
 
@@ -91,8 +91,18 @@ network (the Python app polls GitHub unauthenticated for updates). The Python ap
 
 Parameters: `-Runs` (default 3, each a fresh launch), `-Cycles` (50), `-IdleSeconds` (600; use 10 for smoke tests),
 `-GapMs` (300 between cycles), `-Phase all|idle|window`, `-Parallel` (idle phase only; `tray_ms` is then not taken),
-`-ExtraEnv @{ NAME = 'value' }` (extra environment for the app, e.g. `CLAWD_SPIKE_ARGS` experiments),
-`-WorkDir`, `-BasePort`, `-TrayClassRegex`.
+`-CyclesLaterRuns N` (cycles for runs 2..n; `0` = one batch of `-Cycles` cycles in run 1, later runs only cold-open),
+`-Quiet` (spike windows never take keyboard focus, so the desktop can be used meanwhile),
+`-SharedWebViewDir <dir>` (one WebView2 profile for all runs: run 1 then is the first-ever open with a fresh profile,
+later runs are cold launches with an existing profile, as users see them),
+`-ExtraEnv @{ NAME = 'value' }` (extra environment for the app; works only when the script is started from a PowerShell
+prompt, not via `-File` from another process), `-WorkDir`, `-BasePort`, `-TrayClassRegex`, `-DumpFramesDir`.
+
+Tauri note: without an explicit `data_directory` the spike's WebView2 profile ended up in `<exe>.WebView2\EBWebView`
+next to the exe, not under `%LOCALAPPDATA%`. The spike therefore takes `CLAWD_SPIKE_DATA_DIR`, which this script always sets
+(a per-run directory unless `-SharedWebViewDir` is given), so nothing is written next to the exe or into the real profile.
+Idle phase results are also appended to `%TEMP%\clawd-perf\idle-samples-<kind>.csv` while running, so a crash or a
+killed run loses nothing already sampled.
 
 Default scripts-execution policy blocks unsigned files: run `powershell -NoProfile -ExecutionPolicy Bypass -File ...`.
 

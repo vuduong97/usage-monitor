@@ -7,6 +7,9 @@
 //   CLAWD_SPIKE_CONTROL  1: /open /close /trim /status /fetch routes, so a script can drive the
 //                        same open_settings() the tray click calls
 //   CLAWD_SPIKE_TRIM     1: SetProcessWorkingSetSize(-1,-1) after every window is destroyed
+//   CLAWD_SPIKE_QUIET    1: never take keyboard focus (no set_focus, window created unfocused), for measuring
+//                        on a desktop somebody is working on
+//   CLAWD_SPIKE_DATA_DIR WebView2 profile directory (default: Tauri's, under the real LOCALAPPDATA)
 //   CLAWD_SPIKE_ARGS     WebView2 browser arguments to use instead of Tauri's defaults (experiments)
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -95,7 +98,9 @@ fn spike_ready(window: WebviewWindow, dcl: f64, fcp: f64) {
     mark(&format!("ready dcl={dcl:.1} fcp={fcp:.1}"));
     let _ = window.show();
     mark("shown");
-    let _ = window.set_focus();
+    if !env_flag("CLAWD_SPIKE_QUIET") {
+        let _ = window.set_focus();
+    }
 }
 
 /// What the tray click (and the menu item) does. Called from an async context: building a
@@ -114,7 +119,14 @@ async fn open_settings(app: AppHandle) {
         .min_inner_size(720.0, 540.0)
         .visible(false)
         .background_color(Color(20, 20, 19, 255))
+        .focused(!env_flag("CLAWD_SPIKE_QUIET"))
         .initialization_script(PERF_JS);
+    // Tauri takes the WebView2 profile from the shell's known folder, not from %LOCALAPPDATA%: tools/perf
+    // points it at a directory of its own so a measurement never touches the real profile.
+    let builder = match std::env::var("CLAWD_SPIKE_DATA_DIR") {
+        Ok(dir) => builder.data_directory(dir.into()),
+        Err(_) => builder,
+    };
     // Experiment knob: replaces Tauri's default WebView2 browser arguments.
     #[cfg(windows)]
     let builder = match std::env::var("CLAWD_SPIKE_ARGS") {
