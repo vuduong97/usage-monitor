@@ -1,0 +1,9 @@
+[package]
+name = "clawd-e2e"
+description = "End-to-end and parity tests (empty until phase 14)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]

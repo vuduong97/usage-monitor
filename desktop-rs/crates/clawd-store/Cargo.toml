@@ -1,0 +1,24 @@
+[package]
+name = "clawd-store"
+description = "On-disk and OS-store layer: prefs (desktop.json + lock), pause lease, ota.busy, usage payload file, log, keyring creds, autostart, firstrun."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+clawd-contracts = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+plist = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = { workspace = true }
+
+[dev-dependencies]
+clawd-testkit = { workspace = true }

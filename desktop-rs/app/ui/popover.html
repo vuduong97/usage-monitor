@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'">
+<title>Clawd</title>
+<!-- The panel under the menu-bar icon (clawd_desktop/popover.py). The app calls
+     clawdUpdate(view), clawdPak(base64) and clawdVisible(bool); the page posts
+     {cmd: ready | size | settings | close} back. Opened in a plain browser it shows sample numbers. -->
+<style>
+  :root { --text:#faf9f5; --dim:#b0aea5; --mute:#8f8d84; --track:rgba(255,255,255,.12);
+          --ok:#9bb07a; --amber:#e0a35a; --bad:#e5786d; --busy:#e0b04a; --acc:#d97757; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:transparent; color:var(--text); overflow:hidden; cursor:default;
+               font:12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+               -webkit-font-smoothing:antialiased; user-select:none; -webkit-user-select:none; }
+  body.browser { background:#262624; width:264px; }
+  .wrap { width:264px; padding:6px 6px 12px 8px; }
+  header { display:flex; align-items:center; gap:8px; min-height:34px; }
+  canvas { width:42px; height:32px; flex:none; image-rendering:pixelated; }
+  .lab { flex:1; min-width:0; color:var(--mute); font-size:12px; display:flex; gap:6px; align-items:baseline; }
+  .lab span { overflow-wrap:anywhere; }
+  .dot { width:6px; height:6px; border-radius:50%; flex:none; position:relative; top:-1px; background:var(--mute); }
+  .dot.ok { background:var(--ok); box-shadow:0 0 5px var(--ok); } .dot.busy { background:var(--busy); } .dot.error { background:var(--bad); }
+  .lab.error { color:#f2a69d; }
+  button { all:unset; width:26px; height:26px; border-radius:6px; display:grid; place-items:center; color:var(--mute); flex:none; }
+  button:hover { background:rgba(255,255,255,.08); color:var(--text); }
+  button:focus-visible { outline:2px solid var(--acc); outline-offset:1px; }
+  button svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .rows { display:grid; grid-template-columns:38px 1fr auto 46px; gap:9px 8px; align-items:center; padding:6px 6px 0 4px; }
+  .rows .n { color:var(--dim); }
+  .rows strong { font-size:12.5px; font-weight:600; text-align:right; font-variant-numeric:tabular-nums; min-width:34px; }
+  .rows .t { color:var(--mute); font-size:11px; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bar { height:6px; border-radius:99px; background:var(--track); overflow:hidden; }
+  .bar i { display:block; height:100%; border-radius:99px; transition:width .3s ease-out; }
+  .empty { margin:6px 4px 0; color:var(--mute); }
+  @media (prefers-reduced-motion: reduce) { .bar i { transition:none; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <header>
+    <canvas id="clawd" width="42" height="32" aria-hidden="true"></canvas>
+    <div class="lab" id="lab"><i class="dot" id="dot"></i><span id="label">Đang khởi động…</span></div>
+    <button id="gear" aria-label="Cài đặt…" title="Cài đặt… (⌘,)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </header>
+  <div class="rows" id="rows"></div>
+  <p class="empty" id="empty" hidden>Chưa có số liệu usage.</p>
+</div>
+<script src="preview.js"></script>
+<script>
+'use strict';
+const host = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.clawd;
+const post = msg => { if (host) host.postMessage(JSON.stringify(msg)); };
+const $ = id => document.getElementById(id);
+const pctColor = p => (p >= 80 ? 'var(--bad)' : p >= 50 ? 'var(--amber)' : 'var(--ok)');
+const still = matchMedia('(prefers-reduced-motion: reduce)');
+
+// ---- Clawd: the clock's corner mascot, 3/4 size (1.5 px per sprite cell) ----
+const cv = $('clawd'), ctx = cv.getContext('2d'), DPR = Math.max(1, window.devicePixelRatio || 1);
+cv.width = 42 * DPR; cv.height = 32 * DPR;
+let shown = !host, raf = 0;
+function draw(now) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(0.75 * DPR, 0, 0, 0.75 * DPR, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  PV.drawClawd(ctx, 0, 0, now);
+}
+function loop(now) { draw(now); raf = shown && !still.matches ? requestAnimationFrame(loop) : 0; }
+function kick() { if (!raf) raf = requestAnimationFrame(loop); }
+
+// ---- numbers ----
+function render(v) {
+  $('label').textContent = v.label || '';
+  $('dot').className = 'dot ' + (v.state || '');
+  $('lab').className = 'lab' + (v.state === 'error' ? ' error' : '');
+  const rows = v.rows || [];
+  $('rows').replaceChildren(...rows.flatMap(r => {
+    const n = Object.assign(document.createElement('span'), { className:'n', textContent:r.name });
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.setAttribute('role', 'progressbar');
+    bar.setAttribute('aria-label', r.name);
+    bar.setAttribute('aria-valuenow', r.pct);
+    bar.setAttribute('aria-valuemin', 0);
+    bar.setAttribute('aria-valuemax', 100);
+    const fill = document.createElement('i');
+    fill.style.width = `${Math.max(r.pct, r.pct > 0 ? 3 : 0)}%`;
+    fill.style.background = pctColor(r.pct);
+    bar.append(fill);
+    const pct = Object.assign(document.createElement('strong'), { textContent:`${r.pct}%` });
+    const t = Object.assign(document.createElement('span'), { className:'t', textContent:r.left || '' });
+    if (r.left) t.title = `Đặt lại sau ${r.left}`;
+    return [n, bar, pct, t];
+  }));
+  $('empty').hidden = rows.length > 0;
+  size();
+  if (!raf) draw(performance.now());
+}
+let lastH = 0;
+function size() {
+  const h = Math.ceil($('wrap').getBoundingClientRect().height);
+  if (h !== lastH) { lastH = h; post({ cmd:'size', h }); }
+}
+
+// ---- the app's side ----
+window.clawdUpdate = v => render(v || {});
+window.clawdPak = b64 => { if (PV.setPak(b64)) draw(performance.now()); };
+window.clawdVisible = on => { shown = Boolean(on); if (shown) kick(); else if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+still.addEventListener('change', () => (still.matches ? draw(performance.now()) : kick()));
+
+$('gear').addEventListener('click', () => post({ cmd:'settings' }));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') post({ cmd:'close' });
+  else if (e.key === ',' && e.metaKey) { e.preventDefault(); post({ cmd:'settings' }); }
+});
+
+if (host) post({ cmd:'ready' });
+else {                                        // a plain browser: sample numbers, for design work
+  document.body.classList.add('browser');
+  render({ state:'ok', label:'Đã kết nối', rows:[{ name:'Phiên', pct:10, left:'1g45' }, { name:'Tuần', pct:41, left:'4n 20g' }] });
+  kick();
+}
+</script>
+</body>
+</html>
