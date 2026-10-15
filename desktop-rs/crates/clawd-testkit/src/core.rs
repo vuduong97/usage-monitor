@@ -196,39 +196,67 @@ pub struct FakeResponse {
     pub status: u16,
     pub headers: Vec<(String, String)>,
     pub body: Vec<u8>,
+    /// Wait this long before answering (client timeout tests: slow ESP8266, slowloris).
+    pub delay: Duration,
+    /// Close the connection without any answer (connection reset / no answer tests).
+    pub drop_connection: bool,
+    /// Send the body with `Transfer-Encoding: chunked` (two chunks) instead of `Content-Length`.
+    pub chunked: bool,
 }
 
 impl FakeResponse {
-    pub fn status(status: u16) -> Self {
+    fn new(status: u16, headers: Vec<(String, String)>, body: Vec<u8>) -> Self {
         Self {
             status,
-            headers: Vec::new(),
-            body: Vec::new(),
+            headers,
+            body,
+            delay: Duration::ZERO,
+            drop_connection: false,
+            chunked: false,
         }
+    }
+
+    /// Answer after `delay`.
+    pub fn with_delay(mut self, delay: Duration) -> Self {
+        self.delay = delay;
+        self
+    }
+
+    /// Accept the request, then close the connection with no answer.
+    pub fn dropped() -> Self {
+        let mut r = Self::new(0, Vec::new(), Vec::new());
+        r.drop_connection = true;
+        r
+    }
+
+    /// Use chunked transfer encoding for the body.
+    pub fn chunked(mut self) -> Self {
+        self.chunked = true;
+        self
+    }
+
+    pub fn status(status: u16) -> Self {
+        Self::new(status, Vec::new(), Vec::new())
     }
 
     pub fn text(status: u16, body: &str) -> Self {
-        Self {
+        Self::new(
             status,
-            headers: vec![("Content-Type".into(), "text/plain".into())],
-            body: body.as_bytes().to_vec(),
-        }
+            vec![("Content-Type".into(), "text/plain".into())],
+            body.as_bytes().to_vec(),
+        )
     }
 
     pub fn json(status: u16, body: &Value) -> Self {
-        Self {
+        Self::new(
             status,
-            headers: vec![("Content-Type".into(), "application/json".into())],
-            body: serde_json::to_vec(body).expect("json"),
-        }
+            vec![("Content-Type".into(), "application/json".into())],
+            serde_json::to_vec(body).expect("json"),
+        )
     }
 
     pub fn bytes(status: u16, body: Vec<u8>) -> Self {
-        Self {
-            status,
-            headers: Vec::new(),
-            body,
-        }
+        Self::new(status, Vec::new(), body)
     }
 
     /// Add a response header (`Location` for a redirect, `WWW-Authenticate` for a challenge).
@@ -395,6 +423,13 @@ fn serve(stream: TcpStream, state: &ServerState) -> io::Result<()> {
         None => FakeResponse::text(404, "not found"),
     };
 
+    if response.drop_connection {
+        let _ = stream.shutdown(Shutdown::Both);
+        return Ok(());
+    }
+    if !response.delay.is_zero() {
+        std::thread::sleep(response.delay);
+    }
     let mut out = stream;
     write!(
         out,
@@ -405,12 +440,28 @@ fn serve(stream: TcpStream, state: &ServerState) -> io::Result<()> {
     for (k, v) in &response.headers {
         write!(out, "{k}: {v}\r\n")?;
     }
-    write!(
-        out,
-        "Content-Length: {}\r\nConnection: close\r\n\r\n",
-        response.body.len()
-    )?;
-    out.write_all(&response.body)?;
+    if response.chunked {
+        write!(
+            out,
+            "Transfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
+        )?;
+        let (a, b) = response.body.split_at(response.body.len() / 2);
+        for part in [a, b] {
+            if !part.is_empty() {
+                write!(out, "{:x}\r\n", part.len())?;
+                out.write_all(part)?;
+                write!(out, "\r\n")?;
+            }
+        }
+        write!(out, "0\r\n\r\n")?;
+    } else {
+        write!(
+            out,
+            "Content-Length: {}\r\nConnection: close\r\n\r\n",
+            response.body.len()
+        )?;
+        out.write_all(&response.body)?;
+    }
     out.flush()?;
     let _ = out.shutdown(Shutdown::Both);
     Ok(())
@@ -471,6 +522,32 @@ mod tests {
         assert_eq!(seen[0].path(), "/api/heap");
         assert_eq!(seen[0].query(), "x=1");
         assert_eq!(seen[1].body_json(), Some(json!({"a": 1})));
+    }
+
+    #[test]
+    fn delay_chunked_and_dropped_responses() {
+        let server = FakeHttpServer::start().unwrap();
+        server.route(
+            "GET",
+            "/slow",
+            FakeResponse::text(200, "hello").with_delay(Duration::from_millis(150)),
+        );
+        server.route("GET", "/chunk", FakeResponse::text(200, "abcdef").chunked());
+        server.route("GET", "/drop", FakeResponse::dropped());
+        let t = std::time::Instant::now();
+        let slow = request(&server, "GET /slow HTTP/1.1\r\nHost: t\r\n\r\n");
+        assert!(t.elapsed() >= Duration::from_millis(150));
+        assert!(slow.ends_with("hello"), "{slow}");
+        let chunk = request(&server, "GET /chunk HTTP/1.1\r\nHost: t\r\n\r\n");
+        assert!(chunk.contains("Transfer-Encoding: chunked"), "{chunk}");
+        assert!(
+            chunk.ends_with("3\r\nabc\r\n3\r\ndef\r\n0\r\n\r\n"),
+            "{chunk}"
+        );
+        assert_eq!(
+            request(&server, "GET /drop HTTP/1.1\r\nHost: t\r\n\r\n"),
+            ""
+        );
     }
 
     #[test]
