@@ -3,6 +3,11 @@
 //! phases build with a literal is `#[non_exhaustive]` with a `new(..)`, so adding a field later
 //! does not break the other phase.
 //!
+//! NOTE: inside `clawd-app` (phases 12 and 13 both live here) `#[non_exhaustive]` does NOT stop a
+//! struct literal: the protection is by convention only, so always build `AppState`, `Services`
+//! and `SettingsSession` with `::new(..)`. It is effective for types built from another crate
+//! (`UsageEnv`, `OtaOptions`, `UpdaterOptions`).
+//!
 //! In Python the settings window was a separate process that talked to the tray over a stdin/
 //! stdout pipe; here both live in one process and the same messages travel as [`ShellCmd`]
 //! through `AppState.shell_tx`.
