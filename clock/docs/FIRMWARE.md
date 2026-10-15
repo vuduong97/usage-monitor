@@ -18,6 +18,7 @@ so a port stays possible, but nothing compiles them.
 - **Corner Clawd:** rests, then does acts (waving, dancing, pointing) at a pace set by the usage rate: 4 s of rest between acts when idle, 3 / 2 / 1.5 s as the rate goes up (`MAS_STILL_MS`).
 - **Alert:** the app's attention message (`m`) scrolls on the status line inside a blinking accent frame, and Clawd alternates waving and pointing. It clears on `x` or after 2 minutes.
 - **Idle:** the cloud mini animation with "Listening… / No data…". Until the first payload since boot it says "Waiting…" and shows the clock's IP above the status line, so a clock the desktop app has not reached yet can still be found.
+- **Login expired:** `{"ok": false, "why": "login"}` (fwSeq 7) shows the idle view with "Login expired" on the status line, over a style pack and over the splash, until usage comes back. The title clock keeps running from the payload's `t`.
 - **Splash:** the 17 official Clawd animations, full screen. They play intro → loop → outro, and the walkers cross the stage. They are picked by usage rate or pinned.
   - On the Auto screen the splash means no fresh data, so it captions the clock's IP in a 24 px band at the bottom: the way to reach a clock the desktop app cannot find. Every animation ends by grid row 47 of 60, so the band never covers one. A splash picked on purpose (Screen: Clawd) stays full height.
 

@@ -389,6 +389,42 @@ static int checkWaiting(const char* dir) {
   return bad;
 }
 
+// {"ok": false, "why": "login"}: the Claude login expired. The classic idle screen (time,
+// Clawd, "Login expired") replaces a style pack until usage comes back.
+static int checkLogin(const char* dir) {
+  int bad = 0;
+  const char* sdir = getenv("CLAWD_STYLE_DIR");
+  std::vector<uint8_t> pk;
+  if (sdir) {
+    char path[512];
+    snprintf(path, sizeof(path), "%s/synth.pak", sdir);
+    pk = readFile(path);
+  }
+  const bool style = !pk.empty() && styleAttach(pk.data(), (uint32_t)pk.size());
+  clawdUiPayload(base());
+  run(1000, CLAWD_SCREEN_AUTO, -1);
+  if (style) CHECK(clawdUiOnStyle(), "login: the style pack did not draw the usage");
+  ClawdData d = base();
+  d.ok = false;
+  strcpy(d.why, "login");
+  clawdUiPayload(d);
+  run(1500, CLAWD_SCREEN_AUTO, -1);
+  CHECK(!clawdUiOnStyle(), "login: a style pack hid \"Login expired\"");
+  shot(dir, "15-login-expired");
+  run(CLAWD_DATA_FRESH_MS + 1000, CLAWD_SCREEN_SPLASH, -1);   // even with the splash picked
+  CHECK(!clawdUiOnStyle(), "login: the screen left \"Login expired\" while it lasted");
+  shot(dir, "15b-login-expired-later");
+  clawdUiPayload(base());
+  run(1500, CLAWD_SCREEN_AUTO, -1);
+  if (style) {
+    CHECK(clawdUiOnStyle(), "login: the style pack did not come back with usage");
+    styleDetach();
+    run(500, CLAWD_SCREEN_AUTO, -1);
+  }
+  printf("login expired: %s%s\n", bad ? "FAILED" : "ok", style ? "" : " (synth.pak not found, style part skipped)");
+  return bad;
+}
+
 int main(int argc, char** argv) {
   const char* dir = argc > 1 ? argv[1] : ".";
   MemSurface surf;
@@ -516,8 +552,9 @@ int main(int argc, char** argv) {
   shot(dir, "14b-usage-off-later");
   clawdUiPayload(base());
   run(1500, CLAWD_SCREEN_AUTO, -1);
+  const int loginBad = checkLogin(dir);
 
-  const int bad = checkVariants() + bandBad + styleBad + waitBad;
+  const int bad = checkVariants() + bandBad + styleBad + waitBad + loginBad;
   printf("pixels pushed: %ld\n", g_pushed);
   return bad ? 1 : 0;
 }

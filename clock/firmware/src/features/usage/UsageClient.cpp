@@ -37,12 +37,13 @@ bool usageFresh(uint32_t withinMs) {
 //   ignored — the clock has no speaker.
 //   src  = whose usage: absent = Claude, "codex" = Codex CLI (labels the cards);
 //          "off" with ok = false = the user shows no usage: time and Clawd only
+//   why  = with ok = false: "login" = the Claude login expired (the screen says so)
 static void usageFilter(JsonDocument& f) {
   f["s"] = true; f["sr"] = true; f["w"] = true;
   f["wr"] = true; f["st"] = true; f["ok"] = true;
   f["acct"] = true; f["tp"] = true; f["rd"] = true;
   f["t"] = true; f["tf"] = true; f["m"] = true; f["x"] = true;
-  f["src"] = true;
+  f["src"] = true; f["why"] = true;
 }
 
 // Forward a payload to the Clawd screens.
@@ -62,6 +63,7 @@ static void forwardToClawd(JsonDocument& doc, bool ok) {
   strlcpy(c.alertMsg, doc["m"] | "", sizeof(c.alertMsg));
   c.alertClear      = doc["x"] | false;
   strlcpy(c.source, doc["src"] | "", sizeof(c.source));
+  strlcpy(c.why, doc["why"] | "", sizeof(c.why));
   clawdUiPayload(c);
 }
 

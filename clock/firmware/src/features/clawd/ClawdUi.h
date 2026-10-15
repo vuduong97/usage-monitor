@@ -23,6 +23,8 @@ struct ClawdData {
   bool  alertClear;          // the session moved on: end the alert
   char  source[8];           // whose usage: "" = Claude (the default), "codex"; "off" with
                              // ok = false: the user shows no usage (time + Clawd only)
+  char  why[8];              // with ok = false: why there is no usage. "login" = the Claude
+                             // login expired (the classic screen says so); "" = unknown
 };
 
 // What the daemon wants on screen right now (POST /api/state): a full-screen

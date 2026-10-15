@@ -55,6 +55,7 @@ static ClawdData g_data;
 static bool      g_received = false;     // any ok payload since boot
 static bool      g_lastOk = false;
 static bool      g_usageOff = false;     // the app says: show no usage (src "off")
+static bool      g_loginExpired = false; // the app says: no usage, the Claude login expired (why "login")
 static uint32_t  g_lastDataMs = 0;
 static uint32_t  g_firstDataMs = 0;
 static int       g_rateGroup = 0;
@@ -353,7 +354,9 @@ static void tickStatus(uint32_t now, bool force) {
     g_spinIdx = (g_spinPhase < SPINNER_COUNT) ? g_spinPhase : (SPINNER_PHASES - g_spinPhase);
   }
   const char* word;
-  if (!g_received)                     word = "Waiting";
+  const char* tail = "\xE2\x80\xA6";       // "...": still working on it
+  if (g_loginExpired)                  { word = "Login expired"; tail = ""; }
+  else if (!g_received)                word = "Waiting";
   else if (!dataFresh(now) && !g_usageOff) word = (g_msgIdx & 1) ? "No data" : "Listening";
   else if (now - g_firstDataMs < 5000) word = "Connected";
   else {
@@ -366,7 +369,7 @@ static void tickStatus(uint32_t now, bool force) {
     word = msg;
   }
   char buf[96];
-  snprintf(buf, sizeof(buf), "%s %s\xE2\x80\xA6", SPINNER[g_spinIdx], word);
+  snprintf(buf, sizeof(buf), "%s %s%s", SPINNER[g_spinIdx], word, tail);
   if (!force && strcmp(buf, g_statusDrawn) == 0) return;
   strcpy(g_statusDrawn, buf);
   drawStatus(buf, false, now, now);
@@ -680,6 +683,16 @@ void clawdUiPayload(const ClawdData& d) {
     g_usageOff = off;
     g_dirtyAll = true;
   }
+  const bool login = !d.ok && !off && strcmp(d.why, "login") == 0;
+  if (login != g_loginExpired) {
+    g_loginExpired = login;
+    g_dirtyAll = true;
+    g_statusDrawn[0] = 0;
+  }
+  if (login) {           // the classic screen says why, not "No data"; the time keeps running
+    if (d.clockEpoch > 0) setClock(d);
+    return;
+  }
   if (off) {             // no usage on purpose: the time and Clawd, no "No data"
     g_received = true;
     setClock(d);
@@ -819,6 +832,7 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   View want;
   if (deskLive(now))                       want = VIEW_DESK;
   else if (g_alert)                        want = fresh ? VIEW_USAGE : VIEW_IDLE;
+  else if (g_loginExpired)                 want = VIEW_IDLE;     // time + Clawd + "Login expired"
   else if (g_usageOff)                     want = VIEW_IDLE;     // time + Clawd, whatever the screen setting
   else if (screen == CLAWD_SCREEN_SPLASH)  want = VIEW_SPLASH;
   else if (screen == CLAWD_SCREEN_USAGE)   want = fresh ? VIEW_USAGE : VIEW_IDLE;
@@ -827,9 +841,9 @@ void clawdUiService(uint8_t screen, int8_t fixedAnim, uint8_t layout) {
   // desktop has sent data since boot; before that the classic waiting screen
   // (cloud, IP, "Waiting") shows. An alert keeps the classic screen (its line
   // and the waving mascot), and so does an Enterprise account (spending /
-  // period cards).
+  // period cards) and an expired login (its status line says so).
   if ((want == VIEW_USAGE || want == VIEW_IDLE) && styleActive() && !g_alert && g_received && !g_data.enterprise
-      && !g_usageOff)
+      && !g_usageOff && !g_loginExpired)
     want = VIEW_STYLE;
   if (styleGeneration() != g_styleGen) {   // a pack was installed or removed
     g_styleGen = styleGeneration();
