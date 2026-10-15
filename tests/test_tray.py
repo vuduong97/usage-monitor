@@ -47,6 +47,13 @@ def test_problems_come_first():
     assert tray.status(snap(clock=A, failing=True), NOW)[0] == "error"
 
 
+def test_expired_login_does_not_read_as_a_lost_clock():
+    s, head, _ = tray.status(snap(token=False, clock=A, last_ok=NOW), NOW)
+    assert s == "error" and head.startswith("Đã kết nối clawd · ") and "claude login" in head
+    _, head, _ = tray.status(snap(token=False, clock=A, failing=True), NOW)
+    assert "Đã kết nối" not in head and "claude login" in head
+
+
 def test_lost_clock_points_at_typing_its_ip():
     s, head, _ = tray.status(snap(), NOW)                      # nothing known: no scan to wait for
     assert s == "error" and "nhập IP" in head and "Nhập địa chỉ đồng hồ" in head

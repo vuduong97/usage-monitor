@@ -222,6 +222,7 @@ async function refreshLive() {
       if (p && p.ok) PV.setPak(p.pak);
     }
   } catch (err) { console.warn('usage_preview failed; keeping the last frame', err); }
+  renderConn();
   paintPreview(performance.now());
 }
 setInterval(refreshLive, 20000);
@@ -243,12 +244,23 @@ function loop(now) {
 function renderAll() {
   renderConn(); renderDisplay(); renderGallery(); renderWifi(); renderAppUpdate(); renderUpdate(); renderApp(); renderBar();
 }
+// The engine sends {"ok": false} without "src" when no Claude token works (usage.py); Codex or
+// "none" payloads carry "src" and say nothing about a Claude login.
+function noClaudeData() {
+  const p = live && live.payload;
+  return Boolean(p && p.ok === false && !p.src);
+}
 function renderConn() {
   const dot = $('connDot'), t = $('connText');
   if (!S) return;
   const host = (S.config && S.config.hostname) || '';
   const addr = S.app ? S.app.clock.replace(/^https?:\/\//, '') : '';
-  if (S.ok) { dot.className = 'dot ok'; t.textContent = `${host || 'đồng hồ'} · ${addr}`; }
+  t.title = '';
+  if (S.ok && noClaudeData()) {   // the clock is reached, but the app has no usage to send it
+    dot.className = 'dot busy'; t.textContent = `${host || 'đồng hồ'} · ${addr} · đăng nhập Claude hết hạn`;
+    t.title = 'Đồng hồ vẫn kết nối. Đăng nhập Claude hết hạn: mở Claude Code hoặc gõ claude login';
+  }
+  else if (S.ok) { dot.className = 'dot ok'; t.textContent = `${host || 'đồng hồ'} · ${addr}`; }
   else if (S.code === 'auth') { dot.className = 'dot busy'; t.textContent = `${addr} · cần mật khẩu`; }
   else if (S.code === 'noclock') { dot.className = 'dot bad'; t.textContent = 'Chưa có đồng hồ'; }
   else { dot.className = 'dot bad'; t.textContent = `${addr} · không trả lời`; }

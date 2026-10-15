@@ -157,6 +157,10 @@ static bool toClawdData(const Doc& d, ClawdData& c) {
   const Val* src = d.get("src");       // firmware fwSeq 7+: whose usage ("codex", "off")
   if (src && src->isStr) strncpy(c.source, src->str.c_str(), sizeof(c.source) - 1);
 #endif
+#ifdef CLAWD_HAS_WHY
+  const Val* why = d.get("why");       // firmware fwSeq 7+: why there is no usage ("login")
+  if (why && why->isStr) strncpy(c.why, why->str.c_str(), sizeof(c.why) - 1);
+#endif
   return true;
 }
 

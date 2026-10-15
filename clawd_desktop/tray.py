@@ -13,7 +13,15 @@ import threading
 import time
 from typing import Any
 
-from clawd_desktop import APP_NAME, __version__, appupdate, autostart, hooks, icons, paths
+from clawd_desktop import (
+    APP_NAME,
+    __version__,
+    appupdate,
+    autostart,
+    hooks,
+    icons,
+    paths,
+)
 from clawd_desktop.engine import Engine, daemon_running
 
 REFRESH = 3.0
@@ -32,6 +40,9 @@ def log(msg: str) -> None:
 # =============================================================================
 # Status text (pure, tested)
 # =============================================================================
+LOGIN_HINT = "Đăng nhập Claude hết hạn: mở Claude Code hoặc gõ claude login"
+
+
 def _no(v: object) -> bool:
     """An explicit False (None means "not known yet")."""
     return isinstance(v, bool) and not v
@@ -53,7 +64,9 @@ def status(snap: dict, now: float | None = None) -> tuple[str, str, str]:
             detail += time.strftime(" · lúc %H:%M", time.localtime(at))
 
     if _no(snap.get("token")):
-        return "error", "Chưa đăng nhập Claude: mở Terminal, gõ claude login", detail
+        # The clock may well be reached: say so, or an expired login reads as a lost clock.
+        where = f"Đã kết nối {clock.name or clock.host} · " if connected and clock is not None else ""
+        return "error", where + LOGIN_HINT, detail
     if snap.get("manual_config"):
         where = ", ".join(snap.get("config_targets") or [])
         return ("ok" if connected else "busy",

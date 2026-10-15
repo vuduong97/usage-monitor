@@ -99,8 +99,11 @@ def main() -> int:
     cmd = [cxx, "-std=c++17", "-O2", "-Wall", "-Wextra", "-Wno-unused-function", "-Wno-missing-field-initializers",
            *shlex.split(os.environ.get("CXXFLAGS", "")),     # e.g. "-arch arm64 -arch x86_64" (one Mac file)
            f"-I{clawd}", str(MAIN), *[str(clawd / n) for n in SOURCES], "-o", str(exe)]
-    if "source[" in (clawd / "ClawdUi.h").read_text(encoding="utf-8"):
+    ui_h = (clawd / "ClawdUi.h").read_text(encoding="utf-8")
+    if "source[" in ui_h:
         cmd.insert(1, "-DCLAWD_HAS_SOURCE")      # firmware that labels whose usage it shows (src)
+    if "why[" in ui_h:
+        cmd.insert(1, "-DCLAWD_HAS_WHY")         # firmware that says why there is no usage (login)
     if a.windows:
         cmd += ["-static", "-s"]                  # no MinGW DLLs to ship; no symbol names in the file
         cmd.insert(1, "-D_POSIX_THREAD_SAFE_FUNCTIONS")   # MinGW's time.h declares gmtime_r only then

@@ -17,16 +17,18 @@ const PV = (() => {
               m16:'16px ui-monospace, Menlo, Consolas, monospace' };
   const W = 240, H = 240;
   // The usage payload the app sends the clock ({s, sr, w, wr, t, tf, ok}) as the drawers read it.
-  // null when there is nothing to show (no payload yet, or the "no data" beat).
+  // null when there is nothing to show (no payload yet, or the "no data" beat);
+  // {login: true, clock} for {"ok": false, "why": "login"} (the clock says "Login expired").
+  function clockText(p) {
+    if (typeof p.t !== 'number') return '';       // local wall-clock seconds: read the UTC fields
+    const d = new Date(p.t * 1000), h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2, '0');
+    return p.tf === 12 ? `${h % 12 || 12}:${m} ${h < 12 ? 'AM' : 'PM'}` : `${String(h).padStart(2, '0')}:${m}`;
+  }
   function fromPayload(p) {
+    if (p && p.ok === false && p.why === 'login' && !p.src) return { login: true, clock: clockText(p) };
     if (!p || p.ok === false || typeof p.s !== 'number') return null;
     const n = (v, dflt) => (typeof v === 'number' && isFinite(v) ? v : dflt);
-    let clock = '';
-    if (typeof p.t === 'number') {                // local wall-clock seconds: read the UTC fields
-      const d = new Date(p.t * 1000), h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2, '0');
-      clock = p.tf === 12 ? `${h % 12 || 12}:${m} ${h < 12 ? 'AM' : 'PM'}` : `${String(h).padStart(2, '0')}:${m}`;
-    }
-    return { s: n(p.s, 0), sr: Math.round(n(p.sr, -1)), w: n(p.w, 0), wr: Math.round(n(p.wr, -1)), clock };
+    return { s: n(p.s, 0), sr: Math.round(n(p.sr, -1)), w: n(p.w, 0), wr: Math.round(n(p.wr, -1)), clock: clockText(p) };
   }
   const pctColor = p => p >= 80 ? C.red : p >= 50 ? C.amber : C.green;
   function fmtReset(m) {
@@ -184,6 +186,12 @@ const PV = (() => {
     tx(c, 'Xem tr\u01b0\u1edbc c\u1ea7n b\u1ea3n app', W / 2, 132, F.s14, dim, 'center');
     tx(c, 'c\u00f3 k\u00e8m firmware', W / 2, 152, F.s14, dim, 'center');
   }
+  // ClawdUi.cpp's idle view with why = login: time, corner Clawd, the status line (any style).
+  function loginExpired(c, d, now) {
+    header(c, d, now);                          // (the clock's cloud animation is not drawn here)
+    const ph = Math.floor(now / 160) % SPIN.length;
+    tx(c, `${SPIN[ph]} Login expired`, W / 2, H - 30, F.m16, C.accent, 'center');
+  }
   function waiting(c, now) {
     clawd(c, 92, 66, now);
     tx(c, 'Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u usage', W / 2, 130, F.s14, C.dim, 'center');
@@ -194,6 +202,7 @@ const PV = (() => {
     const c = canvas.getContext('2d');
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.fillStyle = C.bg; c.fillRect(0, 0, W, H);
+    if (d && d.login) { loginExpired(c, d, now); return; }   // the clock leaves a style pack for it
     if (pack) { placeholder(c, pack.name, pack.light); return; }
     if (!d) { waiting(c, now); return; }
     classic(c, d, now);

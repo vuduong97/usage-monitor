@@ -1282,7 +1282,13 @@ class Publisher:
             else:
                 log("No usable token; signalling no-data to device \u2014 run "
                     "`claude login` or use the CLI to let Claude Code renew it")
-            out = {"ok": False, **({"src": "codex"} if source == "codex" else {}), **extra}
+            if source == "codex":
+                out = {"ok": False, "src": "codex", **extra}
+            else:
+                # why = login: a clock with fwSeq 7+ says "Login expired" instead of
+                # "No data", and keeps the time running (an older one ignores both).
+                out = {"ok": False, "why": "login", **extra}
+                add_clock_fields(out)
         else:
             # A live token that didn't answer usefully this cycle -> stay
             # silent. poll_active backs that source off for a poll interval,

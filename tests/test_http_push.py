@@ -154,7 +154,19 @@ def test_publisher_no_data_beat(tmp_path):
     with _config(tmp_path, "http_targets = h\n"), _attention(tmp_path), \
          patch.object(d, "poll_active", new=AsyncMock(return_value=(None, True))):
         asyncio.run(_publisher(transport).step())
-    assert [body for _, body in seen] == [{"ok": False}]
+    [body] = [body for _, body in seen]
+    # why = login: the clock says "Login expired" (fwSeq 7+) and keeps the time
+    assert body["ok"] is False and body["why"] == "login" and "src" not in body
+    assert isinstance(body["t"], int) and body["tf"] in (12, 24)
+
+
+def test_publisher_no_codex_data_is_not_a_login_problem(tmp_path):
+    seen, transport = _recording_transport()
+    with _config(tmp_path, "http_targets = h\n"), _attention(tmp_path), \
+         patch.object(d, "read_usage_source", return_value="codex"), \
+         patch.object(d, "poll_active", new=AsyncMock(return_value=(None, True))):
+        asyncio.run(_publisher(transport).step())
+    assert [body for _, body in seen] == [{"ok": False, "src": "codex"}]
 
 
 def test_publisher_feeds_ble_and_http_from_one_poll(tmp_path):

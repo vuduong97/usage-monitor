@@ -47,7 +47,8 @@ Send every ~60 s. The clock goes back to "no data" if nothing arrives for a whil
 | `tf` | 12 or 24 hour clock |
 | `m`, `x` | alert line to show; `x: true` clears it |
 | `src` | whose usage: absent = Claude, `codex` = Codex CLI (the cards read "Codex 5h" / "Codex week"); `off` with `ok: false` = the user shows no usage: the time and Clawd, never "No data" (`fwSeq` 7) |
-| `ok` | `false` = "no data" (not logged in / no token); other keys ignored except `t`/`tf` with `src: off` |
+| `ok` | `false` = "no data" (not logged in / no token); other keys ignored except `t`/`tf` with `src: off` or `why: login`, and the alert line `m`/`x` |
+| `why` | with `ok: false`, why there is no usage: `login` = the Claude login expired. The clock shows its classic screen (time, Clawd, IP) with "Login expired" on the status line, even over a style pack or the splash, until usage comes back (`fwSeq` 7). An older clock ignores it and shows "No data" |
 
 Reply: `200 {"ok":true}`, or `400` for a malformed body.
 
