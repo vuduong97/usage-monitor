@@ -20,6 +20,30 @@ become `Arc<dyn Fn>` aliases; `asyncio.Event` stop is `StopRx`; `use` is `use_cl
 Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 usage, 08 clock,
 09 firmware, 10 appupdate, 12 app shell, 13 settings bridge.
 
+## Rules every phase follows
+
+* **Testkit fakes (blocking review fix 1).** `clawd-testkit` depends on every `clawd-*` crate and
+  every crate dev-depends on it. A crate X may therefore use testkit fakes **of X's own types**
+  only from `tests/*.rs` integration tests, never from `#[cfg(test)]` modules inside X (two
+  copies of X would be linked and trait impls would not unify). Fakes of other crates' types, and
+  all of `testkit::core`, are fine anywhere. Declared dependencies are fixed in
+  `clawd-testkit/Cargo.toml`: do not edit that block. Async tests that need virtual time use
+  `tokio::time::pause()` (`tokio` `test-util` is enabled in testkit); loops written on
+  `MonotonicClock` follow it, a hand-driven `FakeClock` does not (never mix them in one wait).
+* **Environment.** Nothing reads `std::env` directly: take a `clawd_contracts::Env`
+  (`Env::system()` in production, `Env::from_map(..)` in tests) as `read_event_port`,
+  `feed::from_settings`, `source::from_settings`, `updater`, `bundle_dir`, `load_bundle`,
+  `preview_dir`, `load_renderer` and `hooks::{event_port, handler, write_script, apply}` do.
+* **Blocking APIs.** `clawd_store` (prefs lock waits up to 5 s, creds, autostart, open),
+  `clawd_config::CommandRunner`, `MdnsSource::resolve`, `Updater::apply` and file I/O in general
+  block: call them from async code through `tokio::task::spawn_blocking`.
+* **Fixtures** use `h.canonical_text` / `write_fixture` (object key order preserved). Tokens in
+  fixtures (phase 06 and others) must be `sk-ant-test-*` or `sk-ant-fake-*`:
+  `tools/check_public.py` rejects any other `sk-ant-` string (the Python tests' `sk-ant-oat-*`,
+  `sk-ant-ort-*` must be renamed).
+* **Services/session.** The app registers one `AppState` (`services`, `session` inside);
+  per-window mutable state is `commands::session::SessionData` (phase 13).
+
 ## `__init__`
 | Python | Rust | Phase |
 |---|---|---|
@@ -65,7 +89,8 @@ Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 us
 | `LABEL`, `RUN_KEY`, `RUN_VALUE`, `PLIST` | `clawd_contracts::{LAUNCH_AGENT_LABEL, RUN_KEY, RUN_VALUE}`, `AppPaths::launch_agent_plist` | 02 |
 | `command` | `clawd_store::autostart::command` | 03 |
 | `launch_agent` | `clawd_store::autostart::launch_agent` (+ `run_value`) | 03 |
-| `supported`, `is_enabled`, `enable`, `disable`, `set_enabled` | `clawd_store::autostart::Autostart::{supported, is_enabled, enable, disable, set_enabled}` | 03 |
+| `supported`, `is_enabled`, `enable`, `disable`, `set_enabled` | `clawd_store::autostart::Autostart::{supported, is_enabled, enable, disable, set_enabled}`; `enable/disable/set_enabled` return `io::Result<bool>` (Python's `OSError` text reaches the page) | 03 |
+| `INNO` silent flags (`appupdate.py:620`) | `clawd_contracts::INNO_SILENT_ARGS` | 02 |
 
 ## `firstrun`
 | Python | Rust | Phase |
@@ -84,7 +109,7 @@ Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 us
 ## `discovery`
 | Python | Rust | Phase |
 |---|---|---|
-| `Clock` | `clawd_contracts::ClockTarget` (re-export `clawd_clock::Clock`) | 02 |
+| `Clock` | `clawd_contracts::ClockTarget` (no alias in `clawd_clock`: `Clock` is the time trait) | 02 |
 | `manual_clock`, `valid_host` | `clawd_clock::{manual_clock, valid_host}` | 08 |
 | `ClockStore`, `stored_clock` | `clawd_clock::{ClockStore, stored_clock}` | 08 |
 | `MdnsBrowser` | `clawd_clock::MdnsBrowser` (impl of `MdnsSource`) | 08 |
@@ -96,7 +121,7 @@ Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 us
 | Python | Rust | Phase |
 |---|---|---|
 | `BootWatch` | `clawd_clock::BootWatch` | 08 |
-| `heap_url` (internal duplicate) | `clawd_events::heap_url` | 04 |
+| `heap_url` (Python duplicates `events.heap_url`) | private duplicate in `clawd_clock::bootwatch`; **no edge to `clawd-events`** | 08 |
 | `PROBE_EVERY PROBE_TIMEOUT BOOT_JITTER FRESH_BOOT` | `clawd_clock::bootwatch::{...}` | 08 |
 
 ## `events`
@@ -156,7 +181,8 @@ Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 us
 | `read_config_value`, `read_onoff_setting`, `read_chime_setting`, `read_clock_setting`, `read_usage_source` | `clawd_config::{same}` | 06 |
 | `normalize_http_target`, `read_http_targets` | `clawd_config::{same}` | 06 |
 | `detect_hour_format` | `clawd_config::detect_hour_format` | 06 |
-| `read_cliproxy_key`, `read_cliproxy_url`, `CLIPROXY_*` consts | `clawd_config::cliproxy::{same}` | 06 |
+| `read_cliproxy_key`, `read_cliproxy_url`, `CLIPROXY_DEFAULT_URL/KEYCHAIN_SERVICE/LEGACY_SERVICE/AUTH_FILES_PATH/API_CALL_PATH` | `clawd_config::cliproxy::{same}` | 06 |
+| `CLIPROXY_ACCOUNTS_TTL`, `CLIPROXY_TIMEOUT` | `clawd_usage::cliproxy::{same}` (poll side, not config) | 07 |
 | (`engine.has_claude_token`) | `clawd_config::has_claude_token` | 06 |
 | `API_URL`, `USAGE_URL`, `API_HEADERS_TEMPLATE`, `API_BODY`, `USAGE_HEADERS_TEMPLATE` | `clawd_usage::oauth::{API_URL, USAGE_URL}` (+ header/body constants added by 07) | 07 |
 | `poll_api`, `poll_usage_endpoint`, `poll_token`, `usage_from_oauth_usage`, `_billing_period_info`, `_minutes_until`, `_window_pct`, `_usage_result` | `clawd_usage::oauth::{same}` (private helpers internal) | 07 |
@@ -222,13 +248,17 @@ Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 us
 | `engine.Engine` | `clawd_app::engine::EngineHandle` (+ `Status`) | 12 |
 | `engine.daemon_running` | `clawd_events::daemon_running` | 04 |
 | `engine.TrackingSinks`, `has_claude_token` | `clawd_usage::HttpSinks`, `clawd_config::has_claude_token` | 07/06 |
-| `tray.status`, `lost` | `clawd_app::tray` (phase 12) | 12 |
+| `tray.status`, `lost` | `clawd_app::tray` (phase 12, app-internal: no stub in 02) | 12 |
 | `tray.open_path` | `clawd_store::open::open_path` | 03 |
 | `tray.ask_text`, `alert`, `Tray`, `first_run`, `main` | `clawd_app::{dialogs, tray, lifecycle}` | 12 |
 | `popover.view`, `load_pak`, `MacPopover`, `supported` | `clawd_app::popover` (`handle` stubbed in 02) | 12 |
 | `icons.status_icon`, `base_icon` | PNG files in `app/icons/` | 12 |
 | `cli.main`, `remembered_clock` | `clawd_app::cli` | 12 |
-| `settings_app.command`, `main`, `Channel`, `TABS` | `ShellCmd` + `windows.rs` (`state.rs` frozen) | 02/12 |
+| `settings_app.command`, `main`, `Channel`, `TABS`, `dev`, `_ui_stamp`, `_watch_ui`, `_front`, `UI_DIR`, `WIDTH`, `HEIGHT` | `ShellCmd` + `windows.rs` (`state.rs` frozen); `dev`/`_watch_ui` dropped (no dev UI reload in the port) | 02/12 |
+| `engine.TOKEN_CHECK_EVERY`, `SCREEN_SYNC_EVERY`, `SCREEN_SYNC_RETRY`, `Engine._watch_token/_sync_screen/_on_payload/read_clock_screen/targets` | `clawd_app::engine` internals | 12 |
+| `tray.REFRESH`, `FEED_FIRST`, `FEED_RETRY`, `AGENT_SCAN`, `FRESH`, `ADDRESS_PROMPT`, `LOGIN_HINT`, `_no`, `_no_window` | `clawd_app::{tray, dialogs}` internals | 12 |
+| `popover.view`, `left`, `load_pak`, `STALE`, `PAK_RETRY_S`, `WIDTH` | `clawd_app::popover` internals (only `handle` is stubbed in 02) | 12 |
+| `settings_api` helpers: `answers`, `initial_edit`, `_clock_dict`, `_has_wsl`, `_safe`, `_int/_bool/_str/_wifi`, `FEED_RECHECK`, `PAK_RETRY_S`, `SEARCH_WAIT`, `PROBE_TIMEOUT`, `TYPE_IP`, `HOSTNAME`, `HHMM`, `log` | `clawd_app::commands::*` internals | 13 |
 | `settings_app` stdin protocol (`refresh app_update_apply set_clock use_clock usage_source setup`) | `clawd_app::state::ShellCmd` | 02 |
 | `SettingsApi` (32 JS-called methods) | `clawd_app::commands::<group>::<name>` behind `py_api` | 13 |
 | `SettingsApi.preview/busy/set_hooks/close_mdns` | not exposed | 13 |
