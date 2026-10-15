@@ -158,7 +158,7 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `ClawdAnim.*` | Splash player: player, splash with walkers and rate groups, corner mascot, mini. |
 | `ClawdRate.*` | Usage-rate groups (idle, normal, active, heavy). |
 | `ClawdUi.*` | Screens, views, alert and status line; the desk player (sequences, pass-end switching, timing stats). |
-| `StylePack.*` | Style pack interpreter: validates a pack, reads it in place through the flash cache, paints it and repaints only what its animation tracks change (`docs/STYLE_PACK.md`). |
+| `StylePack.*` | Style pack interpreter: validates a pack, reads it in place through the flash cache, paints it and repaints only what its animation tracks and its Clawd animation (frames from `/clawd.pak`, recoloured) change (`docs/STYLE_PACK.md`). |
 | `StyleStore.*` | `/style.pak` on LittleFS and its mirror in the free sketch flash after the image (device only); re-mirrored at boot after an OTA. |
 | `tools/style/` | Style pack compiler (`build.js`, `style_pack.js`) and the six pack sources (`packs/*.js`); writes `styles/*.pak` + `index.json`. |
 | `DeskPack.*` | `/desk.pak` reader, CLDK v2 and v3. 1:1 240 px frames as row deltas (skip / literal / run ops, 16 colours per animation), streamed in 128 B reads and pushed as row spans. v3 stores each delta as raw DEFLATE (512 B window), inflated through static uzlib state and a 512 B ring (`uzlib/`, vendored from the Arduino core, zlib licence); identical deltas are stored once. Ops in `tools/desk/desk_codec.js`, container in `tools/desk/desk_pak.js`. |
@@ -169,4 +169,4 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `tools/gzip_webui.py` | Writes `src/webui.h` (gzip) from `src/webui.html`, the single web UI source. |
 | `tests/host/run.sh` | Host test: applies a config with dead keys through `Settings.cpp` and the save/load path, and compares with `fixtures/expected.json`. |
 
-Build (`pio run -e clawd`, usage `src`, fwSeq 7): 501,984 B image, RAM 44,988 B. Before (pack CRCs, fwSeq 6): 501,520 B image. Before (style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).
+Build (`pio run -e clawd`, fwSeq 8, style API 2: the packs play the official Clawd animations from `/clawd.pak`): 504,720 B image, RAM 46,028 B (the player keeps one 832 B frame). Before (fwSeq 7, this machine's toolchain): 502,240 B image, RAM 45,032 B. Before (usage `src`, fwSeq 7): 501,984 B image, RAM 44,988 B. Before (pack CRCs, fwSeq 6): 501,520 B image. Before (style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).

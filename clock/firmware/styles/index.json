@@ -1,372 +1,372 @@
 {
-  "api": 1,
+  "api": 2,
   "styles": [
     {
       "id": "gameboy",
       "name": "Game Boy",
       "file": "gameboy.pak",
-      "size": 5692,
-      "crc": "9bebfda9",
+      "size": 5824,
+      "crc": "15f7f07b",
       "light": false
     },
     {
       "id": "synth",
       "name": "Synthwave",
       "file": "synth.pak",
-      "size": 16460,
-      "crc": "e0692e17",
+      "size": 16520,
+      "crc": "f51b597d",
       "light": false
     },
     {
       "id": "paper",
       "name": "Newspaper",
       "file": "paper.pak",
-      "size": 8592,
-      "crc": "a7419e64",
+      "size": 8652,
+      "crc": "87d9f58f",
       "light": true
     },
     {
       "id": "blueprint",
       "name": "Blueprint",
       "file": "blueprint.pak",
-      "size": 2720,
-      "crc": "d347c39c",
+      "size": 2852,
+      "crc": "72888eca",
       "light": false
     },
     {
       "id": "pastel",
       "name": "Pastel",
       "file": "pastel.pak",
-      "size": 9924,
-      "crc": "84551193",
+      "size": 10016,
+      "crc": "e4e35f25",
       "light": true
     },
     {
       "id": "onebit",
       "name": "1-bit",
       "file": "onebit.pak",
-      "size": 4736,
-      "crc": "dea6c56f",
+      "size": 4796,
+      "crc": "931bae91",
       "light": true
     },
     {
       "id": "ambercrt",
       "name": "Amber CRT",
       "file": "ambercrt.pak",
-      "size": 7984,
-      "crc": "80be238e",
+      "size": 8040,
+      "crc": "fe35663c",
       "light": false
     },
     {
       "id": "vt100tui",
       "name": "VT100",
       "file": "vt100tui.pak",
-      "size": 5376,
-      "crc": "90a41099",
+      "size": 5428,
+      "crc": "7a70872f",
       "light": false
     },
     {
       "id": "mac84",
       "name": "Macintosh",
       "file": "mac84.pak",
-      "size": 18348,
-      "crc": "b404b393",
+      "size": 18480,
+      "crc": "5d468771",
       "light": true
     },
     {
       "id": "win95",
       "name": "Windows 95",
       "file": "win95.pak",
-      "size": 13240,
-      "crc": "929a8b9e",
+      "size": 13304,
+      "crc": "2cfb78b5",
       "light": false
     },
     {
       "id": "biossetup",
       "name": "BIOS Setup",
       "file": "biossetup.pak",
-      "size": 7276,
-      "crc": "04e5c149",
+      "size": 7332,
+      "crc": "51767357",
       "light": false
     },
     {
       "id": "c64",
       "name": "Commodore 64",
       "file": "c64.pak",
-      "size": 5112,
-      "crc": "907cb7e3",
+      "size": 5212,
+      "crc": "ab6a35a2",
       "light": false
     },
     {
       "id": "zxspec",
       "name": "ZX Spectrum",
       "file": "zxspec.pak",
-      "size": 5900,
-      "crc": "3696248e",
+      "size": 5960,
+      "crc": "9d75ed11",
       "light": false
     },
     {
       "id": "casiolcd",
       "name": "Casio Watch",
       "file": "casiolcd.pak",
-      "size": 7400,
-      "crc": "e211225e",
+      "size": 7492,
+      "crc": "eecaa435",
       "light": false
     },
     {
       "id": "calc",
       "name": "Calculator",
       "file": "calc.pak",
-      "size": 9120,
-      "crc": "504547a0",
+      "size": 9216,
+      "crc": "000a2b5c",
       "light": false
     },
     {
       "id": "hifivfd",
       "name": "Hi-fi VFD",
       "file": "hifivfd.pak",
-      "size": 9660,
-      "crc": "d2f06d6a",
+      "size": 9796,
+      "crc": "35b6d851",
       "light": false
     },
     {
       "id": "tetris",
       "name": "Tetris",
       "file": "tetris.pak",
-      "size": 14304,
-      "crc": "dddc72d8",
+      "size": 14372,
+      "crc": "0189f389",
       "light": false
     },
     {
       "id": "pinballdmd",
       "name": "Pinball DMD",
       "file": "pinballdmd.pak",
-      "size": 11596,
-      "crc": "802ffa48",
+      "size": 11660,
+      "crc": "541c162e",
       "light": false
     },
     {
       "id": "pacmaze",
       "name": "Pac-Man maze",
       "file": "pacmaze.pak",
-      "size": 7224,
-      "crc": "81feef63",
+      "size": 7324,
+      "crc": "dd079d88",
       "light": false
     },
     {
       "id": "jrpgstatus",
       "name": "JRPG status",
       "file": "jrpgstatus.pak",
-      "size": 10552,
-      "crc": "75dec93c",
+      "size": 10608,
+      "crc": "7697b346",
       "light": false
     },
     {
       "id": "hiscore",
       "name": "High score",
       "file": "hiscore.pak",
-      "size": 5324,
-      "crc": "e3f1f3e1",
+      "size": 5388,
+      "crc": "c7a0bf61",
       "light": false
     },
     {
       "id": "invaders",
       "name": "Space Invaders",
       "file": "invaders.pak",
-      "size": 7412,
-      "crc": "f2c863ce",
+      "size": 7476,
+      "crc": "6b07ae49",
       "light": false
     },
     {
       "id": "eggpet",
       "name": "Tamagotchi",
       "file": "eggpet.pak",
-      "size": 10256,
-      "crc": "292fc7db",
+      "size": 10348,
+      "crc": "8f422270",
       "light": false
     },
     {
       "id": "platformer",
       "name": "Platformer",
       "file": "platformer.pak",
-      "size": 7796,
-      "crc": "7570f872",
+      "size": 7892,
+      "crc": "fb5a362e",
       "light": false
     },
     {
       "id": "chessclock",
       "name": "Chess clock",
       "file": "chessclock.pak",
-      "size": 17652,
-      "crc": "54a0435e",
+      "size": 17712,
+      "crc": "960098ea",
       "light": false
     },
     {
       "id": "racinghud",
       "name": "Racing HUD",
       "file": "racinghud.pak",
-      "size": 17120,
-      "crc": "7a63ab5e",
+      "size": 17180,
+      "crc": "90a9ae73",
       "light": false
     },
     {
       "id": "vumeter",
       "name": "VU meter",
       "file": "vumeter.pak",
-      "size": 13436,
-      "crc": "8392117a",
+      "size": 13496,
+      "crc": "b10e9909",
       "light": false
     },
     {
       "id": "scope",
       "name": "Oscilloscope",
       "file": "scope.pak",
-      "size": 8912,
-      "crc": "a6411a49",
+      "size": 8972,
+      "crc": "99051038",
       "light": false
     },
     {
       "id": "pfd",
       "name": "Aircraft PFD",
       "file": "pfd.pak",
-      "size": 8660,
-      "crc": "5891e1af",
+      "size": 8720,
+      "crc": "93a5a855",
       "light": false
     },
     {
       "id": "fuel",
       "name": "Fuel gauge",
       "file": "fuel.pak",
-      "size": 15832,
-      "crc": "a1b9f3a7",
+      "size": 15900,
+      "crc": "ebdd50aa",
       "light": false
     },
     {
       "id": "monitor",
       "name": "Patient monitor",
       "file": "monitor.pak",
-      "size": 14144,
-      "crc": "b28c3e69",
+      "size": 14204,
+      "crc": "23b3f366",
       "light": false
     },
     {
       "id": "rack",
       "name": "Server rack",
       "file": "rack.pak",
-      "size": 13508,
-      "crc": "4d1e7386",
+      "size": 13564,
+      "crc": "0cc8edc6",
       "light": false
     },
     {
       "id": "weather",
       "name": "Weather station",
       "file": "weather.pak",
-      "size": 15224,
-      "crc": "2a10dd08",
+      "size": 15280,
+      "crc": "172311f5",
       "light": false
     },
     {
       "id": "powerbank",
       "name": "Power bank",
       "file": "powerbank.pak",
-      "size": 12284,
-      "crc": "4ab43bb4",
+      "size": 12344,
+      "crc": "0d4a1c8f",
       "light": false
     },
     {
       "id": "lab",
       "name": "Lab glassware",
       "file": "lab.pak",
-      "size": 14768,
-      "crc": "3aff0173",
+      "size": 14860,
+      "crc": "e23fbf0b",
       "light": true
     },
     {
       "id": "sonar",
       "name": "Sonar screen",
       "file": "sonar.pak",
-      "size": 17624,
-      "crc": "43b9c622",
+      "size": 17688,
+      "crc": "381cb31a",
       "light": false
     },
     {
       "id": "hairline",
       "name": "Hairline",
       "file": "hairline.pak",
-      "size": 10436,
-      "crc": "8f460c5c",
+      "size": 10496,
+      "crc": "2bca1bbd",
       "light": true
     },
     {
       "id": "widget",
       "name": "Phone widget",
       "file": "widget.pak",
-      "size": 12024,
-      "crc": "ccc32c9a",
+      "size": 12164,
+      "crc": "3c9e7511",
       "light": true
     },
     {
       "id": "tonal",
       "name": "Material tonal",
       "file": "tonal.pak",
-      "size": 11912,
-      "crc": "27dc6fd7",
+      "size": 11972,
+      "crc": "505d6f61",
       "light": true
     },
     {
       "id": "brutal",
       "name": "Neo-brutalist",
       "file": "brutal.pak",
-      "size": 12888,
-      "crc": "b911b1ea",
+      "size": 13024,
+      "crc": "7dc93cd3",
       "light": true
     },
     {
       "id": "soft",
       "name": "Soft UI",
       "file": "soft.pak",
-      "size": 18416,
-      "crc": "a683c697",
+      "size": 18476,
+      "crc": "e5046bc2",
       "light": true
     },
     {
       "id": "oled",
       "name": "OLED Black",
       "file": "oled.pak",
-      "size": 9984,
-      "crc": "ae071e3d",
+      "size": 10164,
+      "crc": "94607894",
       "light": false
     },
     {
       "id": "ink",
       "name": "E-reader Ink",
       "file": "ink.pak",
-      "size": 13356,
-      "crc": "3f5d5d08",
+      "size": 13456,
+      "crc": "8313496f",
       "light": true
     },
     {
       "id": "tufte",
       "name": "Tufte Data-Ink",
       "file": "tufte.pak",
-      "size": 18828,
-      "crc": "c19a11d1",
+      "size": 18892,
+      "crc": "1305bf93",
       "light": true
     },
     {
       "id": "frost",
       "name": "Frosted Panels",
       "file": "frost.pak",
-      "size": 11472,
-      "crc": "7ff7c99a",
+      "size": 11532,
+      "crc": "eba62c76",
       "light": false
     },
     {
       "id": "bigtype",
       "name": "Big Type",
       "file": "bigtype.pak",
-      "size": 15336,
-      "crc": "1dffb055",
+      "size": 15468,
+      "crc": "2b97d05c",
       "light": false
     }
   ]

@@ -32,6 +32,12 @@ and no OTA.
 - **Enterprise:** Enterprise accounts (`acct: "ent"`) always draw the classic
   screen, because they have no 5-hour/weekly windows.
 - **Desk and splash:** the desk animations and the Clawd splash are not affected.
+- **Clawd animations (API 2):** with data, each pack's Clawd plays the official
+  Clawd animations from `/clawd.pak` (the 17 the splash uses), in the pack's own
+  colours. He stands on the first frame for the pack's idle time (8 s by default),
+  plays one pass, then the next animation of the pack's list. Without data he
+  sleeps, still, as before. Without `/clawd.pak` (or with a pack naming an
+  animation the file lacks) the pack draws its static Clawd mask instead.
 - **Old setting:** the old `usage.layout` setting is still read and saved, but it
   is ignored. Values 1–5 (pace, hero, rings, gauges, pixel) were removed and now
   draw classic.
@@ -45,7 +51,9 @@ and no OTA.
 | `DELETE /api/style` | login | Delete the pack and go back to the classic screen. |
 
 `/api/heap` adds these fields:
-- `styleApi`: the pack API this image draws (1).
+- `styleApi`: the pack API this image draws (2 since `fwSeq` 8; 1 before).
+- `styleAnim`: the Clawd animation the pack plays now, `""` when none (no pack,
+  no data, or no `/clawd.pak`).
 - `style`: the id of the pack shown, or `""` for classic.
 - `styleFrameUs` and `styleFrameMaxUs`: the last animation repaint and the slowest
   since the pack was attached, in µs. This covers decode and SPI.
@@ -139,6 +147,12 @@ This renders every pack listed in `styles/index.json` in four states
 and checks the guards: a corrupt pack, a future API, a truncated pack, an alert
 over a style, Enterprise, and removing the pack. It ends with `styles: ok`.
 
+Then it plays each pack's Clawd for 45 s (`style anims: ok`): every animation of the
+list plays, frames advance, the hot and fresh Clawd play too, the no-data one stays
+still, and with `/clawd.pak` missing the static mask comes back. Per pack it writes
+`40-<id>-footprint` (every pixel the animations change, magenta, over the standing
+frame: check it covers no text) and `41-<id>-<k>` (a frame of each animation).
+
 ### Writing one
 
 A pack source is `tools/style/packs/<id>.js`:
@@ -155,8 +169,41 @@ module.exports = {
 };
 ```
 
-Add the id to `ORDER` in `build.js`, and a Vietnamese description to
-`STYLE_DESC` in the app's `ui/app.js`.
+Add the id to `ORDER` in `build.js`, its Clawd animations to `tools/style/anims.js`
+(below), and a Vietnamese description to `STYLE_DESC` in the app's `ui/app.js`.
+
+### Clawd's animations
+
+`build.js` turns each pack's Clawd masks into the official animations with
+`anims.js`: `{ set: ['waving', 'pointing'], idle: 8000, cell, at, colours }`.
+- Every group of Clawd layers (`clawd`, `clawd_inner`/`clawd_edge`, `clawd_eyes`) drawn
+  at one spot in one state becomes one `anim` op, gated on `anim`. The masks stay as
+  the fallback (`!anim`). A glow copy 1–2 px away joins its group.
+- The no-data Clawd (`!ok`) is left as it was. A Clawd drawn in every state is
+  split: the old masks without data, the animation with data.
+- Tracks on the Clawd (bob, blink, run) are dropped: the animation is the motion.
+  Data bindings (`dx`, `gate`) carry over.
+- Placement: idle Clawd's 16-cell body is centred on the old 32×40 mask with his
+  feet on its bottom, at `cell` px per art cell (default mask scale + 1); `at`
+  nudges it.
+- Colours: the official palette maps to six roles. Body and shade are Clawd's
+  orange and its shade, ink is near black (eyes), light is near white, grey is a
+  grey, accent is any other prop colour. Defaults: body from the mask, shade flat
+  (15 % darker for Clawd orange), ink from the eye layer (else the background),
+  grey/light/accent mixed from body and background. `states: { hot: {…} }`
+  overrides per state.
+- Choose by room: `jumping` rises 14 cells above his head, `waving` 5,
+  `pointing` reaches 4 cells right. Scenes (`laptop`, `cloud`, `magnifier`,
+  `racing car`, `trumpet`, `basketball`, `skateboard`, `soccer`, `sailing scene`)
+  need up to 50×33 cells; check the footprint shot. `lurking` needs an empty stage.
+
+The build fails when a pack has more than 8 anim ops, or two that could show at
+once (the clock plays only the first shown, and the other's masks are hidden). Two
+are apart when one needs a condition the other excludes, or their gates on the same
+source don't overlap.
+
+`S.anim(names, x, y, cell, colours, { idle, when, dx, gate })` adds one by hand;
+(x, y) is the screen origin of the 55×37 cell stage.
 
 ### From a design sheet
 
@@ -291,6 +338,8 @@ A pack's own helper file (`packs/_c1_ring.js`, `_c2_util.js`, `_d1_common.js`,
 - `tri`
 - `mask`: a 1-bit bitmap, scaled. The built-in masks are `clawd`, `clawd_eyes`,
   `clawd_edge` and `clawd_inner`; `defMask` adds your own.
+- `anim` (API 2): the official Clawd animations from `/clawd.pak`, recoloured (see
+  "Clawd's animations").
 - `disc`: becomes rect rows.
 
 **Fonts:** `s14`, `s24`, `m18` and `t34` are linked into the firmware, so they
@@ -311,6 +360,7 @@ characters the pack can print.
 | `clock` | the wall clock is known |
 | `sr` | the session reset is known |
 | `wr` | the weekly reset is known |
+| `anim` | `/clawd.pak` has every animation the pack's `anim` ops name |
 
 **Data-driven geometry:**
 - `dx: [src, span]` moves an op by the source value times `span`.
@@ -338,7 +388,12 @@ track. `S.blink(ms)` is a two-step track.
   the compiler and stored as plain ops.
 - Blur is not supported, so a glow is an offset dim copy.
 
-## Pack format (API 1)
+## Pack format (API 2)
+
+API 2 adds the `anim` op (kind 6) and the `anim` condition (bit 10); everything
+else is API 1's. An API 2 clock still draws API 1 packs (`STYLE_API_MIN`), so the
+pack installed before the OTA stays on screen; an API 1 pack with an `anim` op or
+the `anim` bit is refused. An API 1 clock refuses API 2 packs.
 
 All fields are little-endian. The pack is laid out like this:
 - a 96 B header
@@ -376,7 +431,7 @@ dx, dy, vis, color.
 **MaskDesc** (8 B): w, h, pad[2], bitsOff. Rows are 1 bit per pixel, MSB first.
 
 **Op** (36 B), in order:
-- kind (rect 1, text 2, line 3, tri 4, mask 5)
+- kind (rect 1, text 2, line 3, tri 4, mask 5, anim 6)
 - color
 - need u16, not u16: condition bits
 - track (0xFF = none)
@@ -390,12 +445,21 @@ dx, dy, vis, color.
 - x3, y3. For a triangle, its third point. For a rect pattern, `x3` is the phase
   and `y3` is kind<<8 | on.
 
+**Anim op:** x, y = the screen origin of the 55×37 cell art stage; `a` = px per
+cell (1–8); `w` = the string offset of the animation names (`"waving,pointing"`,
+at most 8); `h` = idle ms on the first frame before each pass. Role colours
+(palette indices): `color` body, `b` shade, `c` ink, `x3` grey | light << 8, `y3`
+accent (low byte). `dx`/`gate`/`need`/`not` work as for any op; a track is refused.
+At most 8 anim ops in a pack. Only the first one shown plays (a pack shows one
+Clawd at a time); a change of op starts its list over. Frames are read from
+`/clawd.pak` one at a time (≤ 832 B buffer).
+
 **Strings:** bytes below 13 in a string are token codes: s 1, w 2, sleft 3,
 clock 4, dow 5, sr@ 6, wr@d 7, sr~ 8, wr~ 9, out 10, end 11, wr@ 12.
 
 `styleValidate` checks the magic, the API, the CRC and every offset, index and
 count before a pack is attached, so a damaged or hostile pack is refused, never
-drawn. A pack for another API is refused as well. Bump `STYLE_API` (StylePack.h)
+drawn. A pack for an API other than `STYLE_API_MIN`..`STYLE_API` is refused as well. Bump `STYLE_API` (StylePack.h)
 and the compiler's `API` together for any format change. The app sends a pack
 only to a clock whose `styleApi` matches.
 
@@ -406,7 +470,8 @@ only to a clock whose `styleApi` matches.
   500 ms.
 - When the signature changes, the clock repaints the whole screen.
 - Otherwise `styleAnimate` repaints only what the animation tracks changed:
-  - it finds the ops whose track step changed since the last frame,
+  - it finds the ops whose track step changed since the last frame, and the
+    Clawd animation's old and new frame boxes when its frame changed,
   - merges their old and new boxes into at most 6 rectangles,
   - and composes each rectangle in bands, like ClawdDraw. That means every op that
     touches the band is drawn in order, anti-aliased text included, with one SPI
