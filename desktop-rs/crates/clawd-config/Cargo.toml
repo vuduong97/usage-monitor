@@ -1,0 +1,15 @@
+[package]
+name = "clawd-config"
+description = "The `config` key=value file, Claude config dirs and OAuth token sources, CLIProxy settings (no network)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+clawd-contracts = { workspace = true }
+clawd-store = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+clawd-testkit = { workspace = true }

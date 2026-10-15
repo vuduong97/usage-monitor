@@ -1,0 +1,30 @@
+[package]
+name = "clawd-testkit"
+description = "Shared test support: fixture loader, temp config dir, fake HTTP server, fake clock. One module per phase area."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# Every clawd-* crate and tokio are declared NOW so that phases 03-10 never edit this block
+# (8 agents editing one [dependencies] table = merge conflicts).
+#
+# RULE (PORT-MAP.md): a crate X may use testkit fakes of X's OWN types only from `tests/*.rs`
+# integration tests, never from `#[cfg(test)]` modules inside X: X dev-depends on testkit and
+# testkit depends on X, so unit tests would link two copies of X and trait impls would not
+# unify. Fakes of OTHER crates' types are fine anywhere.
+[dependencies]
+clawd-contracts = { workspace = true }
+clawd-store = { workspace = true }
+clawd-config = { workspace = true }
+clawd-events = { workspace = true }
+clawd-agents = { workspace = true }
+clawd-usage = { workspace = true }
+clawd-clock = { workspace = true }
+clawd-firmware = { workspace = true }
+clawd-appupdate = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+# test-util: tokio::time::pause()/advance() for the poll/OTA/boot-watch loops
+tokio = { workspace = true, features = ["test-util"] }

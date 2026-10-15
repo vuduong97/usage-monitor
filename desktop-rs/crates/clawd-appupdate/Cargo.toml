@@ -1,0 +1,18 @@
+[package]
+name = "clawd-appupdate"
+description = "App self-update from GitHub Releases: find, download, verify (SHA256SUMS + minisign), stage, apply on user request."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+clawd-contracts = { workspace = true }
+clawd-store = { workspace = true }
+clawd-config = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+clawd-testkit = { workspace = true }

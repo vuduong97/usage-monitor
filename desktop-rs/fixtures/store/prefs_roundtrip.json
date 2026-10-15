@@ -1,0 +1,47 @@
+{
+  "input": {
+    "initial": {
+      "setup_done": "clock",
+      "usage": {
+        "screen": 300
+      },
+      "future_key": {
+        "nested": [
+          1,
+          2.5,
+          null,
+          true
+        ]
+      },
+      "ratio": 1.0,
+      "name": "\u0110\u1ed3ng h\u1ed3 \u2603",
+      "clock_screen": 0
+    },
+    "change": {
+      "set": {
+        "clock_screen": 1
+      }
+    }
+  },
+  "output": {
+    "prefs": {
+      "setup_done": "clock",
+      "usage": {
+        "screen": 300
+      },
+      "future_key": {
+        "nested": [
+          1,
+          2.5,
+          null,
+          true
+        ]
+      },
+      "ratio": 1.0,
+      "name": "\u0110\u1ed3ng h\u1ed3 \u2603",
+      "clock_screen": 1
+    },
+    "file_text": "{\n  \"setup_done\": \"clock\",\n  \"usage\": {\n    \"screen\": 300\n  },\n  \"future_key\": {\n    \"nested\": [\n      1,\n      2.5,\n      null,\n      true\n    ]\n  },\n  \"ratio\": 1.0,\n  \"name\": \"\\u0110\\u1ed3ng h\\u1ed3 \\u2603\",\n  \"clock_screen\": 1\n}",
+    "clock_screen": 1
+  }
+}

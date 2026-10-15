@@ -1,0 +1,18 @@
+[package]
+name = "clawd-usage"
+description = "Claude/Codex usage polling, payload encoding, attention flags and the publisher that pushes to the clocks."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+clawd-contracts = { workspace = true }
+clawd-store = { workspace = true }
+clawd-config = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+clawd-testkit = { workspace = true }

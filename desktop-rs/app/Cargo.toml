@@ -1,0 +1,42 @@
+[package]
+name = "clawd-app"
+description = "Clawd desktop app (Tauri v2): tray, engine, settings window. The binary is Clawd / Clawd.exe."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+build = "build.rs"
+
+# Owned by the integrator after phase 02 (plan.md rule 1): phases send dependency CRs.
+
+[lib]
+name = "clawd_app"
+path = "src/lib.rs"
+
+[[bin]]
+name = "Clawd"
+path = "src/main.rs"
+
+[dependencies]
+clawd-contracts = { workspace = true }
+clawd-store = { workspace = true }
+clawd-config = { workspace = true }
+clawd-events = { workspace = true }
+clawd-agents = { workspace = true }
+clawd-usage = { workspace = true }
+clawd-clock = { workspace = true }
+clawd-firmware = { workspace = true }
+clawd-appupdate = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tauri = { workspace = true }
+tauri-plugin-positioner = { workspace = true }
+tauri-plugin-dialog = { workspace = true }
+
+[build-dependencies]
+tauri-build = { workspace = true }
+
+[dev-dependencies]
+clawd-testkit = { workspace = true }

@@ -1,0 +1,98 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/clawd-contracts",
+    "crates/clawd-testkit",
+    "crates/clawd-store",
+    "crates/clawd-events",
+    "crates/clawd-agents",
+    "crates/clawd-config",
+    "crates/clawd-usage",
+    "crates/clawd-clock",
+    "crates/clawd-firmware",
+    "crates/clawd-appupdate",
+    "app",
+    "tests-e2e",
+]
+# desktop-rs/spike (phase 01) is deliberately NOT a member.
+exclude = ["spike"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.91"
+publish = false
+
+# One pin per dependency for every crate: crates say `foo = { workspace = true }`.
+# New dependency of a lib crate: add it to that crate's Cargo.toml (not here). The app's
+# Cargo.toml is owned by the integrator (send a Contract CR). No `auto-launch`, no
+# `tauri-plugin-single-instance` (plan.md, red team #1/#8).
+[workspace.dependencies]
+# -- internal crates (DAG: contracts <- store <- config <- events <- agents; see PORT-MAP.md)
+clawd-contracts = { path = "crates/clawd-contracts" }
+clawd-testkit = { path = "crates/clawd-testkit" }
+clawd-store = { path = "crates/clawd-store" }
+clawd-config = { path = "crates/clawd-config" }
+clawd-events = { path = "crates/clawd-events" }
+clawd-agents = { path = "crates/clawd-agents" }
+clawd-usage = { path = "crates/clawd-usage" }
+clawd-clock = { path = "crates/clawd-clock" }
+clawd-firmware = { path = "crates/clawd-firmware" }
+clawd-appupdate = { path = "crates/clawd-appupdate" }
+
+# -- runtime / data
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util", "process", "fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# -- network (event server = hyper directly, no axum)
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json", "multipart", "stream"] }
+diqwest = "3"
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio", "server", "service", "http1"] }
+http-body-util = "0.1"
+mdns-sd = "0.21"
+
+# -- crypto / encoding / files
+aes-gcm = "0.11"
+sha2 = "0.11"
+hex = "0.4"
+base64 = "0.23"
+fs4 = "1"
+tempfile = "3"
+zip = "9"
+miniz_oxide = "0.9"
+minisign-verify = "0.3"
+
+# -- OS stores (use only behind cfg(windows) / cfg(target_os = "macos"))
+windows = { version = "0.62", features = [
+    "Win32_Security_Credentials",
+    "Win32_System_Registry",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_Console",
+    "Win32_Storage_FileSystem",
+] }
+security-framework = "3.7"
+plist = "1"
+
+# -- Tauri v2
+tauri = { version = "2.12", features = ["tray-icon", "image-png"] }
+tauri-build = "2.7"
+tauri-plugin-positioner = { version = "2.4", features = ["tray-icon"] }
+tauri-plugin-dialog = "2.8"
+
+# -- dev only
+insta = { version = "1", features = ["json", "glob"] }
+
+[profile.release]
+# opt-level: "s" until phase 01's spike-decision says otherwise.
+opt-level = "s"
+lto = true
+codegen-units = 1
+# panic = "unwind" on purpose: a panicking task must not take the whole tray app down
+# (catch_unwind in the engine loops, red team #12). Only an owner-approved change flips it.
+panic = "unwind"
+strip = true
