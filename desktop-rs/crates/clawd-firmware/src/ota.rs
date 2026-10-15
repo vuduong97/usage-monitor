@@ -38,7 +38,10 @@ pub type Progress = Arc<dyn Fn(&str) + Send + Sync>;
 /// Sleeps are tokio time (`tokio::time::pause` in tests). The monotonic clock handed to
 /// `ClockApi::wait_back` is `clock` (default `MonotonicClock`, which is also tokio time); never
 /// pass a `FakeClock` together with paused tokio time.
+///
+/// `#[non_exhaustive]`: build it with [`OtaOptions::new`] and assign the fields you override.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct OtaOptions {
     /// Where `pause.json` lives (`clawd_store::pause`).
     pub paths: AppPaths,
@@ -47,6 +50,18 @@ pub struct OtaOptions {
     pub settle: Option<Duration>,
     /// Monotonic clock for `wait_back`; `None` = `MonotonicClock` (tokio time).
     pub clock: Option<Arc<dyn Clock>>,
+}
+
+impl OtaOptions {
+    /// Defaults: no progress callback, [`SETTLE`], `MonotonicClock`.
+    pub fn new(paths: AppPaths) -> Self {
+        Self {
+            paths,
+            progress: None,
+            settle: None,
+            clock: None,
+        }
+    }
 }
 
 /// `ota.install(api, bundle, ...)`: push the bundle; returns the clock's `/api/heap` after it

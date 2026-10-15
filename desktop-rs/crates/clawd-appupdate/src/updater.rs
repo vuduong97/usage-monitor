@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use clawd_config::CommandRunner;
-use clawd_contracts::{AppPaths, Clock, Env};
+use clawd_contracts::{AppPaths, Clock, Env, SystemClock};
 use serde::Serialize;
 
 use crate::source::Source;
@@ -62,7 +62,10 @@ pub fn can_apply(
 }
 
 /// Everything `Updater.__init__` takes as keyword arguments, injectable for tests.
+///
+/// `#[non_exhaustive]`: build it with [`UpdaterOptions::new`] and assign the fields you override.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct UpdaterOptions {
     /// For `ota_busy` (apply refuses during a firmware upload) and the default stage dir.
     pub paths: AppPaths,
@@ -80,9 +83,21 @@ pub struct UpdaterOptions {
 }
 
 impl UpdaterOptions {
-    /// Real machine defaults for `paths`.
-    pub fn for_system(paths: &AppPaths) -> Self {
-        todo!("phase 10")
+    /// Real machine defaults for `paths`: stage dir `paths.app_update_stage_dir()`, version
+    /// [`clawd_contracts::APP_VERSION`], the system clock, platform/arch/executable detected
+    /// at use time (`None`).
+    pub fn new(paths: AppPaths, runner: Arc<dyn CommandRunner>) -> Self {
+        Self {
+            stage: paths.app_update_stage_dir(),
+            paths,
+            current: clawd_contracts::APP_VERSION.to_owned(),
+            runner,
+            now: Arc::new(SystemClock),
+            system: None,
+            arch: None,
+            packaged: None,
+            executable: None,
+        }
     }
 }
 
