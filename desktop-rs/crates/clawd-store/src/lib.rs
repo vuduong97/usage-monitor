@@ -5,6 +5,9 @@
 //! (see `desktop-rs/PORT-MAP.md`). Every function takes the injected [`clawd_contracts::AppPaths`]
 //! and/or [`clawd_contracts::OsStoreNames`] instead of reading globals (red team #14).
 //!
+//! Everything here blocks (the prefs lock waits up to 5 s): from async code call it through
+//! `tokio::task::spawn_blocking`.
+//!
 //! Two different "stop pushing" files, never mixed up (red team #9):
 //! * [`pause`]: `pause.json`, a lease of at most 300 s the engine reads;
 //! * [`paths::ota_busy`]: `ota.busy`, 900 s, read by the app updater only.
