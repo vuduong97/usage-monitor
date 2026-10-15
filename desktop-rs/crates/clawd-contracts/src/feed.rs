@@ -21,9 +21,13 @@ pub struct FeedFile {
 /// `feed.Manifest`: a feed release (manifest v1 + `renderers[]`, plan.md frozen contract).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FeedManifest {
+    /// Manifest version; always 1 (`parse_manifest` rejects anything else).
+    #[serde(default = "manifest_v1")]
+    pub v: u32,
     pub seq: u64,
     pub variant: String,
     pub layouts: u32,
+    #[serde(rename = "styleApi")]
     pub style_api: u32,
     pub files: Vec<FeedFile>,
     pub date: String,
@@ -31,6 +35,10 @@ pub struct FeedManifest {
     pub commit: String,
     /// One zip per platform, kept apart from `files` (older apps reject unknown kinds there).
     pub renderers: Vec<FeedFile>,
+}
+
+fn manifest_v1() -> u32 {
+    1
 }
 
 impl FeedManifest {
@@ -64,6 +72,7 @@ mod tests {
     #[test]
     fn lookup_by_kind_and_platform() {
         let m = FeedManifest {
+            v: 1,
             seq: 7,
             variant: "esp8266-clawd".into(),
             layouts: 1,

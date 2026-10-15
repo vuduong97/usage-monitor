@@ -91,6 +91,8 @@ pub const ASSET_WINDOWS_SETUP: &str = "Clawd-{version}-windows-setup.exe";
 /// `{version}` is `X.Y.Z`, `{arch}` is `arm64` or `x86_64`.
 pub const ASSET_MAC_ZIP: &str = "Clawd-{version}-mac-{arch}.zip";
 pub const ASSET_MAC_DMG: &str = "Clawd-{version}-mac-{arch}.dmg";
+/// Arguments of the silent Inno Setup run (`appupdate.py:620`).
+pub const INNO_SILENT_ARGS: [&str; 3] = ["/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART"];
 pub const SUMS_NAME: &str = "SHA256SUMS";
 /// New in the port (Q2): minisign signature of [`SUMS_NAME`].
 pub const SUMS_SIG_NAME: &str = "SHA256SUMS.minisig";

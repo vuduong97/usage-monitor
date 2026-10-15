@@ -41,12 +41,6 @@ impl OsStoreNames {
     }
 }
 
-impl Default for OsStoreNames {
-    fn default() -> Self {
-        Self::production()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -38,6 +38,8 @@ pub struct FinderSnapshot {
     pub last_ok: Option<f64>,
     /// `FAIL_LIMIT` failed pushes in a row, or no clock and no manual config.
     pub failing: bool,
+    /// `ClockFinder.searching`: nothing found yet, mDNS still being tried.
+    pub searching: bool,
 }
 
 /// `discovery.ClockFinder`.
@@ -59,6 +61,11 @@ impl ClockFinder {
 
     /// Production wiring: the real [`crate::MdnsBrowser`] and a monotonic system clock.
     pub fn with_defaults(store: ClockStore, manual: TargetsFn) -> Self {
+        todo!("phase 08")
+    }
+
+    /// `ClockFinder.store`: the remembered-clock file (the tray's typed-address default reads it).
+    pub fn store(&self) -> &ClockStore {
         todo!("phase 08")
     }
 

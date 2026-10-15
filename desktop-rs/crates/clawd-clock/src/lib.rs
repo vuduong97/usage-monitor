@@ -28,6 +28,3 @@ pub use diff::config_diff;
 pub use finder::{ClockFinder, FinderSnapshot};
 pub use mdns::{MdnsBrowser, MdnsSource};
 pub use store::{stored_clock, ClockStore};
-
-/// `discovery.Clock` is [`clawd_contracts::ClockTarget`] (shared with the app and settings).
-pub use clawd_contracts::ClockTarget as Clock;

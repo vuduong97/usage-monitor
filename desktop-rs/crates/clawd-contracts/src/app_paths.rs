@@ -142,12 +142,6 @@ impl AppPaths {
     }
 }
 
-impl Default for AppPaths {
-    fn default() -> Self {
-        Self::system()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
