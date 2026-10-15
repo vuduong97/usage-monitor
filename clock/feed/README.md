@@ -105,6 +105,7 @@ tools/release.sh --stable --notes "…"        # straight to both
 - KV namespace `clawd-fw-keys`.
 - The app token is kept on the owner's Mac in `~/.clawd-feed/app_token` (mode 600). It is not in any repo.
 - Release 6 was published to beta and stable with `--private` on 2026-10-13.
+- Release 7 (`why: login` shows "Login expired"; commit `94a837e`, renderers win-x64 + mac) was published to beta with `--private` on 2026-10-15, from Windows. Stable is still on 6.
 - Build an app that uses this feed with:
   `CLAWD_FEED_URL=https://clawd-fw-feed.thien-vu97ht123.workers.dev CLAWD_FEED_TOKEN="$(cat ~/.clawd-feed/app_token)" sh packaging/build_mac.sh`
 
