@@ -6,10 +6,9 @@
 //! reply, carrying the account's rate limits. The numbers are as fresh as the last Codex turn: a
 //! window whose reset time has passed reads as 0 %. Plans with null windows: no data.
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use clawd_contracts::{AppPaths, UsagePayload};
+use clawd_contracts::{AppPaths, Env, UsagePayload};
 use serde_json::Value;
 
 /// `codex_usage.TAIL`: bytes read from the end of a session file.
@@ -18,8 +17,8 @@ pub const TAIL: u64 = 256 * 1024;
 pub const FILES: usize = 8;
 
 /// `codex_usage.sessions_dir(home, env)`: `$CODEX_HOME/sessions` or `<home>/.codex/sessions`.
-/// `env` `None` = the process environment.
-pub fn sessions_dir(paths: &AppPaths, env: Option<&HashMap<String, String>>) -> PathBuf {
+/// `env` is `UsageEnv.env` (`Env::system()` in the app, a map in tests).
+pub fn sessions_dir(paths: &AppPaths, env: &Env) -> PathBuf {
     todo!("phase 07")
 }
 
@@ -37,16 +36,12 @@ pub fn payload_from(rate_limits: &Value, written: f64, now: Option<f64>) -> Opti
 
 /// `codex_usage.read(home, env, now)`: the payload from the newest session log with limits, or
 /// `None`.
-pub fn read(
-    paths: &AppPaths,
-    env: Option<&HashMap<String, String>>,
-    now: Option<f64>,
-) -> Option<UsagePayload> {
+pub fn read(paths: &AppPaths, env: &Env, now: Option<f64>) -> Option<UsagePayload> {
     todo!("phase 07")
 }
 
 /// `codex_usage.available(home, env)`: Codex has left session logs on this machine (the setup
 /// wizard offers the source).
-pub fn available(paths: &AppPaths, env: Option<&HashMap<String, String>>) -> bool {
+pub fn available(paths: &AppPaths, env: &Env) -> bool {
     todo!("phase 07")
 }

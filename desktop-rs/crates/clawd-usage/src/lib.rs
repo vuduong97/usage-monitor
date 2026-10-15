@@ -32,7 +32,7 @@ pub mod sinks;
 use std::sync::Arc;
 
 use clawd_config::CommandRunner;
-use clawd_contracts::{AppPaths, Clock, SystemClock};
+use clawd_contracts::{AppPaths, Clock, Env, SystemClock};
 
 pub use cliproxy::CliProxySource;
 pub use oauth::{poll_api, poll_token, poll_usage_endpoint, usage_from_oauth_usage, PollError};
@@ -64,6 +64,8 @@ pub struct UsageEnv {
     pub usage_url: String,
     /// Wall clock for poll scheduling, attention freshness, `t` (default `SystemClock`).
     pub clock: Arc<dyn Clock>,
+    /// The process environment (`CODEX_HOME`); default `Env::system()`.
+    pub env: Env,
 }
 
 impl UsageEnv {
@@ -75,6 +77,7 @@ impl UsageEnv {
             api_url: oauth::API_URL.to_owned(),
             usage_url: oauth::USAGE_URL.to_owned(),
             clock: Arc::new(SystemClock),
+            env: Env::system(),
         }
     }
 }

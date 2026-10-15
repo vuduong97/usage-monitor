@@ -200,7 +200,7 @@ Legend for phase: 02 contracts, 03 store, 04 events, 05 agents, 06 config, 07 us
 ## `codex_usage`
 | Python | Rust | Phase |
 |---|---|---|
-| `TAIL`, `FILES`, `sessions_dir`, `newest_files`, `payload_from`, `read`, `available` | `clawd_usage::codex::{same}` | 07 |
+| `TAIL`, `FILES`, `sessions_dir`, `newest_files`, `payload_from`, `read`, `available` | `clawd_usage::codex::{same}`; `sessions_dir/read/available` take `env: &Env` (`UsageEnv.env`), not a map | 07 |
 
 ## `firmware`
 | Python | Rust | Phase |
