@@ -14,7 +14,7 @@ use clawd_contracts::{WINDOW_POPOVER, WINDOW_SETTINGS};
 use serde_json::Value;
 use tauri::{AppHandle, State, WebviewWindow, Wry};
 
-use crate::state::{AppState, SessionSlot, SettingsSession};
+use crate::state::{AppState, SettingsSession};
 
 pub mod agents;
 pub mod backup;
@@ -22,6 +22,7 @@ pub mod clock;
 pub mod firmware;
 pub mod jobs;
 pub mod misc;
+pub mod session;
 pub mod setup;
 pub mod state;
 pub mod update;
@@ -92,7 +93,6 @@ pub async fn py_api(
     window: WebviewWindow,
     app: AppHandle,
     state: State<'_, AppState>,
-    slot: State<'_, SessionSlot>,
     name: String,
     args: Vec<Value>,
 ) -> Result<Value, String> {
@@ -102,7 +102,8 @@ pub async fn py_api(
     if !PY_API_NAMES.contains(&name.as_str()) {
         return Err(format!("unknown command: {name}"));
     }
-    let session = slot
+    let session = state
+        .session
         .get()
         .ok_or_else(|| "no settings session".to_string())?;
     let ctx = CommandCtx {
