@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use clawd_clock::ClockApi;
-use clawd_contracts::{AppPaths, ClockError};
+use clawd_contracts::{AppPaths, Clock, ClockError};
 use serde_json::Value;
 
 use crate::feed::Release;
@@ -35,7 +35,9 @@ pub const PACK_TRIES: u32 = 2;
 pub type Progress = Arc<dyn Fn(&str) + Send + Sync>;
 
 /// The `progress` / `hold` / `release` / `settle` keyword arguments of the Python functions.
-/// Time is tokio time (`tokio::time::pause` in tests), so no sleep/clock injection is needed.
+/// Sleeps are tokio time (`tokio::time::pause` in tests). The monotonic clock handed to
+/// `ClockApi::wait_back` is `clock` (default `MonotonicClock`, which is also tokio time); never
+/// pass a `FakeClock` together with paused tokio time.
 #[derive(Clone)]
 pub struct OtaOptions {
     /// Where `pause.json` lives (`clawd_store::pause`).
@@ -43,6 +45,8 @@ pub struct OtaOptions {
     pub progress: Option<Progress>,
     /// Override [`SETTLE`] (tests).
     pub settle: Option<Duration>,
+    /// Monotonic clock for `wait_back`; `None` = `MonotonicClock` (tokio time).
+    pub clock: Option<Arc<dyn Clock>>,
 }
 
 /// `ota.install(api, bundle, ...)`: push the bundle; returns the clock's `/api/heap` after it

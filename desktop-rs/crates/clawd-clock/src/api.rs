@@ -139,6 +139,10 @@ impl ClockApi {
     /// clock answers with an uptime that began after `booted_before` (a monotonic time from
     /// `clock`); returns that heap. `tick` runs every poll (the caller renews its push pause
     /// there). `deadline` default 150 s; `ClockError::Other` when the clock does not come back.
+    ///
+    /// Time: sleeps between polls are tokio sleeps and `clock` should be
+    /// `MonotonicClock` (tokio `Instant`), so `tokio::time::pause()` drives the whole loop. A
+    /// `FakeClock` is only for loops that do not sleep on tokio time.
     pub async fn wait_back(
         &self,
         booted_before: f64,

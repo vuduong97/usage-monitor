@@ -4,7 +4,7 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Instant;
+use tokio::time::Instant;
 
 use tokio::sync::watch;
 
@@ -50,7 +50,10 @@ impl Clock for SystemClock {
 }
 
 /// Monotonic clock: seconds since this value was created (`time.monotonic()`; only
-/// differences mean anything).
+/// differences mean anything). Built on `tokio::time::Instant`, so it follows
+/// `tokio::time::pause()` / `advance()` in tests: do NOT mix a [`Clock`] that does not
+/// (e.g. the testkit's `FakeClock`) with paused tokio time inside one wait loop, or the loop
+/// spins for the real deadline.
 #[derive(Debug, Clone, Copy)]
 pub struct MonotonicClock {
     start: Instant,
