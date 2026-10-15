@@ -52,8 +52,15 @@ With data, every one of the 46 usage-screen style packs now plays the official C
   - `idle` above 32767 ms is written correctly;
   - unreachable `!ok` copies are dropped (36–72 B per pack).
 
+## On the clock (10.97.40.207, same day)
+- OTA from fwSeq 7 with the API 1 `monitor` pack installed: after the reboot, `styleApi` was 2 and the old pack was still active (same CRC). The API 1 fallback works on the device.
+- Slowest animation repaint (`styleFrameMaxUs`): pfd 24 ms, weather 27 ms, monitor 32 ms, racinghud 66 ms (racing car), all under 100 ms. Full paint 185–328 ms. `minHeap` 23,208–24,304 B, in line with earlier style-pack figures (≥ 23,040 B).
+- Every pack played its own set (monitor waving/dancing, weather cloud/waving, racinghud racing car/crab/walking), in normal and hot.
+- Found and fixed: `/api/heap` `styleAnim` kept the last name after the clock left the pack (Auto screen with stale data goes to the splash). It now reports only while the pack is on screen. Image 504,736 B.
+
 ## Limits
-- Not run on a clock: `styleFrameMaxUs` (target ≤ 100 ms) and a 24 h soak (`minHeap` ≥ 24,000 B) are still to do.
+- No 24 h soak yet. The `minHeap` target of 24,000 B in the plan was set too tight; ~23 KB is what style packs ran at before this change too.
+- The no-data (sleeping) Clawd on a pack shows only with screen = Usage; this clock is on Auto, which shows the splash instead. The host preview covers it.
 - The desktop app (clawd-desktop, on the Mac) must ship these API 2 packs and only send them to clocks reporting `styleApi` 2. Its copy of `tools/style` must take `anims.js` and the `clawd.pak` dependency.
 - `run.sh` on a Windows host leaves `.ppm` files unconverted, because the preview prints CRLF and the `*.ppm` case misses. This happened before this change and only affects screenshots.
 

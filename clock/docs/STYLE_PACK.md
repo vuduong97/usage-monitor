@@ -38,6 +38,10 @@ and no OTA.
   plays one pass, then the next animation of the pack's list. Without data he
   sleeps, still, as before. Without `/clawd.pak` (or with a pack naming an
   animation the file lacks) the pack draws its static Clawd mask instead.
+  Measured on the clock (2026-10-15, fwSeq 8, 80 MHz, 35-250 s per pack with app-like
+  pushes): slowest animation repaint pfd 24 ms, weather 27 ms, monitor 32 ms,
+  racinghud 66 ms (the racing car scene, the widest); full paint 185-328 ms;
+  `minHeap` 23,208 B. An API 1 pack installed before the OTA kept drawing after it.
 - **Old setting:** the old `usage.layout` setting is still read and saved, but it
   is ignored. Values 1–5 (pace, hero, rings, gauges, pixel) were removed and now
   draw classic.
