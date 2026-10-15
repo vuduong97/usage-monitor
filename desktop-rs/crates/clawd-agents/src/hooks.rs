@@ -18,7 +18,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-use clawd_contracts::{AppPaths, Platform};
+use clawd_contracts::{AppPaths, Env, Platform};
 use serde_json::Value;
 
 /// `hooks.MARKS`: substrings that identify our hook entries (also those Python wrote).
@@ -36,7 +36,7 @@ pub fn hook_script_text(port: u16) -> String {
 
 /// `hooks.event_port()`: the event port for hook URLs (`clawd_events::read_event_port` over the
 /// config file).
-pub fn event_port(paths: &AppPaths) -> u16 {
+pub fn event_port(paths: &AppPaths, env: &Env) -> u16 {
     todo!("phase 05")
 }
 
@@ -51,6 +51,7 @@ pub fn settings_files(paths: &AppPaths) -> Vec<PathBuf> {
 /// `paths.hook_script()`.
 pub fn handler(
     paths: &AppPaths,
+    env: &Env,
     platform: Platform,
     port: Option<u16>,
     script: Option<&Path>,
@@ -62,6 +63,7 @@ pub fn handler(
 /// it executable (`0o755` effect); returns the path. Default `paths.hook_script()`.
 pub fn write_script(
     paths: &AppPaths,
+    env: &Env,
     path: Option<&Path>,
     port: Option<u16>,
 ) -> io::Result<PathBuf> {
@@ -85,6 +87,7 @@ pub fn is_installed(paths: &AppPaths, files: Option<&[PathBuf]>) -> bool {
 /// alone). Returns one message per file; also logs them.
 pub fn apply(
     paths: &AppPaths,
+    env: &Env,
     enable: bool,
     files: Option<&[PathBuf]>,
     platform: Platform,

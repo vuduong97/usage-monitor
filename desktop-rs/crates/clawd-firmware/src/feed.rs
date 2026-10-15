@@ -20,7 +20,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use clawd_contracts::{AppPaths, FeedError};
+use clawd_contracts::{AppPaths, Env, FeedError};
 use serde_json::{Map, Value};
 
 use crate::firmware::{Bundle, StylePack};
@@ -176,7 +176,7 @@ impl Feed {
 
 /// `feed.from_settings()`: the feed this install uses; `None` when it has no URL or token, or the
 /// URL is neither `https://` nor loopback `http://`.
-pub fn from_settings(paths: &AppPaths) -> Option<Feed> {
+pub fn from_settings(paths: &AppPaths, env: &Env) -> Option<Feed> {
     todo!("phase 09")
 }
 

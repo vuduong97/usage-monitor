@@ -5,7 +5,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use clawd_contracts::{AppPaths, AppRelease, UpdateError};
+use clawd_contracts::{AppPaths, AppRelease, Env, UpdateError};
 
 /// `appupdate.API`.
 pub const API: &str = "https://api.github.com";
@@ -72,9 +72,9 @@ impl Source {
     }
 }
 
-/// `appupdate.from_settings()`: repo from env `CLAWD_UPDATE_REPO` / config `update_repo` /
+/// `appupdate.from_settings()`: (`env` = `Env::system()` in the app) repo from env `CLAWD_UPDATE_REPO` / config `update_repo` /
 /// [`clawd_contracts::UPDATE_REPO`]; API from env `CLAWD_UPDATE_API` / [`API`].
-pub fn from_settings(paths: &AppPaths) -> Result<Source, UpdateError> {
+pub fn from_settings(paths: &AppPaths, env: &Env) -> Result<Source, UpdateError> {
     todo!("phase 10")
 }
 

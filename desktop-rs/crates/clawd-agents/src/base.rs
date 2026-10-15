@@ -9,11 +9,10 @@
 //! These strings are frozen byte-for-byte (scout §3): hooks installed by the Python 0.1.4 must be
 //! recognised ([`Agent::ours`]) and removed by the Rust app.
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use clawd_contracts::{AgentError, AppPaths, Platform};
+use clawd_contracts::{AgentError, AppPaths, Env, Platform};
 use serde::Serialize;
 use serde_json::Value;
 
@@ -37,7 +36,7 @@ pub struct AgentCtx {
     /// `shutil.which`: where an executable is on PATH.
     pub which: Arc<dyn Fn(&str) -> Option<PathBuf> + Send + Sync>,
     /// Environment (`CODEX_HOME`, `COPILOT_HOME`, `XDG_CONFIG_HOME`, `PI_CODING_AGENT_DIR`).
-    pub env: HashMap<String, String>,
+    pub env: Env,
 }
 
 impl AgentCtx {

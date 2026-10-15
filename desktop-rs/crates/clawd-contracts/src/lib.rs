@@ -11,6 +11,7 @@ mod app_paths;
 mod appupdate;
 mod clock;
 mod consts;
+mod env;
 mod errors;
 mod feed;
 mod os_store;
@@ -25,6 +26,7 @@ pub use app_paths::AppPaths;
 pub use appupdate::AppRelease;
 pub use clock::{ClockSource, ClockTarget};
 pub use consts::*;
+pub use env::Env;
 pub use errors::{
     AgentError, AuthNeeded, ClockError, FeedError, TokenExpired, UpdateError, UsageNotApplicable,
 };

@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use clawd_config::CommandRunner;
-use clawd_contracts::{AppPaths, Clock};
+use clawd_contracts::{AppPaths, Clock, Env};
 use serde::Serialize;
 
 use crate::source::Source;
@@ -64,6 +64,8 @@ pub fn can_apply(
 /// Everything `Updater.__init__` takes as keyword arguments, injectable for tests.
 #[derive(Clone)]
 pub struct UpdaterOptions {
+    /// For `ota_busy` (apply refuses during a firmware upload) and the default stage dir.
+    pub paths: AppPaths,
     /// Stage dir; default `paths.app_update_stage_dir()`.
     pub stage: PathBuf,
     /// The running version ([`clawd_contracts::APP_VERSION`]).
@@ -138,6 +140,6 @@ impl Updater {
 
 /// `appupdate.updater()`: the updater this install uses (repo from env/config); with a bad
 /// repo name it logs and returns one without a source.
-pub fn updater(paths: &AppPaths) -> Updater {
+pub fn updater(paths: &AppPaths, env: &Env) -> Updater {
     todo!("phase 10")
 }

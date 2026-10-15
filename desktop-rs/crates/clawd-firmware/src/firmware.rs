@@ -8,6 +8,7 @@
 
 use std::path::{Path, PathBuf};
 
+use clawd_contracts::Env;
 use serde_json::Value;
 
 pub use clawd_contracts::CLAWD_VARIANT;
@@ -47,8 +48,8 @@ pub fn is_valid_style_id(id: &str) -> bool {
     todo!("phase 09")
 }
 
-/// `firmware.bundle_dir()`: env `CLAWD_FIRMWARE_DIR`, else the app's resources dir.
-pub fn bundle_dir() -> PathBuf {
+/// `firmware.bundle_dir()`: `env` var `CLAWD_FIRMWARE_DIR`, else the app's resources dir.
+pub fn bundle_dir(env: &Env) -> PathBuf {
     todo!("phase 09")
 }
 
@@ -83,7 +84,7 @@ impl Bundle {
 }
 
 /// `firmware.load_bundle(folder)`: `None` when missing, damaged, or the image is not a file.
-pub fn load_bundle(folder: Option<&Path>) -> Option<Bundle> {
+pub fn load_bundle(env: &Env, folder: Option<&Path>) -> Option<Bundle> {
     todo!("phase 09")
 }
 

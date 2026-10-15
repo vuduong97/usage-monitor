@@ -15,7 +15,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use clawd_contracts::UsagePayload;
+use clawd_contracts::{Env, UsagePayload};
 use thiserror::Error;
 
 /// `preview.W` / `preview.H`.
@@ -45,9 +45,9 @@ pub enum PreviewError {
     Io(#[from] std::io::Error),
 }
 
-/// `preview.preview_dir()`: env `CLAWD_PREVIEW_DIR`, else the app's resources dir (private
+/// `preview.preview_dir()`: `env` var `CLAWD_PREVIEW_DIR`, else the app's resources dir (private
 /// builds only).
-pub fn preview_dir() -> PathBuf {
+pub fn preview_dir(env: &Env) -> PathBuf {
     todo!("phase 09")
 }
 
@@ -112,7 +112,7 @@ pub fn apng_data_url(frames: &[Frame]) -> String {
 /// `preview.load_renderer(folder, firmware_commit)`: the built renderer, or `None` when it is
 /// missing, damaged, speaks another `renderApi`, or was built from another firmware commit than
 /// `firmware_commit` (`""` = no bundled firmware to compare).
-pub fn load_renderer(folder: Option<&Path>, firmware_commit: &str) -> Option<Renderer> {
+pub fn load_renderer(env: &Env, folder: Option<&Path>, firmware_commit: &str) -> Option<Renderer> {
     todo!("phase 09")
 }
 
