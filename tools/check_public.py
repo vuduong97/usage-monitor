@@ -15,6 +15,32 @@ BANNED = [
 ]
 MAX_BYTES = 512_000   # nothing in this repo should be big; a large blob is probably art
 
+# Golden fixtures of the Rust port (desktop-rs/fixtures/**) come from running the real app, so
+# they could leak art, secrets or the author's home path. Scanned as text; binary content fails.
+FIXTURE_DIR = "desktop-rs/fixtures/"
+FIXTURE_PATTERNS = [
+    (re.compile(rb"CLWD"), "clawd.pak magic (animation pack)"),
+    (re.compile(rb"iVBORw0KGgo"), "base64 PNG/APNG (art)"),
+    # real tokens look like sk-ant-oat01-... / sk-ant-api03-...; sk-ant-test-/fake- are fixtures
+    (re.compile(rb"sk-ant-(?!test-|fake-)"), "Anthropic token"),
+    (re.compile(rb"/Users/"), "absolute macOS home path"),
+    (re.compile(rb"[A-Za-z]:\\{1,2}Users\\", re.I), "absolute Windows home path"),
+]
+
+
+def check_fixture(path: str) -> list[str]:
+    try:
+        with open(path, "rb") as fh:
+            data = fh.read()
+    except OSError:
+        return []
+    bad = [f"{path}: {why}" for rx, why in FIXTURE_PATTERNS if rx.search(data)]
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        bad.append(f"{path}: not UTF-8 text (fixtures store hashes, never binary)")
+    return bad
+
 
 def main() -> int:
     files = subprocess.run(["git", "ls-files", "-z"], capture_output=True, check=True).stdout.decode().split("\0")
@@ -23,6 +49,8 @@ def main() -> int:
         for rx, why in BANNED:
             if rx.search(f):
                 bad.append(f"{f}: {why}")
+        if f.startswith(FIXTURE_DIR):
+            bad.extend(check_fixture(f))
         try:
             size = subprocess.run(["git", "cat-file", "-s", f":{f}"], capture_output=True, text=True).stdout.strip()
             if size and int(size) > MAX_BYTES and f != "uv.lock":

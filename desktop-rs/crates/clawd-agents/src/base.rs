@@ -5,6 +5,7 @@
 //!   `'<CONFIG_DIR>/clawd-event.sh' <agent> <event>`;
 //! * Windows: `cmd /c "curl.exe -s -o NUL --max-time 0.3 --connect-timeout 0.2 --data-binary @-
 //!   http://127.0.0.1:<port>/hook/<agent>?e=<event> || exit 0"`.
+//!
 //! These strings are frozen byte-for-byte (scout §3): hooks installed by the Python 0.1.4 must be
 //! recognised ([`Agent::ours`]) and removed by the Rust app.
 

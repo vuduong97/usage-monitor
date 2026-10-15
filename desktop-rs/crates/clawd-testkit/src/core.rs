@@ -491,11 +491,11 @@ mod tests {
     }
 
     #[test]
-    fn missing_fixture_names_the_path() {
-        assert!(
-            fixture_path("store", "prefs_roundtrip").ends_with("store/prefs_roundtrip.json")
-                || fixture_path("store", "prefs_roundtrip")
-                    .ends_with("store\\prefs_roundtrip.json")
-        );
+    fn sample_golden_fixture_loads() {
+        let f: Fixture<Value, Value> = load_fixture("store", "prefs_roundtrip");
+        assert_eq!(f.output["clock_screen"], 1);
+        assert_eq!(f.input["initial"]["usage"]["screen"], 300);
+        let v = load_fixture_value("store", "prefs_roundtrip");
+        assert_eq!(v["output"]["prefs"]["ratio"], 1.0);
     }
 }
