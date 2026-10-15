@@ -184,3 +184,15 @@ def test_style_install_signed_once_clear_and_refusals():
             c.install_style(bad)
     assert c.clear_style() == {"active": False}
     assert api(FakeClock()).style()["slot"] == 32768
+
+
+def test_a_malformed_host_is_a_clock_error_not_a_crash():
+    def boom(req):
+        raise UnicodeError("label empty or too long")   # what the IDNA codec raises in getaddrinfo
+    c = ca.ClockApi("http://10..97.40.207", transport=httpx.MockTransport(boom), sleep=lambda _s: None)
+    try:
+        c.heap()
+    except ca.ClockError as e:
+        assert "UnicodeError" in str(e)
+    else:
+        raise AssertionError("expected ClockError")

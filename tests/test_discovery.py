@@ -195,3 +195,15 @@ def test_manual_clock_parsing():
     assert dsc.manual_clock("http://10.0.0.5/whatever").usage_url == "http://10.0.0.5/api/usage"
     assert dsc.manual_clock("") is None and dsc.manual_clock(":80") is None
     assert dsc.manual_clock("h:abc") is None
+
+
+def test_manual_clock_rejects_malformed_hosts():
+    # "10..97.40.207" reached the resolver, whose IDNA codec raised UnicodeError in the window
+    for bad in ("10..97.40.207", "10.97.40", "10.97.40.256", ".clawd", "clawd.", "a b", "-x.local", "x" * 64):
+        assert dsc.manual_clock(bad) is None, bad
+    assert dsc.manual_clock("10.97.40.207").host == "10.97.40.207"
+    assert dsc.manual_clock("clawd-home.local").host == "clawd-home.local"
+    assert dsc.manual_clock("clawd").host == "clawd"
+    # a bad typed address left in clock.json falls back to the remembered one
+    c = dsc.stored_clock({"manual_host": "10..97.40.207", "host": "10.0.0.6"})
+    assert (c.host, c.source) == ("10.0.0.6", "saved")

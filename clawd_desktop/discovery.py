@@ -22,18 +22,21 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import ipaddress
 import json
+import re
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 SERVICE = "_clawd._tcp.local."
 FAIL_LIMIT = 3            # consecutive failed pushes before a clock is dropped
 BAD_HOLD = 60.0           # seconds a dropped clock is ignored before its address is tried again
 TICK = 2.0
 RESOLVE_TIMEOUT_MS = 4000
+_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?")
 
 
 def log(msg: str) -> None:
@@ -70,7 +73,7 @@ def manual_clock(raw: str) -> Clock | None:
         raw = raw.split("://", 1)[1]
     raw = raw.split("/", 1)[0]
     host, _, port = raw.partition(":")
-    if not host:
+    if not valid_host(host):
         return None
     try:
         p = int(port) if port else 80
@@ -79,6 +82,22 @@ def manual_clock(raw: str) -> Clock | None:
     if not 0 < p < 65536:
         return None
     return Clock(host=host, port=p, source="manual")
+
+
+def valid_host(host: str) -> bool:
+    """A full IPv4 address or a DNS name (`clawd.local`). Rejects a typo such as
+    `10..97.40.207` (the resolver's IDNA codec raises on its empty label) and a short
+    dotted number such as `10.97.40` (the resolver would read it as 10.97.0.40)."""
+    if not host or len(host) > 253:
+        return False
+    labels = host.split(".")
+    if all(label.isdigit() for label in labels):
+        try:
+            ipaddress.IPv4Address(host)
+        except ValueError:
+            return False
+        return True
+    return all(_LABEL.fullmatch(label) for label in labels)
 
 
 # =============================================================================
@@ -145,13 +164,13 @@ class MdnsBrowser:
 
     def start(self) -> bool:
         try:
-            from zeroconf import IPVersion, ServiceBrowser, Zeroconf
+            from zeroconf import IPVersion, ServiceBrowser, ServiceListener, Zeroconf
         except ImportError:
             log("zeroconf not installed: mDNS discovery off")
             return False
         outer = self
 
-        class Listener:
+        class Listener(ServiceListener):
             def add_service(self, zc, type_, name):
                 with outer._lock:
                     outer._names.add(name)

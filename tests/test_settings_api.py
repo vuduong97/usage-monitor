@@ -306,6 +306,8 @@ def test_set_clock_by_hand_reconnects_and_tells_the_tray(tmp_path):
     assert r["ok"] and made[-1].base == "http://192.168.1.48"
     assert notes == [{"cmd": "set_clock", "host": "192.168.1.48"}]
     assert b.set_clock("bad host:99999")["code"] == "bad"
+    assert b.set_clock("10..97.40.207")["code"] == "bad"      # no UnicodeError from the resolver
+    assert notes == [{"cmd": "set_clock", "host": "192.168.1.48"}]
 
 
 def test_retry_asks_only_the_saved_address_then_says_to_type_the_ip(tmp_path, monkeypatch):

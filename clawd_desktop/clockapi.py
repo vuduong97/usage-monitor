@@ -94,7 +94,8 @@ class ClockApi:
             except (httpx.ConnectError, httpx.TimeoutException) as e:
                 last = e
                 continue
-            except httpx.HTTPError as e:
+            except (httpx.HTTPError, httpx.InvalidURL, UnicodeError) as e:
+                # UnicodeError: the resolver's IDNA codec on a malformed host name
                 raise ClockError(f"{type(e).__name__}: {e}") from e
             if r.status_code == 401:
                 raise AuthNeeded("the clock wants its web password")
