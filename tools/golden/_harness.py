@@ -19,12 +19,22 @@ or network (red team #14), so `isolate()`:
    scripted fake program, a loopback server) opts in explicitly: `with h.allow("subprocess"):`.
    Kinds: `subprocess`, `winreg`, `network`.
 
+Not covered (stub them in the exporter): `ctypes` callers such as `events._windows_idle`
+(`GetLastInputInfo`) and `tray.alert` (`MessageBoxW`): a generic ctypes guard would break stdlib
+loads. `Denied` is an `AssertionError`, which a Python `except Exception:` can swallow, so every
+denial is also recorded (`denials()`) and `write_fixture` refuses to write while any exists.
+
+Import form: exporters are scripts (`python tools/golden/export_<area>.py`) that do
+`sys.path.insert(0, str(Path(__file__).resolve().parent)); import _harness as h`, exactly as
+`export_sample.py` does. Importing it under another name (`tools.golden._harness`) raises: two
+copies would each install an audit hook with separate state.
+
 Fixtures: `{input, output}`, nested key order PRESERVED (order is part of the contract for wire
 bodies, usage payloads and hook JSON; use `canonical_text` for the exact file text), stable float
 repr, `ensure_ascii`, each file < 512 KB, no binary (use `sha256_of` and store the digest), no
 absolute home paths (use `rel`). `write_fixture` refuses to run before `isolate()`.
 
-    from tools.golden import _harness as h
+    import _harness as h
     ctx = h.isolate()
     from clawd_desktop import paths
     ...
@@ -51,8 +61,16 @@ MAX_FIXTURE_BYTES = 512_000          # check_public.py MAX_BYTES; stay under it
 HOME_ENV = ("HOME", "USERPROFILE", "CODEX_HOME", "COPILOT_HOME", "XDG_CONFIG_HOME",
             "PI_CODING_AGENT_DIR", "APPDATA", "LOCALAPPDATA")
 FILE_EVENTS = {"open", "os.listdir", "os.scandir", "os.mkdir", "os.remove", "os.rename",
-               "os.rmdir", "shutil.copyfile", "shutil.rmtree"}
-PROCESS_EVENTS = {"subprocess.Popen", "os.system", "os.exec", "os.spawn", "os.posix_spawn"}
+               "os.rmdir", "os.chmod", "os.truncate", "os.utime", "os.symlink", "os.link",
+               "shutil.copyfile", "shutil.copy", "shutil.copy2", "shutil.copystat", "shutil.move",
+               "shutil.copytree", "shutil.rmtree"}
+# events with a source AND a destination path: both are checked
+TWO_PATH_EVENTS = {"os.rename", "os.link", "os.symlink", "shutil.copyfile", "shutil.copy",
+                   "shutil.copy2", "shutil.copystat", "shutil.move", "shutil.copytree"}
+PROCESS_EVENTS = {"subprocess.Popen", "os.system", "os.exec", "os.spawn", "os.posix_spawn",
+                  "os.startfile"}
+HOSTNAME_EVENTS = {"socket.getaddrinfo", "socket.gethostbyname", "socket.gethostbyname_ex",
+                   "socket.gethostbyaddr"}
 LOOPBACK_NAMES = {"localhost", "127.0.0.1", "::1", ""}
 
 
@@ -73,6 +91,20 @@ REAL_HOME = _norm(Path.home())
 _ALLOWED: list[str] = []          # extra roots that may be touched (interpreter, repo, temp)
 _OPTED_IN: dict[str, int] = {}    # kind -> nesting depth of `allow(kind)`
 _STATE: dict[str, Any] = {"root": None, "installed": False, "ctx": None}
+_DENIALS: list[str] = []          # every denial, even when the exporter swallows the exception
+
+if __name__ not in ("_harness", "__main__"):
+    raise ImportError("import the harness as `_harness` (see the module docstring), not as " + __name__)
+
+
+def denials() -> list[str]:
+    """Every denial raised so far (an exporter that caught `Denied` must not write fixtures)."""
+    return list(_DENIALS)
+
+
+def _deny(exc: type[BaseException], message: str) -> None:
+    _DENIALS.append(message)
+    raise exc(message)
 
 
 def _under(path: str, root: str) -> bool:
@@ -112,37 +144,36 @@ def _audit(event: str, args: tuple) -> None:
         _audit_file(event, args)
     elif event in PROCESS_EVENTS or event.startswith("os.exec") or event.startswith("os.spawn"):
         if not _OPTED_IN.get("subprocess"):
-            raise Denied(f"{event} is denied in exporters (use `with h.allow('subprocess'):`): {args[:1]}")
+            _deny(Denied, f"{event} is denied in exporters (use `with h.allow('subprocess'):`): {args[:1]}")
     elif event.startswith("winreg."):
         if not event.endswith("/result") and not _OPTED_IN.get("winreg"):
-            raise Denied(f"{event} would touch the real registry (autostart.winreg is faked)")
-    elif event == "socket.connect":
+            _deny(Denied, f"{event} would touch the real registry (autostart.winreg is faked)")
+    elif event in ("socket.connect", "socket.sendto", "socket.sendmsg"):
+        # (socket, address): UDP sends and multicast announcements leave the machine too
         address = args[1] if len(args) > 1 else None
         if isinstance(address, tuple) and address and not _is_loopback(address[0]) \
                 and not _OPTED_IN.get("network"):
-            raise Denied(f"socket.connect to {address[0]!r} is denied (use `with h.allow('network'):`)")
-    elif event == "socket.getaddrinfo":
+            _deny(Denied, f"{event} to {address[0]!r} is denied (use `with h.allow('network'):`)")
+    elif event in HOSTNAME_EVENTS:
         host = args[0] if args else None
         if not _is_loopback(host) and not _OPTED_IN.get("network"):
-            raise Denied(f"DNS lookup of {host!r} is denied (use `with h.allow('network'):`)")
+            _deny(Denied, f"{event} of {host!r} is denied (use `with h.allow('network'):`)")
 
 
 def _audit_file(event: str, args: tuple) -> None:
-    if not args:
-        return
-    target = args[0]
-    if isinstance(target, int):              # a file descriptor
-        return
-    if isinstance(target, bytes):
-        target = os.fsdecode(target)
-    if not isinstance(target, (str, os.PathLike)) or target in ("", "."):
-        return
-    try:
-        path = _norm(target)
-    except (OSError, ValueError):
-        return
-    if _under(path, REAL_HOME) and not any(_under(path, root) for root in _ALLOWED):
-        raise RealHomeAccess(f"{event} touched the real home: {path}")
+    for target in args[:2] if event in TWO_PATH_EVENTS else args[:1]:
+        if isinstance(target, int):              # a file descriptor
+            continue
+        if isinstance(target, bytes):
+            target = os.fsdecode(target)
+        if not isinstance(target, (str, os.PathLike)) or target in ("", "."):
+            continue
+        try:
+            path = _norm(target)
+        except (OSError, ValueError):
+            continue
+        if _under(path, REAL_HOME) and not any(_under(path, root) for root in _ALLOWED):
+            _deny(RealHomeAccess, f"{event} touched the real home: {path}")
 
 
 def _allowed_roots(temp_root: str) -> list[str]:
@@ -323,6 +354,9 @@ def write_fixture(area: str, name: str, *, input: Any, output: Any, ctx: Isolati
     """Write `desktop-rs/fixtures/<area>/<name>.json` as `{input, output}`. Needs `isolate()`."""
     if not _STATE["installed"]:
         raise RuntimeError("write_fixture before isolate(): the exporter may have read the real home")
+    if _DENIALS:
+        raise RuntimeError("write_fixture after a denied action (the exporter swallowed it?): "
+                           + "; ".join(_DENIALS[:3]))
     ctx = ctx or _STATE["ctx"]
     data = ctx.rel({"input": input, "output": output})
     text = canonical_text(data)
@@ -341,6 +375,7 @@ def write_fixture(area: str, name: str, *, input: Any, output: Any, ctx: Isolati
 
 def selftest() -> None:
     """Every guard must fire (and the temp dir must stay usable). Exits non-zero on failure."""
+    import shutil
     import socket
     import subprocess
 
@@ -391,8 +426,40 @@ def selftest() -> None:
     if data is None or not autostart.is_enabled("win32"):
         raise SystemExit("selftest FAILED: autostart did not use the in-memory registry")
     print("selftest: autostart.winreg is in memory")
+    if hasattr(os, "startfile"):
+        expect(Denied, "os.startfile", lambda: os.startfile(str(ctx.home / "ok.txt")))
+    src = ctx.home / "move-me.txt"
+    src.write_text("x")
+    expect(RealHomeAccess, "rename into the real home", lambda: os.rename(src, Path(REAL_HOME) / "stolen.txt"))
+    expect(RealHomeAccess, "os.chmod in the real home", lambda: os.chmod(probe, 0o600))
+    expect(RealHomeAccess, "shutil.copyfile into the real home",
+           lambda: shutil.copyfile(src, Path(REAL_HOME) / "copy.txt"))
+    udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    expect(Denied, "UDP sendto a non-loopback address", lambda: udp.sendto(b"x", ("192.0.2.1", 9)))
+    expect(Denied, "socket.gethostbyname", lambda: socket.gethostbyname("clawd-selftest.invalid"))
+    udp.sendto(b"x", ("127.0.0.1", 9))
+    udp.close()
+    print("selftest: loopback UDP allowed")
+
+    # a denial swallowed by `except Exception` must still stop fixtures from being written
+    try:
+        subprocess.Popen(cmd)
+    except Exception:                      # noqa: BLE001 - exactly what exporters do
+        pass
+    if not denials():
+        raise SystemExit("selftest FAILED: denials were not recorded")
+    try:
+        write_fixture("store", "selftest", input={}, output={})
+    except RuntimeError:
+        print("selftest: write_fixture refuses after a swallowed denial")
+    else:
+        raise SystemExit("selftest FAILED: write_fixture ran after a denial")
+    _DENIALS.clear()
+
     with allow("subprocess"):
         subprocess.run(cmd, capture_output=True, check=False)
+    if denials():
+        raise SystemExit("selftest FAILED: allow('subprocess') still recorded a denial")
     print("selftest: allow('subprocess') opt-in works")
     print("selftest: ok")
 
