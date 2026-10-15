@@ -11,10 +11,10 @@ import time
 import httpx
 
 from clawd_desktop import creds, events, paths, usage
-from clawd_desktop.clockapi import ClockApi, ClockError
-from clawd_desktop.pause import PauseReader
 from clawd_desktop.bootwatch import BootWatch
+from clawd_desktop.clockapi import ClockApi, ClockError
 from clawd_desktop.discovery import ClockFinder, ClockStore
+from clawd_desktop.pause import PauseReader
 
 TOKEN_CHECK_EVERY = 60.0
 SCREEN_SYNC_EVERY = 300.0
@@ -105,10 +105,8 @@ class Engine:
                 found = False                # Codex usage or none: no Claude login needed
             if self.payload is None:
                 self.token = found or None   # missing locally is not proof: wait for the poll
-            try:
+            with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=TOKEN_CHECK_EVERY)
-            except asyncio.TimeoutError:
-                pass
 
     def read_clock_screen(self) -> int | None:
         """The clock's main screen (`usage.screen` in its config), with the web
@@ -200,27 +198,37 @@ class Engine:
             try:
                 loop.run_until_complete(self.run(self._stop))
             finally:
+                self._loop = None       # stop()/poll_now() after this must not touch it
                 loop.close()
         self._thread = threading.Thread(target=main, name="clawd-engine", daemon=True)
         self._thread.start()
         self._ready.wait(5)
 
+    def _call_in_loop(self, fn) -> None:
+        """call_soon_threadsafe that is a no-op once the engine loop has ended."""
+        loop = self._loop
+        if loop is None:
+            return
+        with contextlib.suppress(RuntimeError):   # closed between the check and the call
+            loop.call_soon_threadsafe(fn)
+
     def stop(self, timeout: float = 8.0) -> None:
-        if self._loop is not None and self._stop is not None:
-            self._loop.call_soon_threadsafe(self._stop.set)
+        """Idempotent: Tray.quit() and tray.main()'s finally both call it."""
+        if self._stop is not None:
+            self._call_in_loop(self._stop.set)
         if self._thread is not None:
             self._thread.join(timeout)
 
     def poll_now(self) -> None:
         """Ask for usage and send it now (the usage source changed). Any thread."""
-        pub, loop = self._publisher, self._loop
-        if pub is None or loop is None:
+        pub = self._publisher
+        if pub is None:
             return
 
         def go() -> None:
             pub.force = True
             pub.wake.set()
-        loop.call_soon_threadsafe(go)
+        self._call_in_loop(go)
 
     def call(self, fn, *args) -> None:
         """Run a finder action from the tray thread (it is lock-protected)."""

@@ -170,3 +170,18 @@ def test_sync_screen_survives_a_failed_prefs_write(tmp_path, monkeypatch):
         await task
     asyncio.run(go())
     assert calls[:2] == [1, 1]
+
+
+def test_stop_twice_after_the_loop_closed_is_harmless(tmp_path, monkeypatch):
+    """Tray.quit() stops the engine, then tray.main()'s finally stops it again."""
+    finder = ClockFinder(ClockStore(tmp_path / "clock.json"), browser=NoBrowser())
+    e = eng.Engine(finder)
+
+    async def idle(stop):
+        await stop.wait()
+    monkeypatch.setattr(e, "run", idle)
+    e.start()
+    e.stop(timeout=5)
+    assert e._thread is not None and not e._thread.is_alive()
+    e.stop(timeout=1)       # used to raise RuntimeError: Event loop is closed
+    e.poll_now()            # same for a late settings-window command
