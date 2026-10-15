@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The lazily created settings window may use the core API (events).",
+  "windows": ["settings"],
+  "permissions": ["core:default"]
+}
