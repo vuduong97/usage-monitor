@@ -15,6 +15,7 @@
 import { createCipheriv, createHash, randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync, chmodSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 
 export const OTA_MAX = 524_288;
@@ -147,7 +148,9 @@ export function pack({ src, fw, clawd, desk, out, notes = "", commit = "", date 
   return manifest;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run as a script (not imported by a test). pathToFileURL: on Windows argv[1] is D:\... and
+// the URL file:///D:/..., so a plain `file://${argv[1]}` never matches there.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [cmd, ...rest] = process.argv.slice(2);
   const { values: a } = parseArgs({
     args: rest,
