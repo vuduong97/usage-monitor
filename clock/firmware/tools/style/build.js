@@ -10,7 +10,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { Style, mix } = require('./style_pack');
+const { Style, mix, API } = require('./style_pack');
+const ANIMS = require('./anims');
 
 const ORDER = [
   'gameboy', 'synth', 'paper', 'blueprint', 'pastel', 'onebit',
@@ -41,16 +42,18 @@ function main() {
     const S = new Style({ id, name: src.name, bg: src.bg, light: !!src.light, fontDir });
     S.rect(0, 0, 240, 240, src.bg);
     src.draw(S, { mix });
+    if (!ANIMS[id]) throw new Error(`anims.js: no Clawd animations for ${id}`);
+    const animOps = S.animateClawd(ANIMS[id]);
     const r = S.build();
     const file = `${id}.pak`;
     fs.writeFileSync(path.join(outDir, file), r.buf);
     const crc = r.buf.readUInt32LE(12).toString(16).padStart(8, '0');
     index.push({ id, name: src.name, file, size: r.buf.length, crc, light: !!src.light });
     const fonts = r.fonts.map((f) => (f.builtin !== undefined ? `${f.key}(fw)` : `${f.key}:${f.glyphs}g/${f.bytes}B`)).join(' ');
-    console.log(`${file}: ${r.buf.length} B, ${r.ops} ops, ${r.tracks} tracks, ${r.palette} colours, fonts ${fonts}`);
+    console.log(`${file}: ${r.buf.length} B, ${r.ops} ops, ${r.tracks} tracks, ${r.palette} colours, Clawd ${ANIMS[id].set.join('/')} x${animOps}, fonts ${fonts}`);
     if (r.buf.length > MAX_PACK) { console.error(`${file}: over the ${MAX_PACK} B budget`); failed = true; }
   }
-  fs.writeFileSync(path.join(outDir, 'index.json'), JSON.stringify({ api: 1, styles: index }, null, 2) + '\n');
+  fs.writeFileSync(path.join(outDir, 'index.json'), JSON.stringify({ api: API, styles: index }, null, 2) + '\n');
   if (failed) process.exit(1);
 }
 

@@ -291,6 +291,7 @@ static void handleHeap() {
   o["styleFrameMaxUs"] = styleMaxFrameUs();
   o["stylePaintUs"] = styleLastPaintUs();            // last full-screen paint
   o["stylePaintMaxUs"] = styleMaxPaintUs();
+  o["styleAnim"] = styleAnimName();                 // the pack's Clawd animation now, "" none
   o["pak"] = clawdPackCount();          // 0 = /clawd.pak missing or invalid
   o["splash"] = clawdUiOnSplash();
   o["anim"] = clawdUiAnimName();

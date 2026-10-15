@@ -19,7 +19,7 @@
 // Bumped by hand whenever a build adds something the desktop app gates on
 // (style packs, endpoints). The app only pushes its bundled image to a clock
 // with a lower number, so it never downgrades one. 0 = before this field.
-#define CLAWD_FW_SEQ 7
+#define CLAWD_FW_SEQ 8               // 8: style pack API 2 (Clawd animations in the packs)
 
 // ---------------------------------------------------------------------------
 // Display wiring + panel quirks — board-specific, pulled from the right header.

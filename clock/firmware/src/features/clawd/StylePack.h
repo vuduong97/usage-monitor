@@ -1,7 +1,8 @@
 // StylePack.h — the usage screen drawn from a style pack (docs/STYLE_PACK.md).
 //
 // A pack is a fixed list of primitives (rectangles, text with data tokens,
-// lines, triangles, 1-bit masks) compiled by firmware/tools/style from a pack
+// lines, triangles, 1-bit masks, official Clawd animations from /clawd.pak
+// recoloured to the pack) compiled by firmware/tools/style from a pack
 // source. Each primitive can be gated on the usage state and moved/recoloured
 // by an animation track, so the clock animates without a framebuffer: a full
 // paint when what the screen says changes, otherwise only the rectangles an
@@ -15,7 +16,8 @@
 #include "ClawdAssets.h"
 #include "ClawdUi.h"
 
-#define STYLE_API 1
+#define STYLE_API 2                  // 2: the Clawd animation op (K_ANIM)
+#define STYLE_API_MIN 1              // API 1 packs (no K_ANIM) still draw, so an installed pack survives the OTA
 #define STYLE_MAX_BYTES 32768        // largest pack accepted (the compiler caps packs at 20 KB)
 #define STYLE_HEADER_BYTES 96
 #define STYLE_MAX_ANIMATED 64        // ops with an animation track
@@ -59,6 +61,7 @@ uint32_t styleLastFrameUs();
 uint32_t styleMaxFrameUs();
 uint32_t styleLastPaintUs();                 // the last full paint, and the slowest since attach
 uint32_t styleMaxPaintUs();
+const char* styleAnimName();                 // the Clawd animation playing, "" none (no pack/op, no /clawd.pak)
 
 // Called with true before the pack draws and false after. StyleStore keeps it in
 // RTC memory, so a boot after a crash in the middle of a paint drops the pack

@@ -12,12 +12,30 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const API = 1;
+const API = 2;                     // 2: the Clawd animation op (anim)
 const HEADER = 96, FONT_DESC = 24, TRACK_DESC = 8, MASK_DESC = 8, OP_SIZE = 36;
 
-const KIND = { rect: 1, text: 2, line: 3, tri: 4, mask: 5 };
+const KIND = { rect: 1, text: 2, line: 3, tri: 4, mask: 5, anim: 6 };
 const SRC = { none: 0, s: 1, w: 2, ts: 3, tw: 4, fixed: 255 };
-const COND = { ok: 0, hot: 1, whot: 2, fresh: 3, over: 4, paceover: 5, out: 6, clock: 7, sr: 8, wr: 9 };
+const COND = { ok: 0, hot: 1, whot: 2, fresh: 3, over: 4, paceover: 5, out: 6, clock: 7, sr: 8, wr: 9, anim: 10 };
+
+// The official Clawd animations on the clock (/clawd.pak, tools/clawd_assets.js):
+// their names, checked at compile time. Frames are crops of a 55x37 cell stage;
+// idle Clawd stands centred on column 27 with his feet on row 37.
+const CLAWD_PAK = path.join(__dirname, '..', '..', 'data', 'clawd.pak');
+const STAGE_CX = 27, STAGE_FEET = 37;
+let pakNames = null;
+function clawdPakNames() {
+  if (pakNames) return pakNames;
+  const d = fs.readFileSync(CLAWD_PAK);
+  if (d.toString('latin1', 0, 4) !== 'CLWD') throw new Error(`${CLAWD_PAK}: not a Clawd pack`);
+  pakNames = new Map();
+  for (let i = 0; i < d.readUInt16LE(6); i++) {
+    const o = 12 + 72 * i;
+    pakNames.set(d.toString('latin1', o, o + 16).replace(/\0.*$/s, ''), { w: d[o + 16], h: d[o + 17], ox: d[o + 18], oy: d[o + 19] });
+  }
+  return pakNames;
+}
 const FLAG = { zeroOk: 1, upper: 2, clamp: 4 };
 const ALIGN = { left: 0, center: 1, right: 2 };
 const TOKENS = { s: 1, w: 2, sleft: 3, clock: 4, dow: 5, 'sr@': 6, 'wr@d': 7, 'sr~': 8, 'wr~': 9, out: 10, end: 11, 'wr@': 12 };
@@ -50,6 +68,15 @@ function rgb(hex) { return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16
 function hex(c) { return '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join(''); }
 function mix(a, b, k) { const A = rgb(a), B = rgb(b); return hex(A.map((v, i) => v * (1 - k) + B[i] * k)); }
 function rgb565(h) { const [r, g, b] = rgb(h); return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3); }
+// Two ops never show together: one needs a condition the other excludes, or their gates
+// on the same source don't overlap. hot/whot/over imply ok (the clock sets them with data).
+function exclusive(a, b) {
+  const DATA = (1 << COND.hot) | (1 << COND.whot) | (1 << COND.over), OK = 1 << COND.ok;
+  const need = (o) => o.need | (o.need & DATA ? OK : 0);
+  if ((need(a) & b.not) || (need(b) & a.not)) return true;
+  return !!(a.gateSrc && a.gateSrc === b.gateSrc && (a.gateHi <= b.gateLo || b.gateHi <= a.gateLo));
+}
+function hexOf(v) { return hex([(v >> 11) << 3, ((v >> 5) & 63) << 2, (v & 31) << 3]); }   // RGB565 -> '#rrggbb'
 
 // ---- LVGL fonts (same parser as tools/clawd_assets.js) -----------------------------
 function arrayBody(text, decl) {
@@ -263,6 +290,148 @@ class Style {
     return op;
   }
   defMask(name, w, h, on) { this.clawd[name] = { w, h, on }; }
+
+  // Official Clawd animations (docs/STYLE_PACK.md, "anim"): `names` play in turn, each
+  // after `idle` ms on its first frame. (x, y) is the screen origin of the 55x37 stage,
+  // `cell` its pixels per art cell. Colours are the roles the official palette maps to.
+  anim(names, x, y, cell, colors, o = {}) {
+    const pak = clawdPakNames();
+    for (const n of names) if (!pak.has(n)) throw new Error(`${this.id}: no animation "${n}" in ${CLAWD_PAK}`);
+    if (!names.length || names.length > 8) throw new Error(`${this.id}: 1..8 animations per op`);
+    if (!(cell >= 1 && cell <= 8)) throw new Error(`${this.id}: bad cell ${cell}`);
+    if (o.track !== undefined) throw new Error(`${this.id}: an animation takes no track`);
+    const idle = Math.round(o.idle ?? 8000);
+    if (idle < 0 || idle > 65535) throw new Error(`${this.id}: idle ${idle} ms`);
+    const op = this.op(KIND.anim, colors.body, o);
+    const c = (k) => this.color(colors[k] ?? colors.body);
+    Object.assign(op, {
+      x, y, h: idle, a: cell, str: Buffer.from(names.join(','), 'latin1'),
+      b: c('shade'), c: c('ink'), x3: c('grey') | (c('light') << 8), y3: c('accent'),
+    });
+    // x3 is written as int16: keep the light role's index (<= 254) in the low 15 bits' range
+    if (op.x3 > 0x7fff) op.x3 -= 0x10000;
+    if (op.h > 0x7fff) op.h -= 0x10000;  // idle up to 65535 ms, read back as u16
+    return op;
+  }
+
+  // Turn the pack's Clawd masks into official animations (`cfg`, tools/style/anims.js).
+  // Every group of Clawd layers drawn at one spot in one state becomes one anim op, gated
+  // on `anim` (the clock has every animation); the masks stay as the fallback (`!anim`).
+  // The no-data Clawd (`!ok`) is left alone: he sleeps. Moving tracks (bob, blink) are
+  // dropped: the animation is the motion. Data bindings (dx, gate) carry over.
+  animateClawd(cfg) {
+    const names = new Map([...this.maskIds].map(([n, id]) => [id, n]));
+    const LAYERS = ['clawd', 'clawd_inner', 'clawd_edge', 'clawd_eyes'];
+    const OK = 1 << COND.ok, ANIM = 1 << COND.anim;
+    const isClawd = (op) => op.kind === KIND.mask && LAYERS.includes(names.get(op.a));
+    const state = (op) => [op.b, op.need, op.not, op.gateSrc, op.gateLo, op.gateHi, op.dxSrc, op.dxSpan].join(',');
+    // A group: the layers at one spot in one state. Copies 1-2 px apart in the same state
+    // (a glow, synth's halo) join the group drawn last, so one animation replaces them all.
+    const spots = [];
+    for (const op of this.ops) {
+      if (!isClawd(op) || (op.not & OK)) continue;
+      const s = state(op);
+      if (!spots.some((p) => p.s === s && p.x === op.x && p.y === op.y)) spots.push({ s, x: op.x, y: op.y });
+    }
+    const keyOf = new Map();
+    for (const p of spots) {
+      const near = spots.filter((q) => q.s === p.s && Math.abs(q.x - p.x) <= 2 && Math.abs(q.y - p.y) <= 2);
+      const last = near[near.length - 1];
+      keyOf.set(`${p.s}|${p.x},${p.y}`, `${last.s}|${last.x},${last.y}`);
+    }
+    const key = (op) => keyOf.get(`${state(op)}|${op.x},${op.y}`);
+    const groups = new Map();
+    for (const op of this.ops) {
+      if (!isClawd(op) || (op.not & OK)) continue;
+      const k = key(op);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(op);
+    }
+    // A group plays an animation when it has a body layer. A fill alone under an outline
+    // drawn by other groups at that spot (hifivfd, mac84) only hides: the outline animates.
+    const outlined = (q) => [...groups.values()].some((g) => g.some((r) => r.x === q.x && r.y === q.y && names.get(r.a) === 'clawd_edge'));
+    const animates = (g) => g.some((q) => names.get(q.a) === 'clawd' || names.get(q.a) === 'clawd_edge') ||
+      (g.some((q) => names.get(q.a) === 'clawd_inner') && !outlined(g[0]));
+    // the animation goes where the group's last layer at its own spot is drawn (on top);
+    // worked out before the loop below changes need/not
+    const lastAt = new Map();
+    for (const [k, g] of groups) lastAt.set(k, g.filter((q) => `${state(q)}|${q.x},${q.y}` === k).pop());
+    // conditions the clock only sets with live data: such a mask needs no !ok copy
+    const DATA = (1 << COND.hot) | (1 << COND.whot) | (1 << COND.over);
+    const out = [];
+    const anims = [];
+    for (const op of this.ops) {
+      const k = isClawd(op) && !(op.not & OK) ? key(op) : null;
+      if (k && op === lastAt.get(k) && animates(groups.get(k))) {
+        const a = this.animFor(groups.get(k), cfg, names);
+        out.push(a);
+        anims.push(a);
+      }
+      if (k && !(op.need & OK) && !(op.need & DATA)) {
+        // one Clawd for every state: without data he stays as he was (a copy for !ok),
+        // with data the animation plays, the mask only as the fallback
+        out.push({ ...op, not: op.not | OK });
+        op.need |= OK;
+      }
+      if (k) op.not |= ANIM;
+      out.push(op);
+    }
+    if (!anims.length) throw new Error(`${this.id}: no Clawd to animate`);
+    // the clock refuses a pack with more than 8, and plays only the first one shown: the
+    // masks of any other shown with it are hidden (!anim), so that Clawd would vanish
+    if (anims.length > 8) throw new Error(`${this.id}: ${anims.length} Clawd animations (8 at most)`);
+    for (let i = 0; i < anims.length; i++) {
+      for (let j = i + 1; j < anims.length; j++) {
+        if (!exclusive(anims[i], anims[j])) throw new Error(`${this.id}: two Clawd animations can show at once (ops ${i}, ${j})`);
+      }
+    }
+    this.ops = out;
+    return anims.length;
+  }
+
+  // One anim op for a group of Clawd layers (same spot, scale and state).
+  animFor(group, cfg, names) {
+    const top = group[group.length - 1];   // the spot drawn last (not a glow copy beside it)
+    const layer = (n) => group.find((q) => names.get(q.a) === n && q.x === top.x && q.y === top.y);
+    // An outlined Clawd's body is its fill, unless the fill is (nearly) the background
+    // (mac84's white, a VFD's unlit segments): then the outline is what shows.
+    const dist = (a, b) => [0, 1, 2].reduce((t, i) => t + Math.abs(rgb(a)[i] - rgb(b)[i]), 0);
+    const inner = layer('clawd_inner'), edge = layer('clawd_edge');
+    const fill = inner && (!edge || dist(hexOf(this.palette[inner.color]), this.bg) > 90) ? inner : null;
+    const body = layer('clawd') || fill || edge || inner || group.find((q) => names.get(q.a) !== 'clawd_eyes');
+    // the eye colour: this state's eye layer, else any with-data eye layer at the same spot
+    const eyes = layer('clawd_eyes') || this.ops.find((q) => q.kind === KIND.mask && names.get(q.a) === 'clawd_eyes' &&
+      q.x === body.x && q.y === body.y && q.b === body.b && !(q.not & (1 << COND.ok)));
+    const hex = (i) => hexOf(this.palette[i]);
+    const s = body.b;
+    // per-state colours: cfg.states = { hot: { body, shade, ink } } when the group needs that condition
+    let st = {};
+    for (const [cond, v] of Object.entries(cfg.states || {})) if (body.need & (1 << COND[cond])) st = v;
+    const cell = cfg.cell ?? s + 1;
+    const bodyC = st.body ?? cfg.body ?? hex(body.color);
+    // Clawd's own orange keeps a shade (the official #b86848 is 15 % darker); others are flat
+    const orange = (h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); return Math.abs(r - 217) + Math.abs(g - 119) + Math.abs(b - 87) < 40; };
+    const colors = {
+      body: bodyC,
+      shade: st.shade ?? cfg.shade ?? (orange(bodyC) ? mix(bodyC, '#000000', 0.15) : bodyC),
+      ink: st.ink ?? cfg.ink ?? (eyes ? hex(eyes.color) : this.bg),
+      grey: cfg.grey ?? mix(bodyC, this.bg, 0.5),
+      light: cfg.light ?? mix(bodyC, '#ffffff', 0.7),
+      accent: cfg.accent ?? mix(bodyC, this.bg, 0.3),
+    };
+    const [ax, ay] = cfg.at || [0, 0];
+    // idle Clawd's body (16 cells wide) centred on the mask's 32 px, his feet on its bottom
+    const x = body.x + 16 * s - STAGE_CX * cell + ax;
+    const y = body.y + 40 * s - STAGE_FEET * cell + ay;
+    const op = this.anim(cfg.set, x, y, cell, colors, { idle: cfg.idle });
+    this.ops.pop();                      // anim() appended it; the caller places it
+    Object.assign(op, {
+      // (the group's layers drawn before this one already carry !anim: not for the animation)
+      need: body.need | (1 << COND.anim) | (1 << COND.ok), not: body.not & ~(1 << COND.anim), gateSrc: body.gateSrc, gateLo: body.gateLo,
+      gateHi: body.gateHi, dxSrc: body.dxSrc, dxSpan: body.dxSpan,
+    });
+    return op;
+  }
   maskId(name) {
     if (this.maskIds.has(name)) return this.maskIds.get(name);
     const m = this.clawd[name];
@@ -339,7 +508,7 @@ class Style {
     const strOff = new Map();
     let slen = 0;
     for (const op of this.ops) {
-      if (op.kind !== KIND.text) continue;
+      if (op.kind !== KIND.text && op.kind !== KIND.anim) continue;
       const k = op.str.toString('latin1');
       if (!strOff.has(k)) { strOff.set(k, slen); strs.push(op.str, Buffer.from([0])); slen += op.str.length + 1; }
       op.w = strOff.get(k);

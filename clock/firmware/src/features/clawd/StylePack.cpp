@@ -2,18 +2,24 @@
 #include "StylePack.h"
 #include "ClawdAnim.h"
 #include "ClawdDraw.h"
+#include "ClawdPack.h"
 #include <stdio.h>
 #include <string.h>
 
 // ---- pack layout (little-endian, offsets from the pack start) ---------------------
-enum : uint8_t { K_RECT = 1, K_TEXT = 2, K_LINE = 3, K_TRI = 4, K_MASK = 5 };
+enum : uint8_t { K_RECT = 1, K_TEXT = 2, K_LINE = 3, K_TRI = 4, K_MASK = 5, K_ANIM = 6 };
 enum : uint8_t { SRC_NONE = 0, SRC_S = 1, SRC_W = 2, SRC_TS = 3, SRC_TW = 4, SRC_COUNT = 5, SRC_FIXED = 255 };
 enum : uint8_t { F_ZERO_OK = 1, F_UPPER = 2, F_CLAMP = 4 };
 enum : uint8_t { P_SOLID = 0, P_DIAG = 1, P_COLS = 2, P_ROWS = 3 };
 enum : uint16_t {
   B_OK = 1 << 0, B_HOT = 1 << 1, B_WHOT = 1 << 2, B_FRESH = 1 << 3, B_OVER = 1 << 4,
   B_PACEOVER = 1 << 5, B_OUT = 1 << 6, B_CLOCK = 1 << 7, B_SR = 1 << 8, B_WR = 1 << 9,
+  B_ANIM = 1 << 10,                 // every K_ANIM op's animations are in /clawd.pak
 };
+// The colour roles of a K_ANIM op: an official colour maps to one, the op gives each a pack colour.
+enum : uint8_t { R_NONE, R_BODY, R_SHADE, R_INK, R_GREY, R_LIGHT, R_ACCENT, R_COUNT };
+#define ANIM_OPS_MAX 8               // K_ANIM ops in one pack
+#define ANIM_LIST_MAX 8              // animations one op cycles through
 #define TOKEN_COUNT 13
 #define TOKEN_LEN 16
 #define BUILTIN_MAX 4
@@ -75,6 +81,28 @@ static uint16_t g_val[SRC_COUNT];            // 0..1000 per source
 static char     g_tok[TOKEN_COUNT][TOKEN_LEN];
 
 static uint8_t  g_last[STYLE_MAX_ANIMATED];  // step each animated op was last drawn at
+
+// The Clawd animation player. Only the first K_ANIM op that is shown plays (a pack
+// gates its Clawd variants per state, so one shows at a time); a change of op restarts it.
+// It holds frame 0 of the current animation for the op's idle time, plays one pass,
+// then moves on to the next animation of the op's list.
+struct AnimPlayer {
+  int16_t   op;                       // the op playing, -1 none
+  uint8_t   list[ANIM_LIST_MAX];      // its animations, /clawd.pak indices
+  uint8_t   count, k;                 // how many, which one plays
+  uint16_t  frame;
+  uint32_t  start, hold;              // the frame's start (ms) and how long it stays
+  bool      loaded;                   // `buf` holds `frame` of `a`
+  int16_t   dx0, dy0, dx1, dy1;       // the screen box last drawn (empty: x0 >= x1)
+  ClawdAnim a;
+  uint8_t   role[16];                 // palette index of `a` -> R_*
+};
+static AnimPlayer g_anim = {-1, {0}, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, {}, {0}};
+static uint8_t    g_animBuf[CLAWD_MAX_FRAME];
+static uint32_t   g_animPakGen = 0xFFFFFFFF;   // clawdPackGeneration() B_ANIM was worked out for
+static bool       g_animReady = false;
+static uint16_t   g_animOps[ANIM_OPS_MAX];     // the pack's K_ANIM ops, in order
+static uint8_t    g_animOpCount = 0;
 static uint32_t g_frameUs = 0, g_frameMaxUs = 0, g_paintUs = 0, g_paintMaxUs = 0;
 __attribute__((weak)) void styleDrawing(bool) {}
 
@@ -101,7 +129,8 @@ const char* styleValidate(const uint8_t* base, uint32_t size) {
   Header h;
   memcpy_P(&h, base, sizeof(h));
   if (memcmp(h.magic, "CSTY", 4) != 0) return "magic";
-  if (h.api != STYLE_API) return "api";
+  if (h.api != STYLE_API && h.api != STYLE_API_MIN) return "api";
+  const bool v1 = h.api == 1;                     // API 1: no K_ANIM, no `anim` bit
   if (h.headerSize != sizeof(Header) || h.size != size) return "header";
   if (styleCrc32(base + 16, size - 16) != h.crc) return "crc";
   if (!h.opCount || h.fontCount > FONT_MAX) return "counts";
@@ -143,16 +172,24 @@ const char* styleValidate(const uint8_t* base, uint32_t size) {
   if (!h.stringsLen || !within(h.stringsOff, h.stringsLen, size) || pgm_read_byte(base + h.stringsOff + h.stringsLen - 1) != 0)
     return "strings";
   if (!within(h.opsOff, (uint32_t)h.opCount * sizeof(Op), size)) return "ops";
-  uint16_t animated = 0;
+  uint16_t animated = 0, anims = 0;
   for (uint16_t i = 0; i < h.opCount; i++) {
     Op o;
     memcpy_P(&o, base + h.opsOff + i * sizeof(Op), sizeof(o));
-    if (o.kind < K_RECT || o.kind > K_MASK || o.color >= h.paletteCount) return "op";
+    if (o.kind < K_RECT || o.kind > K_ANIM || o.color >= h.paletteCount) return "op";
+    if (v1 && (o.kind == K_ANIM || ((o.need | o.notMask) & B_ANIM))) return "op anim";
     if (o.track != 0xFF && (o.track >= h.trackCount || ++animated > STYLE_MAX_ANIMATED)) return "op track";
     if (!srcOk(o.dxSrc) || !srcOk(o.x1Src) || o.gateSrc >= SRC_COUNT) return "op source";
     if (o.kind == K_TEXT && (o.a >= h.fontCount || (uint16_t)o.w >= h.stringsLen || o.b > 2)) return "op text";
     if (o.kind == K_MASK && (o.a >= h.maskCount || !o.b || o.b > 8)) return "op mask";
     if (o.kind == K_RECT && ((o.y3 >> 8) > P_ROWS || ((o.y3 >> 8) && !o.b))) return "op pattern";
+    if (o.kind == K_ANIM) {
+      const uint16_t r = (uint16_t)o.x3;
+      if (++anims > ANIM_OPS_MAX || o.track != 0xFF || !o.a || o.a > 8 || (uint16_t)o.w >= h.stringsLen ||
+          o.b >= h.paletteCount || o.c >= h.paletteCount || (r & 0xFF) >= h.paletteCount ||
+          (r >> 8) >= h.paletteCount || (o.y3 & 0xFF) >= h.paletteCount)
+        return "op anim";
+    }
   }
   return nullptr;
 }
@@ -188,6 +225,15 @@ bool styleAttach(const uint8_t* base, uint32_t size) {
   g_info.light = g_h.flags & 1;
   memset(g_last, 0xFF, sizeof(g_last));
   g_frameUs = g_frameMaxUs = g_paintUs = g_paintMaxUs = 0;
+  g_anim.op = -1;
+  g_anim.loaded = false;
+  g_anim.dx0 = g_anim.dy0 = g_anim.dx1 = g_anim.dy1 = 0;
+  g_animPakGen = 0xFFFFFFFF;
+  g_animReady = false;
+  g_animOpCount = 0;
+  for (uint16_t i = 0; i < g_h.opCount; i++) {
+    if (pgm_read_byte(base + g_h.opsOff + (uint32_t)i * sizeof(Op)) == K_ANIM) g_animOps[g_animOpCount++] = i;
+  }
   g_base = base;
   g_gen++;
   return true;
@@ -196,6 +242,9 @@ bool styleAttach(const uint8_t* base, uint32_t size) {
 void styleDetach() {
   if (g_base) g_gen++;
   g_base = nullptr;
+  g_anim.op = -1;
+  g_anim.loaded = false;
+  g_anim.dx0 = g_anim.dy0 = g_anim.dx1 = g_anim.dy1 = 0;
 }
 bool styleActive() { return g_base != nullptr; }
 const StyleInfo* styleInfo() { return g_base ? &g_info : nullptr; }
@@ -228,6 +277,8 @@ static void dayName(char* out, int dow) {
   out[3] = 0;
 }
 
+static bool animAllReady();
+
 uint32_t styleUpdate(const ClawdData& d, bool fresh, long localEpoch, int clockFmt) {
   const float s = clamp100(d.sessionPct), w = clamp100(d.weeklyPct);
   const int sr = d.sessionResetMin, wr = d.weeklyResetMin;
@@ -254,6 +305,13 @@ uint32_t styleUpdate(const ClawdData& d, bool fresh, long localEpoch, int clockF
   if (clock) b |= B_CLOCK;
   if (sr >= 0) b |= B_SR;
   if (wr >= 0) b |= B_WR;
+  if (g_animPakGen != clawdPackGeneration()) {   // attached, or /clawd.pak (re)loaded
+    g_animPakGen = clawdPackGeneration();
+    g_animReady = animAllReady();
+    g_anim.op = -1;                              // its indices may have moved: start over
+    g_anim.loaded = false;
+  }
+  if (g_animReady) b |= B_ANIM;
   g_bits = b;
   g_val[SRC_NONE] = 0;
   g_val[SRC_S] = (uint16_t)roundi(s * 10);
@@ -410,6 +468,13 @@ static Placed place(const Op& o, const Step* st) {
       p.x1 = p.x0 + m.w * o.b; p.y1 = p.y0 + m.h * o.b;
       break;
     }
+    case K_ANIM: {                 // the player's frame: a crop of the stage at (o.x, o.y)
+      const ClawdAnim& a = g_anim.a;
+      p.x0 = o.x + bdx + a.ox * o.a; p.y0 = o.y + a.oy * o.a;
+      p.x1 = p.x0 + a.w * o.a; p.y1 = p.y0 + a.h * o.a;
+      if (!g_anim.loaded) p.on = false;
+      break;
+    }
     default: {                     // K_TEXT: the line box (x from the expanded text)
       char buf[64];
       expand(o, buf, sizeof(buf));
@@ -562,6 +627,25 @@ static void drawMask(const Op& o, const Placed& p, const Band& b) {
   }
 }
 
+static void drawAnim(const Op& o, const Placed& p, const Band& b) {
+  const int sc = o.a, w = g_anim.a.w;
+  const uint16_t r = (uint16_t)o.x3;
+  const uint16_t pal[R_COUNT] = {0, color(o.color), color(o.b), color(o.c), color(r & 0xFF), color(r >> 8),
+                                 color(o.y3 & 0xFF)};
+  const int ya = p.y0 > b.y0 ? p.y0 : b.y0, yb = p.y1 < b.y1 ? p.y1 : b.y1;
+  const int xa = p.x0 > b.rx ? p.x0 : b.rx, xb = p.x1 < b.rx + b.rw ? p.x1 : b.rx + b.rw;
+  for (int y = ya; y < yb; y++) {
+    const unsigned row = (unsigned)((y - p.y0) / sc * w);
+    uint16_t* d = px(b, xa, y);
+    for (int x = xa; x < xb; x++, d++) {
+      const unsigned cell = row + (unsigned)((x - p.x0) / sc);
+      const uint8_t v = g_animBuf[cell / 2];
+      const uint8_t role = g_anim.role[cell % 2 ? (v & 15) : (v >> 4)];   // high nibble first
+      if (role) *d = pal[role];
+    }
+  }
+}
+
 static void drawText(const Op& o, const Placed& p, const Band& b) {
   if (p.y0 >= b.y1 || p.y1 + 8 <= b.y0) return;
   char buf[64];
@@ -593,6 +677,7 @@ static void renderRegion(int x, int y, int w, int h, uint32_t now) {
         if (o.kind == K_RECT && (o.y >= b.y1 || o.y + o.h <= b.y0)) continue;
         if (o.kind == K_TEXT && (o.y - 4 >= b.y1 || o.y + opFont(o)->lineHeight + 8 <= b.y0)) continue;
       }
+      if (o.kind == K_ANIM && (int16_t)i != g_anim.op) continue;   // only the player's op draws
       Step st;
       const bool anim = o.track != 0xFF;
       if (anim) stepAt(o, now, st);
@@ -604,14 +689,136 @@ static void renderRegion(int x, int y, int w, int h, uint32_t now) {
         case K_TRI:  drawTri(p, b); break;
         case K_MASK: drawMask(o, p, b); break;
         case K_TEXT: drawText(o, p, b); break;
+        case K_ANIM: drawAnim(o, p, b); break;
       }
     }
     surf->push(x, by, w, b.y1 - b.y0, b.buf);
   }
 }
 
+// ---- the Clawd animation player -----------------------------------------------------
+// An official colour (RGB565) -> its role. Body and shade by value (the converter's
+// palette), then by look: near black is ink (eyes, outlines), near white light, a grey
+// grey, anything else a prop colour.
+static uint8_t roleOf(uint16_t c) {
+  if (c == 0xDBAA) return R_BODY;             // #d87450
+  if (c == 0xBB49) return R_SHADE;            // #b86848
+  const int r = (c >> 11) << 3, g = ((c >> 5) & 63) << 2, b = (c & 31) << 3;
+  const int hi = r > g ? (r > b ? r : b) : (g > b ? g : b), lo = r < g ? (r < b ? r : b) : (g < b ? g : b);
+  if (hi < 64) return R_INK;
+  if (lo >= 184) return R_LIGHT;
+  if (hi - lo < 24) return R_GREY;
+  return R_ACCENT;
+}
+
+// The op's animation list ("name,name") as /clawd.pak indices; true when every name is there.
+static bool animParse(const Op& o, uint8_t* list, uint8_t& n) {
+  const uint8_t* p = g_base + g_h.stringsOff + (uint16_t)o.w;
+  char name[16];
+  int len = 0;
+  bool all = true;
+  n = 0;
+  for (;;) {
+    const uint8_t ch = pgm_read_byte(p++);       // the strings end on a NUL (validated)
+    if (ch == ',' || ch == 0) {
+      name[len] = 0;
+      if (len) {
+        const int i = clawdPackFind(name);
+        if (i < 0 || i > 255 || n >= ANIM_LIST_MAX) all = false;
+        else list[n++] = (uint8_t)i;
+      }
+      len = 0;
+      if (!ch) break;
+    } else if (len < 15) {
+      name[len++] = (char)ch;
+    } else {
+      all = false;                                // longer than any name in the pak
+    }
+  }
+  return all && n > 0;
+}
+
+static bool animAllReady() {
+  if (!g_animOpCount || !clawdPackOk()) return false;
+  for (uint8_t j = 0; j < g_animOpCount; j++) {
+    Op o;
+    readOp(g_animOps[j], o);
+    uint8_t list[ANIM_LIST_MAX], n;
+    if (!animParse(o, list, n)) return false;
+    for (uint8_t k = 0; k < n; k++) {            // a descriptor the player can't use: fall back
+      ClawdAnim a;
+      if (!clawdPackAnim(list[k], a)) return false;
+    }
+  }
+  return true;
+}
+
+// Show `frame` of the current animation; frame 0 also holds for the op's idle time.
+static void animShow(uint16_t frame, uint32_t now, uint16_t idleMs) {
+  g_anim.frame = frame;
+  g_anim.start = now;
+  g_anim.loaded = clawdPackFrame(g_anim.a, frame, g_animBuf);
+  g_anim.hold = clawdPackHold(g_anim.a, frame) + (frame == 0 ? idleMs : 0);
+}
+
+static void animSelect(uint8_t k, uint32_t now, uint16_t idleMs) {
+  g_anim.k = k;
+  g_anim.loaded = false;
+  g_anim.start = now;                             // a failed load retries from here (animTick)
+  if (!clawdPackAnim(g_anim.list[k], g_anim.a)) return;
+  for (int i = 0; i < 16; i++) g_anim.role[i] = i ? roleOf(g_anim.a.palette[i]) : R_NONE;
+  animShow(0, now, idleMs);
+}
+
+// The K_ANIM op that plays now: the first one shown, -1 none.
+static int16_t animOpNow(Op& o) {
+  if (!(g_bits & B_ANIM)) return -1;
+  for (uint8_t j = 0; j < g_animOpCount; j++) {
+    readOp(g_animOps[j], o);
+    if (shown(o)) return (int16_t)g_animOps[j];
+  }
+  return -1;
+}
+
+static void animStart(int16_t op, const Op& o, uint32_t now) {
+  g_anim.op = op;
+  g_anim.loaded = false;
+  g_anim.count = 0;
+  if (op < 0) return;
+  animParse(o, g_anim.list, g_anim.count);
+  if (g_anim.count) animSelect(0, now, (uint16_t)o.h);
+}
+
+// Next frame when its time is up (the last frame of a pass goes on to the next animation).
+static bool animTick(const Op& o, uint32_t now) {
+  if (!g_anim.loaded) {                           // a read failed: try the next one after a second
+    if (!g_anim.count || now - g_anim.start < 1000) return false;
+    animSelect((uint8_t)((g_anim.k + 1) % g_anim.count), now, (uint16_t)o.h);
+    return true;
+  }
+  if (now - g_anim.start < g_anim.hold) return false;
+  if (g_anim.frame + 1u < g_anim.a.frameCount) animShow(g_anim.frame + 1, now, (uint16_t)o.h);
+  else animSelect((uint8_t)((g_anim.k + 1) % g_anim.count), now, (uint16_t)o.h);
+  return true;
+}
+
+// Make the player follow the state: the op shown now, started over when it changed.
+static bool animSync(uint32_t now, Op& o) {
+  const int16_t want = animOpNow(o);
+  if (want == g_anim.op) return false;
+  animStart(want, o, now);
+  return true;
+}
+
+const char* styleAnimName() { return g_base && g_anim.loaded ? g_anim.a.name : ""; }
+
+static void animMarkDrawn(const Op& o);
+
 void stylePaint(uint32_t now) {
   if (!g_base) return;
+  Op ao;
+  animSync(now, ao);
+  animMarkDrawn(ao);                              // the paint below draws it there
   const uint32_t t0 = clawdMicros();
   styleDrawing(true);
   renderRegion(0, 0, CLAWD_W, CLAWD_H, now);
@@ -655,10 +862,40 @@ static void addDirty(Rect* list, int& n, Rect r) {
   q = {r.x0 < q.x0 ? r.x0 : q.x0, r.y0 < q.y0 ? r.y0 : q.y0, r.x1 > q.x1 ? r.x1 : q.x1, r.y1 > q.y1 ? r.y1 : q.y1};
 }
 
+// The screen box of the player's current frame (empty when nothing is shown).
+static Rect animRect(const Op& o) {
+  Rect r = {0, 0, 0, 0};
+  if (g_anim.op < 0 || !g_anim.loaded) return r;
+  const Placed p = place(o, nullptr);
+  bounds(o, p, r.x0, r.y0, r.x1, r.y1);
+  return r;
+}
+
+// Remember where the frame is drawn now. A Clawd bound to usage (`dx`) can move a
+// pixel without a full paint, so the next erase must use this, not a fresh place().
+static void animMarkDrawn(const Op& o) {
+  const Rect r = animRect(o);
+  g_anim.dx0 = (int16_t)r.x0; g_anim.dy0 = (int16_t)r.y0;
+  g_anim.dx1 = (int16_t)r.x1; g_anim.dy1 = (int16_t)r.y1;
+}
+
 void styleAnimate(uint32_t now) {
   if (!g_base) return;
+  const uint32_t t0 = clawdMicros();             // frame reads count as decode
   Rect dirty[DIRTY_MAX];
   int n = 0;
+  {                                              // the Clawd animation: old and new frame boxes
+    Op o;
+    if (g_anim.op >= 0) readOp((uint16_t)g_anim.op, o);
+    const Rect was = {g_anim.dx0, g_anim.dy0, g_anim.dx1, g_anim.dy1};
+    bool moved = animSync(now, o);
+    if (!moved && g_anim.op >= 0) moved = animTick(o, now);
+    if (moved) {
+      animMarkDrawn(o);
+      addDirty(dirty, n, was);
+      addDirty(dirty, n, {g_anim.dx0, g_anim.dy0, g_anim.dx1, g_anim.dy1});
+    }
+  }
   uint16_t k = 0;
   for (uint16_t i = 0; i < g_h.opCount && k < STYLE_MAX_ANIMATED; i++) {
     Op o;
@@ -682,7 +919,6 @@ void styleAnimate(uint32_t now) {
     }
   }
   if (!n) return;
-  const uint32_t t0 = clawdMicros();
   styleDrawing(true);
   for (int i = 0; i < n; i++) renderRegion(dirty[i].x0, dirty[i].y0, dirty[i].x1 - dirty[i].x0, dirty[i].y1 - dirty[i].y0, now);
   styleDrawing(false);

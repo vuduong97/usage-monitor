@@ -338,6 +338,180 @@ static int checkStyles(const char* dir) {
   return bad;
 }
 
+#include "ClawdPack.h"
+
+static void setPackPath(const char* p) {
+#ifdef _WIN32
+  _putenv_s("CLAWD_PACK_PATH", p);
+#else
+  setenv("CLAWD_PACK_PATH", p, 1);
+#endif
+}
+
+// Every pack's Clawd animations (STYLE_API 2, docs/STYLE_PACK.md): with data, each
+// animation of the pack's list plays in turn and its frames advance; the no-data
+// Clawd is still. Writes, per pack, the motion footprint (every pixel the animations
+// change, in magenta, over the standing frame: what they may cover) and the frame of
+// each animation that differs most from standing. Without /clawd.pak the packs fall
+// back to the static mask.
+// The pack painted straight through the style API at a fixed time, so two packs compare
+// pixel for pixel (tracks included): state k of styleState, or no data (k = 3).
+static void paintAt(const std::vector<uint8_t>& pk, int k, uint32_t now) {
+  styleAttach(pk.data(), (uint32_t)pk.size());
+  const ClawdData d = styleState(k < 3 ? k : 0);
+  styleUpdate(d, k < 3, d.clockEpoch, 0);
+  stylePaint(now);
+}
+
+// The pack with every mask and anim op hidden (need and not `anim`): no Clawd at all.
+static std::vector<uint8_t> withoutClawd(std::vector<uint8_t> pk) {
+  uint16_t opCount;
+  uint32_t opsOff;
+  memcpy(&opCount, &pk[60], 2);
+  memcpy(&opsOff, &pk[80], 4);
+  for (uint16_t i = 0; i < opCount; i++) {
+    uint8_t* o = &pk[opsOff + i * 36u];
+    if (o[0] != 5 && o[0] != 6) continue;
+    o[3] |= 1 << 2;                               // need |= 1 << 10
+    o[5] |= 1 << 2;                               // not  |= 1 << 10
+  }
+  const uint32_t crc = styleCrc32(pk.data() + 16, (uint32_t)pk.size() - 16);
+  memcpy(&pk[12], &crc, 4);
+  return pk;
+}
+
+// Pixels that differ between fb and `ref` inside [x0,x1) x [y0,y1).
+static int diffIn(const uint16_t* ref, int x0, int y0, int x1, int y1) {
+  int n = 0;
+  for (int y = y0; y < y1; y++)
+    for (int x = x0; x < x1; x++) n += fb[y * CLAWD_W + x] != ref[y * CLAWD_W + x];
+  return n;
+}
+
+static int checkStyleAnims(const char* dir) {
+  int bad = 0;
+  const char* sdir = getenv("CLAWD_STYLE_DIR");
+  if (!sdir) return 0;
+  char path[512];
+  snprintf(path, sizeof(path), "%s/index.json", sdir);
+  std::vector<uint8_t> js = readFile(path);
+  js.push_back(0);
+  const char* only = getenv("CLAWD_STYLE_ONLY");
+  static uint16_t still[CLAWD_W * CLAWD_H], bare[CLAWD_W * CLAWD_H];
+  static uint8_t foot[CLAWD_W * CLAWD_H];
+  static std::vector<uint8_t> pk;                // static: stays attached after the loop
+  const char* real = getenv("CLAWD_PACK_PATH");
+  char keep[512];
+  snprintf(keep, sizeof(keep), "%s", real ? real : "data/clawd.pak");
+  int packs = 0;
+  for (const char* q = (const char*)js.data(); (q = strstr(q, "\"id\""));) {
+    q = strchr(q + 4, '"');
+    const char* e = q ? strchr(++q, '"') : nullptr;
+    if (!e) break;
+    char id[16];
+    snprintf(id, sizeof(id), "%.*s", (int)(e - q), q);
+    q = e + 1;
+    if (only && *only && strcmp(only, id)) continue;
+    snprintf(path, sizeof(path), "%s/%s.pak", sdir, id);
+    pk = readFile(path);
+    if (!styleAttach(pk.data(), (uint32_t)pk.size())) { CHECK(false, "%s: did not attach", id); continue; }
+    packs++;
+    clawdUiPayload(styleState(0));
+    run(600, CLAWD_SCREEN_USAGE, -1);
+    CHECK(styleAnimName()[0], "%s: no Clawd animation with data", id);
+    memcpy(still, fb, sizeof(fb));
+    memset(foot, 0, sizeof(foot));
+    char names[8][16];
+    int seen = 0, best[8] = {0}, frames = 0;
+    char last[16] = "";
+    for (int t = 0; t < 4500; t++) {            // 45 s: two rounds of the usual lists
+      const long before = g_pushed;
+      run(10, CLAWD_SCREEN_USAGE, -1);
+      if (g_pushed != before) frames++;
+      const char* n = styleAnimName();
+      int k = 0;
+      while (k < seen && strcmp(names[k], n)) k++;
+      if (k == seen && seen < 8 && *n) { snprintf(names[seen], 16, "%s", n); best[seen++] = -1; }
+      int diff = 0;
+      for (int i = 0; i < CLAWD_W * CLAWD_H; i++)
+        if (fb[i] != still[i]) { foot[i] = 1; diff++; }
+      if (k < seen && diff > best[k] && strcmp(last, n) == 0) {
+        best[k] = diff;
+        char s[64];
+        snprintf(s, sizeof(s), "41-%s-%d", id, k);
+        if (t % 5 == 0) shot(dir, s);          // a sample, not every step (disk)
+      }
+      snprintf(last, sizeof(last), "%s", n);
+    }
+    CHECK(seen >= 2, "%s: only %d animation(s) played in 45 s (every list has 2+)", id, seen);
+    CHECK(frames > 20, "%s: %d repaints in 45 s", id, frames);
+    int covered = 0;
+    for (int i = 0; i < CLAWD_W * CLAWD_H; i++) covered += foot[i];
+    memcpy(fb, still, sizeof(fb));
+    for (int i = 0; i < CLAWD_W * CLAWD_H; i++) if (foot[i]) fb[i] = 0xF81F;
+    char s[64];
+    snprintf(s, sizeof(s), "40-%s-footprint", id);
+    shot(dir, s);
+    printf("anim %-10s %s%s%s%s  repaints %d in 45 s, footprint %d px\n", id, names[0], seen > 1 ? ", " : "",
+           seen > 1 ? names[1] : "", seen > 2 ? " ..." : "", frames, covered);
+    // hot and fresh: the state's own Clawd plays too
+    for (int k = 1; k <= 2; k++) {
+      clawdUiPayload(styleState(k));
+      run(800, CLAWD_SCREEN_USAGE, -1);
+      CHECK(styleAnimName()[0], "%s: no Clawd animation in state %d", id, k);
+    }
+    // no data: the sleeping Clawd does not move
+    run(CLAWD_DATA_FRESH_MS + 1000, CLAWD_SCREEN_USAGE, -1);
+    CHECK(!styleAnimName()[0], "%s: Clawd animates without data (%s)", id, styleAnimName());
+    // ... and is drawn: the pack differs from itself with no Clawd ops, same time
+    int fx0 = CLAWD_W, fy0 = CLAWD_H, fx1 = 0, fy1 = 0;   // the footprint's box
+    for (int y = 0; y < CLAWD_H; y++)
+      for (int x = 0; x < CLAWD_W; x++)
+        if (foot[y * CLAWD_W + x]) {
+          if (x < fx0) fx0 = x;
+          if (y < fy0) fy0 = y;
+          if (x >= fx1) fx1 = x + 1;
+          if (y >= fy1) fy1 = y + 1;
+        }
+    const std::vector<uint8_t> none = withoutClawd(pk);
+    const uint32_t at = g_now;
+    paintAt(none, 3, at);
+    memcpy(bare, fb, sizeof(fb));
+    paintAt(pk, 3, at);
+    const int asleep = diffIn(bare, 0, 0, CLAWD_W, CLAWD_H);
+    CHECK(asleep >= 150, "%s: no Clawd drawn without data (%d px)", id, asleep);
+    // without /clawd.pak: the static masks are back where the animations play
+    setPackPath("does-not-exist.pak");
+    clawdPackOpen();
+    paintAt(none, 0, at);
+    memcpy(bare, fb, sizeof(fb));
+    paintAt(pk, 0, at);
+    const int fallback = fx0 < fx1 ? diffIn(bare, fx0, fy0, fx1, fy1) : 0;
+    CHECK(!styleAnimName()[0] && fallback >= 150, "%s: no static Clawd without /clawd.pak (%d px)", id, fallback);
+    setPackPath(keep);
+    clawdPackOpen();
+    styleAttach(pk.data(), (uint32_t)pk.size());
+  }
+  // without /clawd.pak: the static Clawd of API 1, no animation
+  if (packs) {
+    setPackPath("does-not-exist.pak");
+    clawdPackOpen();
+    clawdUiPayload(styleState(0));
+    run(1200, CLAWD_SCREEN_USAGE, -1);
+    CHECK(!styleAnimName()[0], "no /clawd.pak, yet an animation plays");
+    memcpy(still, fb, sizeof(fb));
+    run(3000, CLAWD_SCREEN_USAGE, -1);
+    shot(dir, "42-style-no-clawd-pak");
+    setPackPath(keep);
+    clawdPackOpen();
+    run(1200, CLAWD_SCREEN_USAGE, -1);
+    CHECK(styleAnimName()[0], "/clawd.pak back, no animation");
+  }
+  styleDetach();
+  printf("style anims: %s (%d packs)\n", bad ? "FAILED" : "ok", packs);
+  return bad;
+}
+
 // Non-background pixels in the idle screen's IP line.
 static int idleAddrInk() {
   int n = 0;
@@ -467,7 +641,7 @@ int main(int argc, char** argv) {
   shot(dir, "06f-unknown-layout");
   g_layout = CLAWD_LAYOUT_CLASSIC;
 
-  const int styleBad = checkStyles(dir);
+  const int styleBad = checkStyles(dir) + checkStyleAnims(dir);
   if (getenv("CLAWD_STYLES_ONLY")) return (styleBad + waitBad) ? 1 : 0;   // the style-pack loop only
 
   // mascot acts over time

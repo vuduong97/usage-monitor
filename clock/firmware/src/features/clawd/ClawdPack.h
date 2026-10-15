@@ -18,7 +18,9 @@
 bool clawdPackOpen();                          // (re)open; false if missing/invalid
 bool clawdPackOk();
 int  clawdPackCount();                         // animations in the pack (0 if none)
+uint32_t clawdPackGeneration();                // bumps on every clawdPackOpen()
 bool clawdPackAnim(int index, ClawdAnim& out); // read one descriptor
+int  clawdPackFind(const char* name);           // index of the animation called `name`, -1 if none
 bool clawdPackRead(uint32_t off, void* dst, size_t n);
 
 // Load frame `frame` of `a` into buf (CLAWD_MAX_FRAME bytes). False on error

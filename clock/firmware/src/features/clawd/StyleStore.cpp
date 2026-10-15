@@ -95,7 +95,7 @@ static const char* precheck(File& f, uint32_t n) {
   f.seek(0);
   if (f.read(head, sizeof(head)) != (int)sizeof(head)) return "read";
   if (memcmp(head, "CSTY", 4) != 0) return "magic";
-  if (head[4] != STYLE_API) return "api";
+  if (head[4] != STYLE_API && head[4] != STYLE_API_MIN) return "api";
   uint32_t size, crc;
   memcpy(&size, head + 8, 4);
   memcpy(&crc, head + 12, 4);

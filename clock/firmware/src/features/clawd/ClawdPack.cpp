@@ -34,6 +34,7 @@ static bool backendRead(uint32_t off, void* dst, size_t n) {
 
 static bool     g_ok = false;
 static uint16_t g_count = 0;
+static uint32_t g_gen = 0;
 
 static uint16_t rdU16(const uint8_t* p) { return (uint16_t)(p[0] | (p[1] << 8)); }
 static uint32_t rdU32(const uint8_t* p) {
@@ -41,6 +42,7 @@ static uint32_t rdU32(const uint8_t* p) {
 }
 
 bool clawdPackOpen() {
+  g_gen++;
   g_ok = false;
   g_count = 0;
   uint8_t h[PAK_HEADER];
@@ -54,6 +56,7 @@ bool clawdPackOpen() {
 
 bool clawdPackOk() { return g_ok; }
 int  clawdPackCount() { return g_count; }
+uint32_t clawdPackGeneration() { return g_gen; }
 
 bool clawdPackRead(uint32_t off, void* dst, size_t n) { return g_ok && backendRead(off, dst, n); }
 
@@ -72,7 +75,18 @@ bool clawdPackAnim(int i, ClawdAnim& a) {
   for (int k = 0; k < 16; k++) a.palette[k] = rdU16(d + 28 + 2 * k);
   a.framesOff = rdU32(d + 60);
   a.holdsOff  = rdU32(d + 64);
-  return a.frameCount > 0 && a.frameBytes <= CLAWD_MAX_FRAME;
+  return a.frameCount > 0 && a.frameBytes <= CLAWD_MAX_FRAME && a.w && a.h &&
+         (uint32_t)a.w * a.h <= 2u * a.frameBytes;   // every cell's nibble is in the frame
+}
+
+int clawdPackFind(const char* name) {
+  char n[16];
+  for (int i = 0; g_ok && i < g_count; i++) {
+    if (!backendRead(PAK_HEADER + (uint32_t)i * PAK_DESC, n, sizeof(n))) return -1;
+    n[15] = 0;
+    if (strcmp(n, name) == 0) return i;
+  }
+  return -1;
 }
 
 bool clawdPackFrame(const ClawdAnim& a, uint16_t frame, uint8_t* buf) {
