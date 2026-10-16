@@ -1,6 +1,6 @@
-//! pi: an extension file (`clawd-home.ts`) in `$PI_CODING_AGENT_DIR|~/.pi/agent/extensions`.
-//! The extension shapes its events like the tracker's own, so `normalize` only validates
-//! them (`json_edit::prepared`).
+//! pi: the `clawd-home.ts` extension in pi's extensions directory
+//! (`$PI_CODING_AGENT_DIR|~/.pi/agent/extensions`) (`agents/pi.py`). The extension shapes its
+//! events like the tracker's own (`integrations/pi`), so `normalize` only validates them.
 
 use std::path::PathBuf;
 
@@ -8,8 +8,15 @@ use clawd_contracts::{AgentError, Platform};
 use serde_json::Value;
 
 use crate::base::{Agent, AgentCtx};
+use crate::json_edit::prepared;
+use crate::plugin;
 
-/// The `pi` adapter (`agents/pi.py`).
+/// A line only our extension has.
+pub const MARK: &str = "pi extension: report agent lifecycle to the clawd-home daemon";
+const FILE_NAME: &str = "clawd-home.ts";
+const BUNDLED: &str = "pi/clawd-home.ts";
+
+/// The `pi` adapter.
 pub struct Pi {
     ctx: AgentCtx,
 }
@@ -19,9 +26,12 @@ impl Pi {
         Self { ctx }
     }
 
-    /// `PluginAgent.plugin_dir()`: where the plugin file goes.
     pub fn plugin_dir(&self) -> PathBuf {
-        todo!("phase 05")
+        self.config_dir().join("extensions")
+    }
+
+    fn target(&self) -> PathBuf {
+        self.plugin_dir().join(FILE_NAME)
     }
 }
 
@@ -46,22 +56,27 @@ impl Agent for Pi {
     }
 
     fn config_dir(&self) -> PathBuf {
-        todo!("phase 05")
+        self.env_dir(
+            "PI_CODING_AGENT_DIR",
+            self.ctx.paths.home().join(".pi").join("agent"),
+        )
+    }
+    fn found(&self) -> bool {
+        self.config_dir().is_dir() || (self.ctx.which)("pi").is_some()
     }
     fn is_installed(&self) -> Result<bool, AgentError> {
-        todo!("phase 05")
+        Ok(plugin::is_installed(&self.target(), MARK))
     }
     fn install(&self) -> Result<String, AgentError> {
-        todo!("phase 05")
+        plugin::install(&self.target(), MARK, BUNDLED)
     }
     fn uninstall(&self) -> Result<String, AgentError> {
-        todo!("phase 05")
+        plugin::uninstall(&self.target(), MARK)
     }
-    fn normalize(&self, p: &Value, hint: &str) -> Vec<Value> {
-        todo!("phase 05")
+    fn normalize(&self, p: &Value, _hint: &str) -> Vec<Value> {
+        prepared("pi", p)
     }
-
     fn refresh(&self) -> bool {
-        todo!("phase 05")
+        plugin::refresh(&self.target(), MARK, BUNDLED)
     }
 }

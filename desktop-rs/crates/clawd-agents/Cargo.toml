@@ -8,11 +8,11 @@ publish.workspace = true
 
 [dependencies]
 clawd-contracts = { workspace = true }
-clawd-store = { workspace = true }
 clawd-config = { workspace = true }
 clawd-events = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 clawd-testkit = { workspace = true }
