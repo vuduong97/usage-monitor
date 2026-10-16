@@ -32,3 +32,12 @@ libc = "0.2"
 clawd-testkit = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["test-util"] }
+
+# A stand-in for `clawd_render` (tests/support/fake_clawd_render.rs): integration tests copy it
+# next to a fake renderer folder and drive it with a `mode` file. It is the only way to run a
+# "renderer" on every OS (the Python tests used a shell script, POSIX only). Not shipped: the app
+# depends on the library only.
+[[bin]]
+name = "fake_clawd_render"
+path = "tests/support/fake_clawd_render.rs"
+test = false

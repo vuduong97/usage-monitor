@@ -148,7 +148,7 @@ pub struct Bundle {
 }
 
 /// `hashlib.sha256(data).hexdigest()`.
-pub(crate) fn sha256_hex(data: &[u8]) -> String {
+pub fn sha256_hex(data: &[u8]) -> String {
     hex::encode(Sha256::digest(data))
 }
 
