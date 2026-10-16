@@ -14,7 +14,7 @@ use clawd_firmware::ota::{self, OtaOptions};
 use clawd_firmware::preview::CLASSIC;
 use serde_json::{json, Value};
 
-use super::session::{arg, bad_value, diff, err, fail, Bridge};
+use super::session::{arg, bad_value, diff, err, fail, Bridge, StyleError};
 use super::CommandCtx;
 use crate::state::lock;
 
@@ -157,7 +157,8 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
             let now = api.heap().await.map_err(UpdateFailure::Clock)?;
             let mut kinds: Vec<String> = feed::needed(&now, Some(&src));
             kinds.extend(feed::STYLE_KINDS.iter().map(|k| (*k).to_owned()));
-            kinds.dedup();
+            let mut seen = std::collections::HashSet::new();
+            kinds.retain(|k| seen.insert(k.clone()));
             let kinds: Vec<&str> = kinds.iter().map(String::as_str).collect();
             let progress = {
                 let step = Arc::clone(&step);
@@ -184,9 +185,10 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
                 shown.as_str()
             } =>
         {
-            b.apply_style(s)
-                .await
-                .map_err(|e| UpdateFailure::Other(style_message(e)))?;
+            b.apply_style(s).await.map_err(|e| match e {
+                StyleError::Clock(e) => UpdateFailure::Clock(e),
+                StyleError::Pack(e) => UpdateFailure::Other(e),
+            })?;
         }
         _ => refresh_style(b, &src).await,
     }
@@ -196,13 +198,6 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
     let cfg = b.data().cfg.clone();
     b.mirror_screen(&cfg);
     Ok(())
-}
-
-fn style_message(e: super::session::StyleError) -> String {
-    match e {
-        super::session::StyleError::Clock(e) => e.to_string(),
-        super::session::StyleError::Pack(e) => e,
-    }
 }
 
 /// `_refresh_style(src)`: the clock's style pack, re-sent when the release carries a different

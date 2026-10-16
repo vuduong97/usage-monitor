@@ -128,7 +128,8 @@ pub async fn set_clock_on(b: &Bridge, args: &[Value]) -> Result<Value, String> {
         host: raw.to_owned(),
     });
     if let Some(c) = typed {
-        b.connect(&c.base(), raw);
+        let (base, key) = (c.base(), raw.to_owned());
+        b.blocking(move |b| b.connect(&base, &key)).await;
         return Ok(b.state().await);
     }
     let deadline = Instant::now() + SEARCH_WAIT;
@@ -138,7 +139,8 @@ pub async fn set_clock_on(b: &Bridge, args: &[Value]) -> Result<Value, String> {
         if let Some(c) = &stored {
             if Bridge::answers(&c.base()).await {
                 let name = if c.name.is_empty() { &c.host } else { &c.name };
-                b.connect(&c.base(), name);
+                let (base, key) = (c.base(), name.clone());
+                b.blocking(move |b| b.connect(&base, &key)).await;
                 return Ok(b.state().await);
             }
         }

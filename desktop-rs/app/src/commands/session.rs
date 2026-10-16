@@ -155,6 +155,15 @@ impl StyleError {
     }
 }
 
+/// Clears `feed_pending` when the background feed check ends.
+struct FeedPending(Bridge);
+
+impl Drop for FeedPending {
+    fn drop(&mut self) {
+        self.0.data().feed_pending = false;
+    }
+}
+
 /// Everything a command needs, owned so a spawned task can keep it.
 #[derive(Clone)]
 pub struct Bridge {
@@ -236,6 +245,18 @@ impl Bridge {
         d.key = key;
     }
 
+    /// Run `f` on the blocking pool: keyring, file and prefs work must not stall the async
+    /// threads. A panic in `f` is re-raised as the command's panic.
+    pub async fn blocking<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(Bridge) -> T + Send + 'static,
+    ) -> T {
+        let bridge = self.clone();
+        tokio::task::spawn_blocking(move || f(bridge))
+            .await
+            .unwrap_or_else(|e| std::panic::resume_unwind(e.into_panic()))
+    }
+
     /// `_connect(base, key)`.
     pub fn connect(&self, base: &str, key: &str) {
         let mut d = self.data();
@@ -299,8 +320,9 @@ impl Bridge {
         self.data().feed_pending = true;
         let bridge = self.clone();
         tokio::spawn(async move {
+            // Cleared however the check ends, a panic included.
+            let _pending = FeedPending(bridge.clone());
             bridge.check_feed(false).await;
-            bridge.data().feed_pending = false;
         });
     }
 
@@ -588,7 +610,10 @@ impl Bridge {
 
     async fn state_inner(&self) -> Value {
         self.services.updater.check_async(false); // the app's own update: needs no clock
-        self.follow_store(); // the tray's latest find first
+        self.blocking(|b| {
+            b.follow_store(); // the tray's latest find first (the first call asks the keyring)
+        })
+        .await;
         let (base, _) = self.address();
         if base.is_empty() {
             return merged(
@@ -600,7 +625,8 @@ impl Bridge {
         let heap = match api.heap().await {
             Ok(h) => h,
             Err(e) => {
-                if matches!(e, ClockError::AuthNeeded) || !self.follow_store() {
+                if matches!(e, ClockError::AuthNeeded) || !self.blocking(|b| b.follow_store()).await
+                {
                     return merged(err(&e), json!({"app": self.app_info()}));
                 }
                 // The tray found it elsewhere while we waited: ask there.

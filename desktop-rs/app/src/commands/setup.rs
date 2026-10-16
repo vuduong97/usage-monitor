@@ -83,7 +83,7 @@ pub async fn setup_clocks(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Val
         }
     }
     b.data().mdns_seen.retain(|n, _| names.contains(n));
-    b.follow_store();
+    b.blocking(|b| b.follow_store()).await;
     let current = match stored_clock(&b.store().load()) {
         Some(c) => Some(merged(
             clock_dict(&c),
@@ -122,7 +122,8 @@ pub async fn use_clock(b: &Bridge, args: &[Value]) -> Result<Value, String> {
         port: c.port,
         version: c.version.clone(),
     });
-    b.connect(&c.base(), &c.name);
+    let (base, key) = (c.base(), c.name.clone());
+    b.blocking(move |b| b.connect(&base, &key)).await;
     let answers = Bridge::answers(&c.base()).await;
     Ok(json!({"ok": true, "current": merged(clock_dict(&c), json!({"answers": answers}))}))
 }

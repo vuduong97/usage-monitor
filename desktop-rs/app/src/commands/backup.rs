@@ -13,6 +13,9 @@ use tauri_plugin_dialog::DialogExt;
 use super::session::{err, fail, Bridge};
 use super::CommandCtx;
 
+/// A backup of the clock's settings is a few KB; anything bigger is not one.
+const BACKUP_MAX_BYTES: u64 = 1024 * 1024;
+
 const NOT_A_BACKUP: &str = "File này không phải bản sao lưu của đồng hồ.";
 
 /// The file dialog (`_dialog`): the picked path, `None` when cancelled. It blocks until the
@@ -36,8 +39,11 @@ async fn pick_file(app: &AppHandle, save_as: Option<String>) -> Option<PathBuf> 
         picked.and_then(|p| p.into_path().ok())
     })
     .await
-    .ok()
-    .flatten()
+    .unwrap_or_else(|e| {
+        // Typically the dialog plugin is not registered (`.plugin(tauri_plugin_dialog::init())`).
+        tracing::warn!("[settings] file dialog failed: {e}");
+        None
+    })
 }
 
 fn cancelled() -> Value {
@@ -124,6 +130,9 @@ async fn import_with(
 
 /// A backup is a JSON object with a `hostname`.
 fn read_backup(path: &Path) -> Option<Value> {
+    if std::fs::metadata(path).ok()?.len() > BACKUP_MAX_BYTES {
+        return None;
+    }
     let data: Value = serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()?;
     data.get("hostname").is_some().then_some(data)
 }
@@ -157,6 +166,11 @@ mod tests {
         assert!(read_backup(&write("list.json", "[1, 2]")).is_none());
         assert!(read_backup(&write("bad.json", "not json")).is_none());
         assert!(read_backup(&dir.join("missing.json")).is_none());
+        let huge = format!(
+            r#"{{"hostname": "{}"}}"#,
+            "x".repeat(BACKUP_MAX_BYTES as usize)
+        );
+        assert!(read_backup(&write("huge.json", &huge)).is_none());
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

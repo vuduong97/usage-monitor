@@ -26,7 +26,7 @@ fn has_wsl() -> bool {
 /// `SettingsApi.agents`: every agent Clawd knows, whether it is on this machine and connected.
 /// The ones shown count as offered, so the tray stops offering them.
 pub async fn agents(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    agents_of(&Bridge::of(ctx))
+    Bridge::of(ctx).blocking(|b| agents_of(&b)).await
 }
 
 fn agents_of(b: &Bridge) -> Result<Value, String> {
@@ -44,9 +44,14 @@ fn agents_of(b: &Bridge) -> Result<Value, String> {
 
 /// `SettingsApi.set_agent(aid, on)`.
 pub async fn set_agent(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
-    let aid = text_of(arg(&args, 0));
-    let on = truthy(arg(&args, 1));
+    Bridge::of(ctx)
+        .blocking(move |b| set_agent_of(&b, &args))
+        .await
+}
+
+fn set_agent_of(b: &Bridge, args: &[Value]) -> Result<Value, String> {
+    let aid = text_of(arg(args, 0));
+    let on = truthy(arg(args, 1));
     let Some(agent) = b.registry().get(&aid) else {
         return Ok(fail("bad", "Không biết agent này."));
     };
@@ -58,11 +63,11 @@ pub async fn set_agent(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, 
     match result {
         Err(e) => Ok(merged(
             fail("error", &e.to_string()),
-            json!({"agents": infos(&b)}),
+            json!({"agents": infos(b)}),
         )),
         Ok(msg) => {
             b.notify(ShellCmd::Setup);
-            Ok(json!({"ok": true, "msg": msg, "agents": infos(&b)}))
+            Ok(json!({"ok": true, "msg": msg, "agents": infos(b)}))
         }
     }
 }
@@ -71,8 +76,13 @@ pub async fn set_agent(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, 
 /// disconnect the unticked ones that are connected; nothing else is touched. Errors are
 /// listed, the rest still go.
 pub async fn set_agents(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
-    let want: BTreeSet<String> = arg(&args, 0)
+    Bridge::of(ctx)
+        .blocking(move |b| set_agents_of(&b, &args))
+        .await
+}
+
+fn set_agents_of(b: &Bridge, args: &[Value]) -> Result<Value, String> {
+    let want: BTreeSet<String> = arg(args, 0)
         .as_array()
         .map(|ids| ids.iter().map(text_of).collect())
         .unwrap_or_default();
@@ -91,7 +101,7 @@ pub async fn set_agents(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value,
         }
     }
     b.notify(ShellCmd::Setup);
-    let out = json!({"ok": errors.is_empty(), "agents": infos(&b)});
+    let out = json!({"ok": errors.is_empty(), "agents": infos(b)});
     Ok(if errors.is_empty() {
         out
     } else {
@@ -101,8 +111,11 @@ pub async fn set_agents(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value,
 
 /// `SettingsApi.disconnect_all`.
 pub async fn disconnect_all(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
-    let lines = clawd_agents::uninstall_all(b.registry());
-    b.notify(ShellCmd::Setup);
-    Ok(json!({"ok": true, "msg": lines.join("\n"), "agents": infos(&b)}))
+    Bridge::of(ctx)
+        .blocking(|b| {
+            let lines = clawd_agents::uninstall_all(b.registry());
+            b.notify(ShellCmd::Setup);
+            Ok(json!({"ok": true, "msg": lines.join("\n"), "agents": infos(&b)}))
+        })
+        .await
 }

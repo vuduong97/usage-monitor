@@ -3,7 +3,6 @@
 //! 09 (firmware) and 10 (appupdate), whose stubs still `todo!()`, so they are `#[ignore]`d until
 //! those merge (phase 13 step B''). Run them then with `cargo test -p clawd-app -- --ignored`.
 
-use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use clawd_agents::{AgentCtx, Registry};
@@ -12,31 +11,11 @@ use clawd_app::commands::session::Bridge;
 use clawd_app::commands::setup::use_clock;
 use clawd_app::state::{JobState, Services, SettingsSession, ShellCmd};
 use clawd_appupdate::{Updater, UpdaterOptions};
-use clawd_clock::MdnsSource;
 use clawd_config::SystemRunner;
 use clawd_contracts::{ClockSource, ClockTarget, Env, Platform};
 use clawd_testkit::{FakeHttpServer, FakeResponse, TempConfig};
 use serde_json::{json, Value};
 use tokio::sync::mpsc;
-
-/// An mDNS source that sees exactly the clocks it is given.
-struct FakeMdns(BTreeMap<String, ClockTarget>);
-
-impl MdnsSource for FakeMdns {
-    fn start(&self) -> bool {
-        true
-    }
-    fn names(&self) -> Vec<String> {
-        self.0.keys().cloned().collect()
-    }
-    fn changed(&self) -> u64 {
-        0
-    }
-    fn resolve(&self, name: &str) -> Option<ClockTarget> {
-        self.0.get(name).cloned()
-    }
-    fn stop(&self) {}
-}
 
 struct Rig {
     bridge: Bridge,
@@ -108,7 +87,6 @@ fn fake_clock() -> FakeHttpServer {
 async fn state_reads_the_clock_and_brings_the_opening_tab_once() {
     let clock = fake_clock();
     let mut rig = rig(&clock.url(), "clawd");
-    *rig.bridge.session.data.lock().unwrap() = Default::default();
     let first = rig.bridge.state().await;
     assert_eq!(first["ok"], true);
     assert_eq!(first["config"]["hostname"], "clawd");
@@ -150,7 +128,6 @@ async fn choosing_a_wizard_clock_tells_the_engine() {
     );
     let gone = use_clock(&rig.bridge, &[json!("nobody")]).await.unwrap();
     assert_eq!(gone["code"], "gone");
-    let _ = FakeMdns(BTreeMap::new());
 }
 
 #[tokio::test]

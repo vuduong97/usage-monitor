@@ -59,10 +59,16 @@
   // tell the shell, then let the page start talking to the app (`load()` asks for state; that
   // and the usage preview come after the first paint, never before).
   function afterPaint() {
-    requestAnimationFrame(function () {
+    var done = false;
+    function go() {
+      if (done) return;
+      done = true;
       if (events) events.emit('clawd://ready');
       window.dispatchEvent(new Event('pywebviewready'));
-    });
+    }
+    requestAnimationFrame(go);
+    // rAF stands still while the window is minimised or hidden: do not wait for it forever.
+    setTimeout(go, 150);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', afterPaint, { once: true });
