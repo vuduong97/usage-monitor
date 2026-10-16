@@ -178,6 +178,32 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    /// `test_prefs::test_a_short_sharing_violation_is_waited_out`.
+    #[test]
+    fn short_permission_errors_are_waited_out() {
+        let mut left = 2;
+        let got = retrying(|| {
+            if left > 0 {
+                left -= 1;
+                Err(io::Error::from(io::ErrorKind::PermissionDenied))
+            } else {
+                Ok(7)
+            }
+        });
+        assert_eq!(got.unwrap(), 7);
+    }
+
+    #[test]
+    fn other_errors_are_not_retried() {
+        let mut calls = 0;
+        let got: io::Result<()> = retrying(|| {
+            calls += 1;
+            Err(io::Error::from(io::ErrorKind::NotFound))
+        });
+        assert_eq!(got.unwrap_err().kind(), io::ErrorKind::NotFound);
+        assert_eq!(calls, 1);
+    }
+
     fn temp_paths() -> (tempfile::TempDir, AppPaths) {
         let dir = tempfile::tempdir().unwrap();
         let paths = AppPaths::new(dir.path().join("home"));
