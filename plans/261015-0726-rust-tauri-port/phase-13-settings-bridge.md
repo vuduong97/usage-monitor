@@ -1,7 +1,7 @@
 ---
 phase: 13
 title: "Settings bridge + UI shim"
-status: in-progress
+status: completed
 priority: P1
 effort: "3d"
 dependencies: [1, 2]

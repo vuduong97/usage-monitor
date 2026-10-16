@@ -88,9 +88,9 @@ Wave C (tuần tự):              14 e2e-parity-migration → 15 release-cutove
 | 9 | completed | Merge `eac5172` |
 | 10 | completed | Merge + hardening (staged file check); reviewer PASS; Rust→Rust update/rollback và mac swap.sh phải test thật ở 14 |
 | 11 | completed | Merge + review fixes (sign chỉ chạy trên tag rust-v*); iscc/notarize/minisign chưa kiểm trên runner thật; owner phải tạo environment `release`, secrets, vars MINISIGN_PUBKEY + EXPECTED_TEAM_ID, commit Cargo.lock |
-| 12 | merged, golden-thật/GUI pending | Đã merge; bước B'' (test ignore, checklist GUI: tray ≤1 s, 50 chu kỳ settings, single-instance, mac popover) chưa chạy |
-| 13 | merged, golden-thật/GUI pending | Đã merge (+ tích hợp dialog plugin `557c8b0`); runtime test deny popover cần feature tauri `test` (CR) |
-| 14 | pending | Chờ 10, 11 merge + lần chạy GUI đầu tiên có sự đồng ý của owner (hoặc VM) |
+| 12 | completed (GUI → 14) | B'' xong: 113 test app, 0 ignore; sửa lỗi `EngineHandle::stop()`; checklist GUI (tray ≤1 s, Thoát, 50 chu kỳ settings, single-instance, mac popover) chuyển sang 14 |
+| 13 | completed (GUI → 14) | Đã merge + test ignore đã chạy xanh; runtime test deny popover cần feature tauri `test` (CR, chưa làm); đã tích hợp dialog plugin `557c8b0` |
+| 14 | pending (sẵn sàng) | Mọi phase phụ thuộc đã merge; cần lần chạy GUI đầu tiên có sự đồng ý của owner (hoặc VM) |
 | 15 | pending | Chờ 14 |
 
 Tồn đọng: `main` đỏ `check_public` do `Clawd Print & Paper.html` (701 KB) — chờ owner quyết; `MINISIGN_PUBKEY` còn placeholder; cần môi trường GitHub `release`.
