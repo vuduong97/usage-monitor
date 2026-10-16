@@ -55,3 +55,48 @@ async fn set_clock_by_hand_reconnects_and_tells_the_tray() {
     let not_text = set_clock_on(&rig.bridge, &[json!(5)]).await.unwrap();
     assert_eq!(not_text["code"], "bad");
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_typed_address_goes_to_the_tray_and_is_used() {
+    let mut rig = Build::new().base("", "").build();
+    let typed = FakeClock::start(new_heap(), None);
+    let host = typed.host();
+    let r = set_clock_on(&rig.bridge, &[json!(format!("  {host} "))])
+        .await
+        .unwrap();
+    assert_eq!(r["ok"], true, "{r}");
+    assert_eq!(rig.told(), vec![ShellCmd::SetClock { host: host.clone() }]);
+    assert_eq!(rig.bridge.address().0, format!("http://{host}"));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn choosing_a_wizard_clock_tells_the_engine() {
+    // test_settings_api.py:303 (`..._tells_the_tray`): the pick travels as ShellCmd::UseClock.
+    use clawd_contracts::{ClockSource, ClockTarget};
+    let mut rig = Build::new().base("", "").build();
+    let clock = FakeClock::start(new_heap(), None);
+    let found = ClockTarget {
+        host: "127.0.0.1".into(),
+        port: clock.port(),
+        name: "clawd-ab12".into(),
+        version: "1.4".into(),
+        source: ClockSource::Mdns,
+    };
+    rig.bridge
+        .data()
+        .mdns_seen
+        .insert("clawd-ab12".into(), found.clone());
+    let answer = clawd_app::commands::setup::use_clock(&rig.bridge, &[json!("clawd-ab12")])
+        .await
+        .unwrap();
+    assert_eq!(answer["current"]["answers"], true);
+    assert_eq!(
+        rig.told(),
+        vec![ShellCmd::UseClock {
+            name: "clawd-ab12".into(),
+            host: "127.0.0.1".into(),
+            port: found.port,
+            version: "1.4".into(),
+        }]
+    );
+}
