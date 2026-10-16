@@ -246,8 +246,8 @@ mod tests {
         let (reader, _clock) = reader(&paths, 1000.0);
         std::fs::write(paths.pause_file(), r#"{"until": 1301, "reason": "x"}"#).expect("write");
         assert_eq!(reader.reason(), None);
-        std::fs::write(paths.pause_file(), r#"{"until": 1300, "reason": "y"}"#).expect("write");
-        assert_eq!(reader.reason().as_deref(), Some("y"));
+        std::fs::write(paths.pause_file(), r#"{"until": 1300, "reason": "yy"}"#).expect("write");
+        assert_eq!(reader.reason().as_deref(), Some("yy")); // different size: new stamp
     }
 
     #[test]
