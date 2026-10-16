@@ -1,7 +1,7 @@
 ---
 phase: 10
 title: "App self-update + minisign"
-status: in-review
+status: completed
 priority: P1
 effort: "2d"
 dependencies: [2]

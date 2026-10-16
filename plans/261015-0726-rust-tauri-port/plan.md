@@ -86,8 +86,8 @@ Wave C (tuần tự):              14 e2e-parity-migration → 15 release-cutove
 | 7 | completed | Merge `8812c53` |
 | 8 | completed | Merge + review fixes (mdns stop, timeout per-op, sleep inject) |
 | 9 | completed | Merge `eac5172` |
-| 10 | in-review | Cài đặt xong, gate xanh (62 test); reviewer bảo mật đang chạy, chưa merge |
-| 11 | in-review | Cài đặt xong; chưa chạy được trên runner thật (iscc, notarize, minisign chưa kiểm); reviewer đang chạy |
+| 10 | completed | Merge + hardening (staged file check); reviewer PASS; Rust→Rust update/rollback và mac swap.sh phải test thật ở 14 |
+| 11 | completed | Merge + review fixes (sign chỉ chạy trên tag rust-v*); iscc/notarize/minisign chưa kiểm trên runner thật; owner phải tạo environment `release`, secrets, vars MINISIGN_PUBKEY + EXPECTED_TEAM_ID, commit Cargo.lock |
 | 12 | merged, golden-thật/GUI pending | Đã merge; bước B'' (test ignore, checklist GUI: tray ≤1 s, 50 chu kỳ settings, single-instance, mac popover) chưa chạy |
 | 13 | merged, golden-thật/GUI pending | Đã merge (+ tích hợp dialog plugin `557c8b0`); runtime test deny popover cần feature tauri `test` (CR) |
 | 14 | pending | Chờ 10, 11 merge + lần chạy GUI đầu tiên có sự đồng ý của owner (hoặc VM) |
