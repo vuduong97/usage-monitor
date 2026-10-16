@@ -172,7 +172,9 @@ pub struct FakeRunner {
 }
 
 impl FakeRunner {
-    pub fn new(handler: impl Fn(&str, &[&str]) -> io::Result<CommandOutput> + Send + Sync + 'static) -> Arc<Self> {
+    pub fn new(
+        handler: impl Fn(&str, &[&str]) -> io::Result<CommandOutput> + Send + Sync + 'static,
+    ) -> Arc<Self> {
         Arc::new(Self {
             handler: Box::new(handler),
             calls: Mutex::new(Vec::new()),

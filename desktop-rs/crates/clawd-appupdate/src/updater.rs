@@ -346,7 +346,11 @@ impl Updater {
     // ---- what the page and the tray read ---------------------------------------
     /// `Updater._can()`: `can_apply` plus, on macOS, "the running app has a Team ID".
     fn can(&self) -> (bool, String) {
-        let (ok, why) = can_apply(self.packaged, Some(&self.system), self.executable.as_deref());
+        let (ok, why) = can_apply(
+            self.packaged,
+            Some(&self.system),
+            self.executable.as_deref(),
+        );
         if ok && self.system == "mac" {
             let cached = self.team.lock().expect("team lock").clone();
             let team = match cached {
@@ -485,7 +489,9 @@ impl Updater {
                 disk_sha
             }
             None => {
-                log(&format!("{version}: staged files carry no valid signature, dropped"));
+                log(&format!(
+                    "{version}: staged files carry no valid signature, dropped"
+                ));
                 if !self.held_elsewhere() {
                     self.clean();
                 }

@@ -26,7 +26,8 @@ pub const SIGNATURE_MISSING: &str =
 /// Both the plain (`Ed`) and the pre-hashed (`ED`) minisign signature forms are accepted:
 /// `SHA256SUMS` is a few hundred bytes, so the legacy form is just as strong.
 pub fn verify_sums(sums: &[u8], sig: &str, public_key: &str) -> Result<(), UpdateError> {
-    let key = PublicKey::from_base64(public_key.trim()).map_err(|_| UpdateError(BAD_KEY.to_owned()))?;
+    let key =
+        PublicKey::from_base64(public_key.trim()).map_err(|_| UpdateError(BAD_KEY.to_owned()))?;
     let signature =
         Signature::decode(sig).map_err(|_| UpdateError(BAD_SIGNATURE_FILE.to_owned()))?;
     key.verify(sums, &signature, true)

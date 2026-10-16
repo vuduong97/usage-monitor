@@ -110,8 +110,10 @@ pub fn parse_sums(text: &str) -> HashMap<String, String> {
             continue;
         };
         let digest = digest.to_lowercase();
-        let is_hex64 =
-            digest.len() == 64 && digest.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'));
+        let is_hex64 = digest.len() == 64
+            && digest
+                .bytes()
+                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'));
         if is_hex64 {
             let name = rest.trim_start().trim_start_matches('*').trim();
             out.insert(name.to_owned(), digest);
@@ -158,7 +160,15 @@ mod tests {
     fn test_versions() {
         assert_eq!(parse_version("v1.2.3"), Some((1, 2, 3)));
         assert_eq!(parse_version("0.10.0"), Some((0, 10, 0)));
-        for bad in ["1.2", "v1.2.3-rc1", "1.2.3.4", "latest", "", "12345.1.1", "V1.2.3"] {
+        for bad in [
+            "1.2",
+            "v1.2.3-rc1",
+            "1.2.3.4",
+            "latest",
+            "",
+            "12345.1.1",
+            "V1.2.3",
+        ] {
             assert_eq!(parse_version(bad), None, "{bad:?}");
         }
         assert!(is_newer("v0.10.0", "0.9.9"));

@@ -8,8 +8,8 @@ use std::time::Duration;
 
 use clawd_config::read_config_value;
 use clawd_contracts::{
-    AppPaths, AppRelease, Env, UpdateError, APP_VERSION, MINISIGN_PUBKEY, SUMS_NAME,
-    SUMS_SIG_NAME, UPDATE_REPO,
+    AppPaths, AppRelease, Env, UpdateError, APP_VERSION, MINISIGN_PUBKEY, SUMS_NAME, SUMS_SIG_NAME,
+    UPDATE_REPO,
 };
 use serde_json::Value;
 use tokio::io::AsyncWriteExt;
@@ -143,7 +143,10 @@ impl Source {
         transport: Arc<dyn Transport>,
     ) -> Result<Self, UpdateError> {
         if !repo_name_ok(repo) {
-            return Err(UpdateError(format!("bad repository name: {}", py_repr(repo))));
+            return Err(UpdateError(format!(
+                "bad repository name: {}",
+                py_repr(repo)
+            )));
         }
         let api = api.trim_end_matches('/').to_owned();
         let loopback = is_loopback_host(&api);
@@ -225,12 +228,8 @@ impl Source {
                     continue;
                 }
             }
-            let unreadable = || {
-                UpdateError(format!(
-                    "không đọc được {name} (HTTP {})",
-                    reply.status
-                ))
-            };
+            let unreadable =
+                || UpdateError(format!("không đọc được {name} (HTTP {})", reply.status));
             if reply.status >= 400 {
                 return Err(unreadable());
             }
@@ -314,7 +313,10 @@ impl Source {
             .get_small(&text_of(sums.get("browser_download_url")), SUMS_NAME)
             .await?;
         let sig_bytes = self
-            .get_small(&text_of(sig_asset.get("browser_download_url")), SUMS_SIG_NAME)
+            .get_small(
+                &text_of(sig_asset.get("browser_download_url")),
+                SUMS_SIG_NAME,
+            )
             .await?;
         let signature = String::from_utf8(sig_bytes)
             .map_err(|_| UpdateError(crate::minisig::BAD_SIGNATURE_FILE.to_owned()))?;
@@ -324,7 +326,11 @@ impl Source {
         let Some(digest) = table.get(&name).filter(|d| !d.is_empty()) else {
             return Err(UpdateError(format!("{SUMS_NAME} không có {name}")));
         };
-        let notes: String = text_of(data.get("body")).trim().chars().take(2000).collect();
+        let notes: String = text_of(data.get("body"))
+            .trim()
+            .chars()
+            .take(2000)
+            .collect();
         let release = AppRelease {
             version: version.clone(),
             tag,
@@ -478,7 +484,16 @@ mod tests {
         for ok in ["o/r", "vuduong97/usage-monitor", "a.b_c-d/e"] {
             assert!(repo_name_ok(ok), "{ok}");
         }
-        for bad in ["not a repo", "", "x", "a/b/c", "/b", "a/", "a b/c", &"a".repeat(101)] {
+        for bad in [
+            "not a repo",
+            "",
+            "x",
+            "a/b/c",
+            "/b",
+            "a/",
+            "a b/c",
+            &"a".repeat(101),
+        ] {
             assert!(!repo_name_ok(bad), "{bad}");
         }
     }

@@ -70,10 +70,8 @@ impl GitHub {
 
     pub fn with_version(files: Vec<(&str, Vec<u8>)>, version: &str) -> Self {
         let base = format!("https://github.com/o/r/releases/download/v{version}/");
-        let files: Vec<(String, Vec<u8>)> = files
-            .into_iter()
-            .map(|(n, d)| (n.to_owned(), d))
-            .collect();
+        let files: Vec<(String, Vec<u8>)> =
+            files.into_iter().map(|(n, d)| (n.to_owned(), d)).collect();
         let mut assets: Vec<Value> = files
             .iter()
             .map(|(n, d)| json!({"name": n, "size": d.len(), "browser_download_url": format!("{base}{n}")}))
@@ -114,12 +112,24 @@ impl GitHub {
         let g = &self.gh;
         g.route(API_LATEST, FakeReply::json(&self.release));
         let signature = signature.unwrap_or_else(|| self.key.sign(sums.as_bytes()));
-        g.route(&format!("{}{SUMS_NAME}", self.base), FakeReply::redirect(&format!("{CDN}sums")));
+        g.route(
+            &format!("{}{SUMS_NAME}", self.base),
+            FakeReply::redirect(&format!("{CDN}sums")),
+        );
         g.route(&format!("{CDN}sums"), FakeReply::ok(sums.as_bytes()));
-        g.route(&format!("{}{SUMS_SIG_NAME}", self.base), FakeReply::redirect(&format!("{CDN}sums.sig")));
-        g.route(&format!("{CDN}sums.sig"), FakeReply::ok(signature.as_bytes()));
+        g.route(
+            &format!("{}{SUMS_SIG_NAME}", self.base),
+            FakeReply::redirect(&format!("{CDN}sums.sig")),
+        );
+        g.route(
+            &format!("{CDN}sums.sig"),
+            FakeReply::ok(signature.as_bytes()),
+        );
         for (name, data) in &self.files {
-            g.route(&format!("{}{name}", self.base), FakeReply::redirect(&format!("{CDN}{name}")));
+            g.route(
+                &format!("{}{name}", self.base),
+                FakeReply::redirect(&format!("{CDN}{name}")),
+            );
             g.route(&format!("{CDN}{name}"), FakeReply::ok(data.clone()));
         }
     }
@@ -176,7 +186,13 @@ impl Rig {
         self.paths().app_update_stage_dir()
     }
 
-    pub fn options(&self, current: &str, system: &str, arch: &str, key: &TestKey) -> UpdaterOptions {
+    pub fn options(
+        &self,
+        current: &str,
+        system: &str,
+        arch: &str,
+        key: &TestKey,
+    ) -> UpdaterOptions {
         let mut opts = UpdaterOptions::new(self.paths().clone(), self.runner.clone());
         opts.current = current.to_owned();
         opts.now = self.clock.arc();

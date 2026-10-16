@@ -60,7 +60,8 @@ pub fn trusted(url: &str, loopback_api: bool) -> bool {
     };
     match scheme {
         "https" => {
-            matches!(host, "github.com" | "api.github.com") || host.ends_with(".githubusercontent.com")
+            matches!(host, "github.com" | "api.github.com")
+                || host.ends_with(".githubusercontent.com")
         }
         "http" => loopback_api && matches!(host, "127.0.0.1" | "localhost"),
         _ => false,
@@ -81,10 +82,7 @@ pub fn join_location(url: &str, location: &str) -> Option<String> {
 }
 
 /// Read a whole body, refusing more than `limit` bytes (`None` = over the limit).
-pub async fn read_limited(
-    body: &mut dyn Body,
-    limit: u64,
-) -> Result<Option<Vec<u8>>, UpdateError> {
+pub async fn read_limited(body: &mut dyn Body, limit: u64) -> Result<Option<Vec<u8>>, UpdateError> {
     let mut out = Vec::new();
     while let Some(chunk) = body.chunk().await? {
         if (out.len() + chunk.len()) as u64 > limit {
@@ -224,7 +222,11 @@ mod tests {
             Some("https://github.com/c")
         );
         assert_eq!(
-            join_location("https://github.com/a/b", "https://cdn.githubusercontent.com/x").as_deref(),
+            join_location(
+                "https://github.com/a/b",
+                "https://cdn.githubusercontent.com/x"
+            )
+            .as_deref(),
             Some("https://cdn.githubusercontent.com/x")
         );
         assert_eq!(join_location("not a url", "/x"), None);
