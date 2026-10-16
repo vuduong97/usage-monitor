@@ -11,82 +11,34 @@ verified to exist when this file was generated. Re-run the script after any test
   123 more because of `@pytest.mark.parametrize` (413 functions, 536 cases).
   Both are listed below; the case count is in the `cases` column. The plan's number is correct as a function count,
   but any 'tests ported' claim by cases has to use 536.
-* Rust side: 675 `#[test]`/`#[tokio::test]` functions in the workspace crates + app (plus 26 in
+* Rust side: 722 `#[test]`/`#[tokio::test]` functions in the workspace crates + app (plus 26 in
   `tests-e2e`, phase 14). `packaging-rs/test_check_version.py` (8 Python tests for the Rust packaging) is not in the 413.
 
 | status | functions | cases | meaning |
 |---|---|---|---|
-| ported | 349 | 468 | a Rust test (or golden replay of a fixture recorded from Python) covers it |
+| ported | 388 | 507 | a Rust test (or golden replay of a fixture recorded from Python) covers it |
 | partial | 6 | 6 | the pieces are covered, the integrated behaviour is not |
 | dropped | 9 | 13 | deliberately not ported, reason given |
 | python-only | 9 | 9 | stays a Python test (script, shell, log assertion), reason given |
-| gap | 40 | 40 | **nobody covers it** - needs a test or an owner decision |
+| gap | 1 | 1 | **nobody covers it** - needs a test or an owner decision |
 | **total** | **413** | **536** | every row has a status |
 
 ## Gaps (explicit)
 
-### test_preview: 11 gap(s)
-
-* `test_usage_preview_draws_every_style_with_the_real_usage` - `usage_preview` settings command (app/src/commands/usage.rs) has no behaviour test; renderer level is covered (nearest: `preview_run.rs::draw_returns_the_frame_and_passes_the_payload_on`)
-* `test_usage_preview_without_a_bundle_draws_only_the_classic_screen` - same: command-level glue untested
-* `test_usage_preview_without_motion_draws_still_frames` - same: command-level glue untested
-* `test_usage_preview_reuses_frames_within_the_minute` - same; the frame cache itself is tested (nearest: `preview.rs::frame_cache_keeps_the_latest_few`)
-* `test_usage_preview_ignores_bad_style_lists_and_skips_what_the_renderer_lacks` - same: command-level glue untested
-* `test_usage_preview_without_a_renderer_hands_the_page_the_real_payload` - same: command-level glue untested
-* `test_usage_preview_falls_back_when_the_renderer_fails` - same: command-level glue untested (nearest: `preview_run.rs::the_window_keeps_its_fallback_when_the_renderer_is_missing_or_unusable`)
-* `test_usage_preview_before_any_usage_draws_the_waiting_screen` - same: command-level glue untested (nearest: `preview_run.rs::a_payload_the_clock_would_reject_draws_the_waiting_screen`)
-* `test_clawd_pak_reads_the_clock_once_and_keeps_it` - settings-page `clawd_pak` command untested; the pak cache is (nearest: `preview.rs::pak_cache_roundtrip_is_atomic_and_validated`)
-* `test_clawd_pak_without_one_on_the_clock_says_so_and_does_not_hammer_it` - settings-page `clawd_pak` command untested (nearest: `shell_popover.rs::pak_failure_waits_before_trying_again`)
-* `test_clawd_pak_refuses_a_damaged_pack_and_keeps_the_old_one` - settings-page `clawd_pak` command untested; validation is tested in the cache (nearest: `preview.rs::pak_count_reads_a_pack_and_refuses_anything_else`)
-
-### test_renderer_feed: 2 gap(s)
+### test_renderer_feed: 1 gap(s)
 
 * `test_unpacked_program_is_executable` - only the `chmod 755` code on unix exists; no test on any OS (suite ran on Windows only): verify on macOS
-* `test_usage_preview_draws_with_the_feed_renderer` - `usage_preview` command glue untested (see test_preview usage_preview_*) (nearest: `feed_client.rs::fetch_renderer_downloads_decrypts_and_checks`)
-
-### test_settings_api: 22 gap(s)
-
-* `test_state_and_a_one_post_save` - Bridge::state/save against a ClockApi has no test; schema and diff halves are golden (nearest: `settings_golden.rs::the_save_diff_matches_python`, `settings_golden.rs::clock_view_matches_python`)
-* `test_wifi_change_sends_the_whole_list_and_reboots` - Bridge::save with a Wi-Fi change has no test; the list diff is covered (nearest: `clockapi.rs::diff_sends_a_changed_list_whole_and_nothing_when_equal`)
-* `test_bad_input_is_refused_before_the_clock` - validation is covered, the ordering (nothing reaches the clock) is not (nearest: `schema.rs::clean_drops_unknown_keys_and_checks_values`, `settings_golden.rs::clean_matches_python`)
-* `test_a_style_the_clock_cannot_draw_is_not_sent` - style-selection glue in commands/ untested
-* `test_classic_is_restored_without_a_bundle_or_feed` - style-selection glue in commands/ untested
-* `test_a_style_is_sent_first_then_the_settings` - style-selection glue in commands/ untested (nearest: `clockapi.rs::style_install_signed_once_clear_and_refusals`)
-* `test_a_damaged_bundled_pack_is_never_sent` - style-selection glue in commands/ untested (nearest: `firmware.rs::style_packs_and_states`)
-* `test_login_keeps_the_password_in_the_keychain` - Bridge::login untested; keychain round trip is covered (nearest: `mod.rs::put_get_forget_round_trip_with_user_and_newlines`, `clockapi.rs::digest_login_and_one_signed_upload`)
-* `test_offline_and_noclock` - Bridge::state offline/no-clock branches untested (nearest: `settings_bridge.rs::state_reads_the_clock_and_brings_the_opening_tab_once`)
-* `test_state_names_the_network_in_use_and_none_when_it_cannot` - Bridge::state network name untested
-* `test_factory_reset_needs_the_word` - Bridge::factory_reset guard untested
-* `test_update_job_installs_then_saves_and_shows_the_style` - Bridge update job (OTA from the window) untested; the OTA install itself is (nearest: `ota.rs::install_pauses_uploads_waits_then_saves`)
-* `test_update_job_fails_when_the_new_image_draws_no_styles` - Bridge update job untested; the OTA check itself is (nearest: `ota.rs::install_checks_the_new_image_draws_styles`)
-* `test_retry_asks_only_the_saved_address_then_says_to_type_the_ip` - Bridge::retry untested; the finder's retry rules are (nearest: `discovery.rs::retry_keeps_the_address_and_tries_it_at_once`)
-* `test_retry_connects_when_the_saved_clock_answers` - Bridge::retry untested (nearest: `discovery.rs::retry_keeps_the_address_and_tries_it_at_once`)
-* `test_retry_with_no_address_says_to_type_one` - Bridge::retry untested (nearest: `discovery.rs::retry_with_nothing_saved_only_listens_to_mdns`)
-* `test_main_screen_is_handed_to_the_engine` - settings save -> ShellCmd::Refresh/main-screen hand-off untested (nearest: `shell_lifecycle.rs::the_other_commands_do_their_one_thing`)
-* `test_a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save` - save-time screen migration untested
-* `test_window_asks_the_trays_newer_address_first` - session base-address precedence untested (nearest: `shell_lifecycle.rs::each_opening_gets_a_fresh_session_of_the_remembered_clock`)
-* `test_feed_release_is_offered_installed_with_its_packs_and_style` - Bridge feed/update state untested; the feed client and plan are (nearest: `feed_security.rs::plan_needed_and_offer`)
-* `test_feed_older_than_the_bundle_is_ignored_and_errors_show` - Bridge feed state untested (nearest: `golden_fw.rs::plan_needed_offer_and_pack_state_match_python`)
-* `test_state_does_not_wait_for_a_slow_feed` - Bridge::state non-blocking feed untested
-
-### test_setup_api: 5 gap(s)
-
-* `test_agents_lists_found_and_marks_them_offered` - setup-wizard commands untested (nearest: `golden.rs::registry_matches_python`)
-* `test_set_agent_and_errors_are_shown` - setup-wizard commands untested
-* `test_set_agents_syncs_to_the_ticks` - setup-wizard commands untested
-* `test_usage_sources_and_choice` - setup-wizard commands untested (nearest: `config_file.rs::usage_source_values`)
-* `test_setup_state_and_finish` - setup-wizard commands untested (nearest: `golden_store.rs::firstrun_matches_python`)
 
 ### partial: 6
 
 * `test_agents::test_plugin_agent_leaves_a_foreign_file_and_keeps_a_dev_symlink` - foreign-file half ported; the dev-symlink branch is untested (symlinks need a privilege on Windows, nobody ran it on macOS)
 * `test_renderer_feed::test_window_without_a_worker_that_signs_renderers_still_gets_the_packs` - the feed client half; the settings window glue (packs still installed) is untested
-* `test_settings_api::test_private_state_is_not_exposed_to_the_page` - the clock view drops secrets and only the settings window may call py_api; the full state() shape is untested
-* `test_settings_api::test_window_follows_the_clock_the_tray_found_at_a_new_address` - session start and tab hand-off covered; live follow of a new address is not
-* `test_settings_api::test_window_follows_a_typed_address_and_ignores_the_same_one` - typed address covered; the 'ignores the same one' case is not
-* `test_setup_api::test_clock_step_lists_mdns_clocks_and_picks_one_by_name` - the pick is covered; listing the mDNS clocks in the step is not
+* `test_settings_api::test_private_state_is_not_exposed_to_the_page` - asserts the 32 command names and that state() never holds the password; Python's public-method introspection has no Rust equivalent
+* `test_settings_api::test_feed_release_is_offered_installed_with_its_packs_and_style` - after-heap has pak 0 so the CRC wait is skipped (covered by firmware ota tests)
+* `test_settings_api::test_state_does_not_wait_for_a_slow_feed` - FakeFeed routes are first-match: only /v1/latest is delayed, the release is kept without its packs
+* `test_setup_api::test_agents_lists_found_and_marks_them_offered` - only checks wsl is a boolean: the Rust check reads the machine PATH
 
-Reading the gaps: 39 of 40 are the **settings/setup bridge commands** (`app/src/commands/*`,
+Reading the gaps: 0 of 1 are the **settings/setup bridge commands** (`app/src/commands/*`,
 phase 13); the rest is `test_unpacked_program_is_executable` (unix `chmod`, no test on any OS).
 The 32 commands exist and their pure parts (schema `clean`, clock view, diff, scan, session,
 capabilities) are tested, but the command-level behaviour tests of `test_settings_api.py`,
@@ -382,20 +334,20 @@ phase 13 report ('needs a real ClockApi', B'') and never written. They need a fa
 | test_preview | `test_a_broken_clip_raises` | 2 | ported | `preview_run.rs::a_broken_clip_or_frame_raises` |
 | test_preview | `test_a_payload_the_clock_would_reject_draws_the_waiting_screen` | 1 | ported | `preview_run.rs::a_payload_the_clock_would_reject_draws_the_waiting_screen`<br>_same name_ |
 | test_preview | `test_a_broken_renderer_raises` | 3 | ported | `preview_run.rs::a_missing_program_is_an_io_error`<br>`preview_run.rs::a_renderer_that_hangs_is_killed_at_the_timeout` |
-| test_preview | `test_usage_preview_draws_every_style_with_the_real_usage` | 1 | gap | `preview_run.rs::draw_returns_the_frame_and_passes_the_payload_on`<br>_`usage_preview` settings command (app/src/commands/usage.rs) has no behaviour test; renderer level is covered_ |
-| test_preview | `test_usage_preview_without_a_bundle_draws_only_the_classic_screen` | 1 | gap | <br>_same: command-level glue untested_ |
-| test_preview | `test_usage_preview_without_motion_draws_still_frames` | 1 | gap | <br>_same: command-level glue untested_ |
-| test_preview | `test_usage_preview_reuses_frames_within_the_minute` | 1 | gap | `preview.rs::frame_cache_keeps_the_latest_few`<br>_same; the frame cache itself is tested_ |
-| test_preview | `test_usage_preview_ignores_bad_style_lists_and_skips_what_the_renderer_lacks` | 1 | gap | <br>_same: command-level glue untested_ |
-| test_preview | `test_usage_preview_without_a_renderer_hands_the_page_the_real_payload` | 1 | gap | <br>_same: command-level glue untested_ |
-| test_preview | `test_usage_preview_falls_back_when_the_renderer_fails` | 1 | gap | `preview_run.rs::the_window_keeps_its_fallback_when_the_renderer_is_missing_or_unusable`<br>_same: command-level glue untested_ |
-| test_preview | `test_usage_preview_before_any_usage_draws_the_waiting_screen` | 1 | gap | `preview_run.rs::a_payload_the_clock_would_reject_draws_the_waiting_screen`<br>_same: command-level glue untested_ |
+| test_preview | `test_usage_preview_draws_every_style_with_the_real_usage` | 1 | ported | `settings_preview.rs::usage_preview_draws_every_style_with_the_real_usage`<br>_same name_ |
+| test_preview | `test_usage_preview_without_a_bundle_draws_only_the_classic_screen` | 1 | ported | `settings_preview.rs::usage_preview_without_a_bundle_draws_only_the_classic_screen`<br>_same name_ |
+| test_preview | `test_usage_preview_without_motion_draws_still_frames` | 1 | ported | `settings_preview.rs::usage_preview_without_motion_draws_still_frames`<br>_same name_ |
+| test_preview | `test_usage_preview_reuses_frames_within_the_minute` | 1 | ported | `settings_preview.rs::usage_preview_reuses_frames_within_the_minute`<br>_same name_ |
+| test_preview | `test_usage_preview_ignores_bad_style_lists_and_skips_what_the_renderer_lacks` | 1 | ported | `settings_preview.rs::usage_preview_ignores_bad_style_lists_and_skips_what_the_renderer_lacks`<br>_same name_ |
+| test_preview | `test_usage_preview_without_a_renderer_hands_the_page_the_real_payload` | 1 | ported | `settings_preview.rs::usage_preview_without_a_renderer_hands_the_page_the_real_payload`<br>_same name_ |
+| test_preview | `test_usage_preview_falls_back_when_the_renderer_fails` | 1 | ported | `settings_preview.rs::usage_preview_falls_back_when_the_renderer_fails`<br>_same name_ |
+| test_preview | `test_usage_preview_before_any_usage_draws_the_waiting_screen` | 1 | ported | `settings_preview.rs::usage_preview_before_any_usage_draws_the_waiting_screen`<br>_same name_ |
 | test_preview | `test_real_renderer_is_deterministic_and_draws_each_style` | 1 | dropped | <br>_skipped in Python too unless CLAWD_GOLDEN is set and a built C++ renderer exists (never in the repo)_ |
 | test_preview | `test_real_clips_loop_each_style` | 1 | dropped | <br>_skipped in Python too unless CLAWD_GOLDEN is set and a built C++ renderer exists (never in the repo)_ |
 | test_preview | `test_pak_count_reads_a_pack_and_refuses_anything_else` | 1 | ported | `preview.rs::pak_count_reads_a_pack_and_refuses_anything_else`<br>_same name_ |
-| test_preview | `test_clawd_pak_reads_the_clock_once_and_keeps_it` | 1 | gap | `preview.rs::pak_cache_roundtrip_is_atomic_and_validated`<br>_settings-page `clawd_pak` command untested; the pak cache is_ |
-| test_preview | `test_clawd_pak_without_one_on_the_clock_says_so_and_does_not_hammer_it` | 1 | gap | `shell_popover.rs::pak_failure_waits_before_trying_again`<br>_settings-page `clawd_pak` command untested_ |
-| test_preview | `test_clawd_pak_refuses_a_damaged_pack_and_keeps_the_old_one` | 1 | gap | `preview.rs::pak_count_reads_a_pack_and_refuses_anything_else`<br>_settings-page `clawd_pak` command untested; validation is tested in the cache_ |
+| test_preview | `test_clawd_pak_reads_the_clock_once_and_keeps_it` | 1 | ported | `settings_preview.rs::clawd_pak_reads_the_clock_once_and_keeps_it`<br>_same name_ |
+| test_preview | `test_clawd_pak_without_one_on_the_clock_says_so_and_does_not_hammer_it` | 1 | ported | `settings_preview.rs::clawd_pak_without_one_on_the_clock_says_so_and_does_not_hammer_it`<br>_same name_ |
+| test_preview | `test_clawd_pak_refuses_a_damaged_pack_and_keeps_the_old_one` | 1 | ported | `settings_preview.rs::clawd_pak_refuses_a_damaged_pack_and_keeps_the_old_one`<br>_same name_ |
 | test_renderer_feed | `test_manifest_lists_renderers_per_platform` | 1 | ported | `manifest.rs::renderers_are_kept_apart_and_validated_apart`<br>`golden_fw.rs::manifest_matches_python` |
 | test_renderer_feed | `test_a_release_without_renderers_parses_as_before` | 1 | ported | `manifest.rs::renderers_are_kept_apart_and_validated_apart`<br>`golden_fw.rs::manifest_matches_python` |
 | test_renderer_feed | `test_a_bad_renderer_row_drops_the_renderers_never_the_release` | 7 | ported | `manifest.rs::renderers_are_kept_apart_and_validated_apart`<br>`golden_fw.rs::manifest_matches_python` |
@@ -411,7 +363,7 @@ phase 13 report ('needs a real ClockApi', B'') and never written. They need a fa
 | test_renderer_feed | `test_window_previews_with_the_releases_renderer_and_reuses_it` | 1 | ported | `preview_run.rs::the_window_previews_with_the_releases_renderer_and_reuses_it` |
 | test_renderer_feed | `test_window_keeps_its_fallback_when_the_renderer_is_missing_or_unusable` | 1 | ported | `preview_run.rs::the_window_keeps_its_fallback_when_the_renderer_is_missing_or_unusable` |
 | test_renderer_feed | `test_window_without_a_worker_that_signs_renderers_still_gets_the_packs` | 1 | partial | `feed_client.rs::a_worker_that_does_not_sign_renderers_is_a_feed_error`<br>_the feed client half; the settings window glue (packs still installed) is untested_ |
-| test_renderer_feed | `test_usage_preview_draws_with_the_feed_renderer` | 1 | gap | `feed_client.rs::fetch_renderer_downloads_decrypts_and_checks`<br>_`usage_preview` command glue untested (see test_preview usage_preview_*)_ |
+| test_renderer_feed | `test_usage_preview_draws_with_the_feed_renderer` | 1 | ported | `settings_preview.rs::usage_preview_draws_with_the_feed_renderer`<br>_same name_ |
 | test_renderer_feed | `test_same_commit` | 6 | ported | `preview.rs::same_commit_cases` |
 | test_renderer_feed | `test_a_renderer_row_with_an_unhashable_kind_drops_only_the_renderers` | 1 | ported | `manifest.rs::renderers_are_kept_apart_and_validated_apart`<br>`golden_fw.rs::manifest_matches_python` |
 | test_renderer_feed | `test_a_renderer_for_another_render_api_is_not_run` | 1 | ported | `preview.rs::a_renderer_for_another_render_api_is_not_run`<br>_same name_ |
@@ -419,39 +371,39 @@ phase 13 report ('needs a real ClockApi', B'') and never written. They need a fa
 | test_renderer_feed | `test_size_and_count_limits` | 1 | ported | `preview.rs::a_zip_over_its_limits_is_refused` |
 | test_renderer_feed | `test_a_marker_naming_a_file_outside_the_folder_is_not_trusted` | 1 | ported | `preview.rs::a_marker_naming_a_file_outside_the_folder_is_not_trusted`<br>_same name_ |
 | test_settings_api | `test_clean_drops_unknown_keys_and_checks_values` | 1 | ported | `schema.rs::clean_drops_unknown_keys_and_checks_values`<br>_same name_ |
-| test_settings_api | `test_state_and_a_one_post_save` | 1 | gap | `settings_golden.rs::the_save_diff_matches_python`<br>`settings_golden.rs::clock_view_matches_python`<br>_Bridge::state/save against a ClockApi has no test; schema and diff halves are golden_ |
-| test_settings_api | `test_wifi_change_sends_the_whole_list_and_reboots` | 1 | gap | `clockapi.rs::diff_sends_a_changed_list_whole_and_nothing_when_equal`<br>_Bridge::save with a Wi-Fi change has no test; the list diff is covered_ |
-| test_settings_api | `test_bad_input_is_refused_before_the_clock` | 1 | gap | `schema.rs::clean_drops_unknown_keys_and_checks_values`<br>`settings_golden.rs::clean_matches_python`<br>_validation is covered, the ordering (nothing reaches the clock) is not_ |
-| test_settings_api | `test_a_style_the_clock_cannot_draw_is_not_sent` | 1 | gap | <br>_style-selection glue in commands/ untested_ |
-| test_settings_api | `test_classic_is_restored_without_a_bundle_or_feed` | 1 | gap | <br>_style-selection glue in commands/ untested_ |
-| test_settings_api | `test_a_style_is_sent_first_then_the_settings` | 1 | gap | `clockapi.rs::style_install_signed_once_clear_and_refusals`<br>_style-selection glue in commands/ untested_ |
-| test_settings_api | `test_a_damaged_bundled_pack_is_never_sent` | 1 | gap | `firmware.rs::style_packs_and_states`<br>_style-selection glue in commands/ untested_ |
-| test_settings_api | `test_login_keeps_the_password_in_the_keychain` | 1 | gap | `mod.rs::put_get_forget_round_trip_with_user_and_newlines`<br>`clockapi.rs::digest_login_and_one_signed_upload`<br>_Bridge::login untested; keychain round trip is covered_ |
-| test_settings_api | `test_offline_and_noclock` | 1 | gap | `settings_bridge.rs::state_reads_the_clock_and_brings_the_opening_tab_once`<br>_Bridge::state offline/no-clock branches untested_ |
-| test_settings_api | `test_state_names_the_network_in_use_and_none_when_it_cannot` | 1 | gap | <br>_Bridge::state network name untested_ |
+| test_settings_api | `test_state_and_a_one_post_save` | 1 | ported | `settings_api.rs::state_and_a_one_post_save`<br>_same name_ |
+| test_settings_api | `test_wifi_change_sends_the_whole_list_and_reboots` | 1 | ported | `settings_api.rs::wifi_change_sends_the_whole_list_and_reboots`<br>_same name_ |
+| test_settings_api | `test_bad_input_is_refused_before_the_clock` | 1 | ported | `settings_api.rs::bad_input_is_refused_before_the_clock`<br>_same name_ |
+| test_settings_api | `test_a_style_the_clock_cannot_draw_is_not_sent` | 1 | ported | `settings_api.rs::a_style_the_clock_cannot_draw_is_not_sent`<br>_same name_ |
+| test_settings_api | `test_classic_is_restored_without_a_bundle_or_feed` | 1 | ported | `settings_api.rs::classic_is_restored_without_a_bundle_or_feed`<br>_same name_ |
+| test_settings_api | `test_a_style_is_sent_first_then_the_settings` | 1 | ported | `settings_api.rs::a_style_is_sent_first_then_the_settings`<br>_same name_ |
+| test_settings_api | `test_a_damaged_bundled_pack_is_never_sent` | 1 | ported | `settings_api.rs::a_damaged_bundled_pack_is_never_sent`<br>_same name_ |
+| test_settings_api | `test_login_keeps_the_password_in_the_keychain` | 1 | ported | `settings_api.rs::login_keeps_the_password_in_the_keychain`<br>_same name_ |
+| test_settings_api | `test_offline_and_noclock` | 1 | ported | `settings_api.rs::offline_and_noclock`<br>_same name_ |
+| test_settings_api | `test_state_names_the_network_in_use_and_none_when_it_cannot` | 1 | ported | `settings_api.rs::state_names_the_network_in_use_and_none_when_it_cannot`<br>_same name_ |
 | test_settings_api | `test_scan_keeps_the_strongest_of_each_name` | 1 | ported | `clock.rs::a_scan_keeps_the_strongest_row_per_ssid_sorted_by_signal`<br>`settings_golden.rs::a_scan_matches_python` |
-| test_settings_api | `test_factory_reset_needs_the_word` | 1 | gap | <br>_Bridge::factory_reset guard untested_ |
-| test_settings_api | `test_update_job_installs_then_saves_and_shows_the_style` | 1 | gap | `ota.rs::install_pauses_uploads_waits_then_saves`<br>_Bridge update job (OTA from the window) untested; the OTA install itself is_ |
-| test_settings_api | `test_update_job_fails_when_the_new_image_draws_no_styles` | 1 | gap | `ota.rs::install_checks_the_new_image_draws_styles`<br>_Bridge update job untested; the OTA check itself is_ |
+| test_settings_api | `test_factory_reset_needs_the_word` | 1 | ported | `settings_api.rs::factory_reset_needs_the_word`<br>_same name_ |
+| test_settings_api | `test_update_job_installs_then_saves_and_shows_the_style` | 1 | ported | `settings_api.rs::update_job_installs_then_saves_and_shows_the_style`<br>_same name_ |
+| test_settings_api | `test_update_job_fails_when_the_new_image_draws_no_styles` | 1 | ported | `settings_api.rs::update_job_fails_when_the_new_image_draws_no_styles`<br>_same name_ |
 | test_settings_api | `test_set_clock_by_hand_reconnects_and_tells_the_tray` | 1 | ported | `settings_bridge.rs::a_typed_address_goes_to_the_tray_and_is_used` |
-| test_settings_api | `test_retry_asks_only_the_saved_address_then_says_to_type_the_ip` | 1 | gap | `discovery.rs::retry_keeps_the_address_and_tries_it_at_once`<br>_Bridge::retry untested; the finder's retry rules are_ |
-| test_settings_api | `test_retry_connects_when_the_saved_clock_answers` | 1 | gap | `discovery.rs::retry_keeps_the_address_and_tries_it_at_once`<br>_Bridge::retry untested_ |
-| test_settings_api | `test_retry_with_no_address_says_to_type_one` | 1 | gap | `discovery.rs::retry_with_nothing_saved_only_listens_to_mdns`<br>_Bridge::retry untested_ |
-| test_settings_api | `test_private_state_is_not_exposed_to_the_page` | 1 | partial | `settings_golden.rs::clock_view_matches_python`<br>`schema.rs::the_clock_view_loses_pass_set_and_skips_bad_values`<br>`settings_capabilities.rs::only_the_settings_window_may_call_py_api`<br>_the clock view drops secrets and only the settings window may call py_api; the full state() shape is untested_ |
-| test_settings_api | `test_main_screen_is_handed_to_the_engine` | 1 | gap | `shell_lifecycle.rs::the_other_commands_do_their_one_thing`<br>_settings save -> ShellCmd::Refresh/main-screen hand-off untested_ |
-| test_settings_api | `test_a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save` | 1 | gap | <br>_save-time screen migration untested_ |
-| test_settings_api | `test_window_follows_the_clock_the_tray_found_at_a_new_address` | 1 | partial | `shell_lifecycle.rs::each_opening_gets_a_fresh_session_of_the_remembered_clock`<br>`settings_bridge.rs::state_reads_the_clock_and_brings_the_opening_tab_once`<br>_session start and tab hand-off covered; live follow of a new address is not_ |
-| test_settings_api | `test_window_follows_a_typed_address_and_ignores_the_same_one` | 1 | partial | `settings_bridge.rs::a_typed_address_goes_to_the_tray_and_is_used`<br>_typed address covered; the 'ignores the same one' case is not_ |
-| test_settings_api | `test_window_asks_the_trays_newer_address_first` | 1 | gap | `shell_lifecycle.rs::each_opening_gets_a_fresh_session_of_the_remembered_clock`<br>_session base-address precedence untested_ |
-| test_settings_api | `test_feed_release_is_offered_installed_with_its_packs_and_style` | 1 | gap | `feed_security.rs::plan_needed_and_offer`<br>_Bridge feed/update state untested; the feed client and plan are_ |
-| test_settings_api | `test_feed_older_than_the_bundle_is_ignored_and_errors_show` | 1 | gap | `golden_fw.rs::plan_needed_offer_and_pack_state_match_python`<br>_Bridge feed state untested_ |
-| test_settings_api | `test_state_does_not_wait_for_a_slow_feed` | 1 | gap | <br>_Bridge::state non-blocking feed untested_ |
-| test_setup_api | `test_agents_lists_found_and_marks_them_offered` | 1 | gap | `golden.rs::registry_matches_python`<br>_setup-wizard commands untested_ |
-| test_setup_api | `test_set_agent_and_errors_are_shown` | 1 | gap | <br>_setup-wizard commands untested_ |
-| test_setup_api | `test_set_agents_syncs_to_the_ticks` | 1 | gap | <br>_setup-wizard commands untested_ |
-| test_setup_api | `test_usage_sources_and_choice` | 1 | gap | `config_file.rs::usage_source_values`<br>_setup-wizard commands untested_ |
-| test_setup_api | `test_setup_state_and_finish` | 1 | gap | `golden_store.rs::firstrun_matches_python`<br>_setup-wizard commands untested_ |
-| test_setup_api | `test_clock_step_lists_mdns_clocks_and_picks_one_by_name` | 1 | partial | `settings_bridge.rs::choosing_a_wizard_clock_tells_the_engine`<br>`shell_lifecycle.rs::a_wizard_pick_uses_that_clock_as_found_by_mdns`<br>_the pick is covered; listing the mDNS clocks in the step is not_ |
+| test_settings_api | `test_retry_asks_only_the_saved_address_then_says_to_type_the_ip` | 1 | ported | `settings_api.rs::retry_asks_only_the_saved_address_then_says_to_type_the_ip`<br>_same name_ |
+| test_settings_api | `test_retry_connects_when_the_saved_clock_answers` | 1 | ported | `settings_api.rs::retry_connects_when_the_saved_clock_answers`<br>_same name_ |
+| test_settings_api | `test_retry_with_no_address_says_to_type_one` | 1 | ported | `settings_api.rs::retry_with_no_address_says_to_type_one`<br>_same name_ |
+| test_settings_api | `test_private_state_is_not_exposed_to_the_page` | 1 | partial | `settings_api.rs::private_state_is_not_exposed_to_the_page`<br>_asserts the 32 command names and that state() never holds the password; Python's public-method introspection has no Rust equivalent_ |
+| test_settings_api | `test_main_screen_is_handed_to_the_engine` | 1 | ported | `settings_api.rs::main_screen_is_handed_to_the_engine`<br>_same name_ |
+| test_settings_api | `test_a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save` | 1 | ported | `settings_api.rs::a_clock_on_the_removed_clawd_screen_is_moved_to_auto_on_save`<br>_same name_ |
+| test_settings_api | `test_window_follows_the_clock_the_tray_found_at_a_new_address` | 1 | ported | `settings_api.rs::window_follows_the_clock_the_tray_found_at_a_new_address`<br>_same name_ |
+| test_settings_api | `test_window_follows_a_typed_address_and_ignores_the_same_one` | 1 | ported | `settings_api.rs::window_follows_a_typed_address_and_ignores_the_same_one`<br>_same name_ |
+| test_settings_api | `test_window_asks_the_trays_newer_address_first` | 1 | ported | `settings_api.rs::window_asks_the_trays_newer_address_first`<br>_same name_ |
+| test_settings_api | `test_feed_release_is_offered_installed_with_its_packs_and_style` | 1 | partial | `settings_api.rs::feed_release_is_offered_installed_with_its_packs_and_style`<br>_after-heap has pak 0 so the CRC wait is skipped (covered by firmware ota tests)_ |
+| test_settings_api | `test_feed_older_than_the_bundle_is_ignored_and_errors_show` | 1 | ported | `settings_api.rs::feed_older_than_the_bundle_is_ignored_and_errors_show`<br>_same name_ |
+| test_settings_api | `test_state_does_not_wait_for_a_slow_feed` | 1 | partial | `settings_api.rs::state_does_not_wait_for_a_slow_feed`<br>_FakeFeed routes are first-match: only /v1/latest is delayed, the release is kept without its packs_ |
+| test_setup_api | `test_agents_lists_found_and_marks_them_offered` | 1 | partial | `settings_setup.rs::agents_lists_found_and_marks_them_offered`<br>_only checks wsl is a boolean: the Rust check reads the machine PATH_ |
+| test_setup_api | `test_set_agent_and_errors_are_shown` | 1 | ported | `settings_setup.rs::set_agent_and_errors_are_shown`<br>_same name_ |
+| test_setup_api | `test_set_agents_syncs_to_the_ticks` | 1 | ported | `settings_setup.rs::set_agents_syncs_to_the_ticks`<br>_same name_ |
+| test_setup_api | `test_usage_sources_and_choice` | 1 | ported | `settings_setup.rs::usage_sources_and_choice`<br>_same name_ |
+| test_setup_api | `test_setup_state_and_finish` | 1 | ported | `settings_setup.rs::setup_state_and_finish`<br>_same name_ |
+| test_setup_api | `test_clock_step_lists_mdns_clocks_and_picks_one_by_name` | 1 | ported | `settings_setup.rs::clock_step_lists_mdns_clocks_and_picks_one_by_name`<br>_same name_ |
 | test_token_store | `test_reads_live_token` | 1 | ported | `tokens.rs::reads_live_token`<br>_same name_ |
 | test_token_store | `test_follows_active_profile` | 1 | ported | `tokens.rs::follows_active_profile`<br>_same name_ |
 | test_token_store | `test_missing_active_config_means_default` | 1 | ported | `tokens.rs::missing_active_config_means_default`<br>_same name_ |
