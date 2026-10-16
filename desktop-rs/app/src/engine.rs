@@ -21,7 +21,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use clawd_agents::normalize;
+use clawd_agents::{normalize, AgentCtx};
 use clawd_clock::{BootWatch, ClockApi, ClockFinder, ClockStore, FinderSnapshot};
 use clawd_config::{
     has_claude_token, read_config_value, read_http_targets, read_onoff_setting, read_usage_source,
@@ -99,6 +99,13 @@ pub fn guard<R>(what: &str, f: impl FnOnce() -> R) -> Option<R> {
 /// Resolve when `stop` turns true (or its sender is gone).
 pub async fn stopped(stop: &mut StopRx) {
     let _ = stop.wait_for(|s| *s).await;
+}
+
+/// Run `work`, then wait for `stop`: for a task that may finish for good before the engine stops
+/// (a [`supervise`]d future that simply returned would be started again).
+pub async fn until_stopped(mut stop: StopRx, work: impl Future<Output = ()>) {
+    work.await;
+    stopped(&mut stop).await;
 }
 
 /// Sleep for `dur` unless stopped first; true when the stop signal fired.
@@ -345,6 +352,8 @@ pub struct EngineConfig {
     pub env: Env,
     pub names: OsStoreNames,
     pub runner: Arc<dyn CommandRunner>,
+    /// The agents' surroundings (home, platform, PATH search): the registry is built from it.
+    pub agents: AgentCtx,
 }
 
 impl EngineConfig {
@@ -355,6 +364,7 @@ impl EngineConfig {
             env: Env::system(),
             names: OsStoreNames::production(),
             runner: Arc::new(SystemRunner),
+            agents: AgentCtx::system(),
         }
     }
 }
@@ -608,17 +618,21 @@ async fn run(shared: Arc<Shared>, mut stop: StopRx) {
             let (shared, stop) = (Arc::clone(&shared), stop.clone());
             async move {
                 let state = Arc::clone(&shared.state);
-                watch_token_loop(stop, state, TOKEN_CHECK_EVERY, || {
-                    let cfg = shared.cfg.clone();
-                    async move {
-                        tokio::task::spawn_blocking(move || {
-                            read_usage_source(&cfg.paths).starts_with("claude")
-                                && has_claude_token(&cfg.paths, cfg.runner.as_ref())
-                        })
-                        .await
-                        .unwrap_or(false)
-                    }
-                })
+                // The watch ends by itself at the first payload; until stop nothing restarts it.
+                until_stopped(
+                    stop.clone(),
+                    watch_token_loop(stop, state, TOKEN_CHECK_EVERY, || {
+                        let cfg = shared.cfg.clone();
+                        async move {
+                            tokio::task::spawn_blocking(move || {
+                                read_usage_source(&cfg.paths).starts_with("claude")
+                                    && has_claude_token(&cfg.paths, cfg.runner.as_ref())
+                            })
+                            .await
+                            .unwrap_or(false)
+                        }
+                    }),
+                )
                 .await;
             }
         }

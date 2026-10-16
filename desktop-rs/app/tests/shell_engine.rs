@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use clawd_app::engine::{
     credential_key, gated_targets, guard, panic_message, screen_of, supervise, sync_screen_loop,
-    watch_token_loop, Backoff, EngineState,
+    until_stopped, watch_token_loop, Backoff, EngineState,
 };
 use clawd_clock::FinderSnapshot;
 use clawd_contracts::{new_stop, ClockSource, ClockTarget};
@@ -287,4 +287,62 @@ fn engine_run_pushes_usage_to_the_found_clock() {
 #[ignore = "needs 03/08: test_stop_twice_after_the_loop_closed_is_harmless"]
 fn stop_twice_and_poll_now_after_stop_are_harmless() {
     unimplemented!("B'': EngineHandle::new over a temp home; stop(); stop(); poll_now()");
+}
+
+#[tokio::test]
+async fn a_task_that_ends_for_good_is_not_restarted_before_stop() {
+    // Review P1-2: the token watch ends at the first payload; `supervise` used to run it again
+    // every few seconds, forever.
+    let (stop_tx, stop) = new_stop();
+    let runs = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&runs);
+    let backoff = Backoff {
+        first: Duration::from_millis(5),
+        max: Duration::from_millis(10),
+        healthy_after: Duration::from_secs(60),
+    };
+    let supervisor = tokio::spawn(supervise("one-shot", stop.clone(), backoff, {
+        let stop = stop.clone();
+        move || {
+            let counted = Arc::clone(&counted);
+            until_stopped(stop.clone(), async move {
+                counted.fetch_add(1, Ordering::SeqCst);
+            })
+        }
+    }));
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert_eq!(
+        runs.load(Ordering::SeqCst),
+        1,
+        "Ok(()) before stop must not be re-run"
+    );
+    stop_tx.send_replace(true);
+    tokio::time::timeout(Duration::from_secs(5), supervisor)
+        .await
+        .expect("stops")
+        .unwrap();
+    assert_eq!(runs.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn a_bare_task_that_returns_early_is_restarted() {
+    // The documented behaviour of `supervise` itself (a loop that quits by mistake comes back).
+    let (stop_tx, stop) = new_stop();
+    let runs = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&runs);
+    let backoff = Backoff {
+        first: Duration::from_millis(5),
+        max: Duration::from_millis(10),
+        healthy_after: Duration::from_secs(60),
+    };
+    let supervisor = tokio::spawn(supervise("bare", stop, backoff, move || {
+        let counted = Arc::clone(&counted);
+        async move {
+            counted.fetch_add(1, Ordering::SeqCst);
+        }
+    }));
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert!(runs.load(Ordering::SeqCst) >= 2);
+    stop_tx.send_replace(true);
+    let _ = tokio::time::timeout(Duration::from_secs(5), supervisor).await;
 }
