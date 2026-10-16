@@ -2,3 +2,25 @@
 # since): not a secret, every Claude Code install carries it.
 ab1bd241180d499c95498f46480144616f096830:clock/daemon/claude_usage_daemon_windows.py:generic-api-key:61
 36ed049047bd12b0ad9d2235aea9bbc07cf6def9:clock/daemon/claude_usage_daemon.py:generic-api-key:57
+# Reviewed 2026-10-17 (usage-monitor history, public before the import):
+# comments that name the release secrets (no values)
+7c7caa2e14b3a32b9119d13ff5e9ef2fb4aa9c58:.github/workflows/release.yml:generic-api-key:226
+0d2d5a842db1f010bb0f9704d49d6bf76c4e2f6c:packaging-rs/README.md:generic-api-key:53
+a4927d6bdb65b5ba180e3b65ff9c3b87bf00682d:.github/workflows/rust-release.yml:generic-api-key:174
+e2bf1fc8dc0b129fef16b57771e5b79ebc34b1d5:.github/workflows/release.yml:generic-api-key:36
+# throwaway AES keys of the old feed's decrypt test vectors (fixtures/fw/decrypt.json)
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:8
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:17
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:26
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:35
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:44
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:53
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:62
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:71
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:80
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:89
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:108
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:124
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:140
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:156
+c30a4a71516c5d79a159777fb5f6543bba872da4:desktop-rs/fixtures/fw/decrypt.json:generic-api-key:172
