@@ -28,7 +28,12 @@ pub type OnRestart = Arc<dyn Fn(String, u64) -> BoxFuture<bool> + Send + Sync>;
 fn heap_url(target: &str) -> String {
     // `urlunsplit((scheme, netloc, HEAP_PATH, "", ""))`: without a `scheme://` there is no netloc
     match target.split_once("://") {
-        Some((scheme, rest)) => format!("{scheme}://{}{HEAP_PATH}", authority(rest)),
+        // `urlsplit` lowercases the scheme (and nothing else)
+        Some((scheme, rest)) => format!(
+            "{}://{}{HEAP_PATH}",
+            scheme.to_ascii_lowercase(),
+            authority(rest)
+        ),
         None => HEAP_PATH.to_owned(),
     }
 }
