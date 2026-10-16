@@ -268,3 +268,61 @@ fn panic_messages_are_readable() {
     let other = std::panic::catch_unwind(|| std::panic::panic_any(5_u8)).unwrap_err();
     assert_eq!(panic_message(&*other), "non-string panic payload");
 }
+
+#[tokio::test]
+async fn a_task_that_ends_for_good_is_not_restarted_before_stop() {
+    // Review P1-2: the token watch ends at the first payload; `supervise` used to run it again
+    // every few seconds, forever.
+    let (stop_tx, stop) = new_stop();
+    let runs = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&runs);
+    let backoff = Backoff {
+        first: Duration::from_millis(5),
+        max: Duration::from_millis(10),
+        healthy_after: Duration::from_secs(60),
+    };
+    let supervisor = tokio::spawn(supervise("one-shot", stop.clone(), backoff, {
+        let stop = stop.clone();
+        move || {
+            let counted = Arc::clone(&counted);
+            until_stopped(stop.clone(), async move {
+                counted.fetch_add(1, Ordering::SeqCst);
+            })
+        }
+    }));
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert_eq!(
+        runs.load(Ordering::SeqCst),
+        1,
+        "Ok(()) before stop must not be re-run"
+    );
+    stop_tx.send_replace(true);
+    tokio::time::timeout(Duration::from_secs(5), supervisor)
+        .await
+        .expect("stops")
+        .unwrap();
+    assert_eq!(runs.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn a_bare_task_that_returns_early_is_restarted() {
+    // The documented behaviour of `supervise` itself (a loop that quits by mistake comes back).
+    let (stop_tx, stop) = new_stop();
+    let runs = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&runs);
+    let backoff = Backoff {
+        first: Duration::from_millis(5),
+        max: Duration::from_millis(10),
+        healthy_after: Duration::from_secs(60),
+    };
+    let supervisor = tokio::spawn(supervise("bare", stop, backoff, move || {
+        let counted = Arc::clone(&counted);
+        async move {
+            counted.fetch_add(1, Ordering::SeqCst);
+        }
+    }));
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert!(runs.load(Ordering::SeqCst) >= 2);
+    stop_tx.send_replace(true);
+    let _ = tokio::time::timeout(Duration::from_secs(5), supervisor).await;
+}

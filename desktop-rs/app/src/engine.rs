@@ -11,8 +11,8 @@
 //!   competes with a firmware upload.
 //!
 //! The pure parts (`EngineState`, [`gated_targets`], [`screen_of`], the token and screen-sync
-//! loops, [`supervise`]) are unit-tested here; the wiring in `run` needs the real crates
-//! (`#[ignore = "needs 03-10"]` tests in `tests/shell_engine.rs`).
+//! loops, [`supervise`]) are unit-tested here; the wiring in `run` is tested over the
+//! real crates, a temp home and loopback servers in `tests/shell_engine_wiring.rs`.
 
 use std::any::Any;
 use std::future::Future;

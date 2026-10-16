@@ -158,7 +158,54 @@ fn find_lines_are_aligned_like_python() {
 }
 
 #[test]
-#[ignore = "needs 08 (clawd_clock::manual_clock)"]
+fn cleanup_over_a_temp_home_removes_the_hook_and_the_autostart_entry() {
+    use clawd_agents::{uninstall_all, AgentCtx, Registry};
+    use clawd_contracts::{Env, Platform};
+    use clawd_testkit::store::SandboxAutostart;
+    use clawd_testkit::TempConfig;
+    use std::sync::Arc;
+
+    let tc = TempConfig::new();
+    tc.write_home(".claude/settings.json", "{}");
+    let registry = Registry::new(AgentCtx {
+        paths: tc.paths().clone(),
+        platform: Platform::Darwin,
+        port: Some(47913),
+        script: None,
+        which: Arc::new(|_| None),
+        env: Env::empty(),
+    });
+    // The LaunchAgent branch: a plist under the temp home, never the registry.
+    let sandbox = SandboxAutostart::new(
+        tc.paths(),
+        tc.os_names(),
+        Platform::Darwin,
+        vec!["/tmp/Clawd".to_owned()],
+    );
+    sandbox.autostart.enable().expect("enable");
+    let claude = registry.get("claude").expect("claude agent");
+    claude.install().expect("hook installed");
+    assert!(claude.is_installed().unwrap());
+    let plist = tc.paths().launch_agent_plist(&tc.os_names().launch_label);
+    assert!(plist.exists());
+
+    let mut out = Vec::new();
+    cleanup_with(
+        || sandbox.autostart.disable(),
+        || uninstall_all(&registry),
+        || "12:00:00".to_owned(),
+        &mut out,
+    );
+    let text = String::from_utf8(out).unwrap();
+    assert!(
+        text.contains("claude") && text.ends_with("cleanup done\n"),
+        "{text}"
+    );
+    assert!(!plist.exists(), "autostart entry gone");
+    assert!(!claude.is_installed().unwrap(), "hook gone");
+}
+
+#[test]
 fn the_remembered_clock_is_the_typed_one_else_the_saved_one() {
     assert_eq!(
         remembered_clock(&json!({"manual_host": "10.0.0.5"})),
