@@ -241,10 +241,9 @@ fn an_unwritable_payload_file_does_not_stop_the_pushes() {
 /// spawned before `set_on_payload` is called (the event server is started in between), so the
 /// first payload can be pushed before the hook exists. `Engine.status().payload` and the payload
 /// file then stay empty until the next poll (`POLL_INTERVAL` = 60 s). Run it with
-/// `cargo test -p clawd-e2e --test engine -- --ignored`; it fails now and fixes itself once the
-/// hook is installed before the loops start.
+/// `cargo test -p clawd-e2e --test engine`; it failed until the
+/// hook was installed before the loops start.
 #[test]
-#[ignore = "integration bug: first payload misses the on_payload hook (engine.rs run order)"]
 fn the_first_payload_reaches_the_on_payload_hook_without_a_second_poll() {
     let mut misses = 0;
     for _ in 0..5 {

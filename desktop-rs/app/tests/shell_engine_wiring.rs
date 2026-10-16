@@ -90,6 +90,43 @@ fn engine_run_pushes_usage_to_the_found_clock() {
     );
 }
 
+/// The publisher's first poll (usage source off) is delivered at once: the `on_payload` hook
+/// must already be installed, or the status and the payload file stay empty for a minute.
+#[test]
+fn the_first_payload_reaches_the_status_and_the_payload_file_without_a_second_poll() {
+    for round in 0..5 {
+        let tc = TempConfig::new();
+        let sink = FakeClockSink::start();
+        put_config_file(
+            tc.paths(),
+            "config",
+            Some(&format!("http_targets={}\n", sink.server.url())),
+        );
+        put_config_file(
+            tc.paths(),
+            "desktop.json",
+            Some(r#"{"usage_source": "off"}"#),
+        );
+        let (engine, _rx) =
+            engine_with_fakes(engine_config(&tc, free_port()), &FakeClock::new(1000.0));
+        engine.start().expect("start");
+        assert!(
+            wait_until(15, || !sink.payloads().is_empty()),
+            "round {round}: the first payload was pushed"
+        );
+        assert!(
+            wait_until(3, || engine.snapshot().payload.is_some()),
+            "round {round}: Status.payload stayed empty (hook installed after the loops)"
+        );
+        assert!(
+            wait_until(3, || clawd_store::paths::usage_payload(tc.paths())
+                .is_some()),
+            "round {round}: the payload file stayed empty"
+        );
+        engine.stop();
+    }
+}
+
 #[test]
 fn stop_twice_and_poll_now_after_stop_are_harmless() {
     let tc = TempConfig::new();

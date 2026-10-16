@@ -600,6 +600,68 @@ async fn run(shared: Arc<Shared>, mut stop: StopRx) {
     *lock(&shared.publisher) = Some(Arc::clone(&publisher));
 
     let mut tasks: Vec<JoinHandle<()>> = Vec::new();
+    // Agent events: the brain, the loopback server, the pusher.
+    let settings = {
+        let (paths, env) = (cfg.paths.clone(), cfg.env.clone());
+        tokio::task::spawn_blocking(move || read_event_settings(&paths, &env)).await
+    };
+    let mut server: Option<EventServer> = None;
+    let mut brain: Option<SharedBrain> = None;
+    let mut pusher: Option<Arc<StatePusher>> = None;
+    if let Ok(s) = settings {
+        if s.enabled {
+            let paths = cfg.paths.clone();
+            let the_brain = Brain::new(
+                Pet::new(s.pet, Some(paths.pet_file())),
+                Box::new(move || clawd_store::prefs::clock_screen(&paths) == Some(SCREEN_USAGE)),
+            )
+            .shared();
+            let normalize_fn: NormalizeFn = Arc::new(normalize);
+            let mut srv = EventServer::new(Arc::clone(&the_brain), normalize_fn).with_port(s.port);
+            match srv.start().await {
+                Ok(()) => {
+                    lock(&shared.state).events_on = true;
+                    let push = Arc::new(StatePusher::new(
+                        Arc::clone(&the_brain),
+                        Arc::clone(&targets),
+                    ));
+                    tasks.push(spawn_supervised("state pusher", stop.clone(), {
+                        let (push, stop) = (Arc::clone(&push), stop.clone());
+                        move || {
+                            let (push, stop) = (Arc::clone(&push), stop.clone());
+                            async move { push.run(stop).await }
+                        }
+                    }));
+                    pusher = Some(push);
+                    server = Some(srv);
+                }
+                Err(e) => tracing::warn!("Event server not started ({e}); agent events disabled"),
+            }
+            brain = Some(the_brain);
+        }
+    }
+
+    // Every delivered payload: the status, the settings window's copy, the brain's usage.
+    {
+        let (shared, brain) = (Arc::clone(&shared), brain.clone());
+        publisher.set_on_payload(Arc::new(move |p: &UsagePayload| {
+            lock(&shared.state).on_payload(p, now_epoch());
+            if let Some(brain) = &brain {
+                lock(brain).usage = Some(p.clone());
+            }
+            let (paths, p) = (shared.cfg.paths.clone(), p.clone());
+            // The settings window draws the clock from this file: keep it off the loop thread.
+            tokio::task::spawn_blocking(move || {
+                if let Err(e) = clawd_store::paths::set_usage_payload(&paths, &p, None) {
+                    tracing::warn!("Could not keep the usage payload for the settings window: {e}");
+                }
+            });
+        }));
+    }
+
+    // The loops start only now: the publisher's first poll can be delivered at once (usage
+    // source off, Codex), and it must find the hook above, or the status and the payload file
+    // stay empty until the next poll a minute later.
     tasks.push(spawn_supervised("clock finder", stop.clone(), {
         let (finder, stop) = (Arc::clone(&finder), stop.clone());
         move || {
@@ -659,65 +721,6 @@ async fn run(shared: Arc<Shared>, mut stop: StopRx) {
             }
         }
     }));
-
-    // Agent events: the brain, the loopback server, the pusher.
-    let settings = {
-        let (paths, env) = (cfg.paths.clone(), cfg.env.clone());
-        tokio::task::spawn_blocking(move || read_event_settings(&paths, &env)).await
-    };
-    let mut server: Option<EventServer> = None;
-    let mut brain: Option<SharedBrain> = None;
-    let mut pusher: Option<Arc<StatePusher>> = None;
-    if let Ok(s) = settings {
-        if s.enabled {
-            let paths = cfg.paths.clone();
-            let the_brain = Brain::new(
-                Pet::new(s.pet, Some(paths.pet_file())),
-                Box::new(move || clawd_store::prefs::clock_screen(&paths) == Some(SCREEN_USAGE)),
-            )
-            .shared();
-            let normalize_fn: NormalizeFn = Arc::new(normalize);
-            let mut srv = EventServer::new(Arc::clone(&the_brain), normalize_fn).with_port(s.port);
-            match srv.start().await {
-                Ok(()) => {
-                    lock(&shared.state).events_on = true;
-                    let push = Arc::new(StatePusher::new(
-                        Arc::clone(&the_brain),
-                        Arc::clone(&targets),
-                    ));
-                    tasks.push(spawn_supervised("state pusher", stop.clone(), {
-                        let (push, stop) = (Arc::clone(&push), stop.clone());
-                        move || {
-                            let (push, stop) = (Arc::clone(&push), stop.clone());
-                            async move { push.run(stop).await }
-                        }
-                    }));
-                    pusher = Some(push);
-                    server = Some(srv);
-                }
-                Err(e) => tracing::warn!("Event server not started ({e}); agent events disabled"),
-            }
-            brain = Some(the_brain);
-        }
-    }
-
-    // Every delivered payload: the status, the settings window's copy, the brain's usage.
-    {
-        let (shared, brain) = (Arc::clone(&shared), brain.clone());
-        publisher.set_on_payload(Arc::new(move |p: &UsagePayload| {
-            lock(&shared.state).on_payload(p, now_epoch());
-            if let Some(brain) = &brain {
-                lock(brain).usage = Some(p.clone());
-            }
-            let (paths, p) = (shared.cfg.paths.clone(), p.clone());
-            // The settings window draws the clock from this file: keep it off the loop thread.
-            tokio::task::spawn_blocking(move || {
-                if let Err(e) = clawd_store::paths::set_usage_payload(&paths, &p, None) {
-                    tracing::warn!("Could not keep the usage payload for the settings window: {e}");
-                }
-            });
-        }));
-    }
 
     // A restarted clock lost both the usage bars and Clawd's state.
     let on_restart: clawd_clock::OnRestart = {
