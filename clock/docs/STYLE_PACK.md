@@ -34,7 +34,7 @@ and no OTA.
 - **Desk and splash:** the desk animations and the Clawd splash are not affected.
 - **Clawd animations (API 2):** with data, each pack's Clawd plays the official
   Clawd animations from `/clawd.pak` (the 17 the splash uses), in the pack's own
-  colours. He stands on the first frame for the pack's idle time (8 s by default),
+  colours. He stands on the first frame for the pack's idle time (2 s by default),
   plays one pass, then the next animation of the pack's list. Without data he
   sleeps, still, as before. Without `/clawd.pak` (or with a pack naming an
   animation the file lacks) the pack draws its static Clawd mask instead.
@@ -179,7 +179,7 @@ Add the id to `ORDER` in `build.js`, its Clawd animations to `tools/style/anims.
 ### Clawd's animations
 
 `build.js` turns each pack's Clawd masks into the official animations with
-`anims.js`: `{ set: ['waving', 'pointing'], idle: 8000, cell, at, colours }`.
+`anims.js`: `{ set: ['waving', 'pointing'], idle: 2000, cell, at, colours }`.
 - Every group of Clawd layers (`clawd`, `clawd_inner`/`clawd_edge`, `clawd_eyes`) drawn
   at one spot in one state becomes one `anim` op, gated on `anim`. The masks stay as
   the fallback (`!anim`). A glow copy 1–2 px away joins its group.

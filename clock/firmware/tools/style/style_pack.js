@@ -314,7 +314,7 @@ class Style {
     if (!names.length || names.length > 8) throw new Error(`${this.id}: 1..8 animations per op`);
     if (!(cell >= 1 && cell <= 8)) throw new Error(`${this.id}: bad cell ${cell}`);
     if (o.track !== undefined) throw new Error(`${this.id}: an animation takes no track`);
-    const idle = Math.round(o.idle ?? 8000);
+    const idle = Math.round(o.idle ?? 2000);   // 8 s left him still ~80 % of the time on the clock
     if (idle < 0 || idle > 65535) throw new Error(`${this.id}: idle ${idle} ms`);
     const op = this.op(KIND.anim, colors.body, o);
     const c = (k) => this.color(colors[k] ?? colors.body);

@@ -22,7 +22,7 @@ Source: ak:advise 2026-10-15 (conversation), reframing confirmed by the user. Mo
   - It is tested against the boxes of protected ops: every text op (line box, worst-case token widths, track offsets) and every op bound to data (`dx`/`x1`/gate). Ops exclusive with the anim op (state bits or gates) are skipped. Cells off the 240×240 screen also count.
 - **`build.js`:** fails a pack when its set has fewer than 5 names or the fit check reports anything. `--fit` prints, per pack, which of the 17 fit at the current cell and at cell 2.
 - **Preview:** a per-pack run until the list wraps (cap 240 s), checking every name played; per-anim footprints when `CLAWD_STYLE_ONLY` is set.
-- **`anims.js`:** new sets from the fit table, theme first, interleaved with small loops; idle stays 8 s.
+- **`anims.js`:** new sets from the fit table, theme first, interleaved with small loops; idle was left at 8 s, then lowered to 2 s after the on-device check (8 s = Clawd moved only ~20-25 % of the time; 2 s is the user's pick).
 
 ## Phases
 - [ ] fit check + build guards + `--fit` report

@@ -1,7 +1,7 @@
 // anims.js — which official Clawd animations each style pack plays (Style.animateClawd).
 //
 //   set     animation names in /clawd.pak, played in turn (one pass each)
-//   idle    ms on the first frame (standing Clawd) before each pass, default 8000
+//   idle    ms on the first frame (standing Clawd) before each pass, default 2000
 //   cell    px per art cell, default the mask scale + 1 (idle Clawd: 24 x 16 cells)
 //   at      [dx, dy] nudge from the default spot (body over the old 32x40 mask, feet on its bottom)
 //   body, shade, ink, grey, light, accent   role colours (default: the mask's body colour,
