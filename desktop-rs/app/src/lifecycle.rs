@@ -570,9 +570,9 @@ impl Shell {
                         let Some(cmd) = cmd else { return };
                         let shell = Arc::clone(&shell);
                         // A command may touch files and the keychain: off the async threads.
-                        let _ = tokio::task::spawn_blocking(move || {
+                        drop(tokio::task::spawn_blocking(move || {
                             guard("shell command", || apply_shell_cmd(&*shell, cmd));
-                        });
+                        }));
                     }
                     _ = stopped(&mut stop) => return,
                 }
@@ -851,7 +851,10 @@ fn run_events(event: &RunEvent, keep_running: bool) {
 pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
     let cfg = EngineConfig::system();
     start_logging(&cfg);
-    tracing::info!("{APP_NAME} {APP_VERSION} starting ({})", std::env::consts::OS);
+    tracing::info!(
+        "{APP_NAME} {APP_VERSION} starting ({})",
+        std::env::consts::OS
+    );
     if tauri::async_runtime::block_on(another_daemon_running(&cfg.paths, &cfg.env)) {
         tracing::info!("Another Clawd daemon already owns the event port; exiting");
         dialogs::alert(ALREADY_RUNNING);
@@ -923,7 +926,9 @@ pub fn run_settings_only(
     let cfg = EngineConfig::system();
     start_logging(&cfg);
     let Parts {
-        mut shell_rx, state, ..
+        mut shell_rx,
+        state,
+        ..
     } = build_parts(cfg.clone());
     let (clock_base, clock_key) = if clock.is_empty() {
         crate::cli::remembered_clock(&ClockStore::new(cfg.paths.clock_file()).load())

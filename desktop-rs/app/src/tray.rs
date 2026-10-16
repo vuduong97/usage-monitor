@@ -103,10 +103,18 @@ fn local_hms(epoch: f64) -> (u32, u32, u32) {
             && FileTimeToSystemTime(&local, &mut out) != 0
     };
     if ok {
-        (u32::from(out.hour), u32::from(out.minute), u32::from(out.second))
+        (
+            u32::from(out.hour),
+            u32::from(out.minute),
+            u32::from(out.second),
+        )
     } else {
         let secs = epoch.max(0.0) as u64 % 86_400;
-        ((secs / 3600) as u32, (secs % 3600 / 60) as u32, (secs % 60) as u32)
+        (
+            (secs / 3600) as u32,
+            (secs % 3600 / 60) as u32,
+            (secs % 60) as u32,
+        )
     }
 }
 
@@ -146,10 +154,18 @@ fn local_hms(epoch: f64) -> (u32, u32, u32) {
     // SAFETY: `tm` has the glibc/macOS `struct tm` layout and `time` is a valid `time_t`.
     let done = unsafe { !localtime_r(&time, &mut tm).is_null() };
     if done {
-        (tm.hour.max(0) as u32, tm.min.max(0) as u32, tm.sec.clamp(0, 59) as u32)
+        (
+            tm.hour.max(0) as u32,
+            tm.min.max(0) as u32,
+            tm.sec.clamp(0, 59) as u32,
+        )
     } else {
         let secs = epoch.max(0.0) as u64 % 86_400;
-        ((secs / 3600) as u32, (secs % 3600 / 60) as u32, (secs % 60) as u32)
+        (
+            (secs / 3600) as u32,
+            (secs % 3600 / 60) as u32,
+            (secs % 60) as u32,
+        )
     }
 }
 
@@ -311,7 +327,11 @@ pub fn menu_entries(m: &TrayModel) -> Vec<MenuEntry> {
         ));
     }
     if !m.setup_left.is_empty() {
-        out.push(item(id::OPEN_SETUP, "● Hoàn tất thiết lập…".to_owned(), true));
+        out.push(item(
+            id::OPEN_SETUP,
+            "● Hoàn tất thiết lập…".to_owned(),
+            true,
+        ));
     }
     if !m.new_agents.is_empty() {
         out.push(item(
@@ -335,7 +355,13 @@ pub fn build_menu(app: &AppHandle, model: &TrayModel) -> tauri::Result<Menu<taur
     for entry in menu_entries(model) {
         match entry {
             MenuEntry::Item { id, text, enabled } => {
-                items.push(Box::new(MenuItem::with_id(app, id, text, enabled, None::<&str>)?));
+                items.push(Box::new(MenuItem::with_id(
+                    app,
+                    id,
+                    text,
+                    enabled,
+                    None::<&str>,
+                )?));
             }
             MenuEntry::Separator => items.push(Box::new(PredefinedMenuItem::separator(app)?)),
         }

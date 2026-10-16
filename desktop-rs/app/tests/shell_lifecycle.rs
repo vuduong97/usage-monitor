@@ -33,7 +33,14 @@ impl ShellBackend for Fake {
         self.log("retry");
     }
     fn use_clock(&self, c: ClockTarget) {
-        self.log(format!("use {} {} {} {} {}", c.name, c.host, c.port, c.version, c.source.as_str()));
+        self.log(format!(
+            "use {} {} {} {} {}",
+            c.name,
+            c.host,
+            c.port,
+            c.version,
+            c.source.as_str()
+        ));
     }
     fn poll_now(&self) {
         self.log("poll_now");
@@ -58,14 +65,21 @@ fn run(cmd: ShellCmd) -> Vec<String> {
 #[test]
 fn a_typed_clock_pins_the_finder_and_refreshes() {
     assert_eq!(
-        run(ShellCmd::SetClock { host: "10.0.0.5".into() }),
+        run(ShellCmd::SetClock {
+            host: "10.0.0.5".into()
+        }),
         ["set_manual 10.0.0.5", "refresh"]
     );
 }
 
 #[test]
 fn an_empty_host_is_search_again() {
-    assert_eq!(run(ShellCmd::SetClock { host: String::new() }), ["retry", "refresh"]);
+    assert_eq!(
+        run(ShellCmd::SetClock {
+            host: String::new()
+        }),
+        ["retry", "refresh"]
+    );
 }
 
 #[test]
@@ -83,7 +97,11 @@ fn a_wizard_pick_uses_that_clock_as_found_by_mdns() {
         port: 0,
         version: String::new(),
     };
-    assert_eq!(run(no_port)[0], "use  10.0.0.7 80  mdns", "port 0 means 80 (`msg.get('port') or 80`)");
+    assert_eq!(
+        run(no_port)[0],
+        "use  10.0.0.7 80  mdns",
+        "port 0 means 80 (`msg.get('port') or 80`)"
+    );
 }
 
 #[test]
@@ -107,9 +125,15 @@ fn the_password_key_prefers_the_name_then_the_typed_address() {
 fn each_opening_gets_a_fresh_session_of_the_remembered_clock() {
     let clock = clock_a();
     let s = new_session(Some(&clock), "", "setup");
-    assert_eq!((s.base.as_str(), s.key.as_str(), s.tab.as_str()), ("http://10.0.0.7", "clawd", "setup"));
+    assert_eq!(
+        (s.base.as_str(), s.key.as_str(), s.tab.as_str()),
+        ("http://10.0.0.7", "clawd", "setup")
+    );
     let none = new_session(None, "", "");
-    assert_eq!((none.base.as_str(), none.key.as_str(), none.tab.as_str()), ("", "", ""));
+    assert_eq!(
+        (none.base.as_str(), none.key.as_str(), none.tab.as_str()),
+        ("", "", "")
+    );
 }
 
 #[test]
@@ -124,7 +148,10 @@ fn only_the_three_tabs_the_page_knows_are_passed_on() {
 
 #[test]
 fn the_window_shows_the_dark_background_before_the_page_paints() {
-    assert_eq!((BACKGROUND.0, BACKGROUND.1, BACKGROUND.2, BACKGROUND.3), (0x14, 0x14, 0x13, 0xff));
+    assert_eq!(
+        (BACKGROUND.0, BACKGROUND.1, BACKGROUND.2, BACKGROUND.3),
+        (0x14, 0x14, 0x13, 0xff)
+    );
 }
 
 #[test]

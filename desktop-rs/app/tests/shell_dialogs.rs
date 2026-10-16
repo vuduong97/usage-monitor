@@ -80,8 +80,23 @@ fn the_windows_input_box_takes_text_from_the_environment() {
 
 #[test]
 fn an_answer_is_read_like_ask_text() {
-    assert_eq!(answer_of(true, " 10.0.0.5\r\n", true), Some("10.0.0.5".into()));
-    assert_eq!(answer_of(true, "\r\n", true), None, "Windows: empty is cancel");
-    assert_eq!(answer_of(true, "\n", false), Some(String::new()), "macOS: empty text");
-    assert_eq!(answer_of(false, "10.0.0.5", false), None, "macOS: cancel exits non-zero");
+    assert_eq!(
+        answer_of(true, " 10.0.0.5\r\n", true),
+        Some("10.0.0.5".into())
+    );
+    assert_eq!(
+        answer_of(true, "\r\n", true),
+        None,
+        "Windows: empty is cancel"
+    );
+    assert_eq!(
+        answer_of(true, "\n", false),
+        Some(String::new()),
+        "macOS: empty text"
+    );
+    assert_eq!(
+        answer_of(false, "10.0.0.5", false),
+        None,
+        "macOS: cancel exits non-zero"
+    );
 }

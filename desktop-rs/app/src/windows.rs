@@ -82,7 +82,10 @@ pub fn new_session(clock: Option<&ClockTarget>, typed_host: &str, tab: &str) -> 
 /// Where the WebView2 profile lives: `<app local data>/webview`, kept for good (a fresh profile
 /// costs seconds on the first open).
 pub fn data_directory(app: &AppHandle) -> Option<PathBuf> {
-    app.path().app_local_data_dir().ok().map(|d| d.join("webview"))
+    app.path()
+        .app_local_data_dir()
+        .ok()
+        .map(|d| d.join("webview"))
 }
 
 /// Open the settings window on `tab`, or bring the open one forward. Call it from an async task

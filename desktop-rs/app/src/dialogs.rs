@@ -8,7 +8,8 @@ use std::process::Command;
 use clawd_contracts::APP_NAME;
 
 /// `tray.ADDRESS_PROMPT`.
-pub const ADDRESS_PROMPT: &str = "Địa chỉ IP của đồng hồ (hiện trên màn hình đồng hồ lúc khởi động), ví dụ 192.168.1.48:";
+pub const ADDRESS_PROMPT: &str =
+    "Địa chỉ IP của đồng hồ (hiện trên màn hình đồng hồ lúc khởi động), ví dụ 192.168.1.48:";
 
 /// Both dialogs give up after this long (`timeout=300` in Python).
 const DIALOG_TIMEOUT_SECS: u64 = 300;

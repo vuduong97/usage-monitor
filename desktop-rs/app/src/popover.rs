@@ -114,9 +114,21 @@ pub fn view(snap: &Status, now: f64) -> PopoverView {
             if p.acct() == Some("ent") {
                 // One spending limit per billing month.
                 let when = p.rd().unwrap_or("");
-                rows.push(row("Tháng", number(p.get("s")), number(p.get("sr")), when, gone));
+                rows.push(row(
+                    "Tháng",
+                    number(p.get("s")),
+                    number(p.get("sr")),
+                    when,
+                    gone,
+                ));
             } else {
-                rows.push(row("Phiên", number(p.get("s")), number(p.get("sr")), "", gone));
+                rows.push(row(
+                    "Phiên",
+                    number(p.get("s")),
+                    number(p.get("sr")),
+                    "",
+                    gone,
+                ));
                 let week = p.get("w").map_or(Some(0.0), |v| v.as_f64());
                 rows.push(row("Tuần", week, number(p.get("wr")), "", gone));
             }
@@ -149,7 +161,9 @@ pub fn parse_message(msg: &Value) -> Option<PopoverMsg> {
         "ready" => Some(PopoverMsg::Ready),
         "size" => {
             let h = msg.get("h")?.as_f64()?;
-            HEIGHT_RANGE.contains(&h).then_some(PopoverMsg::Size(h.trunc()))
+            HEIGHT_RANGE
+                .contains(&h)
+                .then_some(PopoverMsg::Size(h.trunc()))
         }
         "settings" => Some(PopoverMsg::Settings),
         "close" => Some(PopoverMsg::Close),
@@ -159,8 +173,7 @@ pub fn parse_message(msg: &Value) -> Option<PopoverMsg> {
 
 /// Standard base64 with padding (the pak travels to the page as text).
 pub fn base64(data: &[u8]) -> String {
-    const ALPHABET: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
         let n = chunk
@@ -359,7 +372,11 @@ pub fn push(app: &AppHandle) {
         return;
     }
     let status = app.state::<AppState>().status.borrow().clone();
-    let _ = app.emit_to(WINDOW_POPOVER, EVENT_POPOVER_UPDATE, view(&status, now_epoch()));
+    let _ = app.emit_to(
+        WINDOW_POPOVER,
+        EVENT_POPOVER_UPDATE,
+        view(&status, now_epoch()),
+    );
 }
 
 fn want_pak(app: &AppHandle) {
@@ -377,9 +394,10 @@ fn want_pak(app: &AppHandle) {
         let (base, key) = match &clock {
             Some(c) => {
                 let engine = state.engine.clone();
-                let typed = tokio::task::spawn_blocking(move || crate::windows::typed_host(&engine))
-                    .await
-                    .unwrap_or_default();
+                let typed =
+                    tokio::task::spawn_blocking(move || crate::windows::typed_host(&engine))
+                        .await
+                        .unwrap_or_default();
                 (c.base(), crate::windows::clock_key(c, &typed))
             }
             None => (String::new(), String::new()),

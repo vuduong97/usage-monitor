@@ -18,7 +18,7 @@
 
 use std::io::Write;
 
-use clawd_contracts::{ClockTarget, AppPaths, APP_NAME, APP_VERSION};
+use clawd_contracts::{AppPaths, ClockTarget, APP_NAME, APP_VERSION};
 use serde_json::Value;
 
 /// Default of `find --seconds`.
@@ -31,9 +31,15 @@ pub const TABS: [&str; 4] = ["", "update", "agents", "setup"];
 pub enum Command {
     Tray,
     Run,
-    Find { seconds: f64 },
-    Hooks { on: bool },
-    Autostart { on: bool },
+    Find {
+        seconds: f64,
+    },
+    Hooks {
+        on: bool,
+    },
+    Autostart {
+        on: bool,
+    },
     Cleanup,
     /// `clock`/`key` are `""` when not given (the remembered clock is used).
     Settings {
@@ -89,10 +95,7 @@ fn flag_value<'a>(
             ))),
         };
     }
-    Ok(arg
-        .strip_prefix(flag)
-        .and_then(|r| r.strip_prefix('='))
-)
+    Ok(arg.strip_prefix(flag).and_then(|r| r.strip_prefix('=')))
 }
 
 fn on_off(args: &[String], name: &str) -> Result<bool, Exit> {
@@ -208,7 +211,11 @@ pub fn remembered_clock(data: &Value) -> (String, String) {
         _ => String::new(),
     };
     let (manual, host, port) = (text("manual_host"), text("host"), text("port"));
-    let mut raw = if manual.is_empty() { host.clone() } else { manual.clone() };
+    let mut raw = if manual.is_empty() {
+        host.clone()
+    } else {
+        manual.clone()
+    };
     if !host.is_empty() && manual.is_empty() && !port.is_empty() && port != "0" {
         raw = format!("{host}:{port}");
     }
@@ -232,11 +239,17 @@ pub fn remembered_clock(data: &Value) -> (String, String) {
 
 /// One line of `Clawd find`.
 pub fn find_line(clock: &ClockTarget) -> String {
-    format!("mDNS  {:<20} {:<28} v{}", clock.name, clock.base(), clock.version)
+    format!(
+        "mDNS  {:<20} {:<28} v{}",
+        clock.name,
+        clock.base(),
+        clock.version
+    )
 }
 
 /// What `find` says when nothing answered.
-pub const FIND_NOTHING: &str = "mDNS: nothing. Type the IP the clock shows on its screen in Cài đặt → App → Nhập địa chỉ.";
+pub const FIND_NOTHING: &str =
+    "mDNS: nothing. Type the IP the clock shows on its screen in Cài đặt → App → Nhập địa chỉ.";
 
 /// `cli.main` for `cleanup`: autostart off, then every agent disconnected, one line each with a
 /// `[HH:MM:SS]` stamp, then "cleanup done". An autostart failure is reported and does not stop

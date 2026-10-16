@@ -17,7 +17,11 @@ fn ok(a: &[&str]) -> Command {
 fn no_arguments_is_the_tray() {
     assert_eq!(ok(&[]), Command::Tray);
     assert_eq!(ok(&["tray"]), Command::Tray);
-    assert_eq!(ok(&["-psn_0_12345"]), Command::Tray, "Finder's -psn_ is dropped");
+    assert_eq!(
+        ok(&["-psn_0_12345"]),
+        Command::Tray,
+        "Finder's -psn_ is dropped"
+    );
 }
 
 #[test]
@@ -28,8 +32,16 @@ fn the_subcommands_parse() {
     assert_eq!(ok(&["hooks", "off"]), Command::Hooks { on: false });
     assert_eq!(ok(&["autostart", "on"]), Command::Autostart { on: true });
     assert_eq!(ok(&["autostart", "off"]), Command::Autostart { on: false });
-    assert_eq!(ok(&["find"]), Command::Find { seconds: FIND_SECONDS });
-    assert_eq!(ok(&["find", "--seconds", "2.5"]), Command::Find { seconds: 2.5 });
+    assert_eq!(
+        ok(&["find"]),
+        Command::Find {
+            seconds: FIND_SECONDS
+        }
+    );
+    assert_eq!(
+        ok(&["find", "--seconds", "2.5"]),
+        Command::Find { seconds: 2.5 }
+    );
     assert_eq!(ok(&["find", "--seconds=3"]), Command::Find { seconds: 3.0 });
 }
 
@@ -37,10 +49,22 @@ fn the_subcommands_parse() {
 fn settings_takes_clock_key_and_tab() {
     assert_eq!(
         ok(&["settings"]),
-        Command::Settings { clock: String::new(), key: String::new(), tab: String::new() }
+        Command::Settings {
+            clock: String::new(),
+            key: String::new(),
+            tab: String::new()
+        }
     );
     assert_eq!(
-        ok(&["settings", "--piped", "--clock", "http://10.0.0.5", "--key=clawd", "--tab", "setup"]),
+        ok(&[
+            "settings",
+            "--piped",
+            "--clock",
+            "http://10.0.0.5",
+            "--key=clawd",
+            "--tab",
+            "setup"
+        ]),
         Command::Settings {
             clock: "http://10.0.0.5".into(),
             key: "clawd".into(),
@@ -69,7 +93,10 @@ fn bad_input_exits_2_and_version_exits_0() {
     }
     let version = parse(&args(&["--version"])).unwrap_err();
     assert_eq!((version.code, version.stderr), (0, false));
-    assert_eq!(version.text, format!("Clawd {}", clawd_contracts::APP_VERSION));
+    assert_eq!(
+        version.text,
+        format!("Clawd {}", clawd_contracts::APP_VERSION)
+    );
     assert_eq!(parse(&args(&["--help"])).unwrap_err().code, 0);
 }
 
@@ -102,12 +129,18 @@ fn cleanup_prints_every_agent_and_still_runs_when_autostart_fails() {
 #[test]
 fn autostart_says_what_happened() {
     assert_eq!(autostart_report(true, Ok(true)), ("autostart on".into(), 0));
-    assert_eq!(autostart_report(false, Ok(true)), ("autostart off".into(), 0));
+    assert_eq!(
+        autostart_report(false, Ok(true)),
+        ("autostart off".into(), 0)
+    );
     assert_eq!(
         autostart_report(true, Ok(false)),
         ("autostart: not supported here".into(), 1)
     );
-    assert_eq!(autostart_report(true, Err(std::io::Error::other("denied"))).1, 1);
+    assert_eq!(
+        autostart_report(true, Err(std::io::Error::other("denied"))).1,
+        1
+    );
 }
 
 #[test]
@@ -117,7 +150,10 @@ fn find_lines_are_aligned_like_python() {
     c.version = "1.4.2".into();
     assert_eq!(
         find_line(&c),
-        format!("mDNS  {:<20} {:<28} v1.4.2", "clawd-1a2b", "http://10.0.0.7")
+        format!(
+            "mDNS  {:<20} {:<28} v1.4.2",
+            "clawd-1a2b", "http://10.0.0.7"
+        )
     );
 }
 

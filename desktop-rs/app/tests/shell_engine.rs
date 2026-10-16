@@ -72,7 +72,10 @@ fn the_status_carries_what_the_engine_knows() {
     assert_eq!(status.last_ok, Some(NOW));
     assert_eq!(status.paused.as_deref(), Some("firmware update"));
     assert_eq!(status.token, Some(true));
-    assert!(!e.note_pause(Some("firmware update".into())), "unchanged: no log line");
+    assert!(
+        !e.note_pause(Some("firmware update".into())),
+        "unchanged: no log line"
+    );
 }
 
 #[test]
@@ -146,7 +149,11 @@ async fn sync_screen_waits_while_paused() {
     tokio::time::sleep(Duration::from_millis(60)).await;
     stop_tx.send_replace(true);
     task.await.unwrap();
-    assert_eq!(reads.load(Ordering::SeqCst), 0, "no reads during a pause lease");
+    assert_eq!(
+        reads.load(Ordering::SeqCst),
+        0,
+        "no reads during a pause lease"
+    );
 }
 
 #[tokio::test]
@@ -176,7 +183,11 @@ async fn the_token_watch_ends_with_the_first_payload() {
         .expect("ends by itself")
         .unwrap();
     assert_eq!(checks.load(Ordering::SeqCst), 2);
-    assert_eq!(state.lock().unwrap().token, Some(true), "a payload owns the token after that");
+    assert_eq!(
+        state.lock().unwrap().token,
+        Some(true),
+        "a payload owns the token after that"
+    );
 }
 
 #[tokio::test]
@@ -195,7 +206,11 @@ async fn a_missing_local_token_is_not_proof() {
     tokio::time::sleep(Duration::from_millis(40)).await;
     stop_tx.send_replace(true);
     task.await.unwrap();
-    assert_eq!(state.lock().unwrap().token, None, "unknown, not 'login expired'");
+    assert_eq!(
+        state.lock().unwrap().token,
+        None,
+        "unknown, not 'login expired'"
+    );
 }
 
 #[tokio::test]
@@ -224,7 +239,11 @@ async fn a_panicking_loop_is_restarted_and_the_app_lives() {
             break;
         }
     }
-    assert_eq!(runs.load(Ordering::SeqCst), 3, "restarted twice after the panics");
+    assert_eq!(
+        runs.load(Ordering::SeqCst),
+        3,
+        "restarted twice after the panics"
+    );
     assert!(!supervisor.is_finished(), "the supervisor itself survived");
     stop_tx.send_replace(true);
     tokio::time::timeout(Duration::from_secs(5), supervisor)

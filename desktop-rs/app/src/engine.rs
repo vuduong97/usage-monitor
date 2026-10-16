@@ -146,11 +146,7 @@ where
 }
 
 /// [`supervise`] as a spawned task (so `run` can join it).
-pub fn spawn_supervised<F, Fut>(
-    name: &'static str,
-    stop: StopRx,
-    make: F,
-) -> JoinHandle<()>
+pub fn spawn_supervised<F, Fut>(name: &'static str, stop: StopRx, make: F) -> JoinHandle<()>
 where
     F: FnMut() -> Fut + Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
@@ -661,14 +657,11 @@ async fn run(shared: Arc<Shared>, mut stop: StopRx) {
             let paths = cfg.paths.clone();
             let the_brain = Brain::new(
                 Pet::new(s.pet, Some(paths.pet_file())),
-                Box::new(move || {
-                    clawd_store::prefs::clock_screen(&paths) == Some(SCREEN_USAGE)
-                }),
+                Box::new(move || clawd_store::prefs::clock_screen(&paths) == Some(SCREEN_USAGE)),
             )
             .shared();
             let normalize_fn: NormalizeFn = Arc::new(normalize);
-            let mut srv =
-                EventServer::new(Arc::clone(&the_brain), normalize_fn).with_port(s.port);
+            let mut srv = EventServer::new(Arc::clone(&the_brain), normalize_fn).with_port(s.port);
             match srv.start().await {
                 Ok(()) => {
                     lock(&shared.state).events_on = true;
@@ -714,7 +707,8 @@ async fn run(shared: Arc<Shared>, mut stop: StopRx) {
     let on_restart: clawd_clock::OnRestart = {
         let (publisher, brain, pusher) = (Arc::clone(&publisher), brain.clone(), pusher.clone());
         Arc::new(move |url: String, _uptime: u64| -> BoxFuture<bool> {
-            let (publisher, brain, pusher) = (Arc::clone(&publisher), brain.clone(), pusher.clone());
+            let (publisher, brain, pusher) =
+                (Arc::clone(&publisher), brain.clone(), pusher.clone());
             Box::pin(async move {
                 if let (Some(pusher), Some(brain)) = (&pusher, &brain) {
                     pusher.invalidate();
