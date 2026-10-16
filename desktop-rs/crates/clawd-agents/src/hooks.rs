@@ -290,3 +290,158 @@ pub fn apply(
     }
     msgs
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clawd_testkit::TempConfig;
+
+    const PORT: u16 = 47913;
+
+    fn hook(tc: &TempConfig, platform: Platform) -> Value {
+        let script = tc.paths().hook_script();
+        handler(
+            tc.paths(),
+            &Env::empty(),
+            platform,
+            Some(PORT),
+            Some(&script),
+        )
+    }
+
+    fn apply_with(tc: &TempConfig, enable: bool, file: &Path, hook: &Value) -> Vec<String> {
+        apply(
+            tc.paths(),
+            &Env::empty(),
+            enable,
+            Some(&[file.to_path_buf()]),
+            Platform::Win32,
+            Some(hook),
+        )
+    }
+
+    fn read(file: &Path) -> Value {
+        serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn apply_backs_up_installs_and_removes() {
+        let tc = TempConfig::new();
+        let original =
+            json!({"model": "opus", "hooks": {"Stop": [{"hooks": [{"command": "mine"}]}]}});
+        let file = tc.write_home(".claude/settings.json", original.to_string());
+        let hook = hook(&tc, Platform::Win32);
+
+        let msgs = apply_with(&tc, true, &file, &hook);
+        assert_eq!(msgs, [format!("{}: hooks installed", file.display())]);
+        let installed = read(&file);
+        assert_eq!(installed["model"], "opus");
+        assert_eq!(installed["hooks"]["Stop"][0], original["hooks"]["Stop"][0]);
+        assert_eq!(installed["hooks"]["Stop"].as_array().unwrap().len(), 2);
+        assert!(is_installed(tc.paths(), Some(std::slice::from_ref(&file))));
+        let backups = fs::read_dir(file.parent().unwrap())
+            .unwrap()
+            .flatten()
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .contains("settings.json.bak-clawd-")
+            })
+            .count();
+        assert_eq!(backups, 1);
+
+        let msgs = apply_with(&tc, true, &file, &hook);
+        assert_eq!(msgs, [format!("{}: already up to date", file.display())]);
+
+        let msgs = apply_with(&tc, false, &file, &hook);
+        assert_eq!(msgs, [format!("{}: hooks removed", file.display())]);
+        assert_eq!(read(&file), original);
+        assert!(!is_installed(tc.paths(), Some(&[file])));
+    }
+
+    #[test]
+    fn apply_leaves_broken_or_missing_dirs_alone() {
+        let tc = TempConfig::new();
+        let hook = hook(&tc, Platform::Win32);
+        let broken = tc.write_home(".claude/settings.json", "{ // comments");
+        for enable in [true, false] {
+            let msgs = apply_with(&tc, enable, &broken, &hook);
+            assert_eq!(
+                msgs,
+                [format!("{}: not valid JSON, left alone", broken.display())]
+            );
+            assert_eq!(fs::read_to_string(&broken).unwrap(), "{ // comments");
+        }
+        let siblings = fs::read_dir(broken.parent().unwrap()).unwrap().count();
+        assert_eq!(siblings, 1, "no backup or tmp file next to a broken config");
+
+        let missing = tc.home().join(".other-claude").join("settings.json");
+        assert_eq!(apply_with(&tc, true, &missing, &hook), Vec::<String>::new());
+        assert_eq!(
+            apply_with(&tc, false, &missing, &hook),
+            Vec::<String>::new()
+        );
+        assert!(!missing.parent().unwrap().exists());
+    }
+
+    #[test]
+    fn apply_creates_settings_in_an_existing_claude_dir() {
+        let tc = TempConfig::new();
+        let hook = hook(&tc, Platform::Win32);
+        let dir = tc.home().join(".claude");
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("settings.json");
+
+        let msgs = apply_with(&tc, true, &file, &hook);
+        assert_eq!(msgs, [format!("{}: hooks installed", file.display())]);
+        let data = read(&file);
+        assert_eq!(data["hooks"].as_object().unwrap().len(), EVENTS.len());
+        assert_eq!(data["hooks"]["Stop"][0]["hooks"][0], hook);
+        assert!(is_installed(tc.paths(), Some(&[file])));
+    }
+
+    #[test]
+    fn write_script_writes_once_and_repairs_a_changed_copy() {
+        let tc = TempConfig::new();
+        let env = Env::empty();
+        let target = tc.home().join("bin").join("clawd-event.sh");
+
+        let path = write_script(tc.paths(), &env, Some(&target), Some(PORT)).unwrap();
+        assert_eq!(path, target);
+        assert_eq!(fs::read_to_string(&target).unwrap(), hook_script_text(PORT));
+        assert!(hook_script_text(PORT).contains("${CLAWD_EVENT_PORT:-47913}"));
+
+        fs::write(&target, "#!/bin/sh\nexit 1\n").unwrap();
+        write_script(tc.paths(), &env, Some(&target), Some(PORT)).unwrap();
+        assert_eq!(fs::read_to_string(&target).unwrap(), hook_script_text(PORT));
+
+        // a CRLF copy (a Windows checkout) counts as the same text: left as it is
+        let crlf = hook_script_text(PORT).replace('\n', "\r\n");
+        fs::write(&target, &crlf).unwrap();
+        write_script(tc.paths(), &env, Some(&target), Some(PORT)).unwrap();
+        assert_eq!(fs::read_to_string(&target).unwrap(), crlf);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = fs::metadata(&target).unwrap().permissions().mode();
+            assert_eq!(mode & 0o111, 0o111);
+        }
+    }
+
+    #[test]
+    fn hook_script_text_is_lf_only() {
+        assert!(!hook_script_text(PORT).contains('\r'));
+        assert!(hook_script_text(PORT).starts_with("#!/bin/sh\n"));
+    }
+
+    #[test]
+    #[ignore = "settings_files reads clawd_config::read_config_dirs (phase 06 stub)"]
+    fn settings_files_default_to_the_home_claude_dir() {
+        let tc = TempConfig::new();
+        assert_eq!(
+            settings_files(tc.paths()),
+            [tc.home().join(".claude").join("settings.json")]
+        );
+    }
+}
