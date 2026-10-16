@@ -1,0 +1,366 @@
+{
+  "input": {
+    "user": "clawd-test-user",
+    "cases": [
+      {
+        "name": "other_dir_file_nested",
+        "platform": "linux",
+        "dir": "other",
+        "files": {
+          ".credentials.json": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-FILE\", \"expiresAt\": 4102444800000}}"
+        }
+      },
+      {
+        "name": "other_dir_no_file_linux",
+        "platform": "linux",
+        "dir": "other"
+      },
+      {
+        "name": "other_dir_no_file_darwin",
+        "platform": "darwin",
+        "dir": "other",
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        }
+      },
+      {
+        "name": "other_dir_ignores_store",
+        "platform": "linux",
+        "dir": "other",
+        "store": {
+          "profiles": {
+            "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+          },
+          "active": "default"
+        }
+      },
+      {
+        "name": "other_dir_blank_file",
+        "platform": "linux",
+        "dir": "other",
+        "files": {
+          ".credentials.json": "{\"claudeAiOauth\":{\"accessToken\":\"\",\"refreshToken\":\"\",\"expiresAt\":0}}"
+        }
+      },
+      {
+        "name": "default_keychain_darwin",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        }
+      },
+      {
+        "name": "default_no_keychain_linux",
+        "platform": "linux",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        }
+      },
+      {
+        "name": "default_file_wins_over_keychain",
+        "platform": "darwin",
+        "dir": "default",
+        "files": {
+          ".credentials.json": "{\"accessToken\": \"sk-ant-test-FILE\"}"
+        },
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        }
+      },
+      {
+        "name": "default_blank_file_blocks_keychain",
+        "platform": "darwin",
+        "dir": "default",
+        "files": {
+          ".credentials.json": "{\"accessToken\": \"\"}"
+        },
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        }
+      },
+      {
+        "name": "default_raw_token_file",
+        "platform": "linux",
+        "dir": "default",
+        "files": {
+          ".credentials.json": "sk-ant-test-abcdefghijkl\n"
+        }
+      },
+      {
+        "name": "default_store_live_wins",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        },
+        "files": {
+          ".credentials.json": "{\"accessToken\": \"sk-ant-test-FILE\"}"
+        },
+        "store": {
+          "profiles": {
+            "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+          },
+          "active": "default"
+        }
+      },
+      {
+        "name": "default_store_active_profile",
+        "platform": "linux",
+        "dir": "default",
+        "store": {
+          "profiles": {
+            "work": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-WORK\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+          },
+          "active": "work"
+        }
+      },
+      {
+        "name": "default_store_expired_falls_to_keychain",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"claudeAiOauth\": {\"accessToken\": \"sk-ant-test-KEYCHAIN\", \"expiresAt\": 4102444800000}}\n"
+        },
+        "store": {
+          "profiles": {
+            "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 1000}"
+          },
+          "active": "default"
+        }
+      },
+      {
+        "name": "default_store_expired_linux",
+        "platform": "linux",
+        "dir": "default",
+        "store": {
+          "profiles": {
+            "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 1000}"
+          },
+          "active": "default"
+        }
+      },
+      {
+        "name": "keychain_hex_blob",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": "7b22636c6175646541694f61757468223a207b22616363657373546f6b656e223a2022736b2d616e742d746573742d484558222c2022657870697265734174223a20343130323434343830303030307d7d0a\n"
+        }
+      },
+      {
+        "name": "keychain_not_found",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 44
+        }
+      },
+      {
+        "name": "keychain_no_security_binary",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "raises": "FileNotFoundError"
+        }
+      },
+      {
+        "name": "keychain_timeout",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "raises": "TimeoutExpired"
+        }
+      },
+      {
+        "name": "keychain_mcp_only",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": "{\"mcpOAuth\": {}}\n"
+        }
+      },
+      {
+        "name": "keychain_empty",
+        "platform": "darwin",
+        "dir": "default",
+        "keychain": {
+          "rc": 0,
+          "stdout": ""
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "token": "sk-ant-test-FILE",
+      "commands": []
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-KEYCHAIN",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-FILE",
+      "commands": []
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-abcdefghijkl",
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-LIVE",
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-WORK",
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-KEYCHAIN",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": []
+    },
+    {
+      "token": "sk-ant-test-HEX",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "token": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "Claude Code-credentials",
+          "-a",
+          "clawd-test-user",
+          "-w"
+        ]
+      ]
+    }
+  ]
+}
