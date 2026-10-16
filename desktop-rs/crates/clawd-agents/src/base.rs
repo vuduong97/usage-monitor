@@ -21,11 +21,11 @@ pub const SCRIPT_MARK: &str = "clawd-event";
 /// `agents.base.HTTP_MARK`: every hook we write posts to `.../hook/<agent>`.
 pub const HTTP_MARK: &str = "/hook/";
 
-/// Everything an adapter needs from its surroundings, injectable (Python: `home`, `platform`,
-/// `port`, `script`, `which`, `env` constructor arguments).
 /// `shutil.which`: the executable `name` on `PATH`, if any.
 pub type WhichFn = Arc<dyn Fn(&str) -> Option<PathBuf> + Send + Sync>;
 
+/// Everything an adapter needs from its surroundings, injectable (Python: `home`, `platform`,
+/// `port`, `script`, `which`, `env` constructor arguments).
 #[derive(Clone)]
 pub struct AgentCtx {
     /// `Path.home()` and our config dir (`hook_script`, `config_dir`).

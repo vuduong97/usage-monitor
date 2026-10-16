@@ -37,7 +37,7 @@ const HOOK_SH: &str = include_str!("../assets/hook_sh.txt");
 /// stdin to `http://127.0.0.1:<port>/hook/${1:-claude}[?e=$2]` with curl and always exits 0).
 /// Must be byte-identical to Python's rendering.
 pub fn hook_script_text(port: u16) -> String {
-    HOOK_SH.replace("%(port)d", &port.to_string())
+    universal_newlines(HOOK_SH).replace("%(port)d", &port.to_string())
 }
 
 /// `hooks.event_port()`: the event port for hook URLs (`clawd_events::read_event_port` over the

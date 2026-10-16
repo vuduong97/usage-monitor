@@ -1,15 +1,26 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
+use clawd_contracts::{AppPaths, Env, Platform};
 use serde_json::Value;
 
 use crate::base::AgentCtx;
 use crate::registry::Registry;
 
-/// The adapters' `normalize` never reads the machine, so one shared registry serves every call.
+/// The adapters' `normalize` never reads the machine, so one shared registry with an inert ctx
+/// (no paths, no environment, no PATH search) serves every call.
 fn shared_registry() -> &'static Registry {
     static REGISTRY: OnceLock<Registry> = OnceLock::new();
-    REGISTRY.get_or_init(|| Registry::new(AgentCtx::system()))
+    REGISTRY.get_or_init(|| {
+        Registry::new(AgentCtx {
+            paths: AppPaths::new(""),
+            platform: Platform::current(),
+            port: None,
+            script: None,
+            which: Arc::new(|_| None),
+            env: Env::empty(),
+        })
+    })
 }
 
 /// `agents.normalize(agent_id, payload, hint)`: tracker events for one hook payload; `None` for
