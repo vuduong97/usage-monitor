@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 clawd-contracts = { workspace = true }
 clawd-config = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
@@ -17,6 +18,8 @@ hyper = { workspace = true, features = ["client"] }
 hyper-util = { workspace = true }
 http-body-util = { workspace = true }
 bytes = "1"
+# TEST_CMD / DEBUG_WORDS (lookarounds rewritten as consuming groups: only existence matters)
+regex = "1"
 # insertion-ordered sessions (Python dict order decides `max(...)` ties and /state order)
 indexmap = "2"
 # `unicodedata.normalize` (NFC for the debug-prompt check, NFKD for ascii_text)
