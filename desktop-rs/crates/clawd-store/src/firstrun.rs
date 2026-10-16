@@ -7,6 +7,7 @@
 //!   version while steps are left.
 //! * `agents_seen`: agents already offered to the user; a newly installed agent is offered
 //!   once, never again whatever the answer.
+#![allow(unused_variables, dead_code)] // milestone stub: removed when implemented
 
 use std::collections::BTreeSet;
 use std::io;

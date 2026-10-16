@@ -11,6 +11,7 @@
 //!
 //! All functions take the names to use ([`OsStoreNames::production`] in the app, a
 //! `for_test(..)` set in tests, which must never touch the production service).
+#![allow(unused_variables, dead_code)] // milestone stub: removed when implemented
 
 use clawd_contracts::OsStoreNames;
 

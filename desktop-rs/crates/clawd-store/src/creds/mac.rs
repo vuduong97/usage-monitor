@@ -1,6 +1,7 @@
 //! macOS Keychain backend: generic password with `kSecAttrService = service` and
 //! `kSecAttrAccount = username` through `security-framework` (the same mapping python-keyring's
 //! macOS backend uses, so items saved by 0.1.4 are found).
+#![allow(unused_variables, dead_code)] // milestone stub: removed when implemented
 
 /// `get_generic_password(service, account)` as text.
 pub(super) fn get_password(service: &str, username: &str) -> Option<String> {

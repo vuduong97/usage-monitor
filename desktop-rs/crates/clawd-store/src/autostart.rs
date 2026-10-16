@@ -10,6 +10,7 @@
 //! writes `StartupApproved` and would add a second launcher). The exe path does not change from
 //! 0.1.4 (`{localappdata}\Programs\Clawd\Clawd.exe`, `/Applications/Clawd.app/Contents/MacOS/
 //! Clawd`), so no migration step exists.
+#![allow(unused_variables, dead_code)] // milestone stub: removed when implemented
 
 use std::io;
 use std::path::PathBuf;

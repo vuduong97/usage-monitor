@@ -9,6 +9,7 @@
 //!
 //! This is NOT `ota.busy` ([`crate::paths::ota_busy`], 900 s, read by the app updater): the two
 //! have different readers and lifetimes (red team #9).
+#![allow(unused_variables, dead_code)] // milestone stub: removed when implemented
 
 use std::io;
 use std::sync::Arc;

@@ -1,6 +1,7 @@
 //! Windows Credential Manager backend: `CredReadW` / `CredWriteW` / `CredDeleteW` through the
 //! `windows` crate (features `Win32_Security_Credentials`), mirroring python-keyring's
 //! `WinVaultKeyring` exactly.
+#![allow(unused_variables, dead_code)] // milestone stub: removed when implemented
 
 /// `WinVaultKeyring.get_password(service, username)`: read target `service` and accept it when
 /// its `UserName` matches, else target `username@service`; the blob is decoded as UTF-16LE,
