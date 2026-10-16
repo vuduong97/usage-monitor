@@ -1,0 +1,1913 @@
+{
+  "input": {
+    "note": "cases are [..inputs.., expected]"
+  },
+  "output": {
+    "ascii_text": [
+      [
+        "Caf\u00e9 na\u00efve \u0110\u00e0 L\u1ea1t",
+        null,
+        "Cafe naive Da Lat"
+      ],
+      [
+        "",
+        null,
+        ""
+      ],
+      [
+        "  a \t b\n c ",
+        null,
+        "a b c"
+      ],
+      [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        null,
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..."
+      ],
+      [
+        "Ti\u1ebfng Vi\u1ec7t: \u0111\u1eb9p qu\u00e1",
+        null,
+        "Tieng Viet: dep qua"
+      ],
+      [
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        null,
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ],
+      [
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        null,
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx..."
+      ],
+      [
+        "abc def ghi",
+        null,
+        "abc def ghi"
+      ],
+      [
+        "\ud83d\ude00 emoji",
+        null,
+        "emoji"
+      ],
+      [
+        "\ufb01 ligature \u00b2 \u00bd",
+        null,
+        "fi ligature 2 12"
+      ],
+      [
+        "\u001c\u001d tab\u001f sep",
+        null,
+        "tab sep"
+      ],
+      [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        10,
+        "aaaaaaa..."
+      ],
+      [
+        "abcde fghij",
+        9,
+        "abcde..."
+      ],
+      [
+        "abcd efghij",
+        9,
+        "abcd e..."
+      ],
+      [
+        "\u0110\u00e0 L\u1ea1t",
+        24,
+        "Da Lat"
+      ]
+    ],
+    "is_test_command": [
+      [
+        "pytest daemon/tests -q",
+        true
+      ],
+      [
+        "cd x && npm test",
+        true
+      ],
+      [
+        "pnpm run test:unit",
+        true
+      ],
+      [
+        "go test ./...",
+        true
+      ],
+      [
+        "cargo test --release",
+        true
+      ],
+      [
+        "node --test x.test.ts",
+        true
+      ],
+      [
+        "uv run python -m pytest -q",
+        true
+      ],
+      [
+        "ls tests",
+        false
+      ],
+      [
+        "cat pytest.ini",
+        false
+      ],
+      [
+        "git commit -m 'npm testing'",
+        false
+      ],
+      [
+        null,
+        false
+      ],
+      [
+        "make check",
+        true
+      ],
+      [
+        "dotnet test",
+        true
+      ],
+      [
+        "(pytest)",
+        true
+      ],
+      [
+        "yarn test:e2e x",
+        true
+      ],
+      [
+        "npx jest",
+        true
+      ],
+      [
+        "cargo nextest run",
+        true
+      ],
+      [
+        "gradlew test",
+        true
+      ],
+      [
+        "pytest",
+        true
+      ]
+    ],
+    "is_debug_prompt": [
+      [
+        "/ak:debug the flash script",
+        true
+      ],
+      [
+        "/ak:fix it",
+        true
+      ],
+      [
+        "/skill:ak-debug x",
+        true
+      ],
+      [
+        "why does this debugging fail",
+        true
+      ],
+      [
+        "Fix the build",
+        true
+      ],
+      [
+        "a bug in flash.sh",
+        true
+      ],
+      [
+        "s\u1eeda l\u1ed7i flash.sh",
+        true
+      ],
+      [
+        "su\u031b\u0309a lo\u0302\u0303i",
+        true
+      ],
+      [
+        "tr\u1ea3 l\u1eddi b\u1eb1ng ti\u1ebfng Vi\u1ec7t",
+        false
+      ],
+      [
+        "tra loi nhanh",
+        false
+      ],
+      [
+        "add a prefix and a suffix",
+        false
+      ],
+      [
+        "debounce the input",
+        false
+      ],
+      [
+        "<skill name=\"ak-debug\" location=\"x\">\nbody\n</skill>\n\nwhy?",
+        true
+      ],
+      [
+        "<skill name=\"ak-cook\" location=\"x\">\nfix bugs, debug\n</skill>\n\n--auto",
+        false
+      ],
+      [
+        null,
+        false
+      ],
+      [
+        5,
+        false
+      ],
+      [
+        "",
+        false
+      ],
+      [
+        "bugs",
+        true
+      ],
+      [
+        "BUG",
+        true
+      ],
+      [
+        "fixes",
+        false
+      ],
+      [
+        "(fix)",
+        true
+      ],
+      [
+        "FIX!",
+        true
+      ],
+      [
+        "<skill name=\"ak-fix\">",
+        true
+      ],
+      [
+        "<skill name=\"ak-cook\">fix",
+        false
+      ],
+      [
+        "<skill name=\"debug\">x</skill>",
+        true
+      ],
+      [
+        "<skill name=\"AK:DEBUG\">x</skill>",
+        true
+      ]
+    ],
+    "is_debug_skill_load": [
+      [
+        "Skill",
+        {
+          "skill": "ak:debug"
+        },
+        true
+      ],
+      [
+        "Skill",
+        {
+          "command": "/ak:fix"
+        },
+        true
+      ],
+      [
+        "Skill",
+        {
+          "skill": "ak:cook"
+        },
+        false
+      ],
+      [
+        "Read",
+        {
+          "file_path": "/u/.agents/skills/ak-debug/SKILL.md"
+        },
+        true
+      ],
+      [
+        "read",
+        {
+          "path": "skills/ak-fix/SKILL.md"
+        },
+        true
+      ],
+      [
+        "read",
+        {
+          "path": "skills/ak-debug/references/x.md"
+        },
+        false
+      ],
+      [
+        "Edit",
+        {
+          "file_path": "skills/ak-debug/SKILL.md"
+        },
+        false
+      ],
+      [
+        "Read",
+        null,
+        false
+      ],
+      [
+        "skill",
+        {
+          "skill": 5
+        },
+        false
+      ],
+      [
+        "skill",
+        {
+          "skill": " /fix/ "
+        },
+        true
+      ],
+      [
+        "Read",
+        {
+          "file_path": "C:\\x\\ak-debug\\SKILL.md"
+        },
+        true
+      ],
+      [
+        "Read",
+        {
+          "file_path": 5
+        },
+        false
+      ],
+      [
+        "",
+        {},
+        false
+      ]
+    ],
+    "is_question_tool": [
+      [
+        "AskUserQuestion",
+        true
+      ],
+      [
+        "ask_user",
+        true
+      ],
+      [
+        "question",
+        true
+      ],
+      [
+        "request_user_input",
+        true
+      ],
+      [
+        "mcp__srv__ask_user_question",
+        true
+      ],
+      [
+        "Bash",
+        false
+      ],
+      [
+        "",
+        false
+      ],
+      [
+        "  Question  ",
+        true
+      ],
+      [
+        "mcp__x",
+        false
+      ],
+      [
+        "mcp__x__y__question",
+        false
+      ]
+    ],
+    "tool_action": [
+      [
+        "AskUserQuestion",
+        ""
+      ],
+      [
+        "ask_user",
+        ""
+      ],
+      [
+        "question",
+        ""
+      ],
+      [
+        "request_user_input",
+        ""
+      ],
+      [
+        "mcp__srv__ask_user_question",
+        ""
+      ],
+      [
+        "Bash",
+        "run"
+      ],
+      [
+        "",
+        ""
+      ],
+      [
+        "  Question  ",
+        ""
+      ],
+      [
+        "mcp__x",
+        ""
+      ],
+      [
+        "mcp__x__y__question",
+        ""
+      ],
+      [
+        "Bash",
+        "run"
+      ],
+      [
+        "bash",
+        "run"
+      ],
+      [
+        "bg_run",
+        "run"
+      ],
+      [
+        "PowerShell",
+        "run"
+      ],
+      [
+        "Read",
+        "read"
+      ],
+      [
+        "read_symbol",
+        "read"
+      ],
+      [
+        "LS",
+        "read"
+      ],
+      [
+        "view",
+        "read"
+      ],
+      [
+        "MultiEdit",
+        "edit"
+      ],
+      [
+        "write",
+        "edit"
+      ],
+      [
+        "apply_patch",
+        "edit"
+      ],
+      [
+        "delete",
+        "edit"
+      ],
+      [
+        "Grep",
+        "search"
+      ],
+      [
+        "rg",
+        "search"
+      ],
+      [
+        "WebFetch",
+        "browse"
+      ],
+      [
+        "google_web_search",
+        "browse"
+      ],
+      [
+        "TodoWrite",
+        "plan"
+      ],
+      [
+        "update_plan",
+        "plan"
+      ],
+      [
+        "mcp__x__read",
+        "read"
+      ],
+      [
+        "mcp__x__a__grep",
+        ""
+      ],
+      [
+        "mcp__",
+        ""
+      ],
+      [
+        "Frobnicate",
+        ""
+      ],
+      [
+        "",
+        ""
+      ],
+      [
+        " bash ",
+        "run"
+      ],
+      [
+        "mcp__a__b__c__read",
+        ""
+      ]
+    ],
+    "tool_summary": [
+      [
+        "Bash",
+        {
+          "command": " ls -la "
+        },
+        "Bash: ls -la"
+      ],
+      [
+        "Read",
+        {
+          "file_path": "/a"
+        },
+        "Read: /a"
+      ],
+      [
+        "Read",
+        {
+          "command": "  ",
+          "url": "u"
+        },
+        "Read: u"
+      ],
+      [
+        "Task",
+        {
+          "description": "d"
+        },
+        "Task: d"
+      ],
+      [
+        "Task",
+        {},
+        "Task"
+      ],
+      [
+        "Task",
+        null,
+        "Task"
+      ],
+      [
+        "Task",
+        "x",
+        "Task"
+      ],
+      [
+        "G",
+        {
+          "pattern": 5,
+          "path": "p"
+        },
+        "G: p"
+      ]
+    ],
+    "claude_event": [
+      [
+        {
+          "hook_event_name": "UserPromptSubmit",
+          "session_id": "s1"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "prompt"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "UserPromptSubmit",
+          "session_id": "s1",
+          "prompt": "fix the bug"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "debug": true,
+          "ev": "prompt"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": "Read"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Read",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": "Bash",
+          "tool_input": {
+            "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Bash",
+          "cmd": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": "Bash",
+          "tool_input": {
+            "command": 5
+          }
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Bash",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": "AskUserQuestion",
+          "tool_input": {
+            "questions": [
+              {
+                "question": "Which DB?"
+              }
+            ]
+          }
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "AskUserQuestion",
+          "ev": "attention"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": "Skill",
+          "tool_input": {
+            "skill": "ak:debug"
+          }
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Skill",
+          "debug": true,
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": 5
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PermissionRequest",
+          "session_id": "s1",
+          "tool_name": "Bash",
+          "tool_input": {
+            "command": " npm test "
+          }
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Bash",
+          "cmd": " npm test ",
+          "ev": "attention",
+          "msg": "Allow Bash: npm test"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PermissionRequest",
+          "session_id": "s1",
+          "tool_name": "Edit",
+          "tool_input": {
+            "file_path": "/a/b"
+          }
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Edit",
+          "ev": "attention",
+          "msg": "Allow Edit: /a/b"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PermissionRequest",
+          "session_id": "s1"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Allow "
+        }
+      ],
+      [
+        {
+          "hook_event_name": "Notification",
+          "session_id": "s1",
+          "message": "Claude is waiting for your input",
+          "notification_type": "idle_prompt"
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": "Notification",
+          "session_id": "s1",
+          "message": "Claude is waiting for your input"
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": "Notification",
+          "session_id": "s1",
+          "message": "Claude needs your permission",
+          "notification_type": "permission_prompt"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Claude needs your permission"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "Notification",
+          "session_id": "s1"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Claude needs you"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "Notification",
+          "session_id": "s1",
+          "message": 5
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "5"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "StopFailure",
+          "session_id": "s1"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "stop_error"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "SessionStart",
+          "session_id": "s1"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "start"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "Stop",
+          "session_id": "s1",
+          "cursor_version": "1.0"
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": "Stop"
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": "Stop",
+          "session_id": ""
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": "Stop",
+          "session_id": 5
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": 5,
+          "session_id": "s1"
+        },
+        null
+      ],
+      [
+        {
+          "hook_event_name": "SomethingNew",
+          "session_id": "s1"
+        },
+        null
+      ],
+      [
+        [
+          1,
+          2
+        ],
+        null
+      ],
+      [
+        null,
+        null
+      ],
+      [
+        "x",
+        null
+      ],
+      [
+        {},
+        null
+      ],
+      [
+        {
+          "hook_event_name": "Notification",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Claude needs you"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PermissionRequest",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Allow "
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PostCompact",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "compact_done"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PostToolUse",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "tool_done"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PostToolUseFailure",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "tool_error"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreCompact",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "compact"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "PreToolUse",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "SessionEnd",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "end"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "SessionStart",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "start"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "Stop",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "stop"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "StopFailure",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "stop_error"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "SubagentStart",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "subagent_start"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "SubagentStop",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "subagent_stop"
+        }
+      ],
+      [
+        {
+          "hook_event_name": "UserPromptSubmit",
+          "session_id": "z"
+        },
+        {
+          "src": "claude",
+          "sid": "claude:z",
+          "tool": "",
+          "ev": "prompt"
+        }
+      ]
+    ],
+    "pi_event": [
+      [
+        {
+          "ev": "nope",
+          "sid": "x"
+        },
+        null
+      ],
+      [
+        {
+          "ev": "tool"
+        },
+        null
+      ],
+      [
+        {
+          "ev": "tool",
+          "sid": ""
+        },
+        null
+      ],
+      [
+        {
+          "ev": "tool",
+          "sid": 0
+        },
+        null
+      ],
+      [
+        {
+          "ev": "attention",
+          "sid": "x",
+          "msg": "Pick one"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:x",
+          "ev": "attention",
+          "tool": "",
+          "msg": "Pick one",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "tool",
+          "sid": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+          "cmd": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sub": 1
+        },
+        {
+          "src": "pi",
+          "sid": "pi:yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+          "ev": "tool",
+          "tool": "",
+          "msg": "",
+          "cmd": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sub": true,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "prompt",
+          "sid": "p",
+          "debug": true
+        },
+        {
+          "src": "pi",
+          "sid": "pi:p",
+          "ev": "prompt",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": true
+        }
+      ],
+      [
+        {
+          "ev": "prompt",
+          "sid": "p",
+          "debug": "yes"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:p",
+          "ev": "prompt",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "tool",
+          "sid": 7,
+          "tool": 5,
+          "msg": 0
+        },
+        {
+          "src": "pi",
+          "sid": "pi:7",
+          "ev": "tool",
+          "tool": "5",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "tool",
+          "sid": "a",
+          "tool": null
+        },
+        {
+          "src": "pi",
+          "sid": "pi:a",
+          "ev": "tool",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": 5,
+          "sid": "a"
+        },
+        null
+      ],
+      [
+        [
+          1
+        ],
+        null
+      ],
+      [
+        null,
+        null
+      ],
+      [
+        {
+          "ev": "end",
+          "sid": "e",
+          "sub": false
+        },
+        {
+          "src": "pi",
+          "sid": "pi:e",
+          "ev": "end",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "abort",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "abort",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "attention",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "attention",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "attention_done",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "attention_done",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "attention_seen",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "attention_seen",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "compact",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "compact",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "compact_done",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "compact_done",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "end",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "end",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "prompt",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "prompt",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "start",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "start",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "stop",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "stop",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "stop_error",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "stop_error",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "subagent_start",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "subagent_start",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "subagent_stop",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "subagent_stop",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "tool",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "tool",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "tool_done",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "tool_done",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "ev": "tool_error",
+          "sid": "k"
+        },
+        {
+          "src": "pi",
+          "sid": "pi:k",
+          "ev": "tool_error",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ]
+    ],
+    "wire": [
+      [
+        {
+          "a": "",
+          "seq": [],
+          "rep": false,
+          "v": [],
+          "u": false,
+          "txt": "",
+          "cd": 0,
+          "dim": -1,
+          "focus_until": 0
+        },
+        "{\"a\":\"\",\"ttl\":60}"
+      ],
+      [
+        {
+          "a": "x",
+          "seq": [
+            "x"
+          ],
+          "rep": false,
+          "v": [],
+          "u": true,
+          "txt": "",
+          "cd": 0,
+          "dim": -1,
+          "focus_until": 0
+        },
+        "{\"a\":\"x\",\"ttl\":60,\"u\":true}"
+      ],
+      [
+        {
+          "a": "x",
+          "seq": [
+            "x"
+          ],
+          "rep": false,
+          "v": [],
+          "u": false,
+          "txt": "t",
+          "cd": 5,
+          "dim": 10,
+          "focus_until": 1
+        },
+        "{\"a\":\"x\",\"ttl\":60,\"txt\":\"t\",\"cd\":5,\"dim\":10}"
+      ],
+      [
+        {
+          "a": "s",
+          "seq": [
+            "y",
+            "s"
+          ],
+          "rep": false,
+          "v": [],
+          "u": false,
+          "txt": "",
+          "cd": 0,
+          "dim": -1,
+          "focus_until": 0
+        },
+        "{\"a\":[\"y\",\"s\"],\"ttl\":60}"
+      ],
+      [
+        {
+          "a": "question",
+          "seq": [
+            "react left",
+            "react right"
+          ],
+          "rep": true,
+          "v": [],
+          "u": true,
+          "txt": "Your turn!",
+          "cd": 0,
+          "dim": 0,
+          "focus_until": 0
+        },
+        "{\"a\":[\"react left\",\"react right\"],\"ttl\":60,\"rep\":true,\"u\":true,\"txt\":\"Your turn!\",\"dim\":0}"
+      ],
+      [
+        {
+          "a": "typing",
+          "seq": [
+            "typing"
+          ],
+          "rep": false,
+          "v": [
+            "building",
+            "carrying"
+          ],
+          "u": false,
+          "txt": "",
+          "cd": 0,
+          "dim": -1,
+          "focus_until": 0
+        },
+        "{\"a\":\"typing\",\"ttl\":60,\"v\":[\"building\",\"carrying\"]}"
+      ],
+      [
+        {
+          "a": "x",
+          "seq": [
+            "x"
+          ],
+          "rep": false,
+          "v": [],
+          "u": false,
+          "txt": "\u00dcn\u00ef \"q\"",
+          "cd": 0,
+          "dim": 15,
+          "focus_until": 0
+        },
+        "{\"a\":\"x\",\"ttl\":60,\"txt\":\"\\u00dcn\\u00ef \\\"q\\\"\",\"dim\":15}"
+      ]
+    ],
+    "urls": [
+      [
+        "http://192.168.1.48/api/usage",
+        "http://192.168.1.48/api/state",
+        "http://192.168.1.48/api/heap"
+      ],
+      [
+        "http://clock.local:8080/api/usage?x=1#f",
+        "http://clock.local:8080/api/state",
+        "http://clock.local:8080/api/heap"
+      ],
+      [
+        "HTTP://Host/api/usage",
+        "http://Host/api/state",
+        "http://Host/api/heap"
+      ],
+      [
+        "no-scheme/api/usage",
+        "/api/state",
+        "/api/heap"
+      ],
+      [
+        "http://[::1]:8080/api/usage",
+        "http://[::1]:8080/api/state",
+        "http://[::1]:8080/api/heap"
+      ],
+      [
+        "https://c/api/usage",
+        "https://c/api/state",
+        "https://c/api/heap"
+      ],
+      [
+        "",
+        "/api/state",
+        "/api/heap"
+      ]
+    ],
+    "read_event_port": [
+      [
+        {
+          "env": null,
+          "config": {}
+        },
+        47913
+      ],
+      [
+        {
+          "env": null,
+          "config": {
+            "event_port": "5000"
+          }
+        },
+        5000
+      ],
+      [
+        {
+          "env": null,
+          "config": {
+            "event_port": " 5000 "
+          }
+        },
+        5000
+      ],
+      [
+        {
+          "env": "6000",
+          "config": {
+            "event_port": "5000"
+          }
+        },
+        6000
+      ],
+      [
+        {
+          "env": "0",
+          "config": {}
+        },
+        0
+      ],
+      [
+        {
+          "env": "70000",
+          "config": {}
+        },
+        47913
+      ],
+      [
+        {
+          "env": "65535",
+          "config": {}
+        },
+        65535
+      ],
+      [
+        {
+          "env": "65536",
+          "config": {}
+        },
+        47913
+      ],
+      [
+        {
+          "env": "abc",
+          "config": {}
+        },
+        47913
+      ],
+      [
+        {
+          "env": "-1",
+          "config": {}
+        },
+        47913
+      ],
+      [
+        {
+          "env": "abc",
+          "config": {
+            "event_port": "5000"
+          }
+        },
+        47913
+      ],
+      [
+        {
+          "env": null,
+          "config": {
+            "event_port": "x"
+          }
+        },
+        47913
+      ],
+      [
+        {
+          "env": null,
+          "config": {
+            "event_port": ""
+          }
+        },
+        47913
+      ],
+      [
+        {
+          "env": null,
+          "config": {
+            "event_port": "0"
+          }
+        },
+        0
+      ],
+      [
+        {
+          "env": "  7  ",
+          "config": {}
+        },
+        7
+      ]
+    ],
+    "read_pet_config": [
+      [
+        {},
+        {
+          "quiet_start": 1380,
+          "quiet_end": 420,
+          "quiet_dim": 15,
+          "away_after": 300,
+          "low_pct": 80,
+          "low_every": 900,
+          "yawn_from": 1320,
+          "yawn_every": 1800,
+          "milestone": 10
+        }
+      ],
+      [
+        {
+          "quiet_start": "22:30",
+          "quiet_end": "6:45",
+          "quiet_dim": "200",
+          "away_after": "5",
+          "milestone_turns": "x",
+          "event_port": "5000",
+          "idle_linger": "60"
+        },
+        {
+          "quiet_start": 1350,
+          "quiet_end": 405,
+          "quiet_dim": 100,
+          "away_after": 30,
+          "low_pct": 80,
+          "low_every": 900,
+          "yawn_from": 1320,
+          "yawn_every": 1800,
+          "milestone": 10
+        }
+      ],
+      [
+        {
+          "quiet_start": " 7:05 ",
+          "quiet_end": "25:75",
+          "quiet_dim": "-5",
+          "away_after": "9000",
+          "milestone_turns": "-3"
+        },
+        {
+          "quiet_start": 425,
+          "quiet_end": 75,
+          "quiet_dim": 0,
+          "away_after": 9000,
+          "low_pct": 80,
+          "low_every": 900,
+          "yawn_from": 1320,
+          "yawn_every": 1800,
+          "milestone": 0
+        }
+      ],
+      [
+        {
+          "quiet_start": "7pm",
+          "quiet_end": "1:5",
+          "quiet_dim": "x",
+          "away_after": "",
+          "milestone_turns": "0"
+        },
+        {
+          "quiet_start": 1380,
+          "quiet_end": 420,
+          "quiet_dim": 15,
+          "away_after": 300,
+          "low_pct": 80,
+          "low_every": 900,
+          "yawn_from": 1320,
+          "yawn_every": 1800,
+          "milestone": 0
+        }
+      ],
+      [
+        {
+          "quiet_start": "00:00",
+          "quiet_end": "24:00",
+          "quiet_dim": "50",
+          "away_after": " 45 ",
+          "milestone_turns": "7"
+        },
+        {
+          "quiet_start": 0,
+          "quiet_end": 0,
+          "quiet_dim": 50,
+          "away_after": 45,
+          "low_pct": 80,
+          "low_every": 900,
+          "yawn_from": 1320,
+          "yawn_every": 1800,
+          "milestone": 7
+        }
+      ]
+    ],
+    "constants": {
+      "EVENTS": [
+        "abort",
+        "attention",
+        "attention_done",
+        "attention_seen",
+        "compact",
+        "compact_done",
+        "end",
+        "prompt",
+        "start",
+        "stop",
+        "stop_error",
+        "subagent_start",
+        "subagent_stop",
+        "tool",
+        "tool_done",
+        "tool_error"
+      ],
+      "CLAUDE_HOOK_EVENTS": [
+        "Notification",
+        "PermissionRequest",
+        "PostCompact",
+        "PostToolUse",
+        "PostToolUseFailure",
+        "PreCompact",
+        "PreToolUse",
+        "SessionEnd",
+        "SessionStart",
+        "Stop",
+        "StopFailure",
+        "SubagentStart",
+        "SubagentStop",
+        "UserPromptSubmit"
+      ]
+    }
+  }
+}
