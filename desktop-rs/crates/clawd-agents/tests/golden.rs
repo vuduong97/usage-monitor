@@ -76,6 +76,11 @@ fn run_configs(include_other_phases: bool) {
     let fx = load_fixture_value("agents", "configs");
     let (input, output) = (&fx["input"], &fx["output"]);
     let port = input["port"].as_u64().unwrap();
+    assert_eq!(
+        input["cases"].as_array().unwrap().len(),
+        output["cases"].as_array().unwrap().len(),
+        "configs: cases"
+    );
     for (case, expected) in input["cases"]
         .as_array()
         .unwrap()
@@ -92,6 +97,11 @@ fn run_configs(include_other_phases: bool) {
         let reg = Registry::new(ctx);
         let agent = reg.get(case["agent"].as_str().unwrap()).unwrap();
         let watched = case["watched"].as_array().unwrap();
+        assert_eq!(
+            case["steps"].as_array().unwrap().len(),
+            expected["steps"].as_array().unwrap().len(),
+            "{name}: steps"
+        );
         for (step_name, want) in case["steps"]
             .as_array()
             .unwrap()
@@ -153,17 +163,36 @@ fn configs_match_python_all() {
 #[test]
 fn bundled_assets_equal_the_integrations_python_ships() {
     let fx = load_fixture_value("agents", "configs");
-    let checks = fx["output"]["assets_equal_integrations"]
-        .as_object()
-        .unwrap();
+    let checks = fx["output"]["assets_equal_integrations"].as_object().unwrap();
     assert_eq!(checks.len(), 2);
     assert!(checks.values().all(|v| v == &json!(true)));
+    // Live check against the repo's integrations/ (this crate sits at <repo>/desktop-rs/crates);
+    // skipped when that tree is absent (a crate checked out on its own).
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    for rel in ["pi/clawd-home.ts", "opencode/clawd.js"] {
+        let source = repo.join("integrations").join(rel);
+        let Ok(python_copy) = std::fs::read_to_string(&source) else {
+            eprintln!("skipped: {} not found", source.display());
+            continue;
+        };
+        let bundled = std::str::from_utf8(clawd_agents::assets::integration(rel).unwrap()).unwrap();
+        assert_eq!(
+            bundled.replace("
+", "
+"),
+            python_copy.replace("
+", "
+"),
+            "assets/{rel} drifted from integrations/{rel}"
+        );
+    }
 }
 
 fn run_normalize(include_other_phases: bool) {
     let fx = load_fixture_value("agents", "normalize");
     let cases = fx["input"]["cases"].as_array().unwrap();
     let wants = fx["output"]["events"].as_array().unwrap();
+    assert_eq!(cases.len(), wants.len(), "normalize: cases");
     for (i, (case, want)) in cases.iter().zip(wants).enumerate() {
         if flag(case) && !include_other_phases {
             continue;
@@ -227,6 +256,16 @@ fn hooks_match_python() {
         .collect();
     assert_eq!(events, hooks::EVENTS);
 
+    assert_eq!(
+        input["merges"].as_array().unwrap().len(),
+        output["merges"].as_array().unwrap().len(),
+        "hooks: merges"
+    );
+    assert_eq!(
+        input["installed"].as_array().unwrap().len(),
+        output["installed"].as_array().unwrap().len(),
+        "hooks: installed"
+    );
     for (i, (case, want)) in input["merges"]
         .as_array()
         .unwrap()
