@@ -144,7 +144,7 @@ Then, in order:
 The owner continues on a **MacBook**, not the Windows PC. Consequences:
 
 - The Windows-only items (section 8 steps 2-4: tray "Thoat", rollback, Rust->Rust on Windows, Win10 no-WebView2) need the Windows PC; leave them for later.
-- `D:\clawd-minisign\` and `D:backup-clawd-0.1.4\` stay on the Windows PC. The CI only needs the GitHub secrets (already set), so the Mac does not need the key file.
+- `D:\clawd-minisign\` and `D:\backup-clawd-0.1.4\` stay on the Windows PC. The CI only needs the GitHub secrets (already set), so the Mac does not need the key file.
 - On the Mac you can do for real what CI could only approximate: `cargo test --workspace` on macOS, the keychain / LaunchAgent / popover placement checks in
   `tools/migration/mac.md`, and the mac packaging with `packaging-rs/build_mac.sh` (needs the Apple certificate; the CI has it as secrets). Run the Python checks with your own venv.
 - Setup on the Mac: Rust stable, `gh auth login`, `git clone` the repo, `cargo test --workspace` from `desktop-rs/`. Paths in this file that start with `D:` or `C:` are Windows-only.
