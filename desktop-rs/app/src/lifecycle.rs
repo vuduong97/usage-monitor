@@ -878,6 +878,9 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
     let builder = crate::commands::register(tauri::Builder::default()).manage(state);
     #[cfg(target_os = "macos")]
     let builder = builder.plugin(tauri_plugin_positioner::init());
+    // The settings bridge's backup export/import call `app.dialog()` from Rust; without this
+    // plugin that panics (and the page just sees a cancelled dialog).
+    let builder = builder.plugin(tauri_plugin_dialog::init());
     let built = builder
         .setup(move |app| {
             #[cfg(target_os = "macos")]

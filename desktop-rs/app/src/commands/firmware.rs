@@ -170,9 +170,9 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
                 .map_err(|e| UpdateFailure::Other(e.to_string()))?;
             let fetched = Arc::new(fetched);
             b.data().release = Some(Arc::clone(&fetched));
-            ota::install_release(&api, &fetched, changes, need, &opts).await
+            ota::install_release(&*api, &fetched, changes, need, &opts).await
         }
-        None => ota::install_then_save(&api, &src.bundle, changes, need, &opts).await,
+        None => ota::install_then_save(&*api, &src.bundle, changes, need, &opts).await,
     }
     .map_err(UpdateFailure::Clock)?;
     b.data().heap = heap.clone();
