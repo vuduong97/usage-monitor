@@ -582,7 +582,12 @@ async fn poll_claude_only_restricts_to_one_dir() {
 async fn payload_keys_keep_python_order_with_chime_and_clock() {
     let fx = Fx::new();
     let dir = fx.claude_dir("a", "tA");
-    fx.config(&dirs_config(&[&dir], "chime = on\nclock = 12\n"));
+    // Not `dirs_config`: it writes `clock = off` first, and (as in Python) the first valid
+    // `clock` line wins, so a later `clock = 12` would be ignored.
+    fx.config(&format!(
+        "config_dirs = {}\nchime = on\nclock = 12\n",
+        dir.display()
+    ));
     usage_by_token(&fx, &[("tA", 7.0)]);
     let (p, _) = poll_active(&fx.env, &mut PollState::new()).await;
     let p = p.unwrap();
