@@ -1,0 +1,119 @@
+{
+  "input": {
+    "max_age": 60
+  },
+  "output": [
+    {
+      "name": "bare touch",
+      "text": "",
+      "age": 0,
+      "now": 1791711600.0,
+      "result": {
+        "m": "",
+        "s": "",
+        "t": 1791711600.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "alert with card",
+      "text": "{\"m\": \"Voc\\u00ea  aprova\\na a\\u00e7\\u00e3o?\", \"s\": \"abc\"}",
+      "age": 5,
+      "now": 1791711600.0,
+      "result": {
+        "m": "Voce aprova a acao?",
+        "s": "abc",
+        "t": 1791711595.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "fresh, 59 s",
+      "text": "{\"m\": \"x\", \"s\": \"a\"}",
+      "age": 59,
+      "now": 1791711600.0,
+      "result": {
+        "m": "x",
+        "s": "a",
+        "t": 1791711541.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "stale, 60 s",
+      "text": "{\"m\": \"x\", \"s\": \"a\"}",
+      "age": 60,
+      "now": 1791711600.0,
+      "result": null,
+      "consumed": true
+    },
+    {
+      "name": "stale, 61 s",
+      "text": "{\"m\": \"x\", \"s\": \"a\"}",
+      "age": 61,
+      "now": 1791711600.0,
+      "result": null,
+      "consumed": true
+    },
+    {
+      "name": "not json",
+      "text": "needs you",
+      "age": 1,
+      "now": 1791711600.0,
+      "result": {
+        "m": "",
+        "s": "",
+        "t": 1791711599.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "json list",
+      "text": "[1, 2]",
+      "age": 1,
+      "now": 1791711600.0,
+      "result": {
+        "m": "",
+        "s": "",
+        "t": 1791711599.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "message number, session missing",
+      "text": "{\"m\": 42}",
+      "age": 1,
+      "now": 1791711600.0,
+      "result": {
+        "m": "42",
+        "s": "",
+        "t": 1791711599.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "long message",
+      "text": "{\"m\": \"word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word \", \"s\": \"s1\"}",
+      "age": 1,
+      "now": 1791711600.0,
+      "result": {
+        "m": "word word word word word word word word word word word word word word word word word word word word word word word wo...",
+        "s": "s1",
+        "t": 1791711599.0
+      },
+      "consumed": true
+    },
+    {
+      "name": "falsy fields",
+      "text": "{\"m\": null, \"s\": 0}",
+      "age": 1,
+      "now": 1791711600.0,
+      "result": {
+        "m": "",
+        "s": "",
+        "t": 1791711599.0
+      },
+      "consumed": true
+    }
+  ]
+}

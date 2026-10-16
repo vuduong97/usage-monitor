@@ -1,0 +1,167 @@
+{
+  "input": {
+    "now": 1791711600.0
+  },
+  "output": [
+    {
+      "name": "401",
+      "status": 401,
+      "text": "{}",
+      "config": "clock = off\n",
+      "result": {
+        "error": "TokenExpired"
+      }
+    },
+    {
+      "name": "403",
+      "status": 403,
+      "text": "{}",
+      "config": "clock = off\n",
+      "result": {
+        "error": "TokenExpired"
+      }
+    },
+    {
+      "name": "404",
+      "status": 404,
+      "text": "not found",
+      "config": "clock = off\n",
+      "result": {
+        "error": "UsageNotApplicable",
+        "message": "HTTP 404"
+      }
+    },
+    {
+      "name": "400 not applicable",
+      "status": 400,
+      "text": "{\"error\":{\"message\":\"Usage limits are Not Applicable to API organizations\"}}",
+      "config": "clock = off\n",
+      "result": {
+        "error": "UsageNotApplicable",
+        "message": "HTTP 400"
+      }
+    },
+    {
+      "name": "400 other",
+      "status": 400,
+      "text": "bad request",
+      "config": "clock = off\n",
+      "result": {
+        "value": null
+      }
+    },
+    {
+      "name": "429",
+      "status": 429,
+      "text": "slow down",
+      "config": "clock = off\n",
+      "result": {
+        "value": null
+      }
+    },
+    {
+      "name": "500",
+      "status": 500,
+      "text": "boom",
+      "config": "clock = off\n",
+      "result": {
+        "value": null
+      }
+    },
+    {
+      "name": "200 html",
+      "status": 200,
+      "text": "<html>",
+      "config": "clock = off\n",
+      "result": {
+        "value": null
+      }
+    },
+    {
+      "name": "200 no windows",
+      "status": 200,
+      "text": "{}",
+      "config": "clock = off\n",
+      "result": {
+        "error": "UsageNotApplicable",
+        "message": "no five_hour window"
+      }
+    },
+    {
+      "name": "200 ok, clock off",
+      "status": 200,
+      "text": "{\"five_hour\": {\"utilization\": 7.0, \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day\": {\"utilization\": 8.0, \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day_oauth_apps\": null, \"seven_day_opus\": null, \"seven_day_sonnet\": null, \"iguana_necktie\": {\"utilization\": 0.0, \"resets_at\": \"2026-11-05T07:59:00+00:00\", \"limit_dollars\": 250, \"used_dollars\": 0.0, \"remaining_dollars\": 250.0, \"locked_reason\": null}, \"extra_usage\": {\"is_enabled\": false, \"monthly_limit\": null, \"used_credits\": null, \"utilization\": null, \"currency\": null, \"decimal_places\": null, \"disabled_reason\": null, \"user_disabled\": true, \"spend_limit_reached\": false, \"credits_ever_enabled\": true, \"daily\": null, \"weekly\": null}, \"limits\": [{\"kind\": \"session\", \"group\": \"session\", \"percent\": 7, \"severity\": \"normal\", \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\"}, {\"kind\": \"weekly\", \"group\": \"weekly\", \"percent\": 8, \"severity\": \"normal\", \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\"}]}",
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "200 ok, clock 24",
+      "status": 200,
+      "text": "{\"five_hour\": {\"utilization\": 7.0, \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day\": {\"utilization\": 8.0, \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day_oauth_apps\": null, \"seven_day_opus\": null, \"seven_day_sonnet\": null, \"iguana_necktie\": {\"utilization\": 0.0, \"resets_at\": \"2026-11-05T07:59:00+00:00\", \"limit_dollars\": 250, \"used_dollars\": 0.0, \"remaining_dollars\": 250.0, \"locked_reason\": null}, \"extra_usage\": {\"is_enabled\": false, \"monthly_limit\": null, \"used_credits\": null, \"utilization\": null, \"currency\": null, \"decimal_places\": null, \"disabled_reason\": null, \"user_disabled\": true, \"spend_limit_reached\": false, \"credits_ever_enabled\": true, \"daily\": null, \"weekly\": null}, \"limits\": [{\"kind\": \"session\", \"group\": \"session\", \"percent\": 7, \"severity\": \"normal\", \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\"}, {\"kind\": \"weekly\", \"group\": \"weekly\", \"percent\": 8, \"severity\": \"normal\", \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\"}]}",
+      "config": "clock = 24\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed",
+          "acct": "pro",
+          "ok": true,
+          "t": 1791736800,
+          "tf": 24
+        }
+      },
+      "tz_gmtoff": 25200
+    },
+    {
+      "name": "200 ok, clock 12 + chime",
+      "status": 200,
+      "text": "{\"five_hour\": {\"utilization\": 7.0, \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day\": {\"utilization\": 8.0, \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day_oauth_apps\": null, \"seven_day_opus\": null, \"seven_day_sonnet\": null, \"iguana_necktie\": {\"utilization\": 0.0, \"resets_at\": \"2026-11-05T07:59:00+00:00\", \"limit_dollars\": 250, \"used_dollars\": 0.0, \"remaining_dollars\": 250.0, \"locked_reason\": null}, \"extra_usage\": {\"is_enabled\": false, \"monthly_limit\": null, \"used_credits\": null, \"utilization\": null, \"currency\": null, \"decimal_places\": null, \"disabled_reason\": null, \"user_disabled\": true, \"spend_limit_reached\": false, \"credits_ever_enabled\": true, \"daily\": null, \"weekly\": null}, \"limits\": [{\"kind\": \"session\", \"group\": \"session\", \"percent\": 7, \"severity\": \"normal\", \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\"}, {\"kind\": \"weekly\", \"group\": \"weekly\", \"percent\": 8, \"severity\": \"normal\", \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\"}]}",
+      "config": "clock = 12\nchime = on\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed",
+          "acct": "pro",
+          "ok": true,
+          "c": 1,
+          "t": 1791736800,
+          "tf": 12
+        }
+      },
+      "tz_gmtoff": 25200
+    },
+    {
+      "name": "200 ok, chime only",
+      "status": 200,
+      "text": "{\"five_hour\": {\"utilization\": 7.0, \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day\": {\"utilization\": 8.0, \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\", \"limit_dollars\": null, \"used_dollars\": null, \"remaining_dollars\": null, \"locked_reason\": null}, \"seven_day_oauth_apps\": null, \"seven_day_opus\": null, \"seven_day_sonnet\": null, \"iguana_necktie\": {\"utilization\": 0.0, \"resets_at\": \"2026-11-05T07:59:00+00:00\", \"limit_dollars\": 250, \"used_dollars\": 0.0, \"remaining_dollars\": 250.0, \"locked_reason\": null}, \"extra_usage\": {\"is_enabled\": false, \"monthly_limit\": null, \"used_credits\": null, \"utilization\": null, \"currency\": null, \"decimal_places\": null, \"disabled_reason\": null, \"user_disabled\": true, \"spend_limit_reached\": false, \"credits_ever_enabled\": true, \"daily\": null, \"weekly\": null}, \"limits\": [{\"kind\": \"session\", \"group\": \"session\", \"percent\": 7, \"severity\": \"normal\", \"resets_at\": \"2026-10-11T12:00:00.287293+00:00\"}, {\"kind\": \"weekly\", \"group\": \"weekly\", \"percent\": 8, \"severity\": \"normal\", \"resets_at\": \"2026-10-17T10:00:00.287315+00:00\"}]}",
+      "config": "clock = off\nchime = ON\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed",
+          "acct": "pro",
+          "ok": true,
+          "c": 1
+        }
+      }
+    }
+  ]
+}
