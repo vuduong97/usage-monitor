@@ -17,6 +17,7 @@ clawd-events = { workspace = true }
 clawd-agents = { workspace = true }
 clawd-usage = { workspace = true }
 clawd-clock = { workspace = true }
+clawd-appupdate = { workspace = true }
 clawd-testkit = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
