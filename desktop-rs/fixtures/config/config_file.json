@@ -1,0 +1,514 @@
+{
+  "input": {
+    "names": [
+      "clock",
+      "chime",
+      "config_dirs",
+      "http_targets",
+      "cliproxy_url",
+      "event_port",
+      "ble",
+      "events",
+      "nope"
+    ],
+    "onoff": [
+      [
+        "chime",
+        "off"
+      ],
+      [
+        "ble",
+        "on"
+      ],
+      [
+        "events",
+        "off"
+      ],
+      [
+        "nope",
+        "on"
+      ]
+    ],
+    "cases": [
+      {
+        "name": "missing",
+        "config": null
+      },
+      {
+        "name": "empty",
+        "config": ""
+      },
+      {
+        "name": "comments_case_spacing",
+        "config": "# top\n  Clock =  24  # trailing\nChime=ON\nbroken\n=novalue\nhttp_targets = 192.168.0.125, ,bad://x, 192.168.0.125 # dup\nEVENT_PORT = 0\n"
+      },
+      {
+        "name": "first_line_wins",
+        "config": "clock = 12\nclock = 24\nchime = on\nchime = off\n"
+      },
+      {
+        "name": "clock_invalid_skipped",
+        "config": "clock = bogus\nclock = Off\nclock = 12\n"
+      },
+      {
+        "name": "clock_all_invalid",
+        "config": "clock = 7\n"
+      },
+      {
+        "name": "config_dirs_list",
+        "config": "config_dirs = ~/.claude, ~/.claude-work  # two plans\n"
+      },
+      {
+        "name": "config_dirs_last_wins",
+        "config": "config_dirs = ~/a\nCONFIG_DIRS = ~, ~/b/, rel/dir, ./c\n"
+      },
+      {
+        "name": "config_dirs_blank",
+        "config": "config_dirs = , ,\n"
+      },
+      {
+        "name": "cliproxy_bare",
+        "config": "cliproxy_url = 127.0.0.1:9999/\n"
+      },
+      {
+        "name": "cliproxy_https",
+        "config": "cliproxy_url = https://proxy.example//\n"
+      },
+      {
+        "name": "cliproxy_empty",
+        "config": "cliproxy_url =\n"
+      },
+      {
+        "name": "line_separators",
+        "config": "clock = 12\rchime = on\r\nevent_port = 5\fconfig_dirs=~/x\n"
+      },
+      {
+        "name": "http_targets_mixed",
+        "config": "http_targets = b.local, a.local:81, http://c/x\n"
+      },
+      {
+        "name": "equals_in_value",
+        "config": "http_targets=a=b\nble = off\n"
+      }
+    ]
+  },
+  "output": [
+    {
+      "name": "missing",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "empty",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "comments_case_spacing",
+      "values": {
+        "clock": "24",
+        "chime": "ON",
+        "config_dirs": null,
+        "http_targets": "192.168.0.125, ,bad://x, 192.168.0.125",
+        "cliproxy_url": null,
+        "event_port": "0",
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "on",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "on",
+      "clock": "24",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [
+        "http://192.168.0.125/api/usage"
+      ],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "first_line_wins",
+      "values": {
+        "clock": "12",
+        "chime": "on",
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "on",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "on",
+      "clock": "12",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "clock_invalid_skipped",
+      "values": {
+        "clock": "bogus",
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "off",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "clock_all_invalid",
+      "values": {
+        "clock": "7",
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "config_dirs_list",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": "~/.claude, ~/.claude-work",
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude",
+        "<home>/.claude-work"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "config_dirs_last_wins",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": "~/a",
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>",
+        "<home>/b",
+        "rel/dir",
+        "c"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "config_dirs_blank",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": ", ,",
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "cliproxy_bare",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": "127.0.0.1:9999/",
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://127.0.0.1:9999"
+    },
+    {
+      "name": "cliproxy_https",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": "https://proxy.example//",
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "https://proxy.example"
+    },
+    {
+      "name": "cliproxy_empty",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": null,
+        "cliproxy_url": "",
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "line_separators",
+      "values": {
+        "clock": "12",
+        "chime": "on",
+        "config_dirs": "~/x",
+        "http_targets": null,
+        "cliproxy_url": null,
+        "event_port": "5",
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "on",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "on",
+      "clock": "12",
+      "config_dirs": [
+        "<home>/x"
+      ],
+      "http_targets": [],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "http_targets_mixed",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": "b.local, a.local:81, http://c/x",
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": null,
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "on",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [
+        "http://b.local/api/usage",
+        "http://a.local:81/api/usage",
+        "http://c/x"
+      ],
+      "cliproxy_url": "http://localhost:8317"
+    },
+    {
+      "name": "equals_in_value",
+      "values": {
+        "clock": null,
+        "chime": null,
+        "config_dirs": null,
+        "http_targets": "a=b",
+        "cliproxy_url": null,
+        "event_port": null,
+        "ble": "off",
+        "events": null,
+        "nope": null
+      },
+      "onoff": [
+        "off",
+        "off",
+        "off",
+        "on"
+      ],
+      "chime": "off",
+      "clock": "auto",
+      "config_dirs": [
+        "<home>/.claude"
+      ],
+      "http_targets": [
+        "http://a=b/api/usage"
+      ],
+      "cliproxy_url": "http://localhost:8317"
+    }
+  ]
+}

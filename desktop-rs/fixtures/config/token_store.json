@@ -1,0 +1,199 @@
+{
+  "input": {
+    "now": 1800000000.0,
+    "cases": [
+      {
+        "name": "live",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "default\n"
+      },
+      {
+        "name": "active_profile",
+        "profiles": {
+          "work": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-WORK\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "work\n"
+      },
+      {
+        "name": "no_active_config",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": null
+      },
+      {
+        "name": "blank_active_config",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "  \n"
+      },
+      {
+        "name": "expired_ms",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 1799999999000}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "expired_s",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 1799999999}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "future_s",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 1800000005}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "expires_now",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 1800000000.0}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "expires_zero",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 0}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "expires_negative",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": -5}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "expires_string",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": \"soon\"}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "expires_true",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": true}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "no_expiry",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\"}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "not_oauth",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"api_key\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "blank_token",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "spaces_token",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"   \", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "padded_token",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \" sk-ant-test-X \\n\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "token_not_string",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": 5, \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "default"
+      },
+      {
+        "name": "corrupt",
+        "profiles": {
+          "default": "{not json"
+        },
+        "active": "default"
+      },
+      {
+        "name": "not_an_object",
+        "profiles": {
+          "default": "[1]"
+        },
+        "active": "default"
+      },
+      {
+        "name": "no_profile_file",
+        "profiles": {},
+        "active": "default"
+      },
+      {
+        "name": "profile_escapes",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "../../etc/x"
+      },
+      {
+        "name": "profile_hidden",
+        "profiles": {
+          ".hidden": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": ".hidden"
+      },
+      {
+        "name": "profile_slash",
+        "profiles": {
+          "default": "{\"version\": \"1.0\", \"type\": \"oauth_token\", \"access_token\": \"sk-ant-test-LIVE\", \"refresh_token\": \"sk-ant-fake-R\", \"expires_at\": 4102444800000}"
+        },
+        "active": "a/b"
+      }
+    ]
+  },
+  "output": [
+    "sk-ant-test-LIVE",
+    "sk-ant-test-WORK",
+    "sk-ant-test-LIVE",
+    "sk-ant-test-LIVE",
+    null,
+    null,
+    "sk-ant-test-LIVE",
+    null,
+    "sk-ant-test-LIVE",
+    "sk-ant-test-LIVE",
+    "sk-ant-test-LIVE",
+    null,
+    "sk-ant-test-LIVE",
+    null,
+    null,
+    null,
+    "sk-ant-test-X",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

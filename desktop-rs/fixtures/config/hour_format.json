@@ -1,0 +1,160 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "force_24",
+        "replies": {
+          "AppleICUForce24HourTime": {
+            "rc": 0,
+            "stdout": "1\n"
+          }
+        }
+      },
+      {
+        "name": "force_12",
+        "replies": {
+          "AppleICUForce24HourTime": {
+            "rc": 0,
+            "stdout": "0\n"
+          },
+          "AppleICUForce12HourTime": {
+            "rc": 0,
+            "stdout": "1\n"
+          }
+        }
+      },
+      {
+        "name": "both_one_24_first",
+        "replies": {
+          "AppleICUForce24HourTime": {
+            "rc": 0,
+            "stdout": "1\n"
+          },
+          "AppleICUForce12HourTime": {
+            "rc": 0,
+            "stdout": "1\n"
+          }
+        }
+      },
+      {
+        "name": "defaults_missing",
+        "replies": {}
+      },
+      {
+        "name": "defaults_hangs",
+        "replies": {
+          "AppleICUForce24HourTime": {
+            "raises": "TimeoutExpired"
+          },
+          "AppleICUForce12HourTime": {
+            "rc": 0,
+            "stdout": "1"
+          }
+        }
+      },
+      {
+        "name": "keys_absent_nonzero_exit",
+        "replies": {
+          "AppleICUForce24HourTime": {
+            "rc": 1
+          },
+          "AppleICUForce12HourTime": {
+            "rc": 1
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "hour_format": 24,
+      "commands": [
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce24HourTime"
+        ]
+      ]
+    },
+    {
+      "hour_format": 12,
+      "commands": [
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce24HourTime"
+        ],
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce12HourTime"
+        ]
+      ]
+    },
+    {
+      "hour_format": 24,
+      "commands": [
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce24HourTime"
+        ]
+      ]
+    },
+    {
+      "hour_format": 24,
+      "commands": [
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce24HourTime"
+        ],
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce12HourTime"
+        ]
+      ]
+    },
+    {
+      "hour_format": 12,
+      "commands": [
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce24HourTime"
+        ],
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce12HourTime"
+        ]
+      ]
+    },
+    {
+      "hour_format": 24,
+      "commands": [
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce24HourTime"
+        ],
+        [
+          "defaults",
+          "read",
+          "-g",
+          "AppleICUForce12HourTime"
+        ]
+      ]
+    }
+  ]
+}
