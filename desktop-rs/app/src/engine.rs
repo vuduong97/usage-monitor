@@ -504,8 +504,10 @@ impl EngineHandle {
         let Some(runtime) = runtime else { return };
         let finish = move || {
             if let Some(run) = run {
+                // The timer must be created inside the runtime: `timeout(..)` evaluated outside
+                // `block_on` panics ("no reactor running") and would break quitting.
                 if runtime
-                    .block_on(tokio::time::timeout(STOP_TIMEOUT, run))
+                    .block_on(async { tokio::time::timeout(STOP_TIMEOUT, run).await })
                     .is_err()
                 {
                     tracing::warn!("Engine did not stop in {STOP_TIMEOUT:?}; abandoning it");
