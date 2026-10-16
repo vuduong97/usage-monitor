@@ -1,7 +1,7 @@
 ---
 title: "Port Clawd desktop từ Python sang Rust + Tauri v2 (song song nhiều agent)"
 description: "Viết lại toàn bộ app tray Clawd bằng Rust/Tauri v2, giữ UI HTML/JS và mọi hợp đồng on-disk, chia 15 phase sở hữu file độc quyền để nhiều agent chạy song song."
-status: pending
+status: in-progress
 priority: P1
 effort: "~27 agent-days tổng; wall-clock ~10.5 agent-days (cap 6 agent)"
 branch: main
@@ -72,6 +72,28 @@ Wave C (tuần tự):              14 e2e-parity-migration → 15 release-cutove
 | 13 | [Settings bridge + UI shim](./phase-13-settings-bridge.md) | B' | 1, 2 (golden: 3–10) | `app/src/commands/*.rs` (trừ `mod.rs`), `app/ui/**` (trừ popover.html), `app/capabilities/**`, golden `settings`, `app/tests/settings_*.rs` | 3d |
 | 14 | [E2E, parity, perf gate, migration](./phase-14-e2e-parity-migration.md) | C | 3–13 | `desktop-rs/tests-e2e/**`, `tools/migration/**`, reports | 3d |
 | 15 | [Release cutover](./phase-15-release-cutover.md) | C | 14 | `README.md`, `.github/workflows/{release,ci}.yml`, version fields | 0.5d |
+
+### Trạng thái thực thi (cập nhật 2026-10-16)
+
+| # | Trạng thái | Ghi chú |
+|---|---|---|
+| 1 | completed | Merge `bb699bf`. Spike: paint 632–692 ms, RAM idle 2.3 MB, tray 72 ms |
+| 2 | completed | Merge `e380854`; contract gate PASS-WITH-FIXES (đã sửa) |
+| 3 | completed | Merge `60bcf87`; roundtrip creds Py↔Rust OK; macOS keychain/plist/lock chưa build được (chờ CI mac / 14) |
+| 4 | completed | Merge; 21 unit + 8 behaviour + 5 golden + 10 pusher + 16 server |
+| 5 | completed | Merge `781999c`; golden agents hết ignore sau 03/04/06 |
+| 6 | completed | Merge `844f40f` |
+| 7 | completed | Merge `8812c53` |
+| 8 | completed | Merge + review fixes (mdns stop, timeout per-op, sleep inject) |
+| 9 | completed | Merge `eac5172` |
+| 10 | in-review | Cài đặt xong, gate xanh (62 test); reviewer bảo mật đang chạy, chưa merge |
+| 11 | in-review | Cài đặt xong; chưa chạy được trên runner thật (iscc, notarize, minisign chưa kiểm); reviewer đang chạy |
+| 12 | merged, golden-thật/GUI pending | Đã merge; bước B'' (test ignore, checklist GUI: tray ≤1 s, 50 chu kỳ settings, single-instance, mac popover) chưa chạy |
+| 13 | merged, golden-thật/GUI pending | Đã merge (+ tích hợp dialog plugin `557c8b0`); runtime test deny popover cần feature tauri `test` (CR) |
+| 14 | pending | Chờ 10, 11 merge + lần chạy GUI đầu tiên có sự đồng ý của owner (hoặc VM) |
+| 15 | pending | Chờ 14 |
+
+Tồn đọng: `main` đỏ `check_public` do `Clawd Print & Paper.html` (701 KB) — chờ owner quyết; `MINISIGN_PUBKEY` còn placeholder; cần môi trường GitHub `release`.
 
 Đường dẫn crate tương đối `desktop-rs/`; app = `desktop-rs/app/`. Fixtures: `desktop-rs/fixtures/<area>/` (area `fw`, KHÔNG `firmware` — `tools/check_public.py:13` cấm thư mục tên `firmware`), exporter `tools/golden/export_<area>.py` — phase sở hữu area.
 

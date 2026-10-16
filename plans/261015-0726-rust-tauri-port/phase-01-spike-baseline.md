@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Spike & baseline đo hiệu năng"
-status: pending
+status: completed
 priority: P1
 effort: "1d"
 dependencies: []

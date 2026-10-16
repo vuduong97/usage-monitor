@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Store: paths, prefs, creds, autostart, pause"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [2]

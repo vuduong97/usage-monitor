@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Events brain + loopback server"
-status: pending
+status: completed
 priority: P1
 effort: "2.5d"
 dependencies: [2]
