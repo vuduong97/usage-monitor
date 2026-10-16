@@ -156,6 +156,21 @@ phút một lần, một máy); biểu tượng chuyển đỏ và nhắc nhập
 - **Windows**: **Cài đặt → Ứng dụng**, chọn **Clawd** → **Gỡ cài đặt**. Trình gỡ tự tắt
   ứng dụng, gỡ tự chạy và mọi hook / extension của Clawd trong các agent.
 
+## Nhánh `python-0.1.x` (bản Python, sắp ngừng hỗ trợ)
+
+Từ 0.2.0, Clawd là ứng dụng Rust + Tauri ở nhánh `main` (`desktop-rs/`). Nhánh này giữ bản
+Python 0.1.x để vẫn phát hành được khi cần:
+
+- **Hỗ trợ tới:** sửa lỗi bảo mật cho 0.1.x trong **3 tháng sau ngày phát hành 0.2.0**, hoặc sớm hơn
+  nếu số lượt tải trên trang Releases cho thấy phần lớn người dùng đã lên 0.2.x. Sau đó nhánh chỉ
+  còn để tham khảo.
+- **Bản lùi (rollback):** một bản Python có số phiên bản cao hơn bản Rust đang chạy (ví dụ `0.2.9`).
+  Bản Rust chỉ nhận bản cập nhật có `SHA256SUMS.minisig` ký bằng khoá phát hành, nên bản lùi phải được
+  ký tay (xem `tools/migration/fork-release.md` mục 6 trên `main`).
+- Tag `v0.1.x` đẩy từ nhánh này chạy `release.yml` của nhánh này (Python) và release đó thành
+  **latest**. Sau khi phát một bản 0.1.x, kiểm tra lại `releases/latest` và nếu cần thì đặt lại bản
+  Rust mới nhất làm latest: `gh release edit vX.Y.Z --latest`.
+
 ## Dành cho người phát triển
 
 ```sh
