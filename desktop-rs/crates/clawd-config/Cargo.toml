@@ -10,6 +10,7 @@ publish.workspace = true
 clawd-contracts = { workspace = true }
 clawd-store = { workspace = true }
 serde_json = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 clawd-testkit = { workspace = true }

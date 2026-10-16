@@ -13,6 +13,7 @@ pub mod cliproxy;
 pub mod command;
 pub mod config_file;
 pub mod dirs;
+pub mod host;
 pub mod http_targets;
 pub mod locale;
 pub mod tokens;
@@ -26,6 +27,7 @@ pub use config_file::{
     read_usage_source,
 };
 pub use dirs::read_config_dirs;
+pub use host::Host;
 pub use http_targets::{normalize_http_target, read_http_targets};
 pub use locale::detect_hour_format;
 pub use tokens::{has_claude_token, read_token_for};
