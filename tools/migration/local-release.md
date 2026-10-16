@@ -85,7 +85,8 @@ installer), then for each case start the fake API and the app as in section 1:
 | B6 wrong installer | `--case wrong-installer` | refused after download (SHA-256) |
 | B7 prerelease / draft | `--case prerelease`, `--case draft` | not offered |
 
-Run B2-B7 before B1 (B1 replaces the installed version). Afterwards reinstall the real release and
+B2, B3 and B5 test the minisign check, which only the Rust updater has (0.1.4 would accept
+them): never use them as a pass/fail for case A. Run B2-B7 before B1 (B1 replaces the installed version). Afterwards reinstall the real release and
 delete `/tmp/clawd-test.*`, `rel-0.2.91/` and the test builds in `dist/`.
 
 ## 3. Case C: rollback to Python

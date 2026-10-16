@@ -15,7 +15,9 @@ carry: `Clawd-X.Y.Z-windows-setup.exe`, `Clawd-X.Y.Z-mac-<arch>.zip` (and `.dmg`
 `gh release download vX.Y.Z -D rel-X.Y.Z` (works on a draft for the repo owner).
 
 `--case` serves a broken variant without touching the files on disk (each must be REFUSED by the
-updater, and the app must keep running the installed version):
+updater, and the app must keep running the installed version). Python 0.1.4 does not check
+minisign: against 0.1.4 only `tampered-sums`, `wrong-installer`, `prerelease` and `draft` are
+refused; `bad-sig`, `no-minisig` and `--minisig` apply to the Rust updater (0.2.x -> 0.2.y) only.
 
     ok               the files as they are
     bad-sig          SHA256SUMS.minisig with one byte of the signature changed
@@ -72,7 +74,11 @@ def tamper_sig(data: bytes) -> bytes:
 
 def load(args: argparse.Namespace) -> tuple[str, dict[str, bytes]]:
     folder = Path(args.dir)
-    files = {p.name: p.read_bytes() for p in sorted(folder.iterdir()) if p.is_file()}
+    files = {
+        p.name: p.read_bytes()
+        for p in sorted(folder.iterdir())
+        if p.is_file() and not p.name.startswith(".")
+    }
     if args.minisig:
         files[SIG] = Path(args.minisig).read_bytes()
     versions = {m[1] for name in files if (m := VERSION_IN_NAME.match(name))}

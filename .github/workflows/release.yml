@@ -391,7 +391,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          rels=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+          rels=$(gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -s add |
             jq -c --arg tag "$GITHUB_REF_NAME" \
               '[.[] | select(.tag_name == $tag) | {id, draft}]')
           if echo "$rels" | jq -e 'any(.[]; .draft == false)' >/dev/null; then
@@ -437,7 +439,9 @@ jobs:
         # would never see it once published) and true for X.Y.Z-pre.
         run: |
           case "$VERSION" in *-*) pre=true ;; *) pre=false ;; esac
-          rel=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+          rel=$(gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -s add |
             jq -c --arg tag "$GITHUB_REF_NAME" '[.[]
               | select(.tag_name == $tag)
               | {isDraft: .draft, isPrerelease: .prerelease,

@@ -854,6 +854,9 @@ fn run_events(event: &RunEvent, keep_running: bool) {
             // `app.exit(code)` (logged by `Shell::quit`) or the system ending the event loop.
             tracing::info!("Exit requested (code {code:?})");
         } else {
+            // Normal when the last window closes; logged so an exit asked for by the system or an
+            // installer is visible in a user's log.
+            tracing::info!("Exit requested without a code: kept running");
             api.prevent_exit();
         }
     }
