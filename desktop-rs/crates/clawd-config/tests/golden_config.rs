@@ -1,5 +1,5 @@
 //! Golden replay: `desktop-rs/fixtures/config/*.json` come from the real Python readers
-//! (`tools/golden/export_config.py`); every case must come out identical here.
+//! (`python-0.1.x:tools/golden/export_config.py`); every case must come out identical here.
 
 use std::fs;
 use std::path::Path;

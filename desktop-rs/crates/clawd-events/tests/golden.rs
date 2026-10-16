@@ -1,5 +1,5 @@
 //! Golden tests: replay `desktop-rs/fixtures/events/*.json`, recorded from the real Python
-//! `clawd_desktop.events` by `tools/golden/export_events.py`. A mismatch is a bug in the Rust
+//! `python-0.1.x:clawd_desktop.events` by `python-0.1.x:tools/golden/export_events.py`. A mismatch is a bug in the Rust
 //! port: fix the Rust, never the fixture.
 
 use clawd_contracts::{DesiredState, Env, PetConfig, UsagePayload};

@@ -1,7 +1,7 @@
 //! Frozen constants (plan.md "Frozen contracts"). Each cites its Python origin.
 
 // ---- identity -------------------------------------------------------------------
-/// `clawd_desktop.APP_NAME`. Also `mainBinaryName` / `productName` in `tauri.conf.json`.
+/// `python-0.1.x:clawd_desktop.APP_NAME`. Also `mainBinaryName` / `productName` in `tauri.conf.json`.
 pub const APP_NAME: &str = "Clawd";
 /// Version of this build (workspace version). The release tag must equal it (red team #2).
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -1,4 +1,4 @@
-//! Golden fixtures of `tools/golden/export_clock.py`: what the real Python modules did, replayed
+//! Golden fixtures of `python-0.1.x:tools/golden/export_clock.py`: what the real Python modules did, replayed
 //! against the Rust crate (`desktop-rs/fixtures/clock/*.json`).
 
 use std::sync::atomic::{AtomicBool, Ordering};

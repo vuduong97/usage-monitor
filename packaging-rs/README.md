@@ -37,7 +37,7 @@ missing notarization an error (the script does that by itself when `GITHUB_REF_T
 
 Environment read at build time: `CLAWD_FEED_URL`, `CLAWD_FEED_TOKEN` (firmware feed, baked into
 the binary by cargo, never in the repo), `CLAWD_MINISIGN_PUBKEY`, `CARGO_TARGET_DIR`.
-`CLAWD_PRIVATE_FIRMWARE=1` also ships `clawd_desktop/firmware` and `clawd_desktop/renderer`
+`CLAWD_PRIVATE_FIRMWARE=1` also ships `private/firmware` and `private/renderer`
 (output of `tools/bundle_firmware.py` and `tools/build_preview.py`) next to the exe /
 in `Contents/Resources`. Clock owners only: both scripts refuse it in CI, public artifacts carry
 no firmware.

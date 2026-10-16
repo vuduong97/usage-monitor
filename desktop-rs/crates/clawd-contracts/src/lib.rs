@@ -4,7 +4,7 @@
 //! in the phase report; the integrator batches them. Nothing here does I/O except
 //! [`AppPaths::system`] reading two environment variables.
 //!
-//! Python source of truth: `clawd_desktop/{paths,pause,events,usage,feed,appupdate,discovery,
+//! Python source of truth (branch `python-0.1.x`): `python-0.1.x:clawd_desktop/{paths,pause,events,usage,feed,appupdate,discovery,
 //! clockapi,autostart,creds}.py` (see `desktop-rs/PORT-MAP.md`).
 
 mod app_paths;

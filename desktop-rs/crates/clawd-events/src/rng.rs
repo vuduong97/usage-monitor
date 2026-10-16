@@ -60,7 +60,7 @@ impl Rng for SystemRng {
 }
 
 /// Deterministic draws for goldens: always the first choice, `uniform` is the lower bound.
-/// `tools/golden/export_events.py` passes the same behaviour to the Python classes.
+/// `python-0.1.x:tools/golden/export_events.py` passes the same behaviour to the Python classes.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FirstRng;
 

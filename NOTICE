@@ -2,7 +2,7 @@ Clawd desktop app
 
 This repository contains no firmware, fonts, animation packs or Clawd
 artwork. The app can download them, encrypted, from the clock's firmware feed and
-hand them straight to the clock; they are never written to disk. The tray icon is drawn in code (clawd_desktop/icons.py).
+hand them straight to the clock; they are never written to disk. The tray icon is drawn in code (desktop-rs/app/src/tray.rs).
 
 Claude, Claude Code and Clawd are trademarks of Anthropic. This project is
 not affiliated with or endorsed by Anthropic. It reads your own Claude Code

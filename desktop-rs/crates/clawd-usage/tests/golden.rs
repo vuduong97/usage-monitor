@@ -1,4 +1,4 @@
-//! Golden tests: the Rust port must reproduce what the real Python (`tools/golden/export_usage.py`)
+//! Golden tests: the Rust port must reproduce what the real Python (`python-0.1.x:tools/golden/export_usage.py`)
 //! recorded in `desktop-rs/fixtures/usage/*.json`, key order included.
 //!
 //! Needs the phase-06 `clawd-config` readers (config file, hour format): until phase 06 is merged

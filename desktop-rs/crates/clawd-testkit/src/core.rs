@@ -29,7 +29,7 @@ pub fn fixture_path(area: &str, name: &str) -> PathBuf {
     fixtures_root().join(area).join(format!("{name}.json"))
 }
 
-/// What `tools/golden/_harness.py` writes: the exporter's `input` and the real Python's `output`.
+/// What `python-0.1.x:tools/golden/_harness.py` writes: the exporter's `input` and the real Python's `output`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Fixture<I, O> {
     pub input: I,

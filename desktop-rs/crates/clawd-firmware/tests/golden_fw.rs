@@ -1,5 +1,5 @@
 //! Golden tests: the Rust port reproduces what the real Python `feed.py` / `firmware.py` /
-//! `preview.py` produced (`tools/golden/export_fw.py` -> `fixtures/fw/*.json`). Byte inputs are
+//! `preview.py` produced (`python-0.1.x:tools/golden/export_fw.py` -> `fixtures/fw/*.json`). Byte inputs are
 //! specs regenerated here; byte outputs are hex / sha256 digests.
 mod common;
 

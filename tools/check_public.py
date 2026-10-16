@@ -15,7 +15,7 @@ BANNED = [
 ]
 MAX_BYTES = 512_000   # nothing in this repo should be big; a large blob is probably art
 # Files the owner reviewed and chose to keep despite their size (exact paths, nothing else).
-SIZE_ALLOWED = {"uv.lock", "Clawd Print & Paper.html"}
+SIZE_ALLOWED = {"Clawd Print & Paper.html"}
 
 # Golden fixtures of the Rust port (desktop-rs/fixtures/**) come from running the real app, so
 # they could leak art, secrets or the author's home path. Scanned as text; binary content fails.

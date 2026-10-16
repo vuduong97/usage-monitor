@@ -14,8 +14,6 @@ members = [
     "app",
     "tests-e2e",
 ]
-# desktop-rs/spike (phase 01) is deliberately NOT a member.
-exclude = ["spike"]
 
 [workspace.package]
 version = "0.2.0"

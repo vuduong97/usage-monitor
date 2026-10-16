@@ -1,5 +1,5 @@
 //! Fakes for `clawd-agents` tests (phase 05 owns this file): the `<home>` placeholder of the
-//! golden fixtures (`tools/golden/export_agents.py`) and snapshots of agent config files in a
+//! golden fixtures (`python-0.1.x:tools/golden/export_agents.py`) and snapshots of agent config files in a
 //! temp home. Never touches the real home: every path is under the caller's temp dir.
 
 use std::fs;

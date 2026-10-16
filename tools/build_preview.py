@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Build the clock-screen renderer the settings window previews with
-(clawd_desktop/renderer/, git-ignored: it is compiled from the private firmware).
+(private/renderer/, git-ignored: it is compiled from the private firmware).
 
   python tools/build_preview.py --src ../clawd-home/firmware
-  CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
+  CLAWD_PRIVATE_FIRMWARE=1 sh packaging-rs/build_mac.sh
 
   # the feed's renderer for one platform (clawd-home .github/workflows/renderer.yml):
   python tools/build_preview.py --src firmware --commit $(git rev-parse HEAD) \
       --out build/renderer/mac --zip build/renderer/mac.zip
 
 The zip holds the same folder (exe, clawd.pak, styles/, preview.json); the public app
-downloads it from the feed release and unpacks it (feed.py, preview.unpack_renderer).
+downloads it from the feed release and unpacks it (clawd-firmware: feed.rs, preview.rs).
 On macOS the program is stripped and signed (CLAWD_SIGN_IDENTITY, else ad hoc); on
 Windows it is linked static and stripped. CXXFLAGS adds compiler flags (a universal
 Mac file: "-arch arm64 -arch x86_64").
@@ -36,10 +36,10 @@ from pathlib import Path
 from bundle_firmware import copy_styles, from_source, style_api_from_source
 
 ROOT = Path(__file__).resolve().parent.parent
-DEST = ROOT / "clawd_desktop" / "renderer"
+DEST = ROOT / "private" / "renderer"
 MAIN = ROOT / "tools" / "preview" / "clawd_render.cpp"
 # The clawd_render interface this tools/preview/clawd_render.cpp speaks (arguments, stdin,
-# stdout, CLP1): clawd_desktop/preview.py RENDER_API. Bump both when it changes, so an app
+# stdout, CLP1): RENDER_API in desktop-rs/crates/clawd-firmware/src/preview.rs. Bump both when it changes, so an app
 # never runs a feed renderer it cannot read.
 RENDER_API = 1
 SOURCES = ("ClawdDraw.cpp", "ClawdAnim.cpp", "ClawdRate.cpp", "ClawdUi.cpp", "ClawdPack.cpp", "DeskPack.cpp",

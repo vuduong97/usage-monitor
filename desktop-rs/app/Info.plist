@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- Merged by the Tauri bundler into Clawd.app/Contents/Info.plist (macOS only). The same keys as
-     the Python bundle (packaging/clawd.spec, info_plist). CFBundleIdentifier, the name and the
+     the Python bundle (python-0.1.x:packaging/clawd.spec, info_plist). CFBundleIdentifier, the name and the
      version come from tauri.conf.json, not from here. -->
 <plist version="1.0">
 <dict>

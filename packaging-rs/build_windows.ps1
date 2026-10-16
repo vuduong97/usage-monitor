@@ -3,7 +3,7 @@
 # Build-time settings come from the environment (the release workflow sets them from its secrets):
 #   CLAWD_FEED_URL, CLAWD_FEED_TOKEN   firmware feed, baked into the exe (never in the repo)
 #   CLAWD_MINISIGN_PUBKEY              minisign public key that must verify SHA256SUMS
-#   CLAWD_PRIVATE_FIRMWARE=1           also ship clawd_desktop\firmware and \renderer (clock owners
+#   CLAWD_PRIVATE_FIRMWARE=1           also ship private\firmware and \renderer (clock owners
 #                                      only: never a public release)
 #   CARGO_TARGET_DIR                   where cargo puts target\ (default desktop-rs\target)
 #   PYTHON                             interpreter for check_version.py (default: python)
@@ -36,13 +36,13 @@ Write-Host ("Clawd.exe: {0:N0} bytes (reported only, not gated)" -f (Get-Item -L
 $isccArgs = @("/DAppVersion=$version", "/DExeDir=$exeDir")
 if ($env:CLAWD_PRIVATE_FIRMWARE -eq "1") {
     if ($env:GITHUB_ACTIONS -eq "true") { throw "CLAWD_PRIVATE_FIRMWARE=1 is not allowed in CI: public artifacts carry no firmware" }
-    $fw = Join-Path $root "clawd_desktop\firmware"
+    $fw = Join-Path $root "private\firmware"
     if (-not (Test-Path -LiteralPath (Join-Path $fw "firmware.json"))) { throw "no firmware bundle in $fw (tools/bundle_firmware.py)" }
     $stage = Join-Path $root "dist\rs-resources"
     if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
     New-Item -ItemType Directory -Path $stage | Out-Null
     Copy-Item -Recurse -LiteralPath $fw -Destination (Join-Path $stage "firmware")
-    $renderer = Join-Path $root "clawd_desktop\renderer"
+    $renderer = Join-Path $root "private\renderer"
     if (Test-Path -LiteralPath (Join-Path $renderer "preview.json")) {
         Copy-Item -Recurse -LiteralPath $renderer -Destination (Join-Path $stage "renderer")
     } else {

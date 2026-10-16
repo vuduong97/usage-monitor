@@ -1,5 +1,5 @@
 //! Golden fixtures (`desktop-rs/fixtures/appupdate/*.json`, written by
-//! `tools/golden/export_appupdate.py` from the real Python `appupdate.py`): the Rust port must
+//! `python-0.1.x:tools/golden/export_appupdate.py` from the real Python `appupdate.py`): the Rust port must
 //! answer exactly what Python answered. Network is an in-memory fake, programs are fakes.
 //!
 //! The release site is rebuilt from the fixture input by the rule in the exporter's docstring;

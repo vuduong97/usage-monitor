@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Put a clawd firmware build inside the app (clawd_desktop/firmware/, git-ignored:
+"""Put a clawd firmware build inside the app (private/firmware/, git-ignored:
 the firmware is private and never goes in this repo).
 
   python tools/bundle_firmware.py ../clawd-home/firmware/.pio/build/clawd/firmware.bin \
       --src ../clawd-home/firmware --commit c2da6b4
-  CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
+  CLAWD_PRIVATE_FIRMWARE=1 sh packaging-rs/build_mac.sh
 
 fwSeq and layouts must be what that image reports in /api/heap: --src reads
 them from the firmware source it was built from (CLAWD_FW_SEQ in config.h,
@@ -25,7 +25,7 @@ import zlib
 from pathlib import Path
 
 OTA_MAX = 524_288
-DEST = Path(__file__).resolve().parent.parent / "clawd_desktop" / "firmware"
+DEST = Path(__file__).resolve().parent.parent / "private" / "firmware"
 
 
 def from_source(src: Path) -> tuple[int, int]:

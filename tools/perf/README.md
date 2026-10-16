@@ -73,10 +73,10 @@ network (the Python app polls GitHub unauthenticated for updates). The Python ap
 ## Usage (Windows)
 
 ```powershell
-# Python baseline: prebuilt PyInstaller app; -Installer only reads the file size
+# Python baseline: prebuilt PyInstaller app (branch python-0.1.x); -Installer only reads the file size
 .\tools\perf\measure.ps1 -Kind python -Exe D:\vu\usage-monitor\dist\Clawd\Clawd.exe -Runs 3 -Out py.json
 
-# Tauri spike (build first: cd desktop-rs\spike; cargo build --release)
+# Tauri spike of phase 01 (removed from main; build it from the branch python-0.1.x: cd desktop-rs\spike; cargo build --release)
 .\tools\perf\measure.ps1 -Kind tauri -Exe desktop-rs\spike\target\release\clawd-spike.exe -Installer .\spike-setup.exe -Runs 3 -Out spike.json
 
 # Quick smoke test (10 s idle, 3 cycles, 1 run, ~30 s)
@@ -116,6 +116,7 @@ Idle memory is hardly load sensitive; tray and paint times are.
 ## Usage (macOS / Linux)
 
 ```sh
+# the phase 01 spike: build it from the branch python-0.1.x (desktop-rs/spike)
 tools/perf/measure.sh --exe desktop-rs/spike/target/release/clawd-spike --runs 3 --out spike-mac.json
 ```
 

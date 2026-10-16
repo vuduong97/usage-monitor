@@ -1,5 +1,5 @@
 //! The pure shaping logic of `settings_api.py` against `fixtures/settings/shaping.json`
-//! (written by `tools/golden/export_settings.py` from the real Python).
+//! (written by `python-0.1.x:tools/golden/export_settings.py` from the real Python).
 
 use std::path::Path;
 

@@ -2,7 +2,7 @@
 //!
 //! One `generate_handler![py_api, popover_msg]` (red team #7). `py_api(name, args)` replaces
 //! pywebview's `js_api`: it refuses any window but `settings`, checks `name` against the
-//! 32-name allowlist (the names `clawd_desktop/ui/*.js` call, verified by the test below) and
+//! 32-name allowlist (the names `app/ui/*.js` call, verified by the test below) and
 //! calls the function in `commands/<group>.rs` (phase 13). `popover_msg` refuses any window but
 //! `popover` and calls `crate::popover::handle` (phase 12). Not exposed on purpose: `preview`,
 //! `busy`, `set_hooks`, `close_mdns`. Capabilities (phase 13) allow `py_api` only for `settings`

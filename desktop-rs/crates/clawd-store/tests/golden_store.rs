@@ -1,5 +1,5 @@
 //! Golden tests: the fixtures in `desktop-rs/fixtures/store/` were written by
-//! `tools/golden/export_store.py` from the real Python `paths`, `pause`, `firstrun`, `autostart`
+//! `python-0.1.x:tools/golden/export_store.py` from the real Python `paths`, `pause`, `firstrun`, `autostart`
 //! and `creds`. Files are compared byte for byte (`file_text`, plist text, sha256).
 
 use clawd_contracts::{AppPaths, Prefs, UsagePayload, APP_VERSION, LAUNCH_AGENT_LABEL};

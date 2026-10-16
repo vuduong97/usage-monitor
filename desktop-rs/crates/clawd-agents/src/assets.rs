@@ -1,6 +1,6 @@
 //! The integration files the app copies into an agent, embedded in the binary so this crate does
 //! not depend on any directory tree outside itself (`paths.integration(rel)` in Python, which
-//! read `_MEIPASS/clawd_desktop/integrations` when frozen). Phase 05 owns the files.
+//! read `_MEIPASS/clawd_desktop/integrations` (branch python-0.1.x) when frozen). Phase 05 owns the files.
 
 /// `integrations/pi/clawd-home.ts`.
 pub const PI_CLAWD_HOME_TS: &[u8] = include_bytes!("../assets/pi/clawd-home.ts");

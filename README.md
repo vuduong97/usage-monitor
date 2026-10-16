@@ -156,9 +156,8 @@ phút một lần, một máy); biểu tượng chuyển đỏ và nhắc nhập
 
 ## Dành cho người phát triển
 
-Từ 0.2.0 ứng dụng là Rust + Tauri v2, ở `desktop-rs/`. Mã Python 0.1.x (`clawd_desktop/`,
-`packaging/`) chỉ còn để tham khảo trên `main`; bản Python được phát hành và kiểm thử ở nhánh
-`python-0.1.x`.
+Từ 0.2.0 ứng dụng là Rust + Tauri v2, ở `desktop-rs/`. Bản Python 0.1.x không còn trên `main`:
+mã, test và cách build của nó nằm ở nhánh `python-0.1.x` (và các tag `v0.1.x`).
 
 ```sh
 cd desktop-rs
@@ -236,7 +235,6 @@ desktop-rs/
   tests-e2e/         test xuyên crate
 packaging-rs/        build mac (Tauri bundler, ký, notarize) và Windows (Inno Setup), kiểm tra version
 integrations/        extension pi, plugin opencode (app chép vào agent) và lệnh `clawd`
-clawd_desktop/       bản Python 0.1.x (tham khảo; phát hành ở nhánh python-0.1.x)
 PROTOCOL.md          giao thức giữa máy tính và đồng hồ
 ```
 
@@ -247,7 +245,7 @@ hoạt hình, `event_port = 47913`, `feed_channel = beta` để nhận bản th�
 
 Repo này **không chứa** firmware, font hay hình Clawd của đồng hồ (`tools/check_public.py`
 chặn trong CI). Xem `NOTICE`. Firmware chỉ vào bản build khi chạy `tools/bundle_firmware.py`
-(thư mục `clawd_desktop/firmware/` bị git bỏ qua); bản build như vậy chứa firmware riêng tư,
+(thư mục `private/` bị git bỏ qua); bản build như vậy chứa firmware riêng tư,
 nên chỉ phát cho người dùng đồng hồ Clawd, đừng đính vào GitHub Release công khai. Cách
 phát cho mọi người là **nguồn firmware** (`feed/` trong clawd-home). App tải firmware ở
 dạng mã hoá, chỉ giải mã trong bộ nhớ rồi gửi thẳng lên đồng hồ, không ghi file nào ra đĩa.

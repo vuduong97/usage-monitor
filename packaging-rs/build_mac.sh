@@ -14,7 +14,7 @@
 #                         the signed app must carry exactly this TeamIdentifier. Required when
 #                         CLAWD_REQUIRE_SIGNING=1.
 #   CLAWD_EXPECT_ARCH     fail unless `uname -m` is this (the workflow's runner label check)
-#   CLAWD_PRIVATE_FIRMWARE=1   also ship clawd_desktop/firmware and /renderer (clock owners only)
+#   CLAWD_PRIVATE_FIRMWARE=1   also ship private/firmware and private/renderer (clock owners only)
 #   CLAWD_FEED_URL, CLAWD_FEED_TOKEN, CLAWD_MINISIGN_PUBKEY   baked into the binary by cargo
 set -eu
 cd "$(dirname "$0")/.."
@@ -74,10 +74,10 @@ plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$PLIST"; }
 plist NSLocalNetworkUsageDescription >/dev/null || die "NSLocalNetworkUsageDescription is missing"
 
 if [ "${CLAWD_PRIVATE_FIRMWARE:-0}" = 1 ]; then
-  [ -f clawd_desktop/firmware/firmware.json ] || die "no firmware bundle in clawd_desktop/firmware (tools/bundle_firmware.py)"
-  cp -R clawd_desktop/firmware "$APP/Contents/Resources/firmware"
-  if [ -f clawd_desktop/renderer/preview.json ]; then
-    cp -R clawd_desktop/renderer "$APP/Contents/Resources/renderer"
+  [ -f private/firmware/firmware.json ] || die "no firmware bundle in private/firmware (tools/bundle_firmware.py)"
+  cp -R private/firmware "$APP/Contents/Resources/firmware"
+  if [ -f private/renderer/preview.json ]; then
+    cp -R private/renderer "$APP/Contents/Resources/renderer"
   else
     echo "no clock-screen renderer built (tools/build_preview.py); the preview will be approximate" >&2
   fi
