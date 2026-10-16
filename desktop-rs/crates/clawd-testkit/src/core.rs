@@ -463,7 +463,9 @@ fn serve(stream: TcpStream, state: &ServerState) -> io::Result<()> {
         out.write_all(&response.body)?;
     }
     out.flush()?;
-    let _ = out.shutdown(Shutdown::Both);
+    // Write side only: closing both sides can make Windows answer with an RST that discards
+    // the tail of the response the client has not read yet (a flaky truncated body).
+    let _ = out.shutdown(Shutdown::Write);
     Ok(())
 }
 
