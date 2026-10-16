@@ -77,7 +77,6 @@ fn bundle(dir: &std::path::Path) -> Bundle {
 }
 
 #[tokio::test(start_paused = true)]
-#[ignore = "needs phase 03 clawd_store::pause (todo!() until merged)"]
 async fn the_lease_is_held_renewed_and_removed_even_on_error() {
     let cfg = TempConfig::new();
     let b = bundle(cfg.root());

@@ -436,7 +436,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "settings_files reads clawd_config::read_config_dirs (phase 06 stub)"]
     fn settings_files_default_to_the_home_claude_dir() {
         let tc = TempConfig::new();
         assert_eq!(

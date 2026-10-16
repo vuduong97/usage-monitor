@@ -47,7 +47,6 @@ fn clock_view_matches_python() {
 }
 
 #[test]
-#[ignore = "needs 08: clawd_clock::config_diff is still a stub"]
 fn the_save_diff_matches_python() {
     for case in rows(&golden(), "diff") {
         let edited = clean(&case["edited"]).expect("these edits are valid");

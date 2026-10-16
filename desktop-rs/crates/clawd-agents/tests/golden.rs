@@ -2,7 +2,7 @@
 //! the real Python adapters) against the Rust adapters, in a temp home.
 //!
 //! Cases flagged `needs_other_phases` call `clawd-events` / `clawd-config` code that is still an
-//! unimplemented stub until phases 03/04 merge; they run in the `#[ignore]`d `*_all` tests (run with
+//! (formerly ignored until phases 03/04/06 merged; they now run by default)
 //! `cargo test -p clawd-agents -- --ignored` after those phases land).
 
 use std::collections::HashMap;
@@ -155,7 +155,6 @@ fn configs_match_python() {
 }
 
 #[test]
-#[ignore = "claude cases need clawd-config (phase 03) and clawd-events (phase 04)"]
 fn configs_match_python_all() {
     run_configs(true);
 }
@@ -211,7 +210,6 @@ fn normalize_matches_python() {
 }
 
 #[test]
-#[ignore = "prompt/question/claude/pi/opencode payloads need clawd-events (phase 04)"]
 fn normalize_matches_python_all() {
     run_normalize(true);
 }

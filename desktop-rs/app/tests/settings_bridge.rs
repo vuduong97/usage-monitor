@@ -83,7 +83,6 @@ fn fake_clock() -> FakeHttpServer {
 }
 
 #[tokio::test]
-#[ignore = "needs 03, 05, 08, 09, 10"]
 async fn state_reads_the_clock_and_brings_the_opening_tab_once() {
     let clock = fake_clock();
     let mut rig = rig(&clock.url(), "clawd");
@@ -96,7 +95,6 @@ async fn state_reads_the_clock_and_brings_the_opening_tab_once() {
 }
 
 #[tokio::test]
-#[ignore = "needs 03, 05, 08, 09, 10"]
 async fn choosing_a_wizard_clock_tells_the_engine() {
     // test_settings_api.py:303 (`..._tells_the_tray`): the pick travels as ShellCmd::UseClock.
     let clock = fake_clock();
@@ -131,7 +129,6 @@ async fn choosing_a_wizard_clock_tells_the_engine() {
 }
 
 #[tokio::test]
-#[ignore = "needs 03, 05, 08, 09, 10"]
 async fn a_typed_address_goes_to_the_tray_and_is_used() {
     let clock = fake_clock();
     let mut rig = rig("", "");
