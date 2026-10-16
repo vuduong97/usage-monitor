@@ -17,9 +17,11 @@ name: Rust Release
 #    parse_version("rust-v...") is None, so a "latest" rust-v* release
 #    would stop updates for the whole fleet. The real path is release.yml
 #    after the cutover.
+#  - Only a `rust-v*` tag run builds, signs and publishes. A manual run on
+#    a branch runs just the secret-free gates (verify, test): it never
+#    binds the environment `release`, so it can never reach a secret.
 #  - A tag run must be signed: no Developer ID certificate or no
-#    notarization = failure. A manual run on a branch may be ad-hoc signed
-#    on macOS (not a release; never published).
+#    notarization = failure (no ad-hoc releases).
 #  - Actions are pinned to commit SHAs (version in the comment above).
 on:
   push:
@@ -90,6 +92,7 @@ jobs:
 
   build-windows:
     needs: verify
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'rust-v')
     runs-on: windows-latest
     environment: release
     steps:
@@ -140,6 +143,7 @@ jobs:
 
   build-mac:
     needs: verify
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'rust-v')
     strategy:
       fail-fast: false
       matrix:
@@ -174,24 +178,19 @@ jobs:
         # Secrets: MACOS_CERT_P12 (base64 of the .p12), MACOS_CERT_PASSWORD,
         # MACOS_SIGN_IDENTITY ("Developer ID Application: Name (TEAMID)",
         # the same Team ID as 0.1.x, or its self-update will refuse the
-        # app). A tag run without them FAILS; a manual run goes ad-hoc.
+        # app). Missing secrets FAIL: there are no ad-hoc releases.
         env:
           CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
           CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
           SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
-          REF_TYPE: ${{ github.ref_type }}
         run: |
           if [ -z "$CERT_P12" ] || [ -z "$SIGN_IDENTITY" ]; then
-            if [ "$REF_TYPE" = tag ]; then
-              echo "::error::tag build without the Developer ID secrets" \
-                "(MACOS_CERT_P12, MACOS_SIGN_IDENTITY): refusing an" \
-                "ad-hoc release"
-              exit 1
-            fi
-            echo "::warning::No Developer ID certificate in the secrets:" \
-              "this build is ad-hoc signed and not notarized"
-            exit 0
+            echo "::error::tag build without the Developer ID secrets" \
+              "(MACOS_CERT_P12, MACOS_SIGN_IDENTITY): refusing an" \
+              "ad-hoc release"
+            exit 1
           fi
+          umask 077
           KC="$RUNNER_TEMP/clawd.keychain-db"; PW=$(uuidgen)
           security create-keychain -p "$PW" "$KC"
           security set-keychain-settings -lut 21600 "$KC"
@@ -209,7 +208,7 @@ jobs:
         # build_mac.sh also refuses a release that is not signed with the
         # identity and notarized.
         env:
-          CLAWD_REQUIRE_SIGNING: ${{ github.ref_type == 'tag' && '1' || '0' }}
+          CLAWD_REQUIRE_SIGNING: "1"
           CLAWD_EXPECT_ARCH: ${{ matrix.arch }}
           CLAWD_FEED_URL: ${{ secrets.CLAWD_FEED_URL }}
           CLAWD_FEED_TOKEN: ${{ secrets.CLAWD_FEED_TOKEN }}
@@ -234,8 +233,10 @@ jobs:
 
   sign:
     # SHA256SUMS over exactly the expected files, size gate, minisign
-    # signature.
+    # signature. Tag runs only: the production minisign key is never used
+    # by a branch run.
     needs: [verify, build-windows, build-mac]
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'rust-v')
     runs-on: ubuntu-latest
     environment: release
     steps:

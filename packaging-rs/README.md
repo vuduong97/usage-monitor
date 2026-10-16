@@ -46,9 +46,12 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
 
 ## Release workflow (`rust-release.yml`)
 
-* **Triggers**: pushing a tag `rust-v*`, or a manual run. Nothing runs on a branch push.
+* **Triggers**: pushing a tag `rust-v*`, or a manual run. Nothing runs on a branch push. Only a
+  `rust-v*` tag run builds, signs and publishes; a manual run on a branch runs just the secret-free
+  gates (`verify`, `test`) and never binds the environment `release`.
 * **Secrets** live only in the GitHub environment `release` (Settings, Environments; add the owner
-  as required reviewer and restrict to the protected branches/tags). Jobs `build-windows`,
+  as required reviewer and set Deployment branches and tags to the tag pattern `rust-v*` only).
+  Jobs `build-windows`,
   `build-mac` and `sign` are bound to it; `verify` and `publish` are not.
   Secrets: `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`,
   `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD` (same names as `release.yml`), `CLAWD_FEED_URL`,
@@ -60,7 +63,7 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   `desktop-rs/app/tauri.conf.json`. A test tag therefore needs a version bump in the same commit,
   e.g. `0.2.0-test.1` and `rust-v0.2.0-test.1`.
 * **Signing**: a tag run without the Developer ID certificate, or without notarization, fails.
-  A manual run without them builds ad-hoc and is never published.
+  There are no ad-hoc releases; only a local `build_mac.sh` run without a tag may be ad-hoc.
 * **Size gate**: installer, zip and dmg must be at most 8,000,000 bytes (fails the run). The exe
   size is only reported.
 * **Assets**: `Clawd-<v>-windows-setup.exe`, `Clawd-<v>-mac-{arm64,x86_64}.{zip,dmg}`,
