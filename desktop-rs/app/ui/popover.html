@@ -2,10 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'">
 <title>Clawd</title>
-<!-- The panel under the menu-bar icon (clawd_desktop/popover.py). The app calls
-     clawdUpdate(view), clawdPak(base64) and clawdVisible(bool); the page posts
+<!-- The panel under the menu-bar icon (clawd_desktop/popover.py). The app emits
+     clawd://popover-update (view), clawd://popover-pak (base64) and clawd://popover-visible (bool),
+     which call clawdUpdate / clawdPak / clawdVisible; the page invokes popover_msg with
      {cmd: ready | size | settings | close} back. Opened in a plain browser it shows sample numbers. -->
 <style>
   :root { --text:#faf9f5; --dim:#b0aea5; --mute:#8f8d84; --track:rgba(255,255,255,.12);
@@ -50,8 +50,8 @@
 <script src="preview.js"></script>
 <script>
 'use strict';
-const host = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.clawd;
-const post = msg => { if (host) host.postMessage(JSON.stringify(msg)); };
+const host = window.__TAURI__ && window.__TAURI__.core ? window.__TAURI__ : null;
+const post = msg => { if (host) host.core.invoke('popover_msg', { msg }).catch(() => {}); };
 const $ = id => document.getElementById(id);
 const pctColor = p => (p >= 80 ? 'var(--bad)' : p >= 50 ? 'var(--amber)' : 'var(--ok)');
 const still = matchMedia('(prefers-reduced-motion: reduce)');
@@ -116,8 +116,13 @@ document.addEventListener('keydown', e => {
   else if (e.key === ',' && e.metaKey) { e.preventDefault(); post({ cmd:'settings' }); }
 });
 
-if (host) post({ cmd:'ready' });
-else {                                        // a plain browser: sample numbers, for design work
+if (host) {                                   // listen first, then say ready: nothing is missed
+  const on = (name, fn) => host.event.listen(name, e => fn(e.payload));
+  Promise.all([on('clawd://popover-update', v => window.clawdUpdate(v)),
+               on('clawd://popover-pak', b => window.clawdPak(b)),
+               on('clawd://popover-visible', v => window.clawdVisible(v))])
+    .then(() => post({ cmd:'ready' }));
+} else {                                        // a plain browser: sample numbers, for design work
   document.body.classList.add('browser');
   render({ state:'ok', label:'Đã kết nối', rows:[{ name:'Phiên', pct:10, left:'1g45' }, { name:'Tuần', pct:41, left:'4n 20g' }] });
   kick();

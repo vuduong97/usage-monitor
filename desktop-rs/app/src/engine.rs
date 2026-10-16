@@ -25,7 +25,7 @@ use clawd_agents::normalize;
 use clawd_clock::{BootWatch, ClockApi, ClockFinder, ClockStore, FinderSnapshot};
 use clawd_config::{
     has_claude_token, read_config_value, read_http_targets, read_onoff_setting, read_usage_source,
-    CommandRunner,
+    CommandRunner, SystemRunner,
 };
 use clawd_contracts::{
     new_stop, AppPaths, BoxFuture, ClockTarget, Env, MonotonicClock, OsStoreNames, StopRx,
@@ -349,6 +349,18 @@ pub struct EngineConfig {
     pub env: Env,
     pub names: OsStoreNames,
     pub runner: Arc<dyn CommandRunner>,
+}
+
+impl EngineConfig {
+    /// This machine: the real home, process environment, OS-store names and command runner.
+    pub fn system() -> Self {
+        Self {
+            paths: AppPaths::system(),
+            env: Env::system(),
+            names: OsStoreNames::production(),
+            runner: Arc::new(SystemRunner),
+        }
+    }
 }
 
 struct Shared {
