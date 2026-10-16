@@ -23,6 +23,9 @@ pub const HTTP_MARK: &str = "/hook/";
 
 /// Everything an adapter needs from its surroundings, injectable (Python: `home`, `platform`,
 /// `port`, `script`, `which`, `env` constructor arguments).
+/// `shutil.which`: the executable `name` on `PATH`, if any.
+pub type WhichFn = Arc<dyn Fn(&str) -> Option<PathBuf> + Send + Sync>;
+
 #[derive(Clone)]
 pub struct AgentCtx {
     /// `Path.home()` and our config dir (`hook_script`, `config_dir`).
@@ -34,7 +37,7 @@ pub struct AgentCtx {
     /// The hook script path; `None` = `paths.hook_script()`.
     pub script: Option<PathBuf>,
     /// `shutil.which`: where an executable is on PATH.
-    pub which: Arc<dyn Fn(&str) -> Option<PathBuf> + Send + Sync>,
+    pub which: WhichFn,
     /// Environment (`CODEX_HOME`, `COPILOT_HOME`, `XDG_CONFIG_HOME`, `PI_CODING_AGENT_DIR`).
     pub env: Env,
 }
