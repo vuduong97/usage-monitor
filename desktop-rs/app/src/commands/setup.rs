@@ -98,8 +98,12 @@ pub async fn setup_clocks(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Val
 /// `SettingsApi.setup_use_clock(name)`: use the clock mDNS found under this name (remembered
 /// by name).
 pub async fn setup_use_clock(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
-    let name = text_of(arg(&args, 0));
+    use_clock(&Bridge::of(ctx), &args).await
+}
+
+/// `setup_use_clock` on a bridge (the command without the Tauri context).
+pub async fn use_clock(b: &Bridge, args: &[Value]) -> Result<Value, String> {
+    let name = text_of(arg(args, 0));
     let found = b
         .data()
         .mdns_seen

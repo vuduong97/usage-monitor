@@ -9,7 +9,7 @@ use super::CommandCtx;
 use crate::state::lock;
 
 /// The job as the page sees it: the progress dict without `started`.
-fn public_job(job: &Value) -> Value {
+pub fn public_job(job: &Value) -> Value {
     let mut shown = job.clone();
     if let Some(map) = shown.as_object_mut() {
         map.remove("started");

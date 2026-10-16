@@ -104,8 +104,12 @@ pub async fn save(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, Strin
 /// where mDNS finds the clock meanwhile. Only that one address is ever asked: there is no
 /// network scan.
 pub async fn set_clock(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
-    let Some(raw) = arg(&args, 0).as_str() else {
+    set_clock_on(&Bridge::of(ctx), &args).await
+}
+
+/// `set_clock` on a bridge (the command without the Tauri context).
+pub async fn set_clock_on(b: &Bridge, args: &[Value]) -> Result<Value, String> {
+    let Some(raw) = arg(args, 0).as_str() else {
         return Ok(fail("bad", "Địa chỉ không hợp lệ."));
     };
     let raw = raw.trim();
@@ -160,7 +164,7 @@ pub async fn scan(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, Stri
 }
 
 /// The rows of a scan: the strongest signal per SSID, sorted by signal (stable).
-fn strongest_per_ssid(nets: &[Value]) -> Vec<Value> {
+pub fn strongest_per_ssid(nets: &[Value]) -> Vec<Value> {
     let rssi = |n: &Value, default: f64| n.get("rssi").and_then(Value::as_f64).unwrap_or(default);
     let mut best: Vec<(String, Value)> = Vec::new();
     for n in nets {
