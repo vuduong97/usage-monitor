@@ -26,7 +26,9 @@ fn log(folder: &std::path::Path, name: &str) -> String {
     std::fs::read_to_string(folder.join(name)).unwrap_or_default()
 }
 
-fn clip_bytes(frames: &[(u16, u16, u16, u16, u16, Vec<u8>)]) -> Vec<u8> {
+type ClipFrame = (u16, u16, u16, u16, u16, Vec<u8>);
+
+fn clip_bytes(frames: &[ClipFrame]) -> Vec<u8> {
     let mut out = b"CLP1".to_vec();
     out.extend_from_slice(&(frames.len() as u16).to_le_bytes());
     for (d, x, y, w, h, rgb) in frames {
