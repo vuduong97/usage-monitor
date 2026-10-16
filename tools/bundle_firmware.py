@@ -4,7 +4,7 @@ the firmware is private and never goes in this repo).
 
   python tools/bundle_firmware.py ../clawd-home/firmware/.pio/build/clawd/firmware.bin \
       --src ../clawd-home/firmware --commit c2da6b4
-  CLAWD_PRIVATE_FIRMWARE=1 sh packaging-rs/build_mac.sh
+  CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
 
 fwSeq and layouts must be what that image reports in /api/heap: --src reads
 them from the firmware source it was built from (CLAWD_FW_SEQ in config.h,

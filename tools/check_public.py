@@ -17,9 +17,9 @@ MAX_BYTES = 512_000   # nothing in this repo should be big; a large blob is prob
 # Files the owner reviewed and chose to keep despite their size (exact paths, nothing else).
 SIZE_ALLOWED = {"Clawd Print & Paper.html"}
 
-# Golden fixtures of the Rust port (desktop-rs/fixtures/**) come from running the real app, so
+# Golden fixtures of the Rust port (fixtures/**) come from running the real app, so
 # they could leak art, secrets or the author's home path. Scanned as text; binary content fails.
-FIXTURE_DIR = "desktop-rs/fixtures/"
+FIXTURE_DIR = "fixtures/"
 FIXTURE_PATTERNS = [
     (re.compile(rb"CLWD"), "clawd.pak magic (animation pack)"),
     (re.compile(rb"iVBORw0KGgo"), "base64 PNG/APNG (art)"),

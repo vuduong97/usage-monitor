@@ -156,36 +156,34 @@ phút một lần, một máy); biểu tượng chuyển đỏ và nhắc nhập
 
 ## Dành cho người phát triển
 
-Từ 0.2.0 ứng dụng là Rust + Tauri v2, ở `desktop-rs/`. Bản Python 0.1.x không còn trên `main`:
+Từ 0.2.0 ứng dụng là Rust + Tauri v2; Cargo workspace nằm ở gốc repo. Bản Python 0.1.x không còn trên `main`:
 mã, test và cách build của nó nằm ở nhánh `python-0.1.x` (và các tag `v0.1.x`).
 
 ```sh
-cd desktop-rs
 cargo test --workspace                                   # chạy test
 cargo clippy --workspace --all-targets -- -D warnings    # lint (CI chặn mọi cảnh báo)
 cargo run -p clawd-app                                   # tray từ mã nguồn (tắt Clawd đã cài trước: pkill -x Clawd)
 cargo run -p clawd-app -- run                            # chạy không giao diện, log ra terminal
 cargo run -p clawd-app -- find                           # liệt kê đồng hồ trong mạng
 cargo run -p clawd-app -- settings                       # mở cửa sổ cài đặt (trang ở app/ui/)
-cd ..
 python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/firmware   # kèm firmware…
 python tools/build_preview.py --src ../clawd-home/firmware   # bộ vẽ màn hình đồng hồ cho cửa sổ Cài đặt (cần c++)
 python tools/build_preview.py --src … --zip out.zip   # …đóng thành zip cho nguồn firmware (clawd-home tools/fetch_renderer.sh)
-CLAWD_PRIVATE_FIRMWARE=1 sh packaging-rs/build_mac.sh # …vào bản build (chỉ cho chủ đồng hồ)
-sh packaging-rs/build_mac.sh                          # build Clawd.app + .zip + .dmg (trên Mac)
-./packaging-rs/build_windows.ps1                      # build bộ cài .exe (trên Windows, cần Inno Setup 6)
+CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
+sh packaging/build_mac.sh                             # build Clawd.app + .zip + .dmg (trên Mac)
+./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows, cần Inno Setup 6)
 ```
 
-Phát hành: đặt `version` trong `desktop-rs/Cargo.toml` (`[workspace.package]`) **và**
-`desktop-rs/app/tauri.conf.json` (hai nơi phải giống nhau và giống tag; `cargo update --workspace`
-để `Cargo.lock` theo), viết `packaging-rs/release-notes/X.Y.Z.md`, rồi đẩy tag `vX.Y.Z`. Workflow
+Phát hành: đặt `version` trong `Cargo.toml` (`[workspace.package]`) **và**
+`app/tauri.conf.json` (hai nơi phải giống nhau và giống tag; `cargo update --workspace`
+để `Cargo.lock` theo), viết `packaging/release-notes/X.Y.Z.md`, rồi đẩy tag `vX.Y.Z`. Workflow
 **Release** (`.github/workflows/release.yml`) chạy test, chờ chủ repo duyệt environment `release`,
 build `.dmg` + `.zip` (Apple silicon, ký Developer ID và notarize) và `-setup.exe`, tạo
 `SHA256SUMS` và chữ ký `SHA256SUMS.minisig`, rồi tạo một **bản nháp** (draft). Bản nháp chưa tới
 tay ai: kiểm tra file, thử cập nhật (`tools/migration/local-release.md`), rồi phát hành bằng
 `gh release edit vX.Y.Z --draft=false --latest` và kiểm `gh api repos/vuduong97/usage-monitor/releases/latest --jq .tag_name`
 ra đúng tag thì mọi app mới nhận. Tag có dấu `-` (ví dụ `v1.2.3-rc.1`) là prerelease: app không tự cập nhật lên. Chi tiết
-secret, khoá minisign và các cổng kiểm tra: `packaging-rs/README.md`.
+secret, khoá minisign và các cổng kiểm tra: `packaging/README.md`.
 
 Xem trước màn hình usage: bản public không kèm bộ vẽ. Mỗi bản phát hành trên nguồn firmware
 có kèm bộ vẽ cho Windows và Mac (danh sách `renderers` trong manifest). App tải bộ vẽ đúng hệ
@@ -220,21 +218,24 @@ mới tự cập nhật.
 Cấu trúc:
 
 ```
-desktop-rs/
-  app/               ứng dụng Tauri (binary Clawd / Clawd.exe): tray, engine, cửa sổ cài đặt (ui/), bảng nhỏ trên mac
-  crates/
-    clawd-contracts  kiểu và hằng số dùng chung (đường dẫn, tên, cổng 47913, khoá minisign)
-    clawd-config     file config, thư mục Claude, nguồn token OAuth (không gọi mạng)
-    clawd-store      prefs, log, Keychain/Credential Manager, tự mở cùng máy (LaunchAgent / HKCU Run)
-    clawd-events     sự kiện của agent, quyết định Clawd làm gì, server hook trên loopback
-    clawd-agents     mỗi agent một adapter: tìm trên máy, thêm/gỡ hook an toàn, đọc payload
-    clawd-usage      mức dùng Claude / Codex, gửi lên đồng hồ
-    clawd-clock      API cài đặt của đồng hồ, tìm đồng hồ (mDNS, địa chỉ đã nhớ, nhập tay)
-    clawd-firmware   firmware đi kèm, nguồn firmware, OTA, xem trước màn hình
-    clawd-appupdate  tự cập nhật app: GitHub Releases, minisign, SHA-256, Team ID
-  tests-e2e/         test xuyên crate
-packaging-rs/        build mac (Tauri bundler, ký, notarize) và Windows (Inno Setup), kiểm tra version
+Cargo.toml           workspace (version của app ở [workspace.package]) và Cargo.lock
+app/                 ứng dụng Tauri (binary Clawd / Clawd.exe): tray, engine, cửa sổ cài đặt (ui/), bảng nhỏ trên mac
+crates/
+  clawd-contracts    kiểu và hằng số dùng chung (đường dẫn, tên, cổng 47913, khoá minisign)
+  clawd-config       file config, thư mục Claude, nguồn token OAuth (không gọi mạng)
+  clawd-store        prefs, log, Keychain/Credential Manager, tự mở cùng máy (LaunchAgent / HKCU Run)
+  clawd-events       sự kiện của agent, quyết định Clawd làm gì, server hook trên loopback
+  clawd-agents       mỗi agent một adapter: tìm trên máy, thêm/gỡ hook an toàn, đọc payload
+  clawd-usage        mức dùng Claude / Codex, gửi lên đồng hồ
+  clawd-clock        API cài đặt của đồng hồ, tìm đồng hồ (mDNS, địa chỉ đã nhớ, nhập tay)
+  clawd-firmware     firmware đi kèm, nguồn firmware, OTA, xem trước màn hình
+  clawd-appupdate    tự cập nhật app: GitHub Releases, minisign, SHA-256, Team ID
+  clawd-testkit      đồ giả và fixture dùng chung cho test
+tests-e2e/           test xuyên crate
+fixtures/            golden fixture ghi từ bản Python 0.1.x (đóng băng: sửa Rust, không sửa fixture)
+packaging/           build mac (Tauri bundler, ký, notarize) và Windows (Inno Setup), kiểm tra version
 integrations/        extension pi, plugin opencode (app chép vào agent) và lệnh `clawd`
+tools/               check_public, bundle_firmware / build_preview (firmware riêng tư vào private/), perf, migration
 PROTOCOL.md          giao thức giữa máy tính và đồng hồ
 ```
 

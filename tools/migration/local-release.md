@@ -57,19 +57,19 @@ release so nothing real is offered instead. The two version fields must agree (`
 
 ```sh
 stamp() {  # stamp <version>: workspace version, tauri.conf.json, Cargo.lock
-  sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$1\"/" desktop-rs/Cargo.toml
-  sed -i.bak -E "s/\"version\": \"[^\"]+\"/\"version\": \"$1\"/" desktop-rs/app/tauri.conf.json
-  rm -f desktop-rs/Cargo.toml.bak desktop-rs/app/tauri.conf.json.bak
-  (cd desktop-rs && cargo update --workspace -q)
+  sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$1\"/" Cargo.toml
+  sed -i.bak -E "s/\"version\": \"[^\"]+\"/\"version\": \"$1\"/" app/tauri.conf.json
+  rm -f Cargo.toml.bak app/tauri.conf.json.bak
+  cargo update --workspace -q
 }
-stamp 0.2.90 && CLAWD_SIGN_IDENTITY="<identity>" sh packaging-rs/build_mac.sh   # mac
-stamp 0.2.91 && CLAWD_SIGN_IDENTITY="<identity>" sh packaging-rs/build_mac.sh
-git checkout desktop-rs/Cargo.toml desktop-rs/Cargo.lock desktop-rs/app/tauri.conf.json
+stamp 0.2.90 && CLAWD_SIGN_IDENTITY="<identity>" sh packaging/build_mac.sh   # mac
+stamp 0.2.91 && CLAWD_SIGN_IDENTITY="<identity>" sh packaging/build_mac.sh
+git checkout Cargo.toml Cargo.lock app/tauri.conf.json
 mkdir -p rel-0.2.91 && cp dist/Clawd-0.2.91-* rel-0.2.91/
 (cd rel-0.2.91 && shasum -a 256 Clawd-* > SHA256SUMS && minisign -S -s /tmp/clawd-test.key -m SHA256SUMS)
 ```
 
-On Windows use `.\packaging-rs\build_windows.ps1` with `$env:CLAWD_MINISIGN_PUBKEY` set, and
+On Windows use `.\packaging\build_windows.ps1` with `$env:CLAWD_MINISIGN_PUBKEY` set, and
 `Get-FileHash` / `minisign.exe` for the sums. On mac both builds must carry the **same Team ID**
 (`codesign -dv --verbose=2`): any identity works (an *Apple Development* one too), an ad-hoc build
 never updates. Install 0.2.90 (mac: copy `Clawd.app` to `/Applications`; Windows: run its

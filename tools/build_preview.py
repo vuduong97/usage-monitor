@@ -3,7 +3,7 @@
 (private/renderer/, git-ignored: it is compiled from the private firmware).
 
   python tools/build_preview.py --src ../clawd-home/firmware
-  CLAWD_PRIVATE_FIRMWARE=1 sh packaging-rs/build_mac.sh
+  CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
 
   # the feed's renderer for one platform (clawd-home .github/workflows/renderer.yml):
   python tools/build_preview.py --src firmware --commit $(git rev-parse HEAD) \
@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "private" / "renderer"
 MAIN = ROOT / "tools" / "preview" / "clawd_render.cpp"
 # The clawd_render interface this tools/preview/clawd_render.cpp speaks (arguments, stdin,
-# stdout, CLP1): RENDER_API in desktop-rs/crates/clawd-firmware/src/preview.rs. Bump both when it changes, so an app
+# stdout, CLP1): RENDER_API in crates/clawd-firmware/src/preview.rs. Bump both when it changes, so an app
 # never runs a feed renderer it cannot read.
 RENDER_API = 1
 SOURCES = ("ClawdDraw.cpp", "ClawdAnim.cpp", "ClawdRate.cpp", "ClawdUi.cpp", "ClawdPack.cpp", "DeskPack.cpp",

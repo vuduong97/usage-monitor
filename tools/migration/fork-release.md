@@ -16,7 +16,7 @@ same files by hand as `vX.Y.Z` on the fork.
 
 ## 1. Fork and environment (once)
 
-1. Fork the repo; in the fork enable Actions. Commit `desktop-rs/Cargo.lock` (a tag build uses `--locked`).
+1. Fork the repo; in the fork enable Actions. Commit `Cargo.lock` (a tag build uses `--locked`).
 2. Test minisign key, on your own machine (minisign 0.11+; **never** the production key):
 
    ```sh
@@ -35,20 +35,20 @@ same files by hand as `vX.Y.Z` on the fork.
 4. The test binary differs from production in exactly one constant: `CLAWD_MINISIGN_PUBKEY` (baked
    in by the workflow from the variable above; `clawd_contracts::MINISIGN_PUBKEY` honours it at
    build time). For a local Windows build: `$env:CLAWD_MINISIGN_PUBKEY = "<the RW... line>"`
-   before `packaging-rs\build_windows.ps1`.
+   before `packaging\build_windows.ps1`.
 5. The Windows test needs no signing secrets (no Authenticode). Mac needs the Developer ID ones.
 
 ## 2. Stamp a version (the tag must equal the build)
 
 The workflow requires `GITHUB_REF_NAME` without `rust-` to equal `v<version>` of
-`desktop-rs/app/Cargo.toml` (inherited from `[workspace.package]`) **and** of
-`desktop-rs/app/tauri.conf.json`. Per test version, on a branch of the fork:
+`app/Cargo.toml` (inherited from `[workspace.package]`) **and** of
+`app/tauri.conf.json`. Per test version, on a branch of the fork:
 
 ```sh
 git switch -c test-0.2.1 port/<the-branch-under-test>
-sed -i 's/^version = "0.2.0"/version = "0.2.1"/' desktop-rs/Cargo.toml        # [workspace.package]
-sed -i 's/"version": "0.2.0"/"version": "0.2.1"/' desktop-rs/app/tauri.conf.json
-(cd desktop-rs && cargo update --workspace)       # Cargo.lock lists every workspace crate's version
+sed -i 's/^version = "0.2.0"/version = "0.2.1"/' Cargo.toml        # [workspace.package]
+sed -i 's/"version": "0.2.0"/"version": "0.2.1"/' app/tauri.conf.json
+cargo update --workspace       # Cargo.lock lists every workspace crate's version
 git diff --stat                                   # exactly those three files
 git commit -am "test: stamp 0.2.1" && git tag rust-v0.2.1 && git push fork test-0.2.1 rust-v0.2.1
 ```
@@ -132,4 +132,4 @@ Delete every test release and tag from the fork, remove `MINISIGN_KEY`/`MINISIGN
 Apple secrets from the fork's environment, delete the fork if it is not reused. Keep
 `fork-test.key` offline only if you will repeat the run. Nothing of this touches the main repo,
 its `release` environment or the production minisign key (generated separately, see
-`packaging-rs/README.md`).
+`packaging/README.md`).

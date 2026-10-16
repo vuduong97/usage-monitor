@@ -1,6 +1,6 @@
 name: Release
 
-# Release build of Clawd (Rust + Tauri, desktop-rs/). Since the cutover
+# Release build of Clawd (Rust + Tauri, Cargo workspace at the repo root). Since the cutover
 # (phase 15) this is the only release path on main; the Python 0.1.x line
 # keeps its own release.yml on the branch python-0.1.x.
 #
@@ -61,7 +61,7 @@ jobs:
       - name: No firmware, packs, fonts, art or home paths in this repo
         run: python tools/check_public.py
       - name: Tests of the version guard
-        run: python -m unittest discover -s packaging-rs
+        run: python -m unittest discover -s packaging
       - name: The tag is the app's version
         id: version
         # Tag run: GITHUB_REF_NAME must be v<version> of app/Cargo.toml
@@ -72,9 +72,9 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
         run: |
           if [ "$REF_TYPE" = tag ]; then
-            version=$(python packaging-rs/check_version.py "$GITHUB_REF_NAME")
+            version=$(python packaging/check_version.py "$GITHUB_REF_NAME")
           else
-            version=$(python packaging-rs/check_version.py)
+            version=$(python packaging/check_version.py)
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Clawd $version"
@@ -91,7 +91,7 @@ jobs:
               grep -Eq '^RW[A-Za-z0-9+/]{54}$'; then
             echo "::error::repository variable MINISIGN_PUBKEY is empty," \
               "a placeholder or not a minisign public key" \
-              "(see packaging-rs/README.md)"
+              "(see packaging/README.md)"
             exit 1
           fi
           if ! printf '%s' "$EXPECTED_TEAM_ID" |
@@ -100,8 +100,8 @@ jobs:
               "to the 10-character Team ID of the 0.1.x Developer ID"
             exit 1
           fi
-          if [ ! -f desktop-rs/Cargo.lock ]; then
-            echo "::error::desktop-rs/Cargo.lock is not committed:" \
+          if [ ! -f Cargo.lock ]; then
+            echo "::error::Cargo.lock is not committed:" \
               "a tag build must use --locked"
             exit 1
           fi
@@ -114,7 +114,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: desktop-rs
     steps:
       # v4.4.0 (== tag v4)
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -127,7 +126,6 @@ jobs:
       # v2
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          workspaces: desktop-rs
           cache-targets: false
       - name: cargo test --workspace --locked
         # verify guarantees Cargo.lock on a tag; a branch run may lack it.
@@ -159,7 +157,6 @@ jobs:
       # v2
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          workspaces: desktop-rs
           # registry only: compiled code is always built from source
           cache-targets: false
       - name: Inno Setup
@@ -175,11 +172,11 @@ jobs:
           CLAWD_FEED_URL: ${{ secrets.CLAWD_FEED_URL }}
           CLAWD_FEED_TOKEN: ${{ secrets.CLAWD_FEED_TOKEN }}
           CLAWD_MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
-        run: ./packaging-rs/build_windows.ps1
+        run: ./packaging/build_windows.ps1
       - name: Report the exe size (not gated)
         shell: pwsh
         run: |
-          $n = (Get-Item desktop-rs/target/release/Clawd.exe).Length
+          $n = (Get-Item target/release/Clawd.exe).Length
           "Clawd.exe: $n bytes (reported, not gated)" |
             Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
       # v4.6.2
@@ -220,7 +217,6 @@ jobs:
       # v2
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          workspaces: desktop-rs
           cache-targets: false
       - name: Tauri CLI
         run: cargo install tauri-cli --version "$TAURI_CLI_VERSION" --locked
@@ -269,7 +265,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-        run: sh packaging-rs/build_mac.sh
+        run: sh packaging/build_mac.sh
       - name: Remove the signing keychain
         if: always()
         run: |
@@ -379,7 +375,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-          sparse-checkout: packaging-rs/release-notes
+          sparse-checkout: packaging/release-notes
       # v4.3.0
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -412,10 +408,10 @@ jobs:
         # One command creates the draft with every file attached, the
         # signature first: a SHA256SUMS without its .minisig must never
         # exist on a release (the app's update check would fail on it).
-        # Notes: packaging-rs/release-notes/<version>.md when it exists.
+        # Notes: packaging/release-notes/<version>.md when it exists.
         # A version with a pre-release part is also marked prerelease.
         run: |
-          notes="packaging-rs/release-notes/$VERSION.md"
+          notes="packaging/release-notes/$VERSION.md"
           if [ -f "$notes" ]; then
             set -- --notes-file "$notes"
           else
