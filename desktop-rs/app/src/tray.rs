@@ -87,8 +87,12 @@ fn local_hms(epoch: f64) -> (u32, u32, u32) {
     }
     #[link(name = "kernel32")]
     extern "system" {
-        fn FileTimeToLocalFileTime(utc: *const FileTime, local: *mut FileTime) -> i32;
         fn FileTimeToSystemTime(file: *const FileTime, out: *mut SystemTime) -> i32;
+        fn SystemTimeToTzSpecificLocalTime(
+            zone: *const u8,
+            utc: *const SystemTime,
+            local: *mut SystemTime,
+        ) -> i32;
     }
     // FILETIME counts 100 ns from 1601-01-01; the Unix epoch is 11_644_473_600 s later.
     let ticks = ((epoch + 11_644_473_600.0).max(0.0) * 10_000_000.0) as u64;
@@ -96,11 +100,12 @@ fn local_hms(epoch: f64) -> (u32, u32, u32) {
         low: ticks as u32,
         high: (ticks >> 32) as u32,
     };
-    let (mut local, mut out) = (FileTime::default(), SystemTime::default());
-    // SAFETY: plain out-parameters of the right layout; both calls only read `utc`/`local`.
+    let (mut utc_parts, mut out) = (SystemTime::default(), SystemTime::default());
+    // SAFETY: plain out-parameters of the right layout. A null zone means the current time zone;
+    // the conversion uses the zone rules of that date (daylight saving), not today's offset.
     let ok = unsafe {
-        FileTimeToLocalFileTime(&utc, &mut local) != 0
-            && FileTimeToSystemTime(&local, &mut out) != 0
+        FileTimeToSystemTime(&utc, &mut utc_parts) != 0
+            && SystemTimeToTzSpecificLocalTime(std::ptr::null(), &utc_parts, &mut out) != 0
     };
     if ok {
         (

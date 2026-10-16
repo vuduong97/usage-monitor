@@ -311,3 +311,22 @@ fn only_a_difference_is_redrawn() {
     assert!(st.update(|m| m.fw_new = 3));
     assert!(!st.update(|m| m.fw_new = 3));
 }
+
+#[test]
+fn local_time_is_a_valid_clock_reading_that_advances_with_the_epoch() {
+    use clawd_app::tray::local_hhmmss;
+    let parse = |t: f64| -> (u32, u32, u32) {
+        let s = local_hhmmss(t);
+        let p: Vec<u32> = s.split(':').map(|x| x.parse().unwrap()).collect();
+        assert_eq!(p.len(), 3, "{s}");
+        assert!(p[0] < 24 && p[1] < 60 && p[2] < 60, "{s}");
+        (p[0], p[1], p[2])
+    };
+    let (_, m0, s0) = parse(NOW);
+    let (_, m1, s1) = parse(NOW + 61.0);
+    assert_eq!((m1 + 60 - m0) % 60, 1);
+    assert_eq!(s1, (s0 + 1) % 60);
+    // Summer and winter both convert (the zone rules of the date, not today's offset).
+    parse(NOW - 180.0 * 86_400.0);
+    assert_eq!(local_hhmm(NOW).len(), 5);
+}

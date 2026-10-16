@@ -192,3 +192,25 @@ fn pak_failure_waits_before_trying_again() {
     assert!(!pak_retry_allowed(NOW, NOW + PAK_RETRY_S - 1.0));
     assert!(pak_retry_allowed(NOW, NOW + PAK_RETRY_S));
 }
+
+// `test_popover.py` load_pak cases: they need the real PakCache (09) and ClockApi (08).
+
+#[test]
+#[ignore = "needs 09 (PakCache): test_pak_comes_from_the_cache_first"]
+fn pak_comes_from_the_cache_first() {
+    unimplemented!("B'': popover::load_pak with a PakCache seeded in a temp dir; no clock call");
+}
+
+#[test]
+#[ignore = "needs 08 (ClockApi) and 09 (PakCache): test_pak_is_read_off_the_clock_once_and_kept"]
+fn pak_is_read_off_the_clock_once_and_kept() {
+    unimplemented!(
+        "B'': load_pak against a loopback clock; the second call is served from the cache file"
+    );
+}
+
+#[test]
+#[ignore = "needs 08 (ClockApi): test_pak_failure_waits_before_trying_again (end to end)"]
+fn pak_failure_waits_before_trying_again_end_to_end() {
+    unimplemented!("B'': a failed read, then no second clock call within PAK_RETRY_S");
+}
