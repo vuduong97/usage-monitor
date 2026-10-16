@@ -263,7 +263,7 @@ impl StatePusher {
 
     /// POST the state to every URL at once; true when any took it.
     async fn send(&self, urls: &[String], payload: &WireState) -> bool {
-        let body = serde_json::to_string(payload).unwrap_or_default();
+        let body = crate::pyjson::to_py_json_compact(payload);
         let posts: Vec<_> = urls
             .iter()
             .map(|url| {

@@ -7,7 +7,10 @@ use std::io;
 use serde::Serialize;
 use serde_json::ser::{Formatter, Serializer};
 
-struct PyFormatter;
+struct PyFormatter {
+    /// `separators=(",", ":")`.
+    compact: bool,
+}
 
 impl Formatter for PyFormatter {
     fn begin_array_value<W: ?Sized + io::Write>(
@@ -17,6 +20,8 @@ impl Formatter for PyFormatter {
     ) -> io::Result<()> {
         if first {
             Ok(())
+        } else if self.compact {
+            w.write_all(b",")
         } else {
             w.write_all(b", ")
         }
@@ -29,13 +34,19 @@ impl Formatter for PyFormatter {
     ) -> io::Result<()> {
         if first {
             Ok(())
+        } else if self.compact {
+            w.write_all(b",")
         } else {
             w.write_all(b", ")
         }
     }
 
     fn begin_object_value<W: ?Sized + io::Write>(&mut self, w: &mut W) -> io::Result<()> {
-        w.write_all(b": ")
+        if self.compact {
+            w.write_all(b":")
+        } else {
+            w.write_all(b": ")
+        }
     }
 
     fn write_string_fragment<W: ?Sized + io::Write>(
@@ -60,9 +71,18 @@ impl Formatter for PyFormatter {
 }
 
 /// Python's `json.dumps(value)`.
-pub(crate) fn to_py_json<T: Serialize>(value: &T) -> String {
+pub fn to_py_json<T: Serialize>(value: &T) -> String {
+    dumps(value, false)
+}
+
+/// Python's `json.dumps(value, separators=(",", ":"))`: the body pushed to the clock.
+pub fn to_py_json_compact<T: Serialize>(value: &T) -> String {
+    dumps(value, true)
+}
+
+fn dumps<T: Serialize>(value: &T, compact: bool) -> String {
     let mut out = Vec::new();
-    let mut serializer = Serializer::with_formatter(&mut out, PyFormatter);
+    let mut serializer = Serializer::with_formatter(&mut out, PyFormatter { compact });
     if value.serialize(&mut serializer).is_err() {
         return "null".to_owned();
     }

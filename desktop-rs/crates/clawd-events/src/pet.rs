@@ -303,6 +303,11 @@ impl Pet {
         }
     }
 
+    /// `pet.moments.clear()`: drop every queued moment.
+    pub fn clear_moments(&mut self) {
+        self.moments.clear();
+    }
+
     /// `Pet.moment(now)`: the queued moment playing now (layer `pet`).
     pub fn moment(&mut self, now: f64) -> Option<View> {
         play(&mut self.moments, now, "pet")

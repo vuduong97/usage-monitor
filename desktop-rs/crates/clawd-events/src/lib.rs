@@ -25,7 +25,7 @@ pub mod tracker;
 pub mod vocab;
 
 mod httpc;
-mod pyjson;
+pub mod pyjson;
 mod pyval;
 
 pub use brain::{Brain, SharedBrain};
