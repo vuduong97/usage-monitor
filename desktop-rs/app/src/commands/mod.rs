@@ -87,6 +87,18 @@ py_api_table! {
     "usage_sources" => usage::usage_sources,
 }
 
+/// A command is callable only from its own window: the popover page must not reach the settings
+/// commands (which can save to the clock, install firmware, ...) and the other way round.
+fn only_for_window(label: &str, allowed: &str, command: &str) -> Result<(), String> {
+    if label == allowed {
+        Ok(())
+    } else {
+        Err(format!(
+            "{command} is only available to the {allowed} window"
+        ))
+    }
+}
+
 /// `window.pywebview.api.<name>(...args)` from the settings page.
 #[tauri::command]
 pub async fn py_api(
@@ -96,9 +108,7 @@ pub async fn py_api(
     name: String,
     args: Vec<Value>,
 ) -> Result<Value, String> {
-    if window.label() != WINDOW_SETTINGS {
-        return Err("py_api is only available to the settings window".into());
-    }
+    only_for_window(window.label(), WINDOW_SETTINGS, "py_api")?;
     if !PY_API_NAMES.contains(&name.as_str()) {
         return Err(format!("unknown command: {name}"));
     }
@@ -117,9 +127,7 @@ pub async fn py_api(
 /// `window.webkit.messageHandlers.clawd.postMessage(...)` from the popover page.
 #[tauri::command]
 pub fn popover_msg(window: WebviewWindow, app: AppHandle, msg: Value) -> Result<(), String> {
-    if window.label() != WINDOW_POPOVER {
-        return Err("popover_msg is only available to the popover window".into());
-    }
+    only_for_window(window.label(), WINDOW_POPOVER, "popover_msg")?;
     crate::popover::handle(&app, msg)
 }
 
@@ -133,7 +141,23 @@ mod tests {
     use std::collections::BTreeSet;
     use std::path::Path;
 
-    use super::PY_API_NAMES;
+    use super::{only_for_window, PY_API_NAMES};
+
+    #[test]
+    fn a_command_answers_only_the_window_it_belongs_to() {
+        assert!(only_for_window("settings", "settings", "py_api").is_ok());
+        assert_eq!(
+            only_for_window("popover", "settings", "py_api").unwrap_err(),
+            "py_api is only available to the settings window"
+        );
+        assert_eq!(
+            only_for_window("settings", "popover", "popover_msg").unwrap_err(),
+            "popover_msg is only available to the popover window"
+        );
+        // Any other label (a window the app never creates) gets nothing either.
+        assert!(only_for_window("main", "settings", "py_api").is_err());
+        assert!(only_for_window("", "popover", "popover_msg").is_err());
+    }
 
     /// `api.<name>(` call sites in a JS/HTML source.
     fn api_calls(src: &str, out: &mut BTreeSet<String>) {
