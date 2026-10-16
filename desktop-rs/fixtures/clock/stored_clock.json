@@ -1,0 +1,206 @@
+{
+  "input": {
+    "cases": [
+      {},
+      {
+        "host": ""
+      },
+      {
+        "host": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 8080,
+        "name": "clawd",
+        "version": "2.16.0"
+      },
+      {
+        "manual_host": "10.0.0.5:8080",
+        "host": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": "x",
+        "name": "clawd"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": "8080"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 8080.0
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 0
+      },
+      {
+        "host": "10.0.0.6",
+        "port": null
+      },
+      {
+        "manual_host": "10..97.40.207",
+        "host": "10.0.0.6"
+      },
+      {
+        "manual_host": "",
+        "host": "10.0.0.6",
+        "name": null,
+        "version": null
+      },
+      {
+        "manual_host": "10.0.0.5"
+      },
+      {
+        "manual_host": 5,
+        "host": "10.0.0.6"
+      },
+      {
+        "host": 7,
+        "name": 5,
+        "version": 2
+      },
+      {
+        "name": "clawd"
+      }
+    ]
+  },
+  "output": {
+    "clocks": [
+      null,
+      null,
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 8080,
+        "name": "clawd",
+        "version": "2.16.0",
+        "source": "saved",
+        "base": "http://10.0.0.6:8080",
+        "usage_url": "http://10.0.0.6:8080/api/usage",
+        "label": "clawd (10.0.0.6)"
+      },
+      {
+        "host": "10.0.0.5",
+        "port": 8080,
+        "name": "",
+        "version": "",
+        "source": "manual",
+        "base": "http://10.0.0.5:8080",
+        "usage_url": "http://10.0.0.5:8080/api/usage",
+        "label": "10.0.0.5"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "clawd",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "clawd (10.0.0.6)"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 8080,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6:8080",
+        "usage_url": "http://10.0.0.6:8080/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 8080,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6:8080",
+        "usage_url": "http://10.0.0.6:8080/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "10.0.0.5",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "manual",
+        "base": "http://10.0.0.5",
+        "usage_url": "http://10.0.0.5/api/usage",
+        "label": "10.0.0.5"
+      },
+      {
+        "host": "10.0.0.6",
+        "port": 80,
+        "name": "",
+        "version": "",
+        "source": "saved",
+        "base": "http://10.0.0.6",
+        "usage_url": "http://10.0.0.6/api/usage",
+        "label": "10.0.0.6"
+      },
+      {
+        "host": "7",
+        "port": 80,
+        "name": "5",
+        "version": "2",
+        "source": "saved",
+        "base": "http://7",
+        "usage_url": "http://7/api/usage",
+        "label": "5 (7)"
+      },
+      null
+    ]
+  }
+}

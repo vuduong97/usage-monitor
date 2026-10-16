@@ -1,0 +1,3265 @@
+{
+  "input": {
+    "scenarios": [
+      {
+        "name": "first_mdns_clock",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "saved_follows_new_address",
+        "saved": {
+          "name": "clawd",
+          "host": "192.168.1.48",
+          "port": 80
+        },
+        "steps": [
+          {
+            "op": "mdns",
+            "clocks": [
+              {
+                "host": "192.168.1.60",
+                "port": 80,
+                "name": "clawd",
+                "version": "2.16.0",
+                "source": "mdns"
+              }
+            ]
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "remembered_wins",
+        "mdns": [
+          {
+            "host": "10.0.0.9",
+            "port": 80,
+            "name": "aaa-neighbour",
+            "version": "",
+            "source": "mdns"
+          },
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "saved": {
+          "name": "clawd",
+          "host": "1.2.3.4"
+        },
+        "steps": [
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "config_targets_bypass",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "manual": [
+          "http://192.168.0.5/api/usage"
+        ],
+        "steps": [
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "silent_clock",
+        "saved": {
+          "host": "10.97.40.207"
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "advance",
+            "secs": 30.0
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "advance",
+            "secs": 30.0
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "advance",
+            "secs": 1.0
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "typed_address_wins",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "set_manual",
+            "raw": "not a host:99999"
+          },
+          {
+            "op": "set_manual",
+            "raw": " 192.168.1.80 "
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "report",
+            "url": "http://192.168.1.80/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://192.168.1.80/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://192.168.1.80/api/usage",
+            "ok": false
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "retry_keeps_address",
+        "saved": {
+          "name": "clawd",
+          "host": "10.97.40.207",
+          "port": 80
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "retry"
+          },
+          {
+            "op": "advance",
+            "secs": 1.0
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "retry_unpins_typed",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "set_manual",
+            "raw": "10.97.40.207"
+          },
+          {
+            "op": "retry"
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": false
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "retry_nothing_saved",
+        "steps": [
+          {
+            "op": "retry"
+          },
+          {
+            "op": "mdns",
+            "clocks": [
+              {
+                "host": "10.0.0.7",
+                "port": 80,
+                "name": "clawd",
+                "version": "2.16.0",
+                "source": "mdns"
+              }
+            ]
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "old_scan_keys_dropped",
+        "saved": {
+          "name": "",
+          "host": "10.97.40.207",
+          "port": 80,
+          "version": "2.16.0",
+          "subnets": [
+            "10.97.40.0/24"
+          ]
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.97.40.207/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "use_clock",
+        "saved": {
+          "manual_host": "10.0.0.1"
+        },
+        "steps": [
+          {
+            "op": "use",
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns"
+            }
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "unnamed_saved_takes_mdns_name",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "saved": {
+          "host": "10.0.0.7",
+          "port": 80
+        },
+        "steps": [
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "no_saved_two_clocks_first_by_name",
+        "mdns": [
+          {
+            "host": "10.0.0.3",
+            "port": 80,
+            "name": "zzz",
+            "version": "",
+            "source": "mdns"
+          },
+          {
+            "host": "10.0.0.9",
+            "port": 80,
+            "name": "aaa-neighbour",
+            "version": "",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "mdns_port_and_version",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 8080,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "saved_string_port_is_rewritten",
+        "saved": {
+          "name": "clawd",
+          "host": "10.0.0.6",
+          "port": "8080"
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.0.0.6:8080/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "unnamed_dropped_then_mdns",
+        "mdns": [],
+        "saved": {
+          "host": "10.0.0.6"
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.0.0.6/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.0.0.6/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.0.0.6/api/usage",
+            "ok": false
+          },
+          {
+            "op": "mdns",
+            "clocks": [
+              {
+                "host": "10.0.0.7",
+                "port": 80,
+                "name": "clawd",
+                "version": "2.16.0",
+                "source": "mdns"
+              }
+            ]
+          },
+          {
+            "op": "step"
+          }
+        ]
+      },
+      {
+        "name": "mdns_clock_lost",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "step"
+          },
+          {
+            "op": "mdns",
+            "clocks": []
+          },
+          {
+            "op": "step"
+          },
+          {
+            "op": "report",
+            "url": "http://10.0.0.7/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "report_other_url_stamps_only_last_ok",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "step"
+          },
+          {
+            "op": "report",
+            "url": "http://10.9.9.9/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.9.9.9/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "saved_reported_ok_is_remembered_keeping_name",
+        "saved": {
+          "name": "clawd",
+          "host": "10.0.0.6",
+          "port": 80,
+          "version": ""
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.0.0.6/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "manual_host_blocks_remember",
+        "saved": {
+          "manual_host": "10.0.0.6",
+          "host": "10.0.0.2"
+        },
+        "steps": [
+          {
+            "op": "report",
+            "url": "http://10.0.0.6/api/usage",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "name": "hold_cleared_by_fresh_mdns_answer",
+        "mdns": [
+          {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns"
+          }
+        ],
+        "steps": [
+          {
+            "op": "step"
+          },
+          {
+            "op": "report",
+            "url": "http://10.0.0.7/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.0.0.7/api/usage",
+            "ok": false
+          },
+          {
+            "op": "report",
+            "url": "http://10.0.0.7/api/usage",
+            "ok": false
+          },
+          {
+            "op": "step"
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "runs": [
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://192.168.1.48/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.48",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://192.168.1.48",
+            "usage_url": "http://192.168.1.48/api/usage",
+            "label": "clawd (192.168.1.48)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.48",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://192.168.1.48",
+              "usage_url": "http://192.168.1.48/api/usage",
+              "label": "clawd (192.168.1.48)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "192.168.1.48",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.48/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.48",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://192.168.1.48",
+            "usage_url": "http://192.168.1.48/api/usage",
+            "label": "clawd (192.168.1.48)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.48",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://192.168.1.48",
+              "usage_url": "http://192.168.1.48/api/usage",
+              "label": "clawd (192.168.1.48)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "192.168.1.48",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.60/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.60",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://192.168.1.60",
+            "usage_url": "http://192.168.1.60/api/usage",
+            "label": "clawd (192.168.1.60)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.60",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://192.168.1.60",
+              "usage_url": "http://192.168.1.60/api/usage",
+              "label": "clawd (192.168.1.60)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "192.168.1.60",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://1.2.3.4/api/usage"
+          ],
+          "current": {
+            "host": "1.2.3.4",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://1.2.3.4",
+            "usage_url": "http://1.2.3.4/api/usage",
+            "label": "clawd (1.2.3.4)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "1.2.3.4",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://1.2.3.4",
+              "usage_url": "http://1.2.3.4/api/usage",
+              "label": "clawd (1.2.3.4)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "1.2.3.4"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://192.168.0.5/api/usage"
+          ],
+          "current": null,
+          "describe": {
+            "manual_config": true,
+            "clock": null,
+            "config_targets": [
+              "http://192.168.0.5/api/usage"
+            ],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://192.168.0.5/api/usage"
+          ],
+          "current": null,
+          "describe": {
+            "manual_config": true,
+            "clock": null,
+            "config_targets": [
+              "http://192.168.0.5/api/usage"
+            ],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {}
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {},
+          "returned": null
+        },
+        {
+          "targets": [
+            "http://192.168.1.80/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.80",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://192.168.1.80",
+              "usage_url": "http://192.168.1.80/api/usage",
+              "label": "192.168.1.80"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "manual_host": "192.168.1.80"
+          },
+          "returned": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.80/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.80",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://192.168.1.80",
+              "usage_url": "http://192.168.1.80/api/usage",
+              "label": "192.168.1.80"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "manual_host": "192.168.1.80"
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.80/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.80",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://192.168.1.80",
+              "usage_url": "http://192.168.1.80/api/usage",
+              "label": "192.168.1.80"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "manual_host": "192.168.1.80"
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.80/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.80",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://192.168.1.80",
+              "usage_url": "http://192.168.1.80/api/usage",
+              "label": "192.168.1.80"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "manual_host": "192.168.1.80"
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.80/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.80",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://192.168.1.80",
+              "usage_url": "http://192.168.1.80/api/usage",
+              "label": "192.168.1.80"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": false,
+          "clock_json": {
+            "manual_host": "192.168.1.80"
+          }
+        },
+        {
+          "targets": [
+            "http://192.168.1.80/api/usage"
+          ],
+          "current": {
+            "host": "192.168.1.80",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://192.168.1.80",
+            "usage_url": "http://192.168.1.80/api/usage",
+            "label": "192.168.1.80"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "192.168.1.80",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://192.168.1.80",
+              "usage_url": "http://192.168.1.80/api/usage",
+              "label": "192.168.1.80"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": false,
+          "clock_json": {
+            "manual_host": "192.168.1.80"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "clawd (10.97.40.207)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "clawd (10.97.40.207)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "clawd (10.97.40.207)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "clawd (10.97.40.207)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "clawd (10.97.40.207)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "clawd (10.97.40.207)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "clawd (10.97.40.207)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "clawd (10.97.40.207)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "clawd (10.97.40.207)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "clawd (10.97.40.207)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "clawd (10.97.40.207)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "clawd (10.97.40.207)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.97.40.207",
+            "port": 80
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "manual_host": "10.97.40.207"
+          },
+          "returned": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "2.16.0",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "2.16.0",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": "2.16.0",
+            "subnets": [
+              "10.97.40.0/24"
+            ]
+          }
+        },
+        {
+          "targets": [
+            "http://10.97.40.207/api/usage"
+          ],
+          "current": {
+            "host": "10.97.40.207",
+            "port": 80,
+            "name": "",
+            "version": "2.16.0",
+            "source": "saved",
+            "base": "http://10.97.40.207",
+            "usage_url": "http://10.97.40.207/api/usage",
+            "label": "10.97.40.207"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.97.40.207",
+              "port": 80,
+              "name": "",
+              "version": "2.16.0",
+              "source": "saved",
+              "base": "http://10.97.40.207",
+              "usage_url": "http://10.97.40.207/api/usage",
+              "label": "10.97.40.207"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "",
+            "host": "10.97.40.207",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.0.0.1/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.1",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://10.0.0.1",
+            "usage_url": "http://10.0.0.1/api/usage",
+            "label": "10.0.0.1"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.1",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://10.0.0.1",
+              "usage_url": "http://10.0.0.1/api/usage",
+              "label": "10.0.0.1"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "manual_host": "10.0.0.1"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "10.0.0.7"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "10.0.0.7"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.0.0.7",
+            "port": 80
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.9/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.9",
+            "port": 80,
+            "name": "aaa-neighbour",
+            "version": "",
+            "source": "mdns",
+            "base": "http://10.0.0.9",
+            "usage_url": "http://10.0.0.9/api/usage",
+            "label": "aaa-neighbour (10.0.0.9)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.9",
+              "port": 80,
+              "name": "aaa-neighbour",
+              "version": "",
+              "source": "mdns",
+              "base": "http://10.0.0.9",
+              "usage_url": "http://10.0.0.9/api/usage",
+              "label": "aaa-neighbour (10.0.0.9)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "aaa-neighbour",
+            "host": "10.0.0.9",
+            "port": 80,
+            "version": ""
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.7:8080/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 8080,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7:8080",
+            "usage_url": "http://10.0.0.7:8080/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 8080,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7:8080",
+              "usage_url": "http://10.0.0.7:8080/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 8080,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.0.0.6:8080/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 8080,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6:8080",
+            "usage_url": "http://10.0.0.6:8080/api/usage",
+            "label": "clawd (10.0.0.6)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 8080,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6:8080",
+              "usage_url": "http://10.0.0.6:8080/api/usage",
+              "label": "clawd (10.0.0.6)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.6",
+            "port": "8080"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.6:8080/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 8080,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6:8080",
+            "usage_url": "http://10.0.0.6:8080/api/usage",
+            "label": "clawd (10.0.0.6)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 8080,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6:8080",
+              "usage_url": "http://10.0.0.6:8080/api/usage",
+              "label": "clawd (10.0.0.6)"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.6",
+            "port": 8080,
+            "version": ""
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "10.0.0.6"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "10.0.0.6"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.0.0.6"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "10.0.0.6"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "10.0.0.6"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.0.0.6"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "10.0.0.6"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "10.0.0.6"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.0.0.6"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.0.0.6"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "host": "10.0.0.6"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "clawd (10.0.0.6)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "clawd (10.0.0.6)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.6",
+            "port": 80,
+            "version": ""
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "clawd",
+            "version": "",
+            "source": "saved",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "clawd (10.0.0.6)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "clawd",
+              "version": "",
+              "source": "saved",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "clawd (10.0.0.6)"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.6",
+            "port": 80,
+            "version": ""
+          }
+        }
+      ],
+      [
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "10.0.0.6"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "10.0.0.6"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "manual_host": "10.0.0.6",
+            "host": "10.0.0.2"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.6/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.6",
+            "port": 80,
+            "name": "",
+            "version": "",
+            "source": "manual",
+            "base": "http://10.0.0.6",
+            "usage_url": "http://10.0.0.6/api/usage",
+            "label": "10.0.0.6"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.6",
+              "port": 80,
+              "name": "",
+              "version": "",
+              "source": "manual",
+              "base": "http://10.0.0.6",
+              "usage_url": "http://10.0.0.6/api/usage",
+              "label": "10.0.0.6"
+            },
+            "config_targets": [],
+            "last_ok_set": true,
+            "failing": false
+          },
+          "searching": true,
+          "clock_json": {
+            "manual_host": "10.0.0.6",
+            "host": "10.0.0.2"
+          }
+        }
+      ],
+      [
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {}
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [
+            "http://10.0.0.7/api/usage"
+          ],
+          "current": {
+            "host": "10.0.0.7",
+            "port": 80,
+            "name": "clawd",
+            "version": "2.16.0",
+            "source": "mdns",
+            "base": "http://10.0.0.7",
+            "usage_url": "http://10.0.0.7/api/usage",
+            "label": "clawd (10.0.0.7)"
+          },
+          "describe": {
+            "manual_config": false,
+            "clock": {
+              "host": "10.0.0.7",
+              "port": 80,
+              "name": "clawd",
+              "version": "2.16.0",
+              "source": "mdns",
+              "base": "http://10.0.0.7",
+              "usage_url": "http://10.0.0.7/api/usage",
+              "label": "clawd (10.0.0.7)"
+            },
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": false
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": false,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        },
+        {
+          "targets": [],
+          "current": null,
+          "describe": {
+            "manual_config": false,
+            "clock": null,
+            "config_targets": [],
+            "last_ok_set": false,
+            "failing": true
+          },
+          "searching": true,
+          "clock_json": {
+            "name": "clawd",
+            "host": "10.0.0.7",
+            "port": 80,
+            "version": "2.16.0"
+          }
+        }
+      ]
+    ]
+  }
+}
