@@ -141,3 +141,21 @@ Env: `CARGO_HOME=D:/cargo-home CARGO_TARGET_DIR=D:/ct/14 TMP=D:/tmp`, Windows 11
 | `cargo test -p clawd-e2e` x3 | 25 passed, 1 ignored (the bug repro), 0 failed, in each of 3 consecutive runs. One outlier: `fault_injection` took 6.25 s in run 1 (0.27 s in runs 2-3; every wait in it has a 5-15 s margin), so no flake, but do not tighten those margins |
 | `cargo test -p clawd-e2e --test engine -- --ignored` | fails as intended (4/5 engines missed the first payload hook) |
 | `python tools/check_public.py` | `check_public: 479 files ok` |
+
+## Quick run on the owner's own Windows 11 machine, 2026-10-16 (real 0.1.4 install, not a VM)
+
+Done with the owner's consent (option "install over the real app"), after backing up the install folder,
+config folder, the Uninstall and Run registry keys and the agent hook files to `D:\backup-clawd-0.1.4\`
+(together with the 0.1.4 installer, for rollback).
+
+| Case | Result | Evidence |
+|---|---|---|
+| A. 0.1.4 -> Rust 0.2.0, silent install (`/SILENT /SUPPRESSMSGBOXES /NORESTART`) | PASS | exit 0; old tray closed by the installer; `_internal` removed; Uninstall entry now 0.2.0 (same AppId, same folder); Run value unchanged; config folder identical (sha256 of 105 files, logs excluded); Claude/Codex/Gemini hook files byte-identical; event server on :47913 answers with the live agent sessions; clock accepted state and usage pushes |
+| B. Rust -> Rust, same installer over a running 0.2.0 | PASS (same-version only) | the running app was closed, files replaced, app relaunched by the installer and still alive after 64 s. Not a real update: no `.minisig` / tamper / feed cases were run |
+| Rollback to 0.1.4 | not run | the 0.1.4 installer is in the backup folder |
+| Tray "Thoat" exit, Win10 without WebView2, real clock firmware flow | not run | need clicks on the tray / another machine |
+
+Open observation: in the first install the app launched by the installer exited cleanly (`Stopped`, `Bye`)
+about 16 s after start, right after one `Clock state: error` line; it was started by hand afterwards and in
+the second install it stayed up. Cause not found, not reproduced. Also: the log timestamps of the Rust app are UTC,
+the Python app wrote local time.
