@@ -380,7 +380,7 @@ fn run_console(command: Command) -> i32 {
         }
         Command::Cleanup => {
             let autostart = clawd_store::autostart::Autostart::new(&paths, cfg.names.clone());
-            let registry = clawd_agents::Registry::new(clawd_agents::AgentCtx::system());
+            let registry = clawd_agents::Registry::new(cfg.agents.clone());
             cleanup_with(
                 || autostart.disable(),
                 || clawd_agents::uninstall_all(&registry),

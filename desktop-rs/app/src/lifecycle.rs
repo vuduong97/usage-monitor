@@ -15,7 +15,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use clawd_agents::{AgentCtx, Registry};
+use clawd_agents::Registry;
 use clawd_appupdate::Updater;
 use clawd_clock::{ClockApi, ClockStore};
 use clawd_contracts::{ClockSource, ClockTarget, Env, StopRx, APP_NAME, APP_VERSION};
@@ -43,6 +43,8 @@ pub const FEED_RETRY: Duration = Duration::from_secs(1800);
 pub const AGENT_SCAN: Duration = Duration::from_secs(600);
 /// The first agent scan comes this soon.
 pub const AGENT_FIRST: Duration = Duration::from_secs(2);
+/// The working set is trimmed this long after start-up (`spike-decision.md`).
+pub const STARTUP_TRIM_DELAY: Duration = Duration::from_secs(30);
 /// Capacity of the settings -> shell channel.
 const SHELL_QUEUE: usize = 32;
 /// The notice of a second launch (`tray.py:541`).
@@ -225,7 +227,7 @@ pub fn first_run(cfg: &EngineConfig, registry: &Registry) {
 /// The services every window needs, built once.
 pub fn build_services(cfg: &EngineConfig) -> Arc<Services> {
     let updater = Arc::new(clawd_appupdate::updater(&cfg.paths, &cfg.env));
-    let registry = Arc::new(Registry::new(AgentCtx::system()));
+    let registry = Arc::new(Registry::new(cfg.agents.clone()));
     let feed = clawd_firmware::feed::from_settings(&cfg.paths, &cfg.env).map(Arc::new);
     let bundle = clawd_firmware::firmware::load_bundle(&cfg.env, None);
     Arc::new(Services::new(
@@ -357,6 +359,7 @@ pub struct Shell {
     app: AppHandle,
     engine: EngineHandle,
     services: Arc<Services>,
+    env: Env,
     view: Mutex<TrayState>,
     stop_tx: watch::Sender<bool>,
 }
@@ -364,12 +367,13 @@ pub struct Shell {
 type LoopFuture = Pin<Box<dyn Future<Output = ()> + Send>>;
 
 impl Shell {
-    fn new(app: AppHandle, engine: EngineHandle, services: Arc<Services>) -> Arc<Self> {
+    fn new(app: AppHandle, engine: EngineHandle, services: Arc<Services>, env: Env) -> Arc<Self> {
         let (stop_tx, _) = clawd_contracts::new_stop();
         Arc::new(Self {
             app,
             engine,
             services,
+            env,
             view: Mutex::new(TrayState::new()),
             stop_tx,
         })
@@ -747,7 +751,7 @@ fn feed_loop(shell: Arc<Shell>, mut stop: StopRx) -> LoopFuture {
 fn app_update_loop(shell: Arc<Shell>, mut stop: StopRx) -> LoopFuture {
     Box::pin(async move {
         let paths = shell.services.paths.clone();
-        let env = Env::system();
+        let env = shell.env.clone();
         let on = tokio::task::spawn_blocking(move || {
             clawd_appupdate::auto_enabled(&paths)
                 && clawd_appupdate::from_settings(&paths, &env).is_ok()
@@ -870,6 +874,7 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
     } = parts;
 
     let engine_for_setup = engine.clone();
+    let env = cfg.env.clone();
     let builder = crate::commands::register(tauri::Builder::default()).manage(state);
     #[cfg(target_os = "macos")]
     let builder = builder.plugin(tauri_plugin_positioner::init());
@@ -877,7 +882,12 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
         .setup(move |app| {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
-            let shell = Shell::new(app.handle().clone(), engine_for_setup.clone(), services);
+            let shell = Shell::new(
+                app.handle().clone(),
+                engine_for_setup.clone(),
+                services,
+                env,
+            );
             let on_menu = Arc::clone(&shell);
             let on_click = Arc::clone(&shell);
             tray::build_tray(
@@ -890,6 +900,12 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
                 tracing::error!("Engine did not start: {e}");
             }
             shell.spawn_loops(shell_rx);
+            // The spike showed a trimmed working set only helps the Task Manager figure: do it once
+            // the start-up allocations are done.
+            tauri::async_runtime::spawn(async {
+                tokio::time::sleep(STARTUP_TRIM_DELAY).await;
+                trim_working_set();
+            });
             let first = Arc::clone(&shell);
             tauri::async_runtime::spawn_blocking(move || {
                 guard("first refresh", || first.refresh());
@@ -963,7 +979,13 @@ pub fn run_settings_only(
                 }
             });
             let session = SettingsSession::new(clock_base, key, windows::known_tab(&tab));
-            tauri::async_runtime::spawn(windows::show_settings(app.handle().clone(), session));
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                // The window is all this mode is: no window, nothing left to do.
+                if !windows::show_settings(handle.clone(), session).await {
+                    handle.exit(1);
+                }
+            });
             Ok(())
         })
         .build(context);
