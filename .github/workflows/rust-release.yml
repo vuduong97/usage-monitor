@@ -59,6 +59,8 @@ jobs:
           python-version: "3.12"
       - name: No firmware, packs, fonts, art or home paths in this repo
         run: python tools/check_public.py
+      - name: Tests of the version guard
+        run: python -m unittest discover -s packaging-rs
       - name: The tag is the app's version
         id: version
         # Tag run: GITHUB_REF_NAME minus "rust-" must be v<version> of
@@ -75,23 +77,67 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Clawd $version"
       - name: A release build is reproducible and verifiable
+        # Tag runs only. The minisign public key is 42 bytes in base64 (56
+        # characters, starts with RW): empty or the contracts placeholder
+        # fails. EXPECTED_TEAM_ID is the Team ID of the 0.1.x Developer ID.
+        if: github.ref_type == 'tag'
         env:
-          REF_TYPE: ${{ github.ref_type }}
           MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
+          EXPECTED_TEAM_ID: ${{ vars.EXPECTED_TEAM_ID }}
         run: |
-          if [ -z "$MINISIGN_PUBKEY" ]; then
-            echo "::error::repository variable MINISIGN_PUBKEY is not set" \
-              "(the minisign public key, see packaging-rs/README.md)"
+          if ! printf '%s' "$MINISIGN_PUBKEY" |
+              grep -Eq '^RW[A-Za-z0-9+/]{54}$'; then
+            echo "::error::repository variable MINISIGN_PUBKEY is empty," \
+              "a placeholder or not a minisign public key" \
+              "(see packaging-rs/README.md)"
             exit 1
           fi
-          if [ "$REF_TYPE" = tag ] && [ ! -f desktop-rs/Cargo.lock ]; then
+          if ! printf '%s' "$EXPECTED_TEAM_ID" |
+              grep -Eq '^[A-Z0-9]{10}$'; then
+            echo "::error::repository variable EXPECTED_TEAM_ID is not set" \
+              "to the 10-character Team ID of the 0.1.x Developer ID"
+            exit 1
+          fi
+          if [ ! -f desktop-rs/Cargo.lock ]; then
             echo "::error::desktop-rs/Cargo.lock is not committed:" \
               "a tag build must use --locked"
             exit 1
           fi
 
-  build-windows:
+  test:
+    # The whole workspace must pass before anything is built with secrets.
+    # No secret and no environment here.
     needs: verify
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop-rs
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      # stable branch
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.91.0
+      # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: desktop-rs
+          cache-targets: false
+      - name: cargo test --workspace --locked
+        # verify guarantees Cargo.lock on a tag; a branch run may lack it.
+        run: |
+          if [ -f Cargo.lock ]; then
+            cargo test --workspace --locked
+          else
+            cargo test --workspace
+          fi
+
+  build-windows:
+    needs: [verify, test]
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'rust-v')
     runs-on: windows-latest
     environment: release
@@ -142,7 +188,7 @@ jobs:
           if-no-files-found: error
 
   build-mac:
-    needs: verify
+    needs: [verify, test]
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'rust-v')
     strategy:
       fail-fast: false
@@ -210,6 +256,7 @@ jobs:
         env:
           CLAWD_REQUIRE_SIGNING: "1"
           CLAWD_EXPECT_ARCH: ${{ matrix.arch }}
+          CLAWD_EXPECTED_TEAM_ID: ${{ vars.EXPECTED_TEAM_ID }}
           CLAWD_FEED_URL: ${{ secrets.CLAWD_FEED_URL }}
           CLAWD_FEED_TOKEN: ${{ secrets.CLAWD_FEED_TOKEN }}
           CLAWD_MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
@@ -336,8 +383,12 @@ jobs:
             prerelease on purpose: do not publish or mark as latest (Clawd
             0.1.x updates from /releases/latest). The release path is
             release.yml after the cutover.
+        # One command creates the draft with every file attached, the
+        # signature first: a SHA256SUMS without its .minisig must never
+        # exist on a release (the app's update check would fail on it).
         run: |
-          gh release create "$GITHUB_REF_NAME" assets/* \
+          gh release create "$GITHUB_REF_NAME" \
+            assets/SHA256SUMS.minisig assets/SHA256SUMS assets/Clawd-* \
             --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "Clawd $VERSION (Rust build, internal test)" \
             --notes "$NOTES" \
@@ -345,13 +396,29 @@ jobs:
       - name: "Gate: draft and prerelease, never latest"
         env:
           GH_TOKEN: ${{ github.token }}
+        # `gh release view <tag>` does not reliably find a draft (drafts
+        # have no tag page), so the repository's release list is read
+        # instead: the same isDraft/isPrerelease facts plus the asset
+        # names. No matching release, or anything unexpected, fails.
         run: |
-          view=$(gh release view "$GITHUB_REF_NAME" \
-            --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease)
-          echo "$view"
-          echo "$view" | jq -e '.isDraft == true and .isPrerelease == true' \
+          rel=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -c --arg tag "$GITHUB_REF_NAME" '[.[]
+              | select(.tag_name == $tag)
+              | {isDraft: .draft, isPrerelease: .prerelease,
+                 assets: [.assets[].name]}]')
+          echo "$rel"
+          echo "$rel" | jq -e 'length == 1
+              and .[0].isDraft == true and .[0].isPrerelease == true' \
             >/dev/null || {
-            echo "::error::$GITHUB_REF_NAME is not a draft prerelease"
+            echo "::error::$GITHUB_REF_NAME is not exactly one draft prerelease"
+            exit 1
+          }
+          echo "$rel" | jq -e '.[0].assets
+              | (index("SHA256SUMS") != null)
+                and (index("SHA256SUMS.minisig") != null)
+                and length == 7' >/dev/null || {
+            echo "::error::the draft lacks SHA256SUMS or its .minisig," \
+              "or has not exactly 7 assets"
             exit 1
           }
           latest=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" \

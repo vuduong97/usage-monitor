@@ -51,12 +51,18 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   gates (`verify`, `test`) and never binds the environment `release`.
 * **Secrets** live only in the GitHub environment `release` (Settings, Environments; add the owner
   as required reviewer and set Deployment branches and tags to the tag pattern `rust-v*` only).
-  Jobs `build-windows`,
-  `build-mac` and `sign` are bound to it; `verify` and `publish` are not.
+  Jobs `build-windows`, `build-mac` and `sign` are bound to it (and only run on a `rust-v*` tag);
+  `verify`, `test` and `publish` are not.
   Secrets: `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`,
   `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD` (same names as `release.yml`), `CLAWD_FEED_URL`,
   `CLAWD_FEED_TOKEN`, `MINISIGN_KEY`, `MINISIGN_PASSWORD`.
-  Repository **variable** (not a secret): `MINISIGN_PUBKEY`.
+  Repository **variables** (not secrets): `MINISIGN_PUBKEY` (the public key; a tag run fails if it
+  is empty or not a 56-character `RW...` key) and `EXPECTED_TEAM_ID` (the 10-character Team ID of
+  the 0.1.x Developer ID; the signed app must carry exactly this TeamIdentifier, a tag run fails
+  if it is unset). Take it from `codesign -dv --verbose=2` of an installed 0.1.4 app.
+* **Gates before any secret is used**: `verify` (`check_public`, version-guard tests, tag and
+  version, the variables above, `Cargo.lock`) and `test` (`cargo test --workspace --locked`). Both
+  `build-*` jobs need them.
 * **Permissions**: `contents: read` everywhere; `contents: write` only in `publish`.
 * **Tag and version**: `GITHUB_REF_NAME` without `rust-` must equal `v<version>` of
   `desktop-rs/app/Cargo.toml` (inherited from `[workspace.package]`) and of
@@ -68,14 +74,18 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   size is only reported.
 * **Assets**: `Clawd-<v>-windows-setup.exe`, `Clawd-<v>-mac-{arm64,x86_64}.{zip,dmg}`,
   `SHA256SUMS`, `SHA256SUMS.minisig`. The workflow checks that these are exactly the files present.
-* **Publish**: a draft **and** prerelease, `--latest=false`, then a gate
-  (`gh release view <tag> --json isDraft,isPrerelease`) that must see both true. A `rust-v*`
+* **Publish**: one `gh release create` makes a draft **and** prerelease with `--latest=false` and
+  all seven files attached (signature first, so `SHA256SUMS` never exists without its
+  `.minisig`). A gate then reads the repository's release list (`gh release view <tag>` does not
+  reliably find a draft) and requires exactly one release for the tag with `isDraft` and
+  `isPrerelease` both true and both signature files among exactly seven assets; it also fails if
+  the tag became `/releases/latest`. Anything else fails closed. A `rust-v*`
   release must never become "latest" on the main repo: Clawd 0.1.4 reads `/releases/latest`, and
   `parse_version("rust-v...")` is `None`, so the whole fleet would stop getting updates. Never
   publish the draft by hand. `rust-v*` tags are for internal tests; the real path is `release.yml`
   after the cutover (phase 15).
 * **Before the first tag**: commit `desktop-rs/Cargo.lock` (a tag build uses `--locked`), create
-  the environment, secrets and variable above.
+  the environment, secrets and variables above.
 
 ## minisign key (Q2: SHA256SUMS is signed)
 
