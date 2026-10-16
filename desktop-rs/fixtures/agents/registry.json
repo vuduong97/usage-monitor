@@ -1,0 +1,124 @@
+{
+  "input": {
+    "platform": "win32",
+    "port": 47913,
+    "dirs": [
+      ".gemini",
+      ".cursor"
+    ]
+  },
+  "output": {
+    "ids": [
+      "claude",
+      "pi",
+      "codex",
+      "gemini",
+      "cursor",
+      "opencode",
+      "copilot"
+    ],
+    "found": [
+      "cursor"
+    ],
+    "infos": [
+      {
+        "id": "pi",
+        "name": "pi",
+        "found": false,
+        "installed": false,
+        "where": "<home>/.pi/agent",
+        "beta": true,
+        "signals": [
+          "think",
+          "tool",
+          "subagent",
+          "error",
+          "attention"
+        ],
+        "note": "Kh\u1edfi \u0111\u1ed9ng l\u1ea1i pi (ho\u1eb7c g\u00f5 /reload) sau khi n\u1ed1i.",
+        "error": ""
+      },
+      {
+        "id": "codex",
+        "name": "Codex CLI",
+        "found": false,
+        "installed": false,
+        "where": "<home>/.codex",
+        "beta": true,
+        "signals": [
+          "think",
+          "tool",
+          "subagent",
+          "attention"
+        ],
+        "note": "M\u1edf Codex, g\u00f5 /hooks v\u00e0 ch\u1ecdn tin c\u1eady c\u00e1c hook c\u1ee7a Clawd (m\u1ed9t l\u1ea7n).",
+        "error": ""
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini CLI",
+        "found": false,
+        "installed": false,
+        "where": "<home>/.gemini",
+        "beta": true,
+        "signals": [
+          "think",
+          "tool",
+          "error",
+          "attention"
+        ],
+        "note": "Kh\u1edfi \u0111\u1ed9ng l\u1ea1i Gemini CLI sau khi n\u1ed1i.",
+        "error": ""
+      },
+      {
+        "id": "cursor",
+        "name": "Cursor",
+        "found": true,
+        "installed": false,
+        "where": "<home>/.cursor",
+        "beta": true,
+        "signals": [
+          "think",
+          "tool",
+          "error"
+        ],
+        "note": "",
+        "error": ""
+      },
+      {
+        "id": "opencode",
+        "name": "opencode",
+        "found": false,
+        "installed": false,
+        "where": "<home>/.config/opencode",
+        "beta": true,
+        "signals": [
+          "think",
+          "tool",
+          "subagent",
+          "error",
+          "attention"
+        ],
+        "note": "Kh\u1edfi \u0111\u1ed9ng l\u1ea1i opencode sau khi n\u1ed1i.",
+        "error": ""
+      },
+      {
+        "id": "copilot",
+        "name": "Copilot CLI",
+        "found": false,
+        "installed": false,
+        "where": "<home>/.copilot",
+        "beta": true,
+        "signals": [
+          "think",
+          "tool",
+          "subagent",
+          "error",
+          "attention"
+        ],
+        "note": "",
+        "error": ""
+      }
+    ]
+  }
+}
