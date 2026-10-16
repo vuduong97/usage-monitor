@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 clawd-contracts = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
@@ -15,10 +16,15 @@ tracing-subscriber = { workspace = true }
 plist = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true }
+# Added on top of the workspace feature list: Win32_System_IO (OVERLAPPED for LockFileEx),
+# Win32_UI_Shell + WindowsAndMessaging (ShellExecuteW for open_path). Win32_System_Registry and
+# Win32_Security_Credentials come from the workspace list.
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_System_IO", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = { workspace = true }
 
 [dev-dependencies]
 clawd-testkit = { workspace = true }
+tempfile = { workspace = true }
+sha2 = { workspace = true }

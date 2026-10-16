@@ -1,0 +1,56 @@
+{
+  "input": {
+    "mtime": 1700000000,
+    "stale": 900.0
+  },
+  "output": {
+    "cases": [
+      {
+        "age": 0.0,
+        "now": 1700000000.0,
+        "busy": true
+      },
+      {
+        "age": 1.0,
+        "now": 1700000001.0,
+        "busy": true
+      },
+      {
+        "age": 899.0,
+        "now": 1700000899.0,
+        "busy": true
+      },
+      {
+        "age": 899.9,
+        "now": 1700000899.9,
+        "busy": true
+      },
+      {
+        "age": 900.0,
+        "now": 1700000900.0,
+        "busy": false
+      },
+      {
+        "age": 900.1,
+        "now": 1700000900.1,
+        "busy": false
+      },
+      {
+        "age": 901.0,
+        "now": 1700000901.0,
+        "busy": false
+      },
+      {
+        "age": 5000.0,
+        "now": 1700005000.0,
+        "busy": false
+      },
+      {
+        "age": -50.0,
+        "now": 1699999950.0,
+        "busy": true
+      }
+    ],
+    "missing_file": false
+  }
+}
