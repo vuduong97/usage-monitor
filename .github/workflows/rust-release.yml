@@ -1,0 +1,361 @@
+name: Rust Release
+
+# Release build of the Rust + Tauri port (desktop-rs/), phase 11. It runs
+# next to release.yml (the Python app) until the cutover (phase 15) and
+# never touches it.
+#
+#  - Triggers: ONLY a `rust-v*` tag push, or a manual run. Nothing runs on
+#    a branch push.
+#  - Writing or linting this file needs no secret. Secrets exist only in
+#    jobs bound to the GitHub environment `release` (create it with
+#    required reviewers = the owner): build-windows, build-mac and sign.
+#    Repository variable MINISIGN_PUBKEY (not a secret) is the public key.
+#  - Workflow permissions are `contents: read`; only job `publish` has
+#    `contents: write`.
+#  - A `rust-v*` release is ALWAYS a draft AND a prerelease, never
+#    "latest": Clawd 0.1.4 reads /releases/latest and
+#    parse_version("rust-v...") is None, so a "latest" rust-v* release
+#    would stop updates for the whole fleet. The real path is release.yml
+#    after the cutover.
+#  - A tag run must be signed: no Developer ID certificate or no
+#    notarization = failure. A manual run on a branch may be ad-hoc signed
+#    on macOS (not a release; never published).
+#  - Actions are pinned to commit SHAs (version in the comment above).
+on:
+  push:
+    tags: ["rust-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  # The Tauri CLI only assembles the .app (build_mac.sh); any 2.x will do.
+  TAURI_CLI_VERSION: "^2"
+  # Installer, zip and dmg stay at or under 8 MB (decimal: stricter than
+  # 8 MiB).
+  MAX_ASSET_BYTES: "8000000"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: No firmware, packs, fonts, art or home paths in this repo
+        run: python tools/check_public.py
+      - name: The tag is the app's version
+        id: version
+        # Tag run: GITHUB_REF_NAME minus "rust-" must be v<version> of
+        # app/Cargo.toml and of app/tauri.conf.json. Manual run on a
+        # branch: only those two must agree.
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ "$REF_TYPE" = tag ]; then
+            version=$(python packaging-rs/check_version.py "$GITHUB_REF_NAME")
+          else
+            version=$(python packaging-rs/check_version.py)
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Clawd $version"
+      - name: A release build is reproducible and verifiable
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
+        run: |
+          if [ -z "$MINISIGN_PUBKEY" ]; then
+            echo "::error::repository variable MINISIGN_PUBKEY is not set" \
+              "(the minisign public key, see packaging-rs/README.md)"
+            exit 1
+          fi
+          if [ "$REF_TYPE" = tag ] && [ ! -f desktop-rs/Cargo.lock ]; then
+            echo "::error::desktop-rs/Cargo.lock is not committed:" \
+              "a tag build must use --locked"
+            exit 1
+          fi
+
+  build-windows:
+    needs: verify
+    runs-on: windows-latest
+    environment: release
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      # stable branch
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.91.0
+      # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: desktop-rs
+          # registry only: compiled code is always built from source
+          cache-targets: false
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+      - name: Clawd.exe and the installer
+        shell: pwsh
+        env:
+          CLAWD_FEED_URL: ${{ secrets.CLAWD_FEED_URL }}
+          CLAWD_FEED_TOKEN: ${{ secrets.CLAWD_FEED_TOKEN }}
+          CLAWD_MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
+        run: ./packaging-rs/build_windows.ps1
+      - name: Report the exe size (not gated)
+        shell: pwsh
+        run: |
+          $n = (Get-Item desktop-rs/target/release/Clawd.exe).Length
+          "Clawd.exe: $n bytes (reported, not gated)" |
+            Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+      # v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows
+          path: dist/*-windows-setup.exe
+          if-no-files-found: error
+
+  build-mac:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14          # Apple silicon
+            arch: arm64
+          - runner: macos-15-intel    # Intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    environment: release
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      # stable branch
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.91.0
+      # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: desktop-rs
+          cache-targets: false
+      - name: Tauri CLI
+        run: cargo install tauri-cli --version "$TAURI_CLI_VERSION" --locked
+      - name: Developer ID certificate
+        # Secrets: MACOS_CERT_P12 (base64 of the .p12), MACOS_CERT_PASSWORD,
+        # MACOS_SIGN_IDENTITY ("Developer ID Application: Name (TEAMID)",
+        # the same Team ID as 0.1.x, or its self-update will refuse the
+        # app). A tag run without them FAILS; a manual run goes ad-hoc.
+        env:
+          CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ -z "$CERT_P12" ] || [ -z "$SIGN_IDENTITY" ]; then
+            if [ "$REF_TYPE" = tag ]; then
+              echo "::error::tag build without the Developer ID secrets" \
+                "(MACOS_CERT_P12, MACOS_SIGN_IDENTITY): refusing an" \
+                "ad-hoc release"
+              exit 1
+            fi
+            echo "::warning::No Developer ID certificate in the secrets:" \
+              "this build is ad-hoc signed and not notarized"
+            exit 0
+          fi
+          KC="$RUNNER_TEMP/clawd.keychain-db"; PW=$(uuidgen)
+          security create-keychain -p "$PW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$PW" "$KC"
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KC" -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$PW" \
+            "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" \
+            $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/cert.p12"
+          echo "CLAWD_SIGN_IDENTITY=$SIGN_IDENTITY" >> "$GITHUB_ENV"
+      - name: Clawd.app, zip and dmg
+        # build_mac.sh also refuses a release that is not signed with the
+        # identity and notarized.
+        env:
+          CLAWD_REQUIRE_SIGNING: ${{ github.ref_type == 'tag' && '1' || '0' }}
+          CLAWD_EXPECT_ARCH: ${{ matrix.arch }}
+          CLAWD_FEED_URL: ${{ secrets.CLAWD_FEED_URL }}
+          CLAWD_FEED_TOKEN: ${{ secrets.CLAWD_FEED_TOKEN }}
+          CLAWD_MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: sh packaging-rs/build_mac.sh
+      - name: Remove the signing keychain
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/clawd.keychain-db" \
+            2>/dev/null || true
+      # v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mac-${{ matrix.arch }}
+          path: |
+            dist/*-mac-*.dmg
+            dist/*-mac-*.zip
+          if-no-files-found: error
+
+  sign:
+    # SHA256SUMS over exactly the expected files, size gate, minisign
+    # signature.
+    needs: [verify, build-windows, build-mac]
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      # v4.3.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Exactly the expected files
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        working-directory: assets
+        run: |
+          printf '%s\n' \
+            "Clawd-$VERSION-mac-arm64.dmg" "Clawd-$VERSION-mac-arm64.zip" \
+            "Clawd-$VERSION-mac-x86_64.dmg" "Clawd-$VERSION-mac-x86_64.zip" \
+            "Clawd-$VERSION-windows-setup.exe" \
+            | sort > "$RUNNER_TEMP/expected.txt"
+          ls -1 | sort > "$RUNNER_TEMP/found.txt"
+          diff "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/found.txt" || {
+            echo "::error::the assets are not the expected five files"
+            exit 1
+          }
+      - name: Size gate (installer, zip, dmg)
+        working-directory: assets
+        run: |
+          fail=0
+          for f in *; do
+            size=$(stat -c %s "$f")
+            echo "$f: $size bytes"
+            if [ "$size" -gt "$MAX_ASSET_BYTES" ]; then
+              echo "::error::$f is $size bytes, over $MAX_ASSET_BYTES"
+              fail=1
+            fi
+          done
+          exit $fail
+      - name: SHA256SUMS
+        working-directory: assets
+        run: |
+          sha256sum Clawd-* > SHA256SUMS
+          cat SHA256SUMS
+      - name: Sign SHA256SUMS with minisign
+        # Secrets: MINISIGN_KEY (the secret key file, whole content) and
+        # MINISIGN_PASSWORD (its password). The public half is the
+        # repository variable MINISIGN_PUBKEY, also baked into the app:
+        # the signature must verify with it before anything is published.
+        env:
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+          MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
+        working-directory: assets
+        run: |
+          if [ -z "$MINISIGN_KEY" ]; then
+            echo "::error::secret MINISIGN_KEY is not set"
+            exit 1
+          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq minisign
+          umask 077
+          printf '%s\n' "$MINISIGN_KEY" > "$RUNNER_TEMP/minisign.key"
+          printf '%s\n' "$MINISIGN_PASSWORD" |
+            minisign -S -s "$RUNNER_TEMP/minisign.key" -m SHA256SUMS \
+              -t "Clawd $GITHUB_REF_NAME"
+          minisign -V -P "$MINISIGN_PUBKEY" -m SHA256SUMS
+          test -s SHA256SUMS.minisig
+      - name: Remove the secret key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/minisign.key"
+      # v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-assets
+          path: assets/*
+          if-no-files-found: error
+
+  publish:
+    # Only a rust-v* tag publishes, and only as a draft + prerelease (never
+    # "latest"). No secret here besides the workflow token; it is the only
+    # job allowed to write.
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'rust-v')
+    needs: [verify, sign]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # v4.3.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-assets
+          path: assets
+      - name: GitHub Release (draft + prerelease)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          NOTES: >-
+            Rust + Tauri port build for internal testing. Draft and
+            prerelease on purpose: do not publish or mark as latest (Clawd
+            0.1.x updates from /releases/latest). The release path is
+            release.yml after the cutover.
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "Clawd $VERSION (Rust build, internal test)" \
+            --notes "$NOTES" \
+            --draft --prerelease --latest=false
+      - name: "Gate: draft and prerelease, never latest"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          view=$(gh release view "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease)
+          echo "$view"
+          echo "$view" | jq -e '.isDraft == true and .isPrerelease == true' \
+            >/dev/null || {
+            echo "::error::$GITHUB_REF_NAME is not a draft prerelease"
+            exit 1
+          }
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" \
+            --jq .tag_name 2>/dev/null || true)
+          if [ "$latest" = "$GITHUB_REF_NAME" ]; then
+            echo "::error::$GITHUB_REF_NAME became the latest release"
+            exit 1
+          fi
