@@ -33,8 +33,12 @@ if ($v['EXPECTED_TEAM_ID'] -and $v['EXPECTED_TEAM_ID'] -notmatch '^[A-Z0-9]{10}$
 }
 if ($v['MINISIGN_KEY_FILE'] -and -not (Test-Path $v['MINISIGN_KEY_FILE'])) {
     $problems += 'MINISIGN_KEY_FILE does not exist'
-} elseif ($v['MINISIGN_KEY_FILE'] -and -not ((Get-Content $v['MINISIGN_KEY_FILE'] -TotalCount 1) -match 'secret key')) {
-    $problems += 'MINISIGN_KEY_FILE does not look like a minisign secret key (first line should say "secret key")'
+} else {
+    # A minisign secret key file: an "untrusted comment:" line, then a base64 line that starts RWRTY0Iy.
+    $keyLines = @(Get-Content $v['MINISIGN_KEY_FILE'] -TotalCount 2)
+    if ($keyLines.Count -lt 2 -or $keyLines[0] -notmatch '^untrusted comment:' -or $keyLines[1] -notmatch '^RWRTY0Iy') {
+        $problems += 'MINISIGN_KEY_FILE does not look like a minisign secret key (expected the encrypted .key file, not the .pub)'
+    }
 }
 if ($problems) { $problems | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }; throw 'fix .env first' }
 
