@@ -35,7 +35,7 @@ pub const TITLE: &str = "Clawd · Cài đặt";
 /// Tabs the tray can open the window on (`settings_app.TABS`).
 pub const TABS: [&str; 3] = ["update", "agents", "setup"];
 /// Environment variable with WebView2 browser arguments to try instead of Tauri's defaults (the
-/// Goal 3 experiments, mitigation 3). Unset in production.
+/// Goal 3 experiments, mitigation 3). Read in debug builds only: a release build ignores it.
 pub const WEBVIEW_ARGS_ENV: &str = "CLAWD_WEBVIEW_ARGS";
 
 /// `Tray._clock_key`: the keychain entry of the clock's web password; its name survives a new IP.
@@ -96,49 +96,104 @@ pub async fn open_settings(app: AppHandle, tab: String) {
         return;
     }
     let state = app.state::<AppState>();
-    let typed_host = {
+    // The finder's own view of the clock (not the 3 s old cached status), read off the async threads.
+    let (clock, typed) = {
         let engine = state.engine.clone();
-        tokio::task::spawn_blocking(move || typed_host(&engine))
+        tokio::task::spawn_blocking(move || (engine.snapshot().clock, typed_host(&engine)))
             .await
             .unwrap_or_default()
     };
-    let clock = state.status.borrow().clock.clone();
-    show_settings(app, new_session(clock.as_ref(), &typed_host, &tab)).await;
+    show_settings(app, new_session(clock.as_ref(), &typed, &tab)).await;
+}
+
+/// Only one settings window is ever being opened: two clicks in a row must not build two windows
+/// (the second build fails on the label and would wipe the live window's session).
+static OPENING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Run `create` unless a window exists by the time `gate` is ours, in which case `forward` gets it
+/// instead. The check is repeated after the gate is taken: that is the whole point.
+pub async fn open_once<W, Fut>(
+    gate: &tokio::sync::Mutex<()>,
+    existing: impl Fn() -> Option<W>,
+    forward: impl FnOnce(W),
+    create: impl FnOnce() -> Fut,
+) -> bool
+where
+    Fut: std::future::Future<Output = bool>,
+{
+    let _opening = gate.lock().await;
+    match existing() {
+        Some(window) => {
+            forward(window);
+            true
+        }
+        None => create().await,
+    }
+}
+
+/// A failed build must not clear the session of a window that is open (it belongs to that window).
+pub fn clear_session_after_failed_build(window_exists: bool, clear: impl FnOnce()) {
+    if !window_exists {
+        clear();
+    }
 }
 
 /// Open the window for `session` (or bring the open one forward on its tab).
-pub async fn show_settings(app: AppHandle, session: SettingsSession) {
-    if let Some(window) = app.get_webview_window(WINDOW_SETTINGS) {
-        bring_forward(&window, &session.tab);
-        return;
-    }
+/// `false` when no window could be opened.
+pub async fn show_settings(app: AppHandle, session: SettingsSession) -> bool {
+    let tab = session.tab.clone();
+    open_once(
+        &OPENING,
+        || app.get_webview_window(WINDOW_SETTINGS),
+        |window| bring_forward(&window, &tab),
+        || build_settings(&app, session),
+    )
+    .await
+}
+
+async fn build_settings(app: &AppHandle, session: SettingsSession) -> bool {
     let state = app.state::<AppState>();
     state.session.set(session);
 
     let mut builder =
-        WebviewWindowBuilder::new(&app, WINDOW_SETTINGS, WebviewUrl::App("index.html".into()))
+        WebviewWindowBuilder::new(app, WINDOW_SETTINGS, WebviewUrl::App("index.html".into()))
             .title(TITLE)
             .inner_size(WIDTH, HEIGHT)
             .min_inner_size(MIN_WIDTH, MIN_HEIGHT)
             .visible(false)
             .background_color(BACKGROUND);
-    if let Some(dir) = data_directory(&app) {
+    if let Some(dir) = data_directory(app) {
         builder = builder.data_directory(dir);
     }
     #[cfg(windows)]
-    if let Some(args) = clawd_contracts::Env::system().get(WEBVIEW_ARGS_ENV) {
+    if let Some(args) = webview_args(&clawd_contracts::Env::system()) {
         builder = builder.additional_browser_args(&args);
     }
     match builder.build() {
         Ok(window) => {
-            hook_events(&app, &window);
+            hook_events(app, &window);
             // Goal 3: the dark window is on screen while WebView2 loads the page.
             let _ = window.show();
+            true
         }
         Err(e) => {
             tracing::error!("Settings window did not open: {e}");
-            state.session.clear();
+            clear_session_after_failed_build(
+                app.get_webview_window(WINDOW_SETTINGS).is_some(),
+                || state.session.clear(),
+            );
+            false
         }
+    }
+}
+
+/// The WebView2 browser arguments to experiment with: debug builds only, a release build never
+/// reads the variable (nothing in the environment can change how the shipped window starts).
+pub fn webview_args(env: &clawd_contracts::Env) -> Option<String> {
+    if cfg!(debug_assertions) {
+        env.get(WEBVIEW_ARGS_ENV).filter(|a| !a.is_empty())
+    } else {
+        None
     }
 }
 

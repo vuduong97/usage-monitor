@@ -165,3 +165,86 @@ fn without_a_tray_set_clock_and_use_clock_edit_clock_json() {
 fn first_run_enables_autostart_once_and_installs_no_hooks() {
     unimplemented!("B'': lifecycle::first_run over a temp home");
 }
+
+// ---- opening the settings window (review P1-1) ------------------------------------------
+
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
+
+use clawd_app::windows::{clear_session_after_failed_build, open_once, webview_args};
+
+/// A fake window manager: `window` is what `get_webview_window` would say, `create` takes a
+/// moment (WebView2 creation) before the window exists.
+#[derive(Default)]
+struct FakeWindows {
+    window: Mutex<Option<u8>>,
+    builds: AtomicUsize,
+    forwards: AtomicUsize,
+}
+
+impl FakeWindows {
+    async fn open(&self, gate: &tokio::sync::Mutex<()>, succeed: bool) -> bool {
+        open_once(
+            gate,
+            || *self.window.lock().unwrap(),
+            |_| {
+                self.forwards.fetch_add(1, Ordering::SeqCst);
+            },
+            || async {
+                self.builds.fetch_add(1, Ordering::SeqCst);
+                tokio::time::sleep(Duration::from_millis(30)).await;
+                if succeed {
+                    *self.window.lock().unwrap() = Some(1);
+                }
+                succeed
+            },
+        )
+        .await
+    }
+}
+
+#[tokio::test]
+async fn two_clicks_in_a_row_build_one_window_and_forward_the_other() {
+    let (windows, gate) = (FakeWindows::default(), tokio::sync::Mutex::new(()));
+    let (a, b) = tokio::join!(windows.open(&gate, true), windows.open(&gate, true));
+    assert!(a && b);
+    assert_eq!(windows.builds.load(Ordering::SeqCst), 1);
+    assert_eq!(windows.forwards.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn without_the_gate_both_clicks_would_build() {
+    // The contrast that shows what the gate is for: two gates = no mutual exclusion.
+    let windows = FakeWindows::default();
+    let (g1, g2) = (tokio::sync::Mutex::new(()), tokio::sync::Mutex::new(()));
+    tokio::join!(windows.open(&g1, true), windows.open(&g2, true));
+    assert_eq!(windows.builds.load(Ordering::SeqCst), 2);
+}
+
+#[tokio::test]
+async fn a_failed_build_reports_false_and_the_next_click_tries_again() {
+    let (windows, gate) = (FakeWindows::default(), tokio::sync::Mutex::new(()));
+    assert!(!windows.open(&gate, false).await);
+    assert!(windows.open(&gate, true).await);
+    assert_eq!(windows.builds.load(Ordering::SeqCst), 2);
+    assert_eq!(windows.forwards.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn a_failed_build_keeps_the_session_of_a_live_window() {
+    let cleared = std::cell::Cell::new(0);
+    clear_session_after_failed_build(true, || cleared.set(cleared.get() + 1));
+    assert_eq!(cleared.get(), 0, "the live window still owns its session");
+    clear_session_after_failed_build(false, || cleared.set(cleared.get() + 1));
+    assert_eq!(cleared.get(), 1);
+}
+
+#[test]
+fn webview_arguments_come_from_the_environment_in_debug_builds_only() {
+    use clawd_app::windows::WEBVIEW_ARGS_ENV;
+    use clawd_contracts::Env;
+    let env = Env::from_map([(WEBVIEW_ARGS_ENV.to_owned(), "--disable-gpu".to_owned())].into());
+    let want = cfg!(debug_assertions).then(|| "--disable-gpu".to_owned());
+    assert_eq!(webview_args(&env), want);
+    assert_eq!(webview_args(&Env::empty()), None);
+}
