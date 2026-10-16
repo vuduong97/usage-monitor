@@ -1,13 +1,14 @@
 //! Port of `tests/test_clockapi.py` against the testkit's fake clock (a local HTTP server).
 
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use clawd_clock::api::{ClockApiOptions, OTA_MAX, STYLE_MAX};
+use clawd_clock::api::{ClockApiOptions, SleepFn, OTA_MAX, POLL_GAP, RETRY_GAP, STYLE_MAX};
 use clawd_clock::{config_diff, ClockApi};
-use clawd_contracts::{Clock, ClockError, MonotonicClock};
+use clawd_contracts::{Clock, ClockError};
 use clawd_testkit::clock::FakeClockDevice;
-use clawd_testkit::FakeResponse;
+use clawd_testkit::{FakeClock, FakeResponse};
 use serde_json::{json, Value};
 
 /// No waiting between tries; `timeout` only where a test needs a clock that is too slow.
@@ -16,8 +17,31 @@ fn fast_with(timeout: Option<Duration>) -> ClockApiOptions {
         retry_gap: Duration::ZERO,
         poll_gap: Duration::from_millis(20),
         timeout,
+        sleep: None,
         client: None,
     }
+}
+
+type SleepLog = Arc<Mutex<Vec<Duration>>>;
+
+/// Python's `sleep=lambda s: t.__setitem__(0, t[0] + s)`: no real sleeping, the fake clock moves.
+fn fake_sleep(clock: &FakeClock, log: &SleepLog) -> SleepFn {
+    let clock = clock.clone();
+    let log = Arc::clone(log);
+    Arc::new(move |gap| {
+        log.lock().unwrap().push(gap);
+        clock.advance(gap.as_secs_f64());
+        Box::pin(async {})
+    })
+}
+
+/// Default gaps (`RETRY_GAP`, `POLL_GAP`) and timeouts; only the sleep is fake.
+fn sleepless(base: &str, clock: &FakeClock, log: &SleepLog) -> ClockApi {
+    let options = ClockApiOptions {
+        sleep: Some(fake_sleep(clock, log)),
+        ..ClockApiOptions::default()
+    };
+    ClockApi::with_options(base, None, options)
 }
 
 fn fast() -> ClockApiOptions {
@@ -160,7 +184,7 @@ async fn upload_size_guard() {
 }
 
 #[tokio::test]
-async fn get_retries_a_slow_clock_then_gives_up() {
+async fn get_retries_a_slow_clock() {
     let device = FakeClockDevice::start(None);
     device.set_down(2, Duration::from_secs(2));
     let c = impatient(&device);
@@ -169,15 +193,24 @@ async fn get_retries_a_slow_clock_then_gives_up() {
         45,
         "2 timeouts, 3rd try answers"
     );
-    device.set_down(5, Duration::from_secs(2));
-    let err = c.config().await.unwrap_err();
-    match err {
-        ClockError::NoAnswer { base, kind } => {
-            assert_eq!(base, device.url());
-            assert!(kind.ends_with("Timeout"), "{kind}");
+}
+
+#[tokio::test]
+async fn get_gives_up_after_two_retries_a_retry_gap_apart() {
+    // a port nobody listens on: every try is a ConnectError, at once
+    let closed = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", closed.local_addr().unwrap());
+    drop(closed);
+    let (clock, log) = (FakeClock::new(0.0), SleepLog::default());
+    let err = sleepless(&base, &clock, &log).config().await.unwrap_err();
+    assert_eq!(
+        err,
+        ClockError::NoAnswer {
+            base,
+            kind: "ConnectError".into()
         }
-        other => panic!("expected NoAnswer, got {other:?}"),
-    }
+    );
+    assert_eq!(*log.lock().unwrap(), [RETRY_GAP, RETRY_GAP]);
 }
 
 #[tokio::test]
@@ -214,45 +247,85 @@ async fn scan_export_restore_reboot() {
     );
 }
 
+fn heap_polls(device: &FakeClockDevice) -> usize {
+    device
+        .calls()
+        .iter()
+        .filter(|c| c.path == "/api/heap")
+        .count()
+}
+
 #[tokio::test]
-async fn wait_back_needs_a_boot_after_the_upload() {
+async fn wait_back_gives_up_at_the_150_s_deadline_without_sleeping() {
     let device = FakeClockDevice::start(None);
-    let c = api(&device, None);
-    let clock = MonotonicClock::new();
     device.set_uptime(Some(5000)); // still the old run: keeps waiting
-    let err = c
-        .wait_back(-1.0, Some(Duration::from_millis(300)), &clock, None)
-        .await
-        .unwrap_err();
+    let (clock, log) = (FakeClock::new(1000.0), SleepLog::default());
+    let c = sleepless(&device.url(), &clock, &log);
+    let err = c.wait_back(999.0, None, &clock, None).await.unwrap_err();
     assert_eq!(
         err.to_string(),
         "the clock did not come back after the update"
     );
-    device.set_uptime(Some(0)); // booted just now
+    // polls at t = 0, 2, ..., 148 of the 150 s; the loop ends once the clock reaches the end
+    assert_eq!(heap_polls(&device), 75);
+    assert_eq!(log.lock().unwrap().len(), 75);
+    assert!(log.lock().unwrap().iter().all(|g| *g == POLL_GAP));
+    assert_eq!(clock.now(), 1150.0);
+}
+
+#[tokio::test]
+async fn wait_back_deadline_argument_is_respected() {
+    let device = FakeClockDevice::start(None);
+    device.set_uptime(Some(5000));
+    let (clock, log) = (FakeClock::new(0.0), SleepLog::default());
+    let c = sleepless(&device.url(), &clock, &log);
+    let deadline = Some(Duration::from_secs(10));
+    assert!(c.wait_back(-1.0, deadline, &clock, None).await.is_err());
+    assert_eq!(heap_polls(&device), 5); // t = 0, 2, 4, 6, 8
+}
+
+#[tokio::test]
+async fn wait_back_needs_a_boot_after_the_upload() {
+    let device = FakeClockDevice::start(None);
+    device.set_uptime(Some(0)); // booted at the moment of each poll
+    let (clock, log) = (FakeClock::new(1000.0), SleepLog::default());
+    let c = sleepless(&device.url(), &clock, &log);
     let ticks = AtomicUsize::new(0);
     let tick = || {
         ticks.fetch_add(1, Ordering::SeqCst);
     };
-    let before = clock.now() - 10.0;
+    // the clock must have started after t = 1010: first true at the poll made at t = 1012
     let heap = c
-        .wait_back(before, Some(Duration::from_secs(5)), &clock, Some(&tick))
+        .wait_back(1010.0, Some(Duration::from_secs(60)), &clock, Some(&tick))
         .await
         .unwrap();
     assert_eq!(heap["uptime"], 0);
-    assert!(ticks.load(Ordering::SeqCst) >= 1);
+    assert_eq!(ticks.load(Ordering::SeqCst), 7, "tick runs on every poll");
+    assert_eq!(clock.now(), 1012.0);
 }
 
 #[tokio::test]
 async fn wait_back_survives_a_clock_that_is_not_answering_yet() {
     let device = FakeClockDevice::start(None);
     device.set_uptime(None); // connection closed: ClockError inside, swallowed
-    let c = api(&device, None);
-    let clock = MonotonicClock::new();
-    let err = c
-        .wait_back(0.0, Some(Duration::from_millis(100)), &clock, None)
-        .await
-        .unwrap_err();
+    let (clock, log) = (FakeClock::new(0.0), SleepLog::default());
+    let c = sleepless(&device.url(), &clock, &log);
+    let deadline = Some(Duration::from_secs(10));
+    let err = c.wait_back(0.0, deadline, &clock, None).await.unwrap_err();
     assert!(matches!(err, ClockError::Other(_)));
+    assert_eq!(heap_polls(&device), 5);
+}
+
+#[tokio::test]
+async fn a_bulk_read_that_stalls_times_out_per_operation_and_is_retried() {
+    // get_file is a bulk call: its 60 s (here 1 s) is a per-read limit on a client of its own
+    let device = FakeClockDevice::start(None);
+    device.set_down(1, Duration::from_secs(2));
+    let options = fast_with(Some(Duration::from_secs(1)));
+    let c = ClockApi::with_options(&device.url(), None, options);
+    assert_eq!(c.get_file("/clawd.pak", 1000).await.unwrap().len(), 100);
+    assert_eq!(heap_polls(&device), 0);
+    assert_eq!(device.calls().len(), 2, "the stalled try and its retry");
 }
 
 #[tokio::test]

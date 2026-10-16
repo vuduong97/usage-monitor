@@ -18,7 +18,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use clawd_contracts::{Clock, ClockError};
+use clawd_contracts::{BoxFuture, Clock, ClockError};
 use diqwest::{DigestAuthSession, WithDigestAuth};
 use reqwest::{Method, Url};
 use serde_json::{Map, Value};
@@ -50,6 +50,9 @@ const SCAN_TIMEOUT: Duration = Duration::from_secs(30);
 const FILE_TIMEOUT: Duration = Duration::from_secs(60);
 const STYLE_TIMEOUT: Duration = Duration::from_secs(60);
 
+/// `ClockApi(sleep=...)`: replaces the tokio sleep of the retry gap and the `wait_back` poll gap.
+pub type SleepFn = Arc<dyn Fn(Duration) -> BoxFuture<()> + Send + Sync>;
+
 /// What Python's `ClockApi(base, auth, transport, sleep)` lets a test inject.
 #[derive(Clone)]
 pub struct ClockApiOptions {
@@ -58,7 +61,12 @@ pub struct ClockApiOptions {
     /// The sleep between two polls of `wait_back` (default [`POLL_GAP`]).
     pub poll_gap: Duration,
     /// Replaces the timeout of every request ([`TIMEOUT`], [`UPLOAD_TIMEOUT`], ... by default).
+    /// On a bulk call (`get_file`, firmware and pack uploads) it is also the per-operation
+    /// connect/read timeout.
     pub timeout: Option<Duration>,
+    /// The sleep used for `retry_gap` and `poll_gap` (`None`: `tokio::time::sleep`). A test
+    /// passes one that advances its `FakeClock`, like Python's `sleep=lambda s: t += s`.
+    pub sleep: Option<SleepFn>,
     /// The HTTP client (`transport`): redirects must stay off for Python parity. `None` builds
     /// one without proxy support.
     pub client: Option<reqwest::Client>,
@@ -70,9 +78,22 @@ impl Default for ClockApiOptions {
             retry_gap: RETRY_GAP,
             poll_gap: POLL_GAP,
             timeout: None,
+            sleep: None,
             client: None,
         }
     }
+}
+
+/// A client without proxy support or redirects (httpx follows none by default); `per_op` adds
+/// the per-operation connect and read timeouts of httpx.
+fn build_client(per_op: Option<Duration>) -> reqwest::Client {
+    let mut builder = reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none());
+    if let Some(t) = per_op {
+        builder = builder.connect_timeout(t).read_timeout(t);
+    }
+    builder.build().unwrap_or_default()
 }
 
 /// `clockapi.ClockApi`. Responses stay untyped JSON (`serde_json::Value`): the firmware owns
@@ -105,6 +126,8 @@ struct Call<'a> {
     query: Option<(&'a str, &'a str)>,
     retries: u32,
     timeout: Duration,
+    /// A big transfer: `timeout` is a per-operation limit, see [`ClockApi::attempt`].
+    bulk: bool,
     payload: Payload<'a>,
 }
 
@@ -116,6 +139,7 @@ impl<'a> Call<'a> {
             query: None,
             retries: 0,
             timeout: TIMEOUT,
+            bulk: false,
             payload: Payload::Empty,
         }
     }
@@ -131,6 +155,11 @@ impl<'a> Call<'a> {
 
     fn timeout(mut self, t: Duration) -> Self {
         self.timeout = t;
+        self
+    }
+
+    fn bulk(mut self) -> Self {
+        self.bulk = true;
         self
     }
 
@@ -271,13 +300,7 @@ impl ClockApi {
         auth: Option<(String, String)>,
         options: ClockApiOptions,
     ) -> Self {
-        let http = options.client.clone().unwrap_or_else(|| {
-            reqwest::Client::builder()
-                .no_proxy()
-                .redirect(reqwest::redirect::Policy::none())
-                .build()
-                .unwrap_or_default()
-        });
+        let http = options.client.clone().unwrap_or_else(|| build_client(None));
         Self {
             base: base.trim_end_matches('/').to_owned(),
             http,
@@ -324,7 +347,22 @@ impl ClockApi {
         let _one_at_a_time = self.lock.lock().await;
         let session = self.auth.lock().unwrap_or_else(|e| e.into_inner()).clone();
         let timeout = self.options.timeout.unwrap_or(call.timeout);
-        let mut request = self.http.request(call.method.clone(), url).timeout(timeout);
+        // httpx's timeout is per operation (connect, each read, each write); reqwest's
+        // `RequestBuilder::timeout` is one deadline for the whole exchange, which would cut
+        // off a 3 MB pack that is still flowing. A bulk call therefore gets a client with
+        // per-operation connect/read timeouts of `timeout` (an injected client keeps its own),
+        // and only the whole-exchange deadline is raised to `PACK_TIMEOUT` as a backstop
+        // for a write that stalls (reqwest has no write timeout).
+        let (client, deadline) = if call.bulk {
+            let client = match self.options.client {
+                Some(_) => self.http.clone(),
+                None => build_client(Some(timeout)),
+            };
+            (client, self.options.timeout.unwrap_or(PACK_TIMEOUT))
+        } else {
+            (self.http.clone(), timeout)
+        };
+        let mut request = client.request(call.method.clone(), url).timeout(deadline);
         request = match &call.payload {
             Payload::Empty => request,
             Payload::Json(value) => request.json(value),
@@ -357,13 +395,21 @@ impl ClockApi {
         Ok((status, Reply { content_type, body }))
     }
 
+    /// `ClockApi._sleep`.
+    async fn sleep(&self, gap: Duration) {
+        match &self.options.sleep {
+            Some(sleep) => sleep(gap).await,
+            None => tokio::time::sleep(gap).await,
+        }
+    }
+
     /// `ClockApi._send`.
     async fn send(&self, call: Call<'_>) -> Result<Reply, ClockError> {
         let url = self.url(&call)?;
         let mut last = String::new();
         for attempt in 0..=call.retries {
             if attempt > 0 {
-                tokio::time::sleep(self.options.retry_gap).await;
+                self.sleep(self.options.retry_gap).await;
             }
             match self.attempt(&call, url.clone()).await {
                 Ok((401, _)) => return Err(ClockError::AuthNeeded),
@@ -472,7 +518,8 @@ impl ClockApi {
     pub async fn get_file(&self, path: &str, max_bytes: usize) -> Result<Vec<u8>, ClockError> {
         let mut call = Call::get("/api/fs/get")
             .retries(RETRIES)
-            .timeout(FILE_TIMEOUT);
+            .timeout(FILE_TIMEOUT)
+            .bulk();
         call.query = Some(("path", path));
         let reply = self.send(call).await?;
         if reply.body.len() > max_bytes {
@@ -500,6 +547,7 @@ impl ClockApi {
             .send(
                 Call::new(Method::POST, "/update")
                     .timeout(UPLOAD_TIMEOUT)
+                    .bulk()
                     .file("firmware", "firmware.bin", image),
             )
             .await?;
@@ -536,6 +584,7 @@ impl ClockApi {
             .send(
                 Call::new(Method::POST, path)
                     .timeout(PACK_TIMEOUT)
+                    .bulk()
                     .file("file", &filename, data),
             )
             .await?;
@@ -633,7 +682,7 @@ impl ClockApi {
                     return Ok(heap);
                 }
             }
-            tokio::time::sleep(self.options.poll_gap).await;
+            self.sleep(self.options.poll_gap).await;
         }
         Err(ClockError::Other(
             "the clock did not come back after the update".into(),
