@@ -1,0 +1,141 @@
+{
+  "input": {
+    "scenarios": [
+      "windows_ok",
+      "windows_ota_busy",
+      "windows_changed_file",
+      "windows_nothing_staged",
+      "windows_from_source",
+      "mac_ok"
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "name": "windows_ok",
+        "result": [
+          true,
+          ""
+        ],
+        "popen": {
+          "exe": "Clawd-0.2.0-windows-setup.exe",
+          "args": [
+            "/SILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART"
+          ],
+          "flags": 520,
+          "detached_stdio": true
+        }
+      },
+      {
+        "name": "windows_ota_busy",
+        "result": [
+          false,
+          "\u0110ang c\u1eadp nh\u1eadt firmware cho \u0111\u1ed3ng h\u1ed3; h\u00e3y \u0111\u1ee3i xong r\u1ed3i kh\u1edfi \u0111\u1ed9ng l\u1ea1i."
+        ],
+        "popen": 0
+      },
+      {
+        "name": "windows_changed_file",
+        "result": [
+          false,
+          "File c\u00e0i \u0111\u1eb7t \u0111\u00e3 b\u1ecb \u0111\u1ed5i, \u0111\u00e3 b\u1ecf. H\u00e3y ki\u1ec3m tra l\u1ea1i b\u1ea3n m\u1edbi."
+        ],
+        "popen": 0,
+        "staged_after": false
+      },
+      {
+        "name": "windows_nothing_staged",
+        "result": [
+          false,
+          "Ch\u01b0a c\u00f3 b\u1ea3n n\u00e0o \u0111\u01b0\u1ee3c t\u1ea3i xong."
+        ],
+        "popen": 0
+      },
+      {
+        "name": "windows_from_source",
+        "result": [
+          false,
+          "B\u1ea3n ch\u1ea1y t\u1eeb m\u00e3 ngu\u1ed3n kh\u00f4ng t\u1ef1 c\u1eadp nh\u1eadt."
+        ],
+        "popen": 0
+      },
+      {
+        "name": "mac_ok",
+        "state_status": "ready",
+        "result": [
+          true,
+          ""
+        ],
+        "popen": {
+          "argv": [
+            "/bin/sh",
+            "<stage>/swap.sh",
+            "4321",
+            "<stage>/Clawd.app",
+            "<running>",
+            "<stage>",
+            "0.2.0"
+          ],
+          "start_new_session": true,
+          "script_is_swap": true,
+          "failed_marker_removed": true
+        },
+        "runner_calls": [
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ],
+          [
+            "ditto",
+            "-x",
+            "-k",
+            "<stage>/Clawd-0.2.0-mac-arm64.zip",
+            "<stage>/unpack"
+          ],
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<stage>/unpack/Clawd.app"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<stage>/unpack/Clawd.app"
+          ],
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<stage>/Clawd.app"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<stage>/Clawd.app"
+          ]
+        ]
+      }
+    ]
+  }
+}

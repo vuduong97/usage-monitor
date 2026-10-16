@@ -1,0 +1,64 @@
+{
+  "input": {
+    "cases": [
+      [
+        "1.2.3",
+        "mac",
+        "arm64"
+      ],
+      [
+        "1.2.3",
+        "mac",
+        "x86_64"
+      ],
+      [
+        "1.2.3",
+        "windows",
+        "x86_64"
+      ],
+      [
+        "1.2.3",
+        "windows",
+        "arm64"
+      ],
+      [
+        "1.2.3",
+        "windows",
+        ""
+      ],
+      [
+        "1.2.3",
+        "linux",
+        "x86_64"
+      ],
+      [
+        "1.2.3",
+        "mac",
+        "ppc"
+      ],
+      [
+        "1.2.3",
+        "mac",
+        ""
+      ],
+      [
+        "0.2.0",
+        "mac",
+        "arm64"
+      ]
+    ]
+  },
+  "output": {
+    "names": [
+      "Clawd-1.2.3-mac-arm64.zip",
+      "Clawd-1.2.3-mac-x86_64.zip",
+      "Clawd-1.2.3-windows-setup.exe",
+      "Clawd-1.2.3-windows-setup.exe",
+      "Clawd-1.2.3-windows-setup.exe",
+      null,
+      null,
+      null,
+      "Clawd-0.2.0-mac-arm64.zip"
+    ]
+  }
+}
