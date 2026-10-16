@@ -163,7 +163,9 @@ fn configs_match_python_all() {
 #[test]
 fn bundled_assets_equal_the_integrations_python_ships() {
     let fx = load_fixture_value("agents", "configs");
-    let checks = fx["output"]["assets_equal_integrations"].as_object().unwrap();
+    let checks = fx["output"]["assets_equal_integrations"]
+        .as_object()
+        .unwrap();
     assert_eq!(checks.len(), 2);
     assert!(checks.values().all(|v| v == &json!(true)));
     // Live check against the repo's integrations/ (this crate sits at <repo>/desktop-rs/crates);
@@ -177,12 +179,8 @@ fn bundled_assets_equal_the_integrations_python_ships() {
         };
         let bundled = std::str::from_utf8(clawd_agents::assets::integration(rel).unwrap()).unwrap();
         assert_eq!(
-            bundled.replace("
-", "
-"),
-            python_copy.replace("
-", "
-"),
+            bundled.replace("\r\n", "\n"),
+            python_copy.replace("\r\n", "\n"),
             "assets/{rel} drifted from integrations/{rel}"
         );
     }
