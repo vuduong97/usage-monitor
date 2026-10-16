@@ -140,4 +140,4 @@ Env: `CARGO_HOME=D:/cargo-home CARGO_TARGET_DIR=D:/ct/14 TMP=D:/tmp`, Windows 11
 | `cargo clippy -p clawd-e2e --all-targets -- -D warnings` | clean |
 | `cargo test -p clawd-e2e` x3 | 25 passed, 1 ignored (the bug repro), 0 failed, in each of 3 consecutive runs. One outlier: `fault_injection` took 6.25 s in run 1 (0.27 s in runs 2-3; every wait in it has a 5-15 s margin), so no flake, but do not tighten those margins |
 | `cargo test -p clawd-e2e --test engine -- --ignored` | fails as intended (4/5 engines missed the first payload hook) |
-| `python tools/check_public.py` | `check_public: 472 files ok` |
+| `python tools/check_public.py` | `check_public: 479 files ok` |
