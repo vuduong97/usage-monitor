@@ -72,7 +72,7 @@ pub async fn update_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
     let prepared = (if edited.is_null() {
         Ok(json!({}))
     } else {
-        diff(&b, edited)
+        diff(b, edited)
     })
     .and_then(|changes| Ok((changes, b.style_arg(arg(&args, 1))?)));
     let (changes, style) = match prepared {

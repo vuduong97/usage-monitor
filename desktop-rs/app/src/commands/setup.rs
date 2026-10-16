@@ -52,7 +52,7 @@ pub async fn finish_setup_on(b: &Bridge, args_in: &[Value]) -> Result<Value, Str
         let _ = firstrun::mark_done(b.paths(), &steps);
     }
     b.notify(ShellCmd::Setup);
-    Ok(setup_state_of(&b))
+    Ok(setup_state_of(b))
 }
 
 /// `SettingsApi.setup_clocks`: the wizard's clock step, asked every ~2 s: clocks mDNS sees, and

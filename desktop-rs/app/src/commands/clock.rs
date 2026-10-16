@@ -60,7 +60,7 @@ pub async fn save_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
         return Ok(fail("busy", "Đang cập nhật firmware, chờ xong đã."));
     }
     let (changes, style) =
-        match diff(&b, arg(&args, 0)).and_then(|c| Ok((c, b.style_arg(arg(&args, 1))?))) {
+        match diff(b, arg(&args, 0)).and_then(|c| Ok((c, b.style_arg(arg(&args, 1))?))) {
             Ok(ok) => ok,
             Err(e) => return Ok(bad_value(&e)),
         };

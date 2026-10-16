@@ -423,6 +423,12 @@ pub struct Build {
     pub shared: Option<(AppPaths, OsStoreNames)>,
 }
 
+impl Default for Build {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Build {
     pub fn new() -> Self {
         Self {
@@ -480,7 +486,7 @@ impl Build {
     }
 
     pub fn build(self) -> Rig {
-        let tc = self.tc.unwrap_or_else(TempConfig::new);
+        let tc = self.tc.unwrap_or_default();
         let clock = FakeClock::start(self.heap, self.password.as_deref());
         let (paths, names) = self
             .shared
