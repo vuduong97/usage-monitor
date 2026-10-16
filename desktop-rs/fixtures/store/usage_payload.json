@@ -1,0 +1,204 @@
+{
+  "input": {
+    "payload_keys": [
+      "s",
+      "sr",
+      "w",
+      "wr",
+      "st",
+      "ok",
+      "acct",
+      "tp",
+      "rd",
+      "t",
+      "tf"
+    ]
+  },
+  "output": {
+    "writes": [
+      {
+        "input": {
+          "payload": {
+            "s": 5,
+            "m": "alert",
+            "b": 1,
+            "w": 9,
+            "ok": true,
+            "x": 1
+          },
+          "now": 1760000000.5
+        },
+        "output": {
+          "file_text": "{\"at\": 1760000000.5, \"payload\": {\"s\": 5, \"w\": 9, \"ok\": true}}",
+          "read": [
+            {
+              "s": 5,
+              "w": 9,
+              "ok": true
+            },
+            1760000000.5
+          ]
+        }
+      },
+      {
+        "input": {
+          "payload": {
+            "w": 1,
+            "s": 2,
+            "sr": 3,
+            "wr": 4,
+            "st": "allowed",
+            "ok": true,
+            "acct": "pro",
+            "tp": 50,
+            "rd": "Nov 1",
+            "t": 1760000000,
+            "tf": 24,
+            "c": 1,
+            "src": "codex",
+            "why": "login",
+            "unknown": [
+              1
+            ]
+          },
+          "now": 1760000000.0
+        },
+        "output": {
+          "file_text": "{\"at\": 1760000000.0, \"payload\": {\"s\": 2, \"sr\": 3, \"w\": 1, \"wr\": 4, \"st\": \"allowed\", \"ok\": true, \"acct\": \"pro\", \"tp\": 50, \"rd\": \"Nov 1\", \"t\": 1760000000, \"tf\": 24}}",
+          "read": [
+            {
+              "s": 2,
+              "sr": 3,
+              "w": 1,
+              "wr": 4,
+              "st": "allowed",
+              "ok": true,
+              "acct": "pro",
+              "tp": 50,
+              "rd": "Nov 1",
+              "t": 1760000000,
+              "tf": 24
+            },
+            1760000000.0
+          ]
+        }
+      },
+      {
+        "input": {
+          "payload": {},
+          "now": 5.0
+        },
+        "output": {
+          "file_text": "{\"at\": 5.0, \"payload\": {}}",
+          "read": [
+            {},
+            5.0
+          ]
+        }
+      },
+      {
+        "input": {
+          "payload": {
+            "s": 12.5,
+            "ok": false,
+            "acct": "\u0110\u1ed3ng \u2603"
+          },
+          "now": 1e-05
+        },
+        "output": {
+          "file_text": "{\"at\": 1e-05, \"payload\": {\"s\": 12.5, \"ok\": false, \"acct\": \"\\u0110\\u1ed3ng \\u2603\"}}",
+          "read": [
+            {
+              "s": 12.5,
+              "ok": false,
+              "acct": "\u0110\u1ed3ng \u2603"
+            },
+            1e-05
+          ]
+        }
+      }
+    ],
+    "reads": [
+      {
+        "file": "{\"at\": 1760000000.5, \"payload\": {\"s\": 5}}",
+        "result": {
+          "payload": {
+            "s": 5
+          },
+          "at": 1760000000.5
+        }
+      },
+      {
+        "file": "{\"at\": 5, \"payload\": {}}",
+        "result": {
+          "payload": {},
+          "at": 5.0
+        }
+      },
+      {
+        "file": "{\"at\": 5.0, \"payload\": {\"z\": 1, \"a\": 2}}",
+        "result": {
+          "payload": {
+            "z": 1,
+            "a": 2
+          },
+          "at": 5.0
+        }
+      },
+      {
+        "file": "{\"at\": true, \"payload\": {}}",
+        "result": null
+      },
+      {
+        "file": "{\"at\": \"5\", \"payload\": {}}",
+        "result": null
+      },
+      {
+        "file": "{\"at\": null, \"payload\": {}}",
+        "result": null
+      },
+      {
+        "file": "{\"payload\": {}}",
+        "result": null
+      },
+      {
+        "file": "{\"at\": 5}",
+        "result": null
+      },
+      {
+        "file": "{\"at\": 5, \"payload\": []}",
+        "result": null
+      },
+      {
+        "file": "{\"at\": 5, \"payload\": \"x\"}",
+        "result": null
+      },
+      {
+        "file": "[]",
+        "result": null
+      },
+      {
+        "file": "\"x\"",
+        "result": null
+      },
+      {
+        "file": "{bad",
+        "result": null
+      },
+      {
+        "file": "",
+        "result": null
+      },
+      {
+        "file": "{\"at\": 1e2, \"payload\": {\"s\": 1}}",
+        "result": {
+          "payload": {
+            "s": 1
+          },
+          "at": 100.0
+        }
+      }
+    ],
+    "missing_file": null
+  }
+}
