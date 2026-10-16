@@ -151,3 +151,112 @@ fn a_second_engine_on_a_taken_port_runs_without_agent_events() {
         "the first engine still owns the port"
     );
 }
+
+/// `test_agents.test_event_server_routes_every_agent` through the engine's own server: every
+/// agent the registry knows answers a hook, an unknown id is 404, the sessions land in the brain.
+#[test]
+fn the_engine_server_takes_a_hook_from_every_agent() {
+    let rig = EngineRig::new("");
+    rig.engine.start().expect("start");
+    assert!(wait_until(15.0, || daemon_up(&rig)));
+    let port = rig.port;
+    let hooks = [
+        ("codex", "UserPromptSubmit", json!({"session_id": "t1"})),
+        (
+            "gemini",
+            "",
+            json!({"hook_event_name": "BeforeTool", "session_id": "g", "tool_name": "read_file"}),
+        ),
+        ("opencode", "", json!({"ev": "prompt", "sid": "o"})),
+        ("pi", "", json!({"ev": "prompt", "sid": "p"})),
+        (
+            "claude",
+            "",
+            json!({"hook_event_name": "UserPromptSubmit", "session_id": "c"}),
+        ),
+    ];
+    for (agent, hint, payload) in &hooks {
+        let reply = post_hook(port, agent, hint, payload).expect("post");
+        assert_eq!(reply.status, 200, "{agent}: {}", reply.text());
+    }
+    assert_eq!(
+        post_hook(port, "nobody", "", &json!({}))
+            .expect("post")
+            .status,
+        404
+    );
+    let state = http::get_state(port).expect("state").json().to_string();
+    for sid in ["codex:t1", "gemini:g", "opencode:o", "pi:p", "claude:c"] {
+        assert!(state.contains(sid), "{sid} missing from {state}");
+    }
+}
+
+/// `test_preview.test_engine_keeps_every_payload_for_the_settings_window`: whatever the engine
+/// pushes is also kept in the payload file the settings window draws the clock from.
+#[test]
+fn the_engine_keeps_the_pushed_payload_for_the_settings_window() {
+    let rig = EngineRig::new("");
+    assert!(clawd_store::paths::usage_payload(&rig.cfg.paths).is_none());
+    rig.engine.start().expect("start");
+    // INTEGRATION BUG (see the phase 14 report): `run` installs the payload hook after it has
+    // started the publisher, so the very first payload can miss it. Ask for more polls.
+    assert!(
+        wait_until(15.0, || {
+            rig.engine.poll_now();
+            clawd_store::paths::usage_payload(&rig.cfg.paths).is_some()
+        }),
+        "no payload file; config dir: {:?}; status {:?}",
+        std::fs::read_dir(rig.cfg.paths.config_dir())
+            .map(|d| d.flatten().map(|e| e.file_name()).collect::<Vec<_>>()),
+        rig.engine.snapshot().payload
+    );
+    let (kept, _at) = clawd_store::paths::usage_payload(&rig.cfg.paths).expect("kept");
+    // `src` is not one of the screen keys the file keeps (PAYLOAD_KEYS)
+    assert!(kept.src().is_none(), "{kept:?}");
+}
+
+/// `test_preview.test_engine_survives_an_unwritable_payload_file`: a payload file that cannot be
+/// written (a directory sits in its place) costs the settings window its copy, nothing else.
+#[test]
+fn an_unwritable_payload_file_does_not_stop_the_pushes() {
+    let rig = EngineRig::new("");
+    std::fs::create_dir_all(rig.cfg.paths.payload_file()).expect("a directory in the way");
+    rig.engine.start().expect("start");
+    assert!(
+        wait_until(15.0, || !usage_bodies(&rig.device).is_empty()),
+        "the clock still gets its usage"
+    );
+    assert!(
+        wait_until(15.0, || {
+            rig.engine.poll_now(); // the first payload can miss the hook (see above)
+            rig.engine.snapshot().payload.as_ref().and_then(|p| p.src()) == Some("off")
+        }),
+        "the engine keeps the payload"
+    );
+    let reply = post_hook(rig.port, "claude", "", &json!({})).expect("post");
+    assert_eq!(reply.status, 200, "the server is up");
+}
+
+/// REPRO of an integration bug (owner: phase 12, `app/src/engine.rs::run`): the publisher task is
+/// spawned before `set_on_payload` is called (the event server is started in between), so the
+/// first payload can be pushed before the hook exists. `Engine.status().payload` and the payload
+/// file then stay empty until the next poll (`POLL_INTERVAL` = 60 s). Run it with
+/// `cargo test -p clawd-e2e --test engine -- --ignored`; it fails now and fixes itself once the
+/// hook is installed before the loops start.
+#[test]
+#[ignore = "integration bug: first payload misses the on_payload hook (engine.rs run order)"]
+fn the_first_payload_reaches_the_on_payload_hook_without_a_second_poll() {
+    let mut misses = 0;
+    for _ in 0..5 {
+        let rig = EngineRig::new("");
+        rig.engine.start().expect("start");
+        assert!(wait_until(15.0, || !usage_bodies(&rig.device).is_empty()));
+        if !wait_until(3.0, || rig.engine.snapshot().payload.is_some()) {
+            misses += 1;
+        }
+    }
+    assert_eq!(
+        misses, 0,
+        "{misses}/5 engines never saw their first payload"
+    );
+}
