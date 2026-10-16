@@ -1,0 +1,4123 @@
+{
+  "input": {
+    "note": "parse_manifest(json) -> manifest dict or the ValueError text"
+  },
+  "output": {
+    "cases": [
+      {
+        "name": "valid",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "valid_with_renderers",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": [
+              {
+                "name": "renderer/win-x64.zip",
+                "kind": "renderer",
+                "size": 400,
+                "enc": 428,
+                "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+                "crc": "744c6e2a",
+                "platform": "win-x64"
+              },
+              {
+                "name": "renderer/mac.zip",
+                "kind": "renderer",
+                "size": 500,
+                "enc": 528,
+                "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+                "crc": "0dbbab49",
+                "platform": "mac"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "v_float_one",
+        "manifest": {
+          "v": 1.0,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "v_true",
+        "manifest": {
+          "v": true,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "v_string",
+        "manifest": {
+          "v": "1",
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "not a v1 manifest"
+        }
+      },
+      {
+        "name": "v_two",
+        "manifest": {
+          "v": 2,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "not a v1 manifest"
+        }
+      },
+      {
+        "name": "layouts_default",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "layouts_null",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": null,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number None"
+        }
+      },
+      {
+        "name": "layouts_zero",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 0,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 0"
+        }
+      },
+      {
+        "name": "layouts_max",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 65535,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 65535,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "layouts_over",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 65536,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 65536"
+        }
+      },
+      {
+        "name": "style_api_max",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 255,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 255,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "style_api_over",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 256,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 256"
+        }
+      },
+      {
+        "name": "style_api_missing",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 0,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "seq_zero",
+        "manifest": {
+          "v": 1,
+          "seq": 0,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 0"
+        }
+      },
+      {
+        "name": "seq_max",
+        "manifest": {
+          "v": 1,
+          "seq": 1000000,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 1000000,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "seq_over",
+        "manifest": {
+          "v": 1,
+          "seq": 1000001,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 1000001"
+        }
+      },
+      {
+        "name": "seq_string",
+        "manifest": {
+          "v": 1,
+          "seq": "6",
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number '6'"
+        }
+      },
+      {
+        "name": "seq_float",
+        "manifest": {
+          "v": 1,
+          "seq": 6.0,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 6.0"
+        }
+      },
+      {
+        "name": "seq_bool",
+        "manifest": {
+          "v": 1,
+          "seq": true,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number True"
+        }
+      },
+      {
+        "name": "seq_missing",
+        "manifest": {
+          "v": 1,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number None"
+        }
+      },
+      {
+        "name": "name_dotdot",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "../x",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name '../x'"
+        }
+      },
+      {
+        "name": "name_dotdot_inside",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "a..b",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 'a..b'"
+        }
+      },
+      {
+        "name": "name_upper",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "A.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 'A.bin'"
+        }
+      },
+      {
+        "name": "name_two_dirs",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "a/b/c",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 'a/b/c'"
+        }
+      },
+      {
+        "name": "name_space",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "a b",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 'a b'"
+        }
+      },
+      {
+        "name": "name_dir_ok",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "styles/synth.pak",
+              "kind": "style",
+              "size": 100,
+              "enc": 128,
+              "sha256": "db5bc0f1aaf045f659a9a9605691153552be99e5a559fbd3b6bff0024889bbb8",
+              "crc": "4495d8f2"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              },
+              {
+                "name": "styles/synth.pak",
+                "kind": "style",
+                "size": 100,
+                "enc": 128,
+                "sha256": "db5bc0f1aaf045f659a9a9605691153552be99e5a559fbd3b6bff0024889bbb8",
+                "crc": "4495d8f2",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "name_too_long",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'"
+        }
+      },
+      {
+        "name": "name_duplicate",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 'clawd.pak'"
+        }
+      },
+      {
+        "name": "name_not_string",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": 5,
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file name 5"
+        }
+      },
+      {
+        "name": "kind_unknown",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "exe",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "unknown kind 'exe'"
+        }
+      },
+      {
+        "name": "kind_list",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": [],
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "unknown kind []"
+        }
+      },
+      {
+        "name": "kind_renderer_in_files",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "renderer",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "unknown kind 'renderer'"
+        }
+      },
+      {
+        "name": "size_zero",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 0,
+              "enc": 28,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 0"
+        }
+      },
+      {
+        "name": "size_max",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "big.pak",
+              "kind": "deskpak",
+              "size": 4194304,
+              "enc": 4194332,
+              "sha256": "adbeb55232be892f80bf8170b5903f51435a502214d0b83284c7debfc339942f",
+              "crc": "89bf5ff0"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              },
+              {
+                "name": "big.pak",
+                "kind": "deskpak",
+                "size": 4194304,
+                "enc": 4194332,
+                "sha256": "adbeb55232be892f80bf8170b5903f51435a502214d0b83284c7debfc339942f",
+                "crc": "89bf5ff0",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "size_over",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "big.pak",
+              "kind": "deskpak",
+              "size": 4194305,
+              "enc": 4194333,
+              "sha256": "516ba9974ae123161dd76ce3351eb91d8f9c1f55b37145a25b64e404408b5e5f",
+              "crc": "20e9509c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 4194305"
+        }
+      },
+      {
+        "name": "enc_wrong",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 508,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number 508"
+        }
+      },
+      {
+        "name": "enc_missing",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad number None"
+        }
+      },
+      {
+        "name": "sha_upper",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5B489A15B97400E07E344C8E1E5EEC5F58889A7E8B66724AEB5FD5D517D59AA9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad hash for clawd.pak"
+        }
+      },
+      {
+        "name": "sha_short",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "ab",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad hash for clawd.pak"
+        }
+      },
+      {
+        "name": "sha_number",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": 5,
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad hash for clawd.pak"
+        }
+      },
+      {
+        "name": "crc_short",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "abcdef0"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad hash for clawd.pak"
+        }
+      },
+      {
+        "name": "crc_xyz",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "xyz"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad hash for clawd.pak"
+        }
+      },
+      {
+        "name": "row_not_object",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            3,
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "bad file row"
+        }
+      },
+      {
+        "name": "two_firmware",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            },
+            {
+              "name": "b.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            }
+          ]
+        },
+        "result": {
+          "error": "a release has exactly one firmware image"
+        }
+      },
+      {
+        "name": "no_firmware",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "error": "a release has exactly one firmware image"
+        }
+      },
+      {
+        "name": "no_files",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": []
+        },
+        "result": {
+          "error": "a release has exactly one firmware image"
+        }
+      },
+      {
+        "name": "files_null",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": null
+        },
+        "result": {
+          "error": "a release has exactly one firmware image"
+        }
+      },
+      {
+        "name": "platform_on_file_row",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77",
+              "platform": "mac"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": "mac"
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "long_text",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "notes": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "dddddddddddddddddddddddddddddddddddddddd",
+            "notes": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "null_text",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": null,
+          "notes": null,
+          "variant": null,
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": null,
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "",
+            "notes": "",
+            "commit": "",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "number_text",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": 5,
+          "variant": true,
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "True",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "5",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_bad_platform",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "amiga"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_kind_fw",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "fw",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_kind_list",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": [],
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_name_dotdot",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "../x.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_name_clash",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "firmware.bin",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_bad_sha",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "nope",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_bad_enc",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 400,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_too_big",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 33554433,
+              "enc": 33554461,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_row_not_object",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            7,
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_duplicate_platform",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            },
+            {
+              "name": "renderer/mac2.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderer_duplicate_name",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": [
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            },
+            {
+              "name": "renderer/mac.zip",
+              "kind": "renderer",
+              "size": 500,
+              "enc": 528,
+              "sha256": "df4de7e25e5f68ead8f946df027f52cf5e772378f6546f1e5571dcffc226009f",
+              "crc": "0dbbab49",
+              "platform": "mac"
+            },
+            {
+              "name": "renderer/win-x64.zip",
+              "kind": "renderer",
+              "size": 400,
+              "enc": 428,
+              "sha256": "4b3ff69d3f615e81e984e2e0e1df124b8f9b9ff69477dfa68e3aa554a6dc2908",
+              "crc": "744c6e2a",
+              "platform": "win-x64"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderers_not_a_list",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": {
+            "a": 1
+          }
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "renderers_null",
+        "manifest": {
+          "v": 1,
+          "seq": 6,
+          "date": "2026-10-14T08:00:00Z",
+          "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+          "variant": "esp8266-clawd",
+          "layouts": 1,
+          "styleApi": 1,
+          "commit": "c000006",
+          "files": [
+            {
+              "name": "firmware.bin",
+              "kind": "fw",
+              "size": 2048,
+              "enc": 2076,
+              "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+              "crc": "dd68d7c9"
+            },
+            {
+              "name": "clawd.pak",
+              "kind": "clawdpak",
+              "size": 508,
+              "enc": 536,
+              "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+              "crc": "8ef30f77"
+            },
+            {
+              "name": "desk.pak",
+              "kind": "deskpak",
+              "size": 3008,
+              "enc": 3036,
+              "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+              "crc": "147ed31c"
+            }
+          ],
+          "renderers": null
+        },
+        "result": {
+          "ok": {
+            "seq": 6,
+            "variant": "esp8266-clawd",
+            "layouts": 1,
+            "style_api": 1,
+            "files": [
+              {
+                "name": "firmware.bin",
+                "kind": "fw",
+                "size": 2048,
+                "enc": 2076,
+                "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+                "crc": "dd68d7c9",
+                "platform": ""
+              },
+              {
+                "name": "clawd.pak",
+                "kind": "clawdpak",
+                "size": 508,
+                "enc": 536,
+                "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+                "crc": "8ef30f77",
+                "platform": ""
+              },
+              {
+                "name": "desk.pak",
+                "kind": "deskpak",
+                "size": 3008,
+                "enc": 3036,
+                "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+                "crc": "147ed31c",
+                "platform": ""
+              }
+            ],
+            "date": "2026-10-14T08:00:00Z",
+            "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+            "commit": "c000006",
+            "renderers": []
+          }
+        }
+      },
+      {
+        "name": "not_an_object",
+        "manifest": [
+          1
+        ],
+        "result": {
+          "error": "not a v1 manifest"
+        }
+      }
+    ]
+  }
+}

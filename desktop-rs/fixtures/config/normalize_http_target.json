@@ -1,0 +1,52 @@
+{
+  "input": [
+    "192.168.0.125",
+    " clawd.local:8080 ",
+    "http://10.0.0.5/",
+    "http://10.0.0.5/custom/push",
+    "",
+    "   ",
+    "ftp://host",
+    "HTTPS://Host:8443?x=1#frag",
+    "http://user:pw@10.0.0.5/p?q=1&r=2",
+    "http://[::1]:80",
+    "http:///path",
+    "http://:80",
+    "http://[::1",
+    "host/path/",
+    "host?a=b",
+    "10.0.0.5:80/x y",
+    "http://h\tost/",
+    "wss://host",
+    "http://HOST.Local",
+    "://x",
+    "1http://x",
+    "http://a@/p"
+  ],
+  "output": [
+    "http://192.168.0.125/api/usage",
+    "http://clawd.local:8080/api/usage",
+    "http://10.0.0.5/api/usage",
+    "http://10.0.0.5/custom/push",
+    null,
+    null,
+    null,
+    "https://Host:8443/api/usage?x=1",
+    "http://user:pw@10.0.0.5/p?q=1&r=2",
+    "http://[::1]:80/api/usage",
+    null,
+    null,
+    {
+      "error": "ValueError"
+    },
+    "http://host/path/",
+    "http://host/api/usage?a=b",
+    "http://10.0.0.5:80/x y",
+    "http://host/api/usage",
+    null,
+    "http://HOST.Local/api/usage",
+    null,
+    null,
+    null
+  ]
+}

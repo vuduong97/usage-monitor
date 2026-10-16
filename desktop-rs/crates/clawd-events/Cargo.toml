@@ -8,9 +8,28 @@ publish.workspace = true
 
 [dependencies]
 clawd-contracts = { workspace = true }
-clawd-config = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+tracing = { workspace = true }
+# event server: hyper directly (no axum); `client` is only for the StatePusher / probe requests
+hyper = { workspace = true, features = ["client"] }
+hyper-util = { workspace = true }
+http-body-util = { workspace = true }
+bytes = "1"
+# TEST_CMD / DEBUG_WORDS (lookarounds rewritten as consuming groups: only existence matters)
+regex = "1"
+# insertion-ordered sessions (Python dict order decides `max(...)` ties and /state order)
+indexmap = "2"
+# `unicodedata.normalize` (NFC for the debug-prompt check, NFKD for ascii_text)
+unicode-normalization = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_System_SystemInformation", "Win32_System_Time"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [dev-dependencies]
 clawd-testkit = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }

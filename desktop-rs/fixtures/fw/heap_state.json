@@ -1,0 +1,898 @@
+{
+  "input": {
+    "note": "firmware.* readers over odd /api/heap answers"
+  },
+  "output": {
+    "heaps": [
+      {},
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 5,
+        "styleApi": 1,
+        "style": "synth",
+        "pak": 17,
+        "desk": 31
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 1
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 0
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": -3
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": true
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 4.0
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": "4"
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": null
+      },
+      {
+        "version": "2.16.0",
+        "pak": 17,
+        "desk": 31,
+        "uptime": 900
+      },
+      {
+        "version": "2.16.0"
+      },
+      {
+        "variant": "esp8266",
+        "desk": 1,
+        "pak": 1
+      },
+      {
+        "variant": null,
+        "desk": 1,
+        "pak": 1
+      },
+      {
+        "variant": null
+      },
+      {
+        "desk": 1
+      },
+      {
+        "pak": 1
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": true,
+        "style": "synth"
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": 0,
+        "style": "synth"
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": 2,
+        "style": "synth"
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": 1,
+        "style": 7
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": 1
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": -1,
+        "style": "x"
+      },
+      {
+        "variant": "esp8266-clawd",
+        "fwSeq": 2,
+        "styleApi": 1.0,
+        "style": "x"
+      }
+    ],
+    "bundles": [
+      {
+        "seq": 1,
+        "variant": "esp8266-clawd",
+        "style_api": 0,
+        "styles": []
+      },
+      {
+        "seq": 2,
+        "variant": "esp8266-clawd",
+        "style_api": 1,
+        "styles": [
+          "synth",
+          "paper"
+        ]
+      },
+      {
+        "seq": 2,
+        "variant": "esp8266-clawd",
+        "style_api": 1,
+        "styles": []
+      },
+      {
+        "seq": 6,
+        "variant": "esp8266-clawd",
+        "style_api": 2,
+        "styles": [
+          "a"
+        ]
+      },
+      {
+        "seq": 0,
+        "variant": "esp8266-clawd",
+        "style_api": 0,
+        "styles": []
+      },
+      {
+        "seq": 3,
+        "variant": "other",
+        "style_api": 0,
+        "styles": []
+      }
+    ],
+    "rows": [
+      {
+        "heap": {},
+        "result": {
+          "is_clawd": false,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "styleApi": 1,
+          "style": "synth",
+          "pak": 17,
+          "desk": 31
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 5,
+          "clock_style_api": 1,
+          "clock_style": "synth",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "ready",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 1
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 1,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 0
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": -3
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "available",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": true
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4.0
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": "4"
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": null
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "version": "2.16.0",
+          "pak": 17,
+          "desk": 31,
+          "uptime": 900
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "version": "2.16.0"
+        },
+        "result": {
+          "is_clawd": false,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266",
+          "desk": 1,
+          "pak": 1
+        },
+        "result": {
+          "is_clawd": false,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": null,
+          "desk": 1,
+          "pak": 1
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "available",
+            "available",
+            "available",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "update",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": null
+        },
+        "result": {
+          "is_clawd": false,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "desk": 1
+        },
+        "result": {
+          "is_clawd": false,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "pak": 1
+        },
+        "result": {
+          "is_clawd": false,
+          "clock_seq": 0,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": true,
+          "style": "synth"
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 0,
+          "style": "synth"
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 2,
+          "style": "synth"
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 2,
+          "clock_style": "synth",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "ready",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 1,
+          "style": 7
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 1,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "ready",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 1
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 1,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "ready",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": -1,
+          "style": "x"
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 1.0,
+          "style": "x"
+        },
+        "result": {
+          "is_clawd": true,
+          "clock_seq": 2,
+          "clock_style_api": 0,
+          "clock_style": "",
+          "update_state": [
+            "current",
+            "current",
+            "current",
+            "available",
+            "current",
+            "incompatible"
+          ],
+          "style_state": [
+            "unavailable",
+            "unavailable",
+            "unavailable",
+            "update",
+            "unavailable",
+            "unavailable"
+          ],
+          "update_state_none": "none",
+          "style_state_none": "unavailable"
+        }
+      }
+    ]
+  }
+}

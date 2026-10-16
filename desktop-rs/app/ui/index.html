@@ -2,10 +2,6 @@
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; connect-src 'none'"
-    />
     <title>Clawd · Cài đặt</title>
     <style>
       :root {
@@ -844,6 +840,51 @@
       .guide li {
         margin-bottom: 4px;
       }
+      /* Utility classes: they replace the inline style attributes, which the app's CSP blocks.
+         !important keeps what an inline style had: it beat every selector above. */
+      .u-abs {
+        position: absolute !important;
+      }
+      .u-nowrap {
+        flex-wrap: nowrap !important;
+      }
+      .u-val {
+        width: 38px !important;
+        text-align: right !important;
+        font-size: 12px !important;
+        color: var(--dim) !important;
+      }
+      .u-dim {
+        color: var(--dim) !important;
+      }
+      .u-dim-sm {
+        font-size: 12px !important;
+        color: var(--dim) !important;
+      }
+      .u-w90 {
+        width: 90px !important;
+      }
+      .u-flex1 {
+        flex: 1 !important;
+      }
+      .u-mono-sm {
+        font: 12px var(--mono) !important;
+      }
+      .u-mt14 {
+        margin-top: 14px !important;
+      }
+      .u-mtneg6 {
+        margin-top: -6px !important;
+      }
+      .u-m-8-14 {
+        margin: 8px 0 14px !important;
+      }
+      .u-m-10 {
+        margin: 10px 0 !important;
+      }
+      .u-m-6-10 {
+        margin: 6px 0 10px !important;
+      }
       @media (prefers-reduced-motion: reduce) {
         * {
           transition: none !important;
@@ -855,7 +896,7 @@
     </style>
   </head>
   <body>
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <svg class="u-abs" width="0" height="0" aria-hidden="true">
       <symbol id="sun" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="4" />
         <path
@@ -961,7 +1002,7 @@
             </p>
             <div class="f">
               <span>Độ sáng</span>
-              <div class="row" style="flex-wrap: nowrap">
+              <div class="row u-nowrap">
                 <input
                   id="brightness"
                   type="range"
@@ -970,12 +1011,7 @@
                   aria-label="Độ sáng"
                 /><span
                   id="brightVal"
-                  style="
-                    width: 38px;
-                    text-align: right;
-                    font-size: 12px;
-                    color: var(--dim);
-                  "
+                  class="u-val"
                 ></span>
               </div>
             </div>
@@ -1022,21 +1058,21 @@
               <span>Giờ đêm</span>
               <div class="row">
                 <input id="nightStart" type="time" aria-label="Bắt đầu" /><span
-                  style="color: var(--dim)"
+                  class="u-dim"
                   >→</span
                 ><input id="nightEnd" type="time" aria-label="Kết thúc" /><span
-                  style="color: var(--dim); font-size: 12px"
+                  class="u-dim-sm"
                   >sáng</span
                 ><input
                   id="nightLevel"
                   type="range"
                   min="0"
                   max="100"
-                  style="width: 90px"
+                  class="u-w90"
                   aria-label="Độ sáng ban đêm"
                 /><span
                   id="nightVal"
-                  style="font-size: 12px; color: var(--dim)"
+                  class="u-dim-sm"
                 ></span>
               </div>
             </div>
@@ -1049,7 +1085,7 @@
               <span>Nguồn usage<small>Đồng hồ hiện một nguồn</small></span
               ><select id="usageSrc" aria-label="Nguồn usage"></select>
             </div>
-            <p class="note" id="usageSrcNote" style="margin: 8px 0 14px"></p>
+            <p class="note u-m-8-14" id="usageSrcNote"></p>
             <p class="sub">Chọn kiểu màn hình usage.</p>
             <div
               class="gal"
@@ -1082,7 +1118,7 @@
             <p class="note warn hide" id="wslNote">
               Agent chạy trong WSL chưa được hỗ trợ: chỉ agent chạy thẳng trên Windows mới nối được.
             </p>
-            <div class="row" style="margin-top: 14px">
+            <div class="row u-mt14">
               <button class="btn ghost small" id="agentsRescan">Quét lại</button
               ><button class="btn danger small" id="disconnectAll">Ngắt kết nối tất cả</button>
             </div>
@@ -1097,7 +1133,7 @@
             <div class="box" id="appUpBox">
               <h3>Ứng dụng Clawd</h3>
               <div class="kv" id="appUpKv"></div>
-              <p id="appUpText" style="margin: 10px 0"></p>
+              <p id="appUpText" class="u-m-10"></p>
               <div class="bar hide" id="appUpBar" aria-hidden="true"><i id="appUpFill"></i></div>
               <div class="row">
                 <button class="btn hide" id="appUpBtn" disabled>Khởi động lại để cập nhật</button>
@@ -1107,11 +1143,11 @@
             <div class="box">
               <h3>Firmware</h3>
               <div class="kv" id="fwKv"></div>
-              <p id="fwText" style="margin: 10px 0"></p>
+              <p id="fwText" class="u-m-10"></p>
               <div class="steps hide" id="steps">
                 <span></span><span></span><span></span><span></span><span></span><span></span>
               </div>
-              <p id="fwStep" class="hide" style="margin: 6px 0 10px"></p>
+              <p id="fwStep" class="hide u-m-6-10"></p>
               <div class="row">
                 <button class="btn hide" id="fwBtn" disabled>Cập nhật firmware</button>
                 <button class="btn ghost small" id="fwCheck" disabled>Kiểm tra bản mới</button>
@@ -1162,7 +1198,7 @@
             <div class="f">
               <span>Agent<small>Clawd phản ứng khi agent làm việc</small></span>
               <div class="row">
-                <span id="agentSum" style="font-size: 12px; color: var(--dim)"></span
+                <span id="agentSum" class="u-dim-sm"></span
                 ><button class="btn ghost small" id="goAgents">Chọn agent…</button>
               </div>
             </div>
@@ -1173,20 +1209,20 @@
             <div class="f">
               <span>Đồng hồ</span>
               <div class="row">
-                <span id="clockAddr" style="font: 12px var(--mono)"></span
+                <span id="clockAddr" class="u-mono-sm"></span
                 ><button class="btn ghost small" id="rescanBtn">Tìm lại</button>
               </div>
             </div>
             <div class="f">
               <span>Nhập địa chỉ<small>Khi không tự tìm thấy</small></span>
-              <div class="row" style="flex-wrap: nowrap">
+              <div class="row u-nowrap">
                 <input
                   id="manualHost"
                   type="text"
                   placeholder="192.168.1.48"
                   spellcheck="false"
                   aria-label="Địa chỉ đồng hồ"
-                  style="flex: 1"
+                  class="u-flex1"
                 /><button class="btn ghost small" id="manualBtn">Dùng</button>
               </div>
             </div>
@@ -1206,7 +1242,7 @@
 
       <footer>
         <span class="msg" id="msg">Đang đọc cài đặt từ đồng hồ…</span>
-        <span class="row" style="flex-wrap: nowrap"
+        <span class="row u-nowrap"
           ><button class="btn ghost" id="undoBtn" disabled>Hoàn tác</button
           ><button class="btn" id="saveBtn" disabled>
             Lưu vào đồng hồ
@@ -1236,7 +1272,7 @@
           autocomplete="off"
           aria-label="Mật khẩu"
         />
-        <p id="authErr" class="warn hide" style="margin-top: -6px"></p>
+        <p id="authErr" class="warn hide u-mtneg6"></p>
         <div class="row">
           <button class="btn" id="authBtn">Đăng nhập</button>
         </div>
@@ -1279,7 +1315,7 @@
       <div class="wbody" id="wizBody"></div>
       <footer>
         <span class="msg" id="wizMsg"></span>
-        <span class="row" style="flex-wrap: nowrap"
+        <span class="row u-nowrap"
           ><button class="btn ghost" id="wizBack">Quay lại</button
           ><button class="btn ghost" id="wizSkip">Bỏ qua</button
           ><button class="btn" id="wizNext">Tiếp</button></span
@@ -1287,6 +1323,7 @@
       </footer>
     </div>
 
+    <script src="shim.js"></script>
     <script src="preview.js"></script>
     <script src="app.js"></script>
     <script src="setup.js"></script>

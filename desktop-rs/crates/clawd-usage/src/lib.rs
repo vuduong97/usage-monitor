@@ -1,8 +1,7 @@
 //! `clawd-usage`: poll Claude/Codex usage and push it to the clocks (phase 07 implements it).
 //!
-//! STUB (phase 02): real signatures and docs, `todo!()` bodies. Python origin: `usage.py`
-//! (from `poll_api` on) and `codex_usage.py` (see `desktop-rs/PORT-MAP.md`). The "read the
-//! sources" half of `usage.py` (config file, tokens, targets, CLIProxy settings) is
+//! Python origin: `usage.py` (from `poll_api` on) and `codex_usage.py` (see
+//! `desktop-rs/PORT-MAP.md`). The "read the sources" half of `usage.py` (config file, tokens, targets, CLIProxy settings) is
 //! `clawd-config`.
 //!
 //! **BLE is dropped (owner decision Q3):** `BleakError`, `Session`, `discover_target`,
@@ -13,14 +12,6 @@
 //!
 //! Every poll/publish loop must survive a failing cycle (log, go on): the app also wraps each
 //! task in `catch_unwind` (red team #12).
-#![allow(
-    unused_variables,
-    dead_code,
-    clippy::new_without_default,
-    clippy::too_many_arguments,
-    clippy::type_complexity
-)] // stub crate: the owning phase removes this when it implements the bodies
-
 pub mod cliproxy;
 pub mod codex;
 pub mod oauth;
@@ -28,10 +19,11 @@ pub mod payload;
 pub mod publisher;
 pub mod selector;
 pub mod sinks;
+mod util;
 
 use std::sync::Arc;
 
-use clawd_config::CommandRunner;
+use clawd_config::{read_cliproxy_key, CommandRunner};
 use clawd_contracts::{AppPaths, Clock, Env, SystemClock};
 
 pub use cliproxy::CliProxySource;
@@ -66,6 +58,12 @@ pub struct UsageEnv {
     pub clock: Arc<dyn Clock>,
     /// The process environment (`CODEX_HOME`); default `Env::system()`.
     pub env: Env,
+    /// The one HTTP client every poll shares (never built per poll). Default: reqwest with the
+    /// system proxy settings, like httpx; tests inject one without proxies.
+    pub client: reqwest::Client,
+    /// How the CLIProxyAPI management key is read; default [`clawd_config::read_cliproxy_key`]
+    /// (macOS Keychain only). Tests override it so the proxy source runs on every OS.
+    pub cliproxy_key_reader: fn(&dyn CommandRunner) -> Option<String>,
 }
 
 impl UsageEnv {
@@ -78,6 +76,10 @@ impl UsageEnv {
             usage_url: oauth::USAGE_URL.to_owned(),
             clock: Arc::new(SystemClock),
             env: Env::system(),
+            client: reqwest::Client::builder()
+                .build()
+                .expect("the TLS backend initialises"),
+            cliproxy_key_reader: read_cliproxy_key,
         }
     }
 }
