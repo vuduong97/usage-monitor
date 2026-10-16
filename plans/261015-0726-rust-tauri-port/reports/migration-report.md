@@ -159,3 +159,51 @@ Open observation: in the first install the app launched by the installer exited 
 about 16 s after start, right after one `Clock state: error` line; it was started by hand afterwards and in
 the second install it stayed up. Cause not found, not reproduced. Also: the log timestamps of the Rust app are UTC,
 the Python app wrote local time.
+
+## Owner's MacBook (Apple silicon, macOS 26.5.2), 2026-10-16 (cutover, `tools/migration/local-release.md`)
+
+Backed up first: `/Applications/Clawd.app` (an old ad-hoc 0.1.0), `~/.config/claude-usage-monitor/`, the
+LaunchAgent plist and a sha256 list of the config folder (`~/clawd-backup-20261016-2146`, local only).
+The LaunchAgent was booted out for the run (`launchctl bootout gui/$UID/vn.clawd.desktop`) so launchd could
+not restart an app the test had stopped; the plist file itself stayed.
+
+### Case B: Rust -> Rust and the refused cases (local builds, fake API)
+
+Builds from `af397f8` (main), stamped `0.2.90` (installed) and `0.2.91` (served), signed with the owner's
+*Apple Development* identity (TeamIdentifier `TYX86KUPYQ`, the same Team as the 0.1.4 Developer ID),
+hardened runtime, not notarized, with a throw-away minisign key baked in (`CLAWD_MINISIGN_PUBKEY`).
+Zip sha256 prefixes: 0.2.90 `c7079a00da267bcf`, 0.2.91 `5eb8702af68b48f2`. Each case: a fresh
+`app-update/`, `fake_api.py` on :8765, the app started with `CLAWD_UPDATE_API`, read at +105 s.
+
+| Case | Result | Evidence (app log / fake API log) |
+|---|---|---|
+| B2 bad signature (`--case bad-sig`) | PASS (refused) | `check failed: Chữ ký của SHA256SUMS không hợp lệ…`; fetched latest, SHA256SUMS, .minisig only; nothing staged |
+| B3 signature by another key (`--minisig other.minisig`) | PASS (refused) | same message; nothing staged |
+| B4 tampered SHA256SUMS (`--case tampered-sums`) | PASS (refused) | same message (the signature covers the sums); nothing staged |
+| B5 no `.minisig` (`--case no-minisig`) | PASS (refused) | `Bản phát hành thiếu SHA256SUMS.minisig…`; only `releases/latest` fetched |
+| B6 wrong zip, same size (`--case wrong-installer`) | PASS (refused after download) | `Clawd-0.2.91-mac-arm64.zip: SHA-256 không khớp, bỏ file`; nothing staged |
+| B7 prerelease / draft | PASS (not offered) | only `releases/latest` fetched, no message, nothing staged |
+| B1 valid 0.2.91 | **PASS** | `0.2.91 downloaded and verified`, `App update ready`; tray menu showed "● Khởi động lại để cập nhật Clawd 0.2.91"; clicked: `Restarting to install the update` → `Quit: restart to install the update` → `Exit requested (code Some(0))` → `Event loop ended (code 0)` → `Bye` → 1 s later `Clawd 0.2.91 starting (macos)` (relaunched by `swap.sh`); `Clawd --version` = 0.2.91; `codesign --verify --deep --strict` OK; one bundle in /Applications; `app-update/` cleaned up; LaunchAgent plist byte-identical; config folder identical except `pet.json` and `usage_payload.json` (rewritten by every run); clock 192.168.1.48 found again within 2 s |
+
+Note: in B6 the log shows `Exit requested without a code: kept running` twice around the download (no
+window had been opened by the test). The new log line works as intended and the app stayed up; what sends
+a code-less exit request is still unknown (same family as the Windows "16 s exit"). Watch for it in case A.
+
+### Case A: 0.1.4 -> 0.2.0 with the real v0.2.0 draft files (fake API on 127.0.0.1:8765)
+
+Draft checks first: 7 assets, `minisign -Vm SHA256SUMS` with the production key (`MINISIGN_PUBKEY`)
+verified (`Trusted comment: Clawd v0.2.0`), `shasum -c` OK for all 5 files, arm64 app signed
+`Developer ID Application: LUMINADE COMMERCE COMPANY LIMITED (TYX86KUPYQ)`, hardened runtime,
+`spctl` "Notarized Developer ID", stapled, `--version` = 0.2.0. Signed 0.1.4 from the real v0.1.4 zip.
+
+| Run | Result | Evidence |
+|---|---|---|
+| A1: 0.1.4 started by hand, LaunchAgent booted out | **PASS** | 90 s after start: `[app-update] 0.2.0 downloaded and verified` (zip sha `913381c0…` = draft SHA256SUMS); menu "● Khởi động lại để cập nhật Clawd 0.2.0"; clicked → `applying 0.2.0` → `Restarting to install the update` → 1 s later `Clawd 0.2.0 starting (macos)`; `--version` 0.2.0, `codesign --verify --deep --strict` OK, Team ID unchanged, notarized + stapled; LaunchAgent plist byte-identical; config folder identical except `usage_payload.json`; `app-update/` removed; event port 47913 answers; no exit in the next 2 min; no Keychain or Local Network prompt (the token item does not exist on this Mac, so the Keychain path was a read miss, not a prompt). Clock 192.168.1.48 was off the network during the run (ping: host down), so "clock found again" is not shown here (B1 showed it for Rust). |
+| A2: 0.1.4 started by the LaunchAgent (as on users' Macs) | **PASS with one extra dialog** | Same update and relaunch. But 0.1.4's restart path ends with a traceback (`RuntimeError: Event loop is closed`, exit code 1, also in A1), so `KeepAlive {SuccessfulExit=false}` starts the app again: at +1 s it hit the bundle mid-swap (PyInstaller "appears to have been moved or deleted", exit 1), at +30 s (ThrottleInterval) it started **0.2.0 a second time**, which found the event port taken and showed **"Clawd đang chạy rồi (xem biểu tượng trên thanh menu / khay hệ thống)."** After OK it exited 0 and launchd stopped (`last exit code = 0`, `state = not running`). One 0.2.0 kept running (the one `swap` opened, outside the launchd job until next login). Nothing stuck, no second tray icon. |
+
+Fix for later releases: `run_tray` exits quietly (code 0, no alert) when `XPC_SERVICE_NAME` is the
+LaunchAgent label and another Clawd owns the port (branch `fix/launchd-duplicate-quiet`). It cannot
+help the 0.1.4 -> 0.2.0 step itself unless 0.2.0 is rebuilt; the v0.2.0 draft keeps the dialog
+(decision: ship, the Mac 0.1.x fleet is ~2 downloads; a re-cut would also re-run all of case A).
+
+`Exit requested without a code: kept running` did not appear in either 0.2.0 run on this Mac.
