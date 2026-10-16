@@ -17,6 +17,7 @@ pub mod firmware;
 pub mod ota;
 pub mod preview;
 pub mod pyval;
+pub mod renderer_store;
 
 use std::path::PathBuf;
 
