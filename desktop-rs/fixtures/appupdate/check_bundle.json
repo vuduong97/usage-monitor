@@ -1,0 +1,204 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "ok"
+      },
+      {
+        "name": "other_team",
+        "new_team": "OTHERTEAM01"
+      },
+      {
+        "name": "new_is_ad_hoc",
+        "new_team": null
+      },
+      {
+        "name": "verify_fails",
+        "verify_rc": 1
+      },
+      {
+        "name": "other_version",
+        "bundle_version": "0.1.9"
+      },
+      {
+        "name": "version_missing",
+        "bundle_version": null
+      },
+      {
+        "name": "other_bundle_id",
+        "bundle_id": "com.evil.app"
+      },
+      {
+        "name": "running_ad_hoc",
+        "running_team": null
+      },
+      {
+        "name": "running_absent",
+        "running": "absent"
+      },
+      {
+        "name": "plist_missing",
+        "plist": "missing"
+      },
+      {
+        "name": "plist_garbage",
+        "plist": "garbage"
+      },
+      {
+        "name": "codesign_missing",
+        "codesign": "oserror"
+      }
+    ],
+    "version": "0.2.0"
+  },
+  "output": {
+    "results": [
+      {
+        "error": null,
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<new>"
+          ]
+        ]
+      },
+      {
+        "error": "b\u1ea3n m\u1edbi kh\u00f4ng c\u00f9ng Team ID v\u1edbi app \u0111ang ch\u1ea1y",
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<new>"
+          ]
+        ]
+      },
+      {
+        "error": "b\u1ea3n m\u1edbi kh\u00f4ng c\u00f9ng Team ID v\u1edbi app \u0111ang ch\u1ea1y",
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<new>"
+          ]
+        ]
+      },
+      {
+        "error": "ch\u1eef k\u00fd c\u1ee7a b\u1ea3n m\u1edbi kh\u00f4ng h\u1ee3p l\u1ec7",
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ]
+        ]
+      },
+      {
+        "error": "app b\u00ean trong l\u00e0 0.1.9, kh\u00f4ng ph\u1ea3i 0.2.0",
+        "calls": []
+      },
+      {
+        "error": "app b\u00ean trong l\u00e0 None, kh\u00f4ng ph\u1ea3i 0.2.0",
+        "calls": []
+      },
+      {
+        "error": "kh\u00f4ng ph\u1ea3i app Clawd",
+        "calls": []
+      },
+      {
+        "error": "B\u1ea3n n\u00e0y ch\u1ec9 c\u00f3 ch\u1eef k\u00fd ad-hoc (kh\u00f4ng c\u00f3 Team ID) n\u00ean kh\u00f4ng t\u1ef1 c\u1eadp nh\u1eadt \u0111\u01b0\u1ee3c. H\u00e3y c\u00e0i b\u1ea3n ch\u00ednh th\u1ee9c m\u1ed9t l\u1ea7n, t\u1eeb \u0111\u00f3 app s\u1ebd t\u1ef1 c\u1eadp nh\u1eadt.",
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ],
+          [
+            "codesign",
+            "-dv",
+            "--verbose=2",
+            "<running>"
+          ]
+        ]
+      },
+      {
+        "error": "B\u1ea3n n\u00e0y ch\u1ec9 c\u00f3 ch\u1eef k\u00fd ad-hoc (kh\u00f4ng c\u00f3 Team ID) n\u00ean kh\u00f4ng t\u1ef1 c\u1eadp nh\u1eadt \u0111\u01b0\u1ee3c. H\u00e3y c\u00e0i b\u1ea3n ch\u00ednh th\u1ee9c m\u1ed9t l\u1ea7n, t\u1eeb \u0111\u00f3 app s\u1ebd t\u1ef1 c\u1eadp nh\u1eadt.",
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ]
+        ]
+      },
+      {
+        "error": "Info.plist: *",
+        "calls": []
+      },
+      {
+        "error": "Info.plist: *",
+        "calls": []
+      },
+      {
+        "error": "codesign: *",
+        "calls": [
+          [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "<new>"
+          ]
+        ]
+      }
+    ]
+  }
+}

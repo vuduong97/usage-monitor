@@ -1,0 +1,32 @@
+{
+  "input": {
+    "texts": [
+      "Identifier=x\nTeamIdentifier=ABCDE12345\n",
+      "TeamIdentifier=not set\n",
+      "",
+      "TeamIdentifier=not\n",
+      "TeamIdentifier=ABC\r\n",
+      "x TeamIdentifier=ABC\n",
+      "TeamIdentifier=\n",
+      "  TeamIdentifier=ABC\n",
+      "TeamIdentifier=not set\nTeamIdentifier=ZZZZZ99999\n",
+      "TeamIdentifier=A B\nTeamIdentifier=C\n",
+      "Authority=Developer ID\nTeamIdentifier=ABCDE12345"
+    ]
+  },
+  "output": {
+    "teams": [
+      "ABCDE12345",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "ZZZZZ99999",
+      "C",
+      "ABCDE12345"
+    ]
+  }
+}

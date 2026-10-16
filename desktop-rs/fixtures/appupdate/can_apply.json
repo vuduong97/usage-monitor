@@ -1,0 +1,73 @@
+{
+  "input": {
+    "cases": [
+      {
+        "frozen": false,
+        "system": "mac",
+        "executable": null
+      },
+      {
+        "frozen": false,
+        "system": "windows",
+        "executable": null
+      },
+      {
+        "frozen": true,
+        "system": "windows",
+        "executable": null
+      },
+      {
+        "frozen": true,
+        "system": "linux",
+        "executable": null
+      },
+      {
+        "frozen": true,
+        "system": "freebsd",
+        "executable": null
+      },
+      {
+        "frozen": true,
+        "system": "mac",
+        "executable": "<apps>/Clawd.app/Contents/MacOS/Clawd"
+      },
+      {
+        "frozen": true,
+        "system": "mac",
+        "executable": "<apps>/Other.app/Contents/MacOS/Clawd"
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      [
+        false,
+        "B\u1ea3n ch\u1ea1y t\u1eeb m\u00e3 ngu\u1ed3n kh\u00f4ng t\u1ef1 c\u1eadp nh\u1eadt."
+      ],
+      [
+        false,
+        "B\u1ea3n ch\u1ea1y t\u1eeb m\u00e3 ngu\u1ed3n kh\u00f4ng t\u1ef1 c\u1eadp nh\u1eadt."
+      ],
+      [
+        true,
+        ""
+      ],
+      [
+        false,
+        "H\u1ec7 \u0111i\u1ec1u h\u00e0nh n\u00e0y ch\u01b0a h\u1ed7 tr\u1ee3 t\u1ef1 c\u1eadp nh\u1eadt."
+      ],
+      [
+        false,
+        "H\u1ec7 \u0111i\u1ec1u h\u00e0nh n\u00e0y ch\u01b0a h\u1ed7 tr\u1ee3 t\u1ef1 c\u1eadp nh\u1eadt."
+      ],
+      [
+        true,
+        ""
+      ],
+      [
+        true,
+        ""
+      ]
+    ]
+  }
+}

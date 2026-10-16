@@ -1,9 +1,6 @@
-//! `clawd-appupdate`: updates of the app itself, from the project's GitHub Releases (phase 10
-//! implements it). The clock's firmware has its own feed (`clawd-firmware`); nothing here touches
-//! that feed or its token.
-//!
-//! STUB (phase 02): real signatures and docs, `todo!()` bodies. Python origin: `appupdate.py`
-//! (see `desktop-rs/PORT-MAP.md`).
+//! `clawd-appupdate`: updates of the app itself, from the project's GitHub Releases (phase 10).
+//! The clock's firmware has its own feed (`clawd-firmware`); nothing here touches that feed or
+//! its token. Python origin: `appupdate.py` (see `desktop-rs/PORT-MAP.md`).
 //!
 //! How it works (frozen): ask `GET /repos/<owner>/<name>/releases/latest` (public API, no
 //! token; draft and prerelease are never offered; tag `vX.Y.Z` is the version) -> a newer release
@@ -14,21 +11,18 @@
 //! "Khởi động lại để cập nhật" applies it** (Windows: Inno installer, silent, detached;
 //! macOS: `swap.sh` after bundle id, version, `codesign` and same Team ID checks).
 //! Every redirect hop is re-checked with [`Source::trusted`]; never `tauri-plugin-updater`.
-#![allow(
-    unused_variables,
-    dead_code,
-    clippy::new_without_default,
-    clippy::too_many_arguments,
-    clippy::type_complexity
-)] // stub crate: the owning phase removes this when it implements the bodies
 
 pub mod codesign;
+pub mod http;
+pub mod launch;
 pub mod minisig;
 pub mod source;
 pub mod updater;
 pub mod version;
 
 pub use clawd_contracts::{AppRelease, UpdateError};
+pub use http::{Body, Fut, Reply, ReqwestTransport, Transport};
+pub use launch::{LaunchKind, LaunchSpec, Launcher, SystemLauncher};
 pub use source::{auto_enabled, from_settings, Source};
 pub use updater::{
     can_apply, running_bundle, updater, Staged, Updater, UpdaterOptions, UpdaterState,

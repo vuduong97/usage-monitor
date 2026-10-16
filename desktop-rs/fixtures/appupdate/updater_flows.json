@@ -1,0 +1,814 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "ok",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "steps": [
+          {
+            "state": true
+          },
+          {
+            "check": false
+          },
+          {
+            "state": true
+          }
+        ]
+      },
+      {
+        "name": "tampered",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "tamper": [
+          "Clawd-0.2.0-windows-setup.exe"
+        ],
+        "steps": [
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "already_current",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.2.0",
+        "steps": [
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "rate_limit",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.2.0",
+        "steps": [
+          {
+            "check": false
+          },
+          {
+            "check": false
+          },
+          {
+            "check": true
+          },
+          {
+            "advance": 601.0
+          },
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "cannot_apply_from_source",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "frozen": false,
+        "steps": [
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "unreachable",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "offline": true,
+        "steps": [
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "failed_marker",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "steps": [
+          {
+            "check": false
+          },
+          {
+            "fail_marker": "0.2.0"
+          },
+          {
+            "state": true
+          },
+          {
+            "restart": true
+          },
+          {
+            "check": true
+          }
+        ]
+      },
+      {
+        "name": "rate_limit_counts_failures",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "offline": true,
+        "steps": [
+          {
+            "check": false
+          },
+          {
+            "check": false
+          },
+          {
+            "advance": 601.0
+          },
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "api_error",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 500
+          }
+        },
+        "steps": [
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "sums_lack_the_file",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "sums_override": "0000000000000000000000000000000000000000000000000000000000000000  other.exe\n",
+        "steps": [
+          {
+            "check": false
+          }
+        ]
+      },
+      {
+        "name": "newer_then_stale_stage",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "steps": [
+          {
+            "check": false
+          },
+          {
+            "restart": true,
+            "current": "0.2.0"
+          },
+          {
+            "state": true
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "states": [
+          {
+            "state": {
+              "status": "idle",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            }
+          },
+          {
+            "state": {
+              "status": "ready",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 1.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          },
+          {
+            "state": {
+              "status": "ready",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 1.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            }
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "error",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 1.0,
+              "error": "Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c b\u1ea3n 0.2.0: Clawd-0.2.0-windows-setup.exe: SHA-256 kh\u00f4ng kh\u1edbp, b\u1ecf file",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "current",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "current",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          },
+          {
+            "state": {
+              "status": "current",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 0
+          },
+          {
+            "state": {
+              "status": "current",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          },
+          {
+            "state": {
+              "status": "current",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 1601.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "available",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 0.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": false,
+              "why": "B\u1ea3n ch\u1ea1y t\u1eeb m\u00e3 ngu\u1ed3n kh\u00f4ng t\u1ef1 c\u1eadp nh\u1eadt."
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "error",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "Kh\u00f4ng h\u1ecfi \u0111\u01b0\u1ee3c GitHub: ConnectError: no network",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "ready",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 1.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          },
+          {
+            "state": {
+              "status": "error",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 1.0,
+              "error": "L\u1ea7n thay app tr\u01b0\u1edbc kh\u00f4ng th\u00e0nh c\u00f4ng. H\u00e3y t\u1ea3i b\u1ea3n m\u1edbi t\u1eeb trang ph\u00e1t h\u00e0nh v\u00e0 c\u00e0i \u0111\u00e8.",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": false,
+              "why": ""
+            }
+          },
+          {
+            "restart_state": {
+              "status": "error",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 0.0,
+              "error": "L\u1ea7n thay app tr\u01b0\u1edbc kh\u00f4ng th\u00e0nh c\u00f4ng. H\u00e3y t\u1ea3i b\u1ea3n m\u1edbi t\u1eeb trang ph\u00e1t h\u00e0nh v\u00e0 c\u00e0i \u0111\u00e8.",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": false,
+              "why": ""
+            }
+          },
+          {
+            "state": {
+              "status": "error",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 0.0,
+              "error": "L\u1ea7n thay app tr\u01b0\u1edbc kh\u00f4ng th\u00e0nh c\u00f4ng. H\u00e3y t\u1ea3i b\u1ea3n m\u1edbi t\u1eeb trang ph\u00e1t h\u00e0nh v\u00e0 c\u00e0i \u0111\u00e8.",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": false,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "error",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "Kh\u00f4ng h\u1ecfi \u0111\u01b0\u1ee3c GitHub: ConnectError: no network",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          },
+          {
+            "state": {
+              "status": "error",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "Kh\u00f4ng h\u1ecfi \u0111\u01b0\u1ee3c GitHub: ConnectError: no network",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 0
+          },
+          {
+            "state": {
+              "status": "error",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "Kh\u00f4ng h\u1ecfi \u0111\u01b0\u1ee3c GitHub: ConnectError: no network",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "error",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "Kh\u00f4ng h\u1ecfi \u0111\u01b0\u1ee3c GitHub: GitHub tr\u1ea3 HTTP 500",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "error",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "Kh\u00f4ng h\u1ecfi \u0111\u01b0\u1ee3c GitHub: SHA256SUMS kh\u00f4ng c\u00f3 Clawd-0.2.0-windows-setup.exe",
+              "checked": 0.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          }
+        ]
+      },
+      {
+        "states": [
+          {
+            "state": {
+              "status": "ready",
+              "version": "0.2.0",
+              "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+              "page": "https://github.com/o/r/releases/tag/v0.2.0",
+              "progress": 1.0,
+              "error": "",
+              "checked": 1000.0,
+              "current": "0.1.0",
+              "canApply": true,
+              "why": ""
+            },
+            "api_asks": 1
+          },
+          {
+            "restart_state": {
+              "status": "idle",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 0.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            }
+          },
+          {
+            "state": {
+              "status": "idle",
+              "version": "",
+              "notes": "",
+              "page": "",
+              "progress": 0.0,
+              "error": "",
+              "checked": 0.0,
+              "current": "0.2.0",
+              "canApply": true,
+              "why": ""
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

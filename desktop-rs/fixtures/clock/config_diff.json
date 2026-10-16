@@ -1,0 +1,321 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "nested_changed_key",
+        "old": {
+          "brightness": 45,
+          "rotation": 0,
+          "usage": {
+            "screen": 0,
+            "layout": 0,
+            "anim": 9
+          }
+        },
+        "new": {
+          "brightness": 60,
+          "rotation": 0,
+          "usage": {
+            "screen": 0,
+            "layout": 1,
+            "anim": 9
+          }
+        }
+      },
+      {
+        "name": "list_goes_whole",
+        "old": {
+          "wifi": [
+            {
+              "ssid": "A"
+            },
+            {
+              "ssid": "B"
+            }
+          ]
+        },
+        "new": {
+          "wifi": [
+            {
+              "ssid": "B"
+            },
+            {
+              "ssid": "A"
+            }
+          ]
+        }
+      },
+      {
+        "name": "equal",
+        "old": {
+          "wifi": [
+            {
+              "ssid": "A"
+            }
+          ],
+          "a": {
+            "b": 1
+          }
+        },
+        "new": {
+          "wifi": [
+            {
+              "ssid": "A"
+            }
+          ],
+          "a": {
+            "b": 1
+          }
+        }
+      },
+      {
+        "name": "new_key_goes_missing_stays",
+        "old": {
+          "a": 1,
+          "b": 2
+        },
+        "new": {
+          "a": 1,
+          "c": 3
+        }
+      },
+      {
+        "name": "dict_replaces_scalar",
+        "old": {
+          "usage": 5
+        },
+        "new": {
+          "usage": {
+            "layout": 1
+          }
+        }
+      },
+      {
+        "name": "scalar_replaces_dict",
+        "old": {
+          "usage": {
+            "layout": 1
+          }
+        },
+        "new": {
+          "usage": 5
+        }
+      },
+      {
+        "name": "int_equals_float",
+        "old": {
+          "a": 1,
+          "b": {
+            "c": 2.0
+          }
+        },
+        "new": {
+          "a": 1.0,
+          "b": {
+            "c": 2
+          }
+        }
+      },
+      {
+        "name": "bool_equals_int",
+        "old": {
+          "a": 1,
+          "b": 0
+        },
+        "new": {
+          "a": true,
+          "b": false
+        }
+      },
+      {
+        "name": "string_is_not_number",
+        "old": {
+          "a": 1
+        },
+        "new": {
+          "a": "1"
+        }
+      },
+      {
+        "name": "null_values",
+        "old": {
+          "a": null,
+          "b": 1
+        },
+        "new": {
+          "a": null,
+          "b": null
+        }
+      },
+      {
+        "name": "new_is_list",
+        "old": {
+          "a": 1
+        },
+        "new": [
+          1,
+          2
+        ]
+      },
+      {
+        "name": "new_is_scalar",
+        "old": {
+          "a": 1
+        },
+        "new": "x"
+      },
+      {
+        "name": "old_is_not_dict",
+        "old": [
+          1
+        ],
+        "new": {
+          "a": 1
+        }
+      },
+      {
+        "name": "old_missing_nested",
+        "old": {},
+        "new": {
+          "usage": {
+            "layout": 1,
+            "screen": 0
+          }
+        }
+      },
+      {
+        "name": "deep",
+        "old": {
+          "a": {
+            "b": {
+              "c": {
+                "d": 1,
+                "e": 2
+              }
+            }
+          }
+        },
+        "new": {
+          "a": {
+            "b": {
+              "c": {
+                "d": 1,
+                "e": 3
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "order_preserved",
+        "old": {
+          "z": 0
+        },
+        "new": {
+          "z": 1,
+          "a": 2,
+          "m": {
+            "y": 1,
+            "b": 2
+          }
+        }
+      },
+      {
+        "name": "dict_key_order_ignored",
+        "old": {
+          "u": {
+            "a": 1,
+            "b": 2
+          }
+        },
+        "new": {
+          "u": {
+            "b": 2,
+            "a": 1
+          }
+        }
+      },
+      {
+        "name": "unicode",
+        "old": {
+          "name": "x"
+        },
+        "new": {
+          "name": "\u0110\u1ed3ng h\u1ed3 \u2603"
+        }
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "brightness": 60,
+        "usage": {
+          "layout": 1
+        }
+      },
+      {
+        "wifi": [
+          {
+            "ssid": "B"
+          },
+          {
+            "ssid": "A"
+          }
+        ]
+      },
+      {},
+      {
+        "c": 3
+      },
+      {
+        "usage": {
+          "layout": 1
+        }
+      },
+      {
+        "usage": 5
+      },
+      {},
+      {},
+      {
+        "a": "1"
+      },
+      {
+        "b": null
+      },
+      {},
+      {},
+      {
+        "a": 1
+      },
+      {
+        "usage": {
+          "layout": 1,
+          "screen": 0
+        }
+      },
+      {
+        "a": {
+          "b": {
+            "c": {
+              "e": 3
+            }
+          }
+        }
+      },
+      {
+        "z": 1,
+        "a": 2,
+        "m": {
+          "y": 1,
+          "b": 2
+        }
+      },
+      {},
+      {
+        "name": "\u0110\u1ed3ng h\u1ed3 \u2603"
+      }
+    ]
+  }
+}

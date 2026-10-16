@@ -1,7 +1,7 @@
 ---
 phase: 12
 title: "App shell: engine, tray, popover, CLI"
-status: pending
+status: in-progress
 priority: P1
 effort: "3d"
 dependencies: [1, 2]

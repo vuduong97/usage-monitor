@@ -1,0 +1,478 @@
+{
+  "input": {
+    "scenarios": [
+      {
+        "name": "restart_reported_once",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 5,
+            "uptime": 5005,
+            "delivered": true
+          },
+          {
+            "dt": 40,
+            "uptime": 12,
+            "delivered": true
+          },
+          {
+            "dt": 5,
+            "uptime": 17,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "slow_answers_are_not_restarts",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 20,
+            "uptime": 5008,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "unreachable_then_back_after_reboot",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 5,
+            "uptime": null,
+            "delivered": true
+          },
+          {
+            "dt": 30,
+            "uptime": 9,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "new_address_that_just_booted",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 30,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "fresh_boundary_119",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 119,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "fresh_boundary_120",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 120,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "jitter_boundary_exactly_30",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 40,
+            "uptime": 5010,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "jitter_boundary_just_over",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 40,
+            "uptime": 5009,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "failed_delivery_retries_while_fresh",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": false
+          },
+          {
+            "dt": 40,
+            "uptime": 10,
+            "delivered": false
+          },
+          {
+            "dt": 5,
+            "uptime": 15,
+            "delivered": true
+          },
+          {
+            "dt": 5,
+            "uptime": 20,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "failed_delivery_twice_then_ok",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 10,
+            "delivered": false
+          },
+          {
+            "dt": 5,
+            "uptime": 15,
+            "delivered": false
+          },
+          {
+            "dt": 5,
+            "uptime": 20,
+            "delivered": true
+          },
+          {
+            "dt": 5,
+            "uptime": 25,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "retries_stop_after_fresh_window",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 100,
+            "delivered": false
+          },
+          {
+            "dt": 30,
+            "uptime": 130,
+            "delivered": false
+          }
+        ]
+      },
+      {
+        "name": "retry_survives_a_silent_probe",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 40,
+            "uptime": 10,
+            "delivered": false
+          },
+          {
+            "dt": 5,
+            "uptime": null,
+            "delivered": true
+          },
+          {
+            "dt": 5,
+            "uptime": 20,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "uptime_zero_counts_as_fresh",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 0,
+            "delivered": true
+          }
+        ]
+      },
+      {
+        "name": "two_restarts",
+        "steps": [
+          {
+            "dt": 0,
+            "uptime": 5000,
+            "delivered": true
+          },
+          {
+            "dt": 40,
+            "uptime": 3,
+            "delivered": true
+          },
+          {
+            "dt": 200,
+            "uptime": 4,
+            "delivered": true
+          },
+          {
+            "dt": 60,
+            "uptime": 2,
+            "delivered": true
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "runs": [
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": true,
+          "hits": [
+            12
+          ]
+        },
+        {
+          "restarted": false,
+          "hits": [
+            12
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": false,
+          "hits": []
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": true,
+          "hits": [
+            9
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": true,
+          "hits": [
+            30
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": true,
+          "hits": [
+            119
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": false,
+          "hits": []
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": true,
+          "hits": [
+            5009
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": true,
+          "hits": [
+            10
+          ]
+        },
+        {
+          "restarted": true,
+          "hits": [
+            10,
+            15
+          ]
+        },
+        {
+          "restarted": false,
+          "hits": [
+            10,
+            15
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": true,
+          "hits": [
+            10
+          ]
+        },
+        {
+          "restarted": true,
+          "hits": [
+            10,
+            15
+          ]
+        },
+        {
+          "restarted": true,
+          "hits": [
+            10,
+            15,
+            20
+          ]
+        },
+        {
+          "restarted": false,
+          "hits": [
+            10,
+            15,
+            20
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": true,
+          "hits": [
+            100
+          ]
+        },
+        {
+          "restarted": false,
+          "hits": [
+            100
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": true,
+          "hits": [
+            10
+          ]
+        },
+        {
+          "restarted": false,
+          "hits": [
+            10
+          ]
+        },
+        {
+          "restarted": true,
+          "hits": [
+            10,
+            20
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": true,
+          "hits": [
+            0
+          ]
+        }
+      ],
+      [
+        {
+          "restarted": false,
+          "hits": []
+        },
+        {
+          "restarted": true,
+          "hits": [
+            3
+          ]
+        },
+        {
+          "restarted": true,
+          "hits": [
+            3,
+            4
+          ]
+        },
+        {
+          "restarted": true,
+          "hits": [
+            3,
+            4,
+            2
+          ]
+        }
+      ]
+    ]
+  }
+}

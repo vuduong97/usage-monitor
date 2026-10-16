@@ -1,0 +1,137 @@
+{
+  "input": {
+    "saves": [
+      {},
+      {
+        "name": "clawd",
+        "host": "10.0.0.7",
+        "port": 80,
+        "version": "2.16.0"
+      },
+      {
+        "name": "\u0110\u1ed3ng h\u1ed3 \u2603 \ud83d\ude00",
+        "host": "10.0.0.7",
+        "port": 80,
+        "version": ""
+      },
+      {
+        "manual_host": "10.97.40.207",
+        "extra": [
+          1,
+          2.5,
+          null,
+          true,
+          {
+            "k": []
+          }
+        ],
+        "empty": {}
+      }
+    ],
+    "unpins": [
+      null,
+      {
+        "manual_host": "10.97.40.207",
+        "name": "old",
+        "host": "1.2.3.4"
+      },
+      {
+        "manual_host": "clawd.local:8080"
+      },
+      {
+        "manual_host": "10..97.40.207",
+        "host": "10.0.0.6",
+        "name": "n"
+      },
+      {
+        "name": "clawd",
+        "host": "10.0.0.7",
+        "port": 80,
+        "version": "2.16.0"
+      },
+      {
+        "host": "10.0.0.7",
+        "port": "x"
+      }
+    ]
+  },
+  "output": {
+    "save_texts": [
+      "{}",
+      "{\n  \"name\": \"clawd\",\n  \"host\": \"10.0.0.7\",\n  \"port\": 80,\n  \"version\": \"2.16.0\"\n}",
+      "{\n  \"name\": \"\\u0110\\u1ed3ng h\\u1ed3 \\u2603 \\ud83d\\ude00\",\n  \"host\": \"10.0.0.7\",\n  \"port\": 80,\n  \"version\": \"\"\n}",
+      "{\n  \"manual_host\": \"10.97.40.207\",\n  \"extra\": [\n    1,\n    2.5,\n    null,\n    true,\n    {\n      \"k\": []\n    }\n  ],\n  \"empty\": {}\n}"
+    ],
+    "unpins": [
+      {
+        "clock": null,
+        "file": null
+      },
+      {
+        "clock": {
+          "host": "10.97.40.207",
+          "port": 80,
+          "name": "",
+          "version": "",
+          "source": "saved",
+          "base": "http://10.97.40.207",
+          "usage_url": "http://10.97.40.207/api/usage",
+          "label": "10.97.40.207"
+        },
+        "file": "{\n  \"name\": \"\",\n  \"host\": \"10.97.40.207\",\n  \"port\": 80,\n  \"version\": \"\"\n}"
+      },
+      {
+        "clock": {
+          "host": "clawd.local",
+          "port": 8080,
+          "name": "",
+          "version": "",
+          "source": "saved",
+          "base": "http://clawd.local:8080",
+          "usage_url": "http://clawd.local:8080/api/usage",
+          "label": "clawd.local"
+        },
+        "file": "{\n  \"name\": \"\",\n  \"host\": \"clawd.local\",\n  \"port\": 8080,\n  \"version\": \"\"\n}"
+      },
+      {
+        "clock": {
+          "host": "10.0.0.6",
+          "port": 80,
+          "name": "n",
+          "version": "",
+          "source": "saved",
+          "base": "http://10.0.0.6",
+          "usage_url": "http://10.0.0.6/api/usage",
+          "label": "n (10.0.0.6)"
+        },
+        "file": "{\n  \"manual_host\": \"10..97.40.207\",\n  \"host\": \"10.0.0.6\",\n  \"name\": \"n\"\n}"
+      },
+      {
+        "clock": {
+          "host": "10.0.0.7",
+          "port": 80,
+          "name": "clawd",
+          "version": "2.16.0",
+          "source": "saved",
+          "base": "http://10.0.0.7",
+          "usage_url": "http://10.0.0.7/api/usage",
+          "label": "clawd (10.0.0.7)"
+        },
+        "file": "{\n  \"name\": \"clawd\",\n  \"host\": \"10.0.0.7\",\n  \"port\": 80,\n  \"version\": \"2.16.0\"\n}"
+      },
+      {
+        "clock": {
+          "host": "10.0.0.7",
+          "port": 80,
+          "name": "",
+          "version": "",
+          "source": "saved",
+          "base": "http://10.0.0.7",
+          "usage_url": "http://10.0.0.7/api/usage",
+          "label": "10.0.0.7"
+        },
+        "file": "{\n  \"host\": \"10.0.0.7\",\n  \"port\": \"x\"\n}"
+      }
+    ]
+  }
+}
