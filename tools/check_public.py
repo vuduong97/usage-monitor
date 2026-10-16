@@ -14,6 +14,8 @@ BANNED = [
     (re.compile(r"(^|/)clawd_render(\.exe)?$|\.zip$", re.I), "compiled clock-screen renderer (feed only)"),
 ]
 MAX_BYTES = 512_000   # nothing in this repo should be big; a large blob is probably art
+# Files the owner reviewed and chose to keep despite their size (exact paths, nothing else).
+SIZE_ALLOWED = {"uv.lock", "Clawd Print & Paper.html"}
 
 # Golden fixtures of the Rust port (desktop-rs/fixtures/**) come from running the real app, so
 # they could leak art, secrets or the author's home path. Scanned as text; binary content fails.
@@ -53,7 +55,7 @@ def main() -> int:
             bad.extend(check_fixture(f))
         try:
             size = subprocess.run(["git", "cat-file", "-s", f":{f}"], capture_output=True, text=True).stdout.strip()
-            if size and int(size) > MAX_BYTES and f != "uv.lock":
+            if size and int(size) > MAX_BYTES and f not in SIZE_ALLOWED:
                 bad.append(f"{f}: {int(size):,} bytes (over {MAX_BYTES:,})")
         except ValueError:
             pass
