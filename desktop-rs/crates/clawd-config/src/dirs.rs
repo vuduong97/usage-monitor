@@ -1,3 +1,4 @@
+#![allow(unused_variables)] // TEMP: stub until its milestone lands
 use std::path::PathBuf;
 
 use clawd_contracts::AppPaths;

@@ -1,6 +1,6 @@
 //! `clawd-config`: the "read the sources" half of `usage.py` (phase 06 implements it).
 //!
-//! STUB (phase 02): real signatures and docs, `todo!()` bodies. Python origin:
+//! Python origin:
 //! `usage.py:44-330, 417-545, 753-780, 969-980` (see `desktop-rs/PORT-MAP.md`). No network here:
 //! the poller (`clawd-usage`, phase 07) uses these to find a token, the engine and the agents
 //! use them for ports, dirs and targets.
@@ -8,13 +8,6 @@
 //! Python read the module-global `CONFIG_FILE`; every function here takes the injected
 //! [`clawd_contracts::AppPaths`] instead. Readers are forgiving: a read error yields `None` /
 //! the default, never a panic.
-#![allow(
-    unused_variables,
-    dead_code,
-    clippy::new_without_default,
-    clippy::too_many_arguments,
-    clippy::type_complexity
-)] // stub crate: the owning phase removes this when it implements the bodies
 
 pub mod cliproxy;
 pub mod command;
@@ -23,6 +16,8 @@ pub mod dirs;
 pub mod http_targets;
 pub mod locale;
 pub mod tokens;
+
+mod pytext;
 
 pub use cliproxy::{read_cliproxy_key, read_cliproxy_url};
 pub use command::{CommandOutput, CommandRunner, SystemRunner};

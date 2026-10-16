@@ -1,3 +1,4 @@
+#![allow(unused_variables)] // TEMP: stub until its milestone lands
 //! CLIProxyAPI settings (`usage.py:107-113, 753-777`): the management key lives only in the
 //! macOS Keychain; the URL comes from the `cliproxy_url` option. The proxy calls themselves are
 //! `clawd_usage::CliProxySource`.

@@ -1,3 +1,4 @@
+#![allow(unused_variables)] // TEMP: stub until its milestone lands
 use crate::command::CommandRunner;
 
 /// `usage.detect_hour_format()`: best-effort 12h/24h detection for the host, `12` or `24`

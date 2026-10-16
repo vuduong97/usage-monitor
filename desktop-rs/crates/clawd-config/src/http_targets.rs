@@ -1,3 +1,4 @@
+#![allow(unused_variables)] // TEMP: stub until its milestone lands
 use clawd_contracts::AppPaths;
 
 /// `usage.normalize_http_target(raw)`: an `http_targets` entry as a push URL, or `None` if

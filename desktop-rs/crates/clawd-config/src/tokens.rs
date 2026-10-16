@@ -1,3 +1,4 @@
+#![allow(unused_variables)] // TEMP: stub until its milestone lands
 //! Claude OAuth token sources (`usage.py:55-96, 131-290`). Pure free-ride: read whatever token
 //! Claude Code currently holds and never refresh it. A read error is `None`, never a panic;
 //! nothing here logs a token.
