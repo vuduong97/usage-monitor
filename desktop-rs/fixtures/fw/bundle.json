@@ -1,0 +1,2331 @@
+{
+  "input": {
+    "note": "files are specs: pattern(n, seed) | text | json | style_pack(id, flip_last)"
+  },
+  "output": {
+    "bundles": [
+      {
+        "name": "plain",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 0,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 0,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "styled",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "styled_light_flag_missing",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d"
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": false,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "api_mismatch",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 2,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 2,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "api_zero_with_index",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 0,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 0,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 0,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "no_style_api_key",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 0,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "no_commit_key",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "file_escapes",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "../firmware.json",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "file_backslash",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "a\\b.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "bad_id",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "Bad Id",
+                  "name": "Bad Id",
+                  "file": "Bad Id.pak",
+                  "size": 96,
+                  "crc": "ba4e50a4",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/Bad Id.pak": {
+            "style_pack": [
+              "Bad Id",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "id_too_long",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "aaaaaaaaaaaaaaaa",
+                  "name": "Aaaaaaaaaaaaaaaa",
+                  "file": "aaaaaaaaaaaaaaaa.pak",
+                  "size": 96,
+                  "crc": "e6a08b1e",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/aaaaaaaaaaaaaaaa.pak": {
+            "style_pack": [
+              "aaaaaaaaaaaaaaaa",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "duplicate_id",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                },
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "pack_file_missing",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "size_over_cap",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 20481,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "size_zero",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 0,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "size_as_string",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": "96",
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "crc_not_hex",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "zz",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "crc_0x_prefix",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "0x5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "name_cut",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "nnnnnnnnnnnnnnnnnnnnnnn",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "pack_damaged_after_bundling",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              true
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": {
+                "error": "style pack synth does not match the index"
+              }
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "styles_not_a_list",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": {
+                "a": 1
+              }
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "index_not_json",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          },
+          "styles/index.json": {
+            "text": "{not json"
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "image_missing",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": null
+      },
+      {
+        "name": "image_damaged",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              2
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": {
+            "error": "bundled firmware does not match its manifest"
+          },
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "image_wrong_size",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              999,
+              1
+            ]
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paper",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 2,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": {
+            "error": "bundled firmware does not match its manifest"
+          },
+          "styles": [
+            {
+              "id": "synth",
+              "name": "Synth",
+              "size": 96,
+              "crc": 1602353872,
+              "light": false,
+              "read": "f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4"
+            },
+            {
+              "id": "paper",
+              "name": "Paper",
+              "size": 96,
+              "crc": 2577224333,
+              "light": true,
+              "read": "f1699a1c7f34bc3ee77950fc09f49128666ea4b004ccd13697262e461278f166"
+            }
+          ]
+        }
+      },
+      {
+        "name": "firmware_json_not_json",
+        "files": {
+          "firmware.json": {
+            "text": "nope"
+          }
+        },
+        "result": null
+      },
+      {
+        "name": "firmware_json_missing_key",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "fwSeq": 2,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": null
+      },
+      {
+        "name": "firmware_json_seq_string",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": "3",
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 3,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "firmware_json_seq_float",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 3.9,
+              "layouts": 1,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": {
+          "seq": 3,
+          "layouts": 1,
+          "commit": "abc1234",
+          "style_api": 1,
+          "size": 1000,
+          "variant": "esp8266-clawd",
+          "image": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+          "styles": []
+        }
+      },
+      {
+        "name": "firmware_json_layouts_null",
+        "files": {
+          "firmware.json": {
+            "json": {
+              "file": "clawd-firmware.bin",
+              "size": 1000,
+              "sha256": "67a8f5c74b034d617fec2807aa1d5591a50459cd923b577614ad725226c4b092",
+              "variant": "esp8266-clawd",
+              "fwSeq": 2,
+              "layouts": null,
+              "styleApi": 1,
+              "commit": "abc1234"
+            }
+          },
+          "clawd-firmware.bin": {
+            "pattern": [
+              1000,
+              1
+            ]
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": null
+      }
+    ],
+    "styles_of": [
+      {
+        "name": "ok",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": [
+          {
+            "id": "synth",
+            "name": "Synthxxxxxxxxxxxxxxxxxx",
+            "size": 96,
+            "crc": 1602353872,
+            "light": false
+          },
+          {
+            "id": "paper",
+            "name": "Paperxxxxxxxxxxxxxxxxxx",
+            "size": 96,
+            "crc": 2577224333,
+            "light": true
+          }
+        ]
+      },
+      {
+        "name": "root_index",
+        "style_api": 1,
+        "index_name": "index.json",
+        "blobs": {
+          "index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": [
+          {
+            "id": "synth",
+            "name": "Synthxxxxxxxxxxxxxxxxxx",
+            "size": 96,
+            "crc": 1602353872,
+            "light": false
+          },
+          {
+            "id": "paper",
+            "name": "Paperxxxxxxxxxxxxxxxxxx",
+            "size": 96,
+            "crc": 2577224333,
+            "light": true
+          }
+        ]
+      },
+      {
+        "name": "no_style_api",
+        "style_api": 0,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": []
+      },
+      {
+        "name": "api_mismatch",
+        "style_api": 2,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": []
+      },
+      {
+        "name": "index_api_string",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": "1",
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": [
+          {
+            "id": "synth",
+            "name": "Synthxxxxxxxxxxxxxxxxxx",
+            "size": 96,
+            "crc": 1602353872,
+            "light": false
+          },
+          {
+            "id": "paper",
+            "name": "Paperxxxxxxxxxxxxxxxxxx",
+            "size": 96,
+            "crc": 2577224333,
+            "light": true
+          }
+        ]
+      },
+      {
+        "name": "missing_pack",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "result": []
+      },
+      {
+        "name": "damaged_pack",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                },
+                {
+                  "id": "paper",
+                  "name": "Paperxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "paper.pak",
+                  "size": 96,
+                  "crc": "999d528d",
+                  "light": true
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              true
+            ]
+          }
+        },
+        "result": []
+      },
+      {
+        "name": "index_not_json",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "text": "{nope"
+          }
+        },
+        "result": []
+      },
+      {
+        "name": "no_index_blob",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {},
+        "result": []
+      },
+      {
+        "name": "file_with_slash",
+        "style_api": 1,
+        "index_name": "styles/index.json",
+        "blobs": {
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synthxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  "file": "x/y.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/paper.pak": {
+            "style_pack": [
+              "paper",
+              false
+            ]
+          }
+        },
+        "result": []
+      }
+    ]
+  }
+}

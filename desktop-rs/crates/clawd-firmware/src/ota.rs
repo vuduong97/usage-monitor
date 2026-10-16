@@ -242,7 +242,7 @@ async fn install_image<A: ClockOps + ?Sized>(
         };
         api.wait_back(started, clock.as_ref(), &renew).await?
     };
-    if firmware::clock_seq(&new) < bundle.seq {
+    if firmware::clock_seq_signed(&new) < i128::from(bundle.seq) {
         return Err(other("the clock came back on its old firmware"));
     }
     opts.say("done");

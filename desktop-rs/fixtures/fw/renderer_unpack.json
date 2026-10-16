@@ -1,0 +1,934 @@
+{
+  "input": {
+    "note": "zip built from the file specs; sha256 is the manifest hash naming the folder"
+  },
+  "output": {
+    "cases": [
+      {
+        "name": "good",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "ok": "abababababababab"
+        },
+        "marker_text": "{\"zip\": \"abababababababababababababababababababababababababababababababab\", \"files\": {\"preview.json\": \"cc73d88950677da3442d2b5b6811ec25eb3edabf9d055d614a1e47970d6bf6d9\", \"clawd_render\": \"1310ca2c8932dbd118668bd97442558a3e1f546b5e15c69699dfbd6024f548d8\", \"clawd.pak\": \"43729710aeaf3be1874292ea05bfa12ecc622373ed9fc2cdc08c93119faeca23\", \"styles/index.json\": \"64a7bd8cea022fbc41873487be56688cc9974e490a21e416f6a31277f743131d\", \"styles/synth.pak\": \"f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4\"}}",
+        "files_on_disk": [
+          ".files.json",
+          "clawd.pak",
+          "clawd_render",
+          "preview.json",
+          "styles/index.json",
+          "styles/synth.pak"
+        ],
+        "load": {
+          "commit": "c000006",
+          "styles": [
+            "synth"
+          ]
+        },
+        "load_other_commit": false,
+        "load_other_zip": false
+      },
+      {
+        "name": "good_exe_windows_name",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render.exe",
+              "pak": "clawd.pak",
+              "commit": "c1"
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "clawd_render.exe": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "ok": "abababababababab"
+        },
+        "marker_text": "{\"zip\": \"abababababababababababababababababababababababababababababababab\", \"files\": {\"preview.json\": \"04b3d15015d622e879e0196b9410837cda4e975b91c4d993973704e11b3de2ef\", \"clawd_render\": \"1310ca2c8932dbd118668bd97442558a3e1f546b5e15c69699dfbd6024f548d8\", \"clawd.pak\": \"43729710aeaf3be1874292ea05bfa12ecc622373ed9fc2cdc08c93119faeca23\", \"styles/index.json\": \"64a7bd8cea022fbc41873487be56688cc9974e490a21e416f6a31277f743131d\", \"styles/synth.pak\": \"f590da969ce1af17cdd0b2d2f2e0e1457cad1e8c5cc87c6c789ddee964b0fea4\", \"clawd_render.exe\": \"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\"}}",
+        "files_on_disk": [
+          ".files.json",
+          "clawd.pak",
+          "clawd_render",
+          "clawd_render.exe",
+          "preview.json",
+          "styles/index.json",
+          "styles/synth.pak"
+        ],
+        "load": {
+          "commit": "c1",
+          "styles": []
+        },
+        "load_other_commit": false,
+        "load_other_zip": false
+      },
+      {
+        "name": "no_styles",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "ok": "abababababababab"
+        },
+        "marker_text": "{\"zip\": \"abababababababababababababababababababababababababababababababab\", \"files\": {\"preview.json\": \"cc73d88950677da3442d2b5b6811ec25eb3edabf9d055d614a1e47970d6bf6d9\", \"clawd_render\": \"1310ca2c8932dbd118668bd97442558a3e1f546b5e15c69699dfbd6024f548d8\", \"clawd.pak\": \"43729710aeaf3be1874292ea05bfa12ecc622373ed9fc2cdc08c93119faeca23\"}}",
+        "files_on_disk": [
+          ".files.json",
+          "clawd.pak",
+          "clawd_render",
+          "preview.json"
+        ],
+        "load": {
+          "commit": "c000006",
+          "styles": []
+        },
+        "load_other_commit": false,
+        "load_other_zip": false
+      },
+      {
+        "name": "traversal",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "../evil": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "absolute",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "/abs": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "styles_traversal",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/../../x.pak": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "other_file",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "other.dll": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "drive_letter",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "C:/x.pak": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "style_name_upper",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/Bad.pak": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "style_name_too_long",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/aaaaaaaaaaaaaaaa.pak": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "nested_style",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          },
+          "styles/a/b.pak": {
+            "text": "x"
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "no_preview_json",
+        "files": {
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip without a usable preview.json"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "preview_json_not_json",
+        "files": {
+          "preview.json": {
+            "text": "not json"
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip without a usable preview.json"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "preview_json_list",
+        "files": {
+          "preview.json": {
+            "text": "[1]"
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip without a usable preview.json"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "preview_json_no_exe",
+        "files": {
+          "preview.json": {
+            "json": {
+              "pak": "clawd.pak"
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip without a usable preview.json"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "exe_is_pak",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd.pak",
+              "pak": "clawd.pak"
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip: preview.json names files it does not hold"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "exe_not_in_zip",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render.exe",
+              "pak": "clawd.pak"
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip: preview.json names files it does not hold"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "exe_wrong_prefix",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "preview.json",
+              "pak": "clawd.pak"
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip: preview.json names files it does not hold"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "pak_wrong_name",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "styles/synth.pak"
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "clawd.pak": {
+            "text": "pak"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip: preview.json names files it does not hold"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "no_pak",
+        "files": {
+          "preview.json": {
+            "json": {
+              "exe": "clawd_render",
+              "pak": "clawd.pak",
+              "commit": "c000006",
+              "styleApi": 1
+            }
+          },
+          "clawd_render": {
+            "text": "program"
+          },
+          "styles/index.json": {
+            "json": {
+              "api": 1,
+              "styles": [
+                {
+                  "id": "synth",
+                  "name": "Synth",
+                  "file": "synth.pak",
+                  "size": 96,
+                  "crc": "5f81fad0",
+                  "light": false
+                }
+              ]
+            }
+          },
+          "styles/synth.pak": {
+            "style_pack": [
+              "synth",
+              false
+            ]
+          }
+        },
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "renderer zip: preview.json names files it does not hold"
+        },
+        "root_left_empty": true
+      },
+      {
+        "name": "empty_zip",
+        "files": {},
+        "sha256": "abababababababababababababababababababababababababababababababab",
+        "result": {
+          "error": "not a renderer zip"
+        },
+        "root_left_empty": true
+      }
+    ]
+  }
+}

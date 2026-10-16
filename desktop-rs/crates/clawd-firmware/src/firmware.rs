@@ -200,12 +200,19 @@ pub fn is_clawd(heap: &Value) -> bool {
     }
 }
 
-/// `firmware.clock_seq(heap)`: `fwSeq` (an integer, not a bool), else 0.
-pub fn clock_seq(heap: &Value) -> u64 {
+/// `firmware.clock_seq(heap)` as Python returns it: an `int` (not a bool), possibly negative.
+pub(crate) fn clock_seq_signed(heap: &Value) -> i128 {
     match heap.get("fwSeq") {
-        Some(Value::Number(n)) if n.is_i64() || n.is_u64() => n.as_u64().unwrap_or(0),
+        Some(Value::Number(n)) if n.is_i64() => i128::from(n.as_i64().unwrap_or(0)),
+        Some(Value::Number(n)) if n.is_u64() => i128::from(n.as_u64().unwrap_or(0)),
         _ => 0,
     }
+}
+
+/// `firmware.clock_seq(heap)`: `fwSeq` (an integer, not a bool), else 0. A negative `fwSeq`
+/// reads as 0 here (Python returns it as is; [`update_state`] and OTA compare the signed value).
+pub fn clock_seq(heap: &Value) -> u64 {
+    u64::try_from(clock_seq_signed(heap)).unwrap_or(0)
 }
 
 /// `firmware.update_state(heap, bundle)`: `"available"` | `"current"` | `"none"` (no bundle) |
@@ -216,7 +223,7 @@ pub fn update_state(heap: &Value, bundle: Option<&Bundle>) -> &'static str {
     };
     if !is_clawd(heap) || bundle.variant != CLAWD_VARIANT {
         "incompatible"
-    } else if clock_seq(heap) < bundle.seq {
+    } else if clock_seq_signed(heap) < i128::from(bundle.seq) {
         "available"
     } else {
         "current"
