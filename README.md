@@ -35,11 +35,11 @@ Tải bản mới nhất ở trang **Releases** của repo này:
 | Máy | Tải file |
 | --- | --- |
 | Mac chip Apple (M1, M2, M3...) | `Clawd-x.y.z-mac-arm64.dmg` |
-| Mac chip Intel | `Clawd-x.y.z-mac-x86_64.dmg` |
 | Windows | `Clawd-x.y.z-windows-setup.exe` |
 
-Không biết Mac của mình chip gì? Bấm  → **Giới thiệu về máy Mac**: dòng *Chip* ghi
-"Apple M..." là chip Apple, dòng *Bộ xử lý* ghi "Intel" là chip Intel.
+Mac chip Intel: bản cuối là **0.2.0** (`Clawd-0.2.0-mac-x86_64.dmg` ở trang Releases của 0.2.0); từ
+0.2.1 chỉ còn bản cho chip Apple. Không biết Mac của mình chip gì? Bấm  → **Giới thiệu về máy
+Mac**: dòng *Chip* ghi "Apple M..." là chip Apple, dòng *Bộ xử lý* ghi "Intel" là chip Intel.
 
 ### Mac
 
@@ -181,7 +181,7 @@ Phát hành: đặt `version` trong `desktop-rs/Cargo.toml` (`[workspace.package
 `desktop-rs/app/tauri.conf.json` (hai nơi phải giống nhau và giống tag; `cargo update --workspace`
 để `Cargo.lock` theo), viết `packaging-rs/release-notes/X.Y.Z.md`, rồi đẩy tag `vX.Y.Z`. Workflow
 **Release** (`.github/workflows/release.yml`) chạy test, chờ chủ repo duyệt environment `release`,
-build `.dmg` + `.zip` (Apple silicon và Intel, ký Developer ID và notarize) và `-setup.exe`, tạo
+build `.dmg` + `.zip` (Apple silicon, ký Developer ID và notarize) và `-setup.exe`, tạo
 `SHA256SUMS` và chữ ký `SHA256SUMS.minisig`, rồi tạo một **bản nháp** (draft). Bản nháp chưa tới
 tay ai: kiểm tra file, thử cập nhật (`tools/migration/local-release.md`), rồi phát hành bằng
 `gh release edit vX.Y.Z --draft=false --latest` và kiểm `gh api repos/vuduong97/usage-monitor/releases/latest --jq .tag_name`
@@ -204,7 +204,7 @@ biến `EXPECTED_TEAM_ID`, nếu không app đang chạy sẽ từ chối bản 
 
 App hỏi `api.github.com/repos/vuduong97/usage-monitor/releases/latest` (công khai, không token)
 sau khi mở 90 giây rồi mỗi 6 giờ; bản prerelease và draft bị bỏ qua. Có bản mới hơn thì app tải
-nền file hợp với máy (`Clawd-X.Y.Z-mac-<arm64|x86_64>.zip` hoặc `Clawd-X.Y.Z-windows-setup.exe`),
+nền file hợp với máy (`Clawd-X.Y.Z-mac-arm64.zip` hoặc `Clawd-X.Y.Z-windows-setup.exe`),
 kiểm chữ ký minisign của `SHA256SUMS` (`SHA256SUMS.minisig`, khoá công khai nằm sẵn trong app; từ
 0.2.0), so SHA-256 với `SHA256SUMS`, và trên mac kiểm tra chữ ký, bundle id, số phiên bản
 và **Team ID trùng với app đang chạy**. Xong thì tray và tab Cập nhật hiện *Khởi động lại để

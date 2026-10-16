@@ -72,14 +72,16 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   There are no ad-hoc releases; only a local `build_mac.sh` run without a tag may be ad-hoc.
 * **Size gate**: installer, zip and dmg must be at most 8,000,000 bytes (fails the run). The exe
   size is only reported.
-* **Assets**: `Clawd-<v>-windows-setup.exe`, `Clawd-<v>-mac-{arm64,x86_64}.{zip,dmg}`,
-  `SHA256SUMS`, `SHA256SUMS.minisig`. The workflow checks that these are exactly the files present.
-* **Publish**: one `gh release create` makes a **draft** with `--latest=false` and all seven files
+* **Assets**: `Clawd-<v>-windows-setup.exe`, `Clawd-<v>-mac-arm64.{zip,dmg}`, `SHA256SUMS`,
+  `SHA256SUMS.minisig` (five files). Apple silicon only since 0.2.1: 0.2.0 was the last
+  `mac-x86_64` release (an Intel Mac keeps 0.2.0; its updater finds no file and offers nothing).
+  `build_mac.sh` still builds on an Intel Mac for a local build. The workflow checks that these are exactly the files present.
+* **Publish**: one `gh release create` makes a **draft** with `--latest=false` and all five files
   attached (signature first, so `SHA256SUMS` never exists without its `.minisig`); a version with a
   pre-release part (`0.3.0-rc.1`) is also a prerelease. A gate then reads the repository's release
   list (`gh release view <tag>` does not reliably find a draft) and requires exactly one draft for
   the tag, `isPrerelease` false for `X.Y.Z` (a published prerelease is never offered by 0.1.x or
-  0.2.x), and both signature files among exactly seven assets; it also fails if the tag became
+  0.2.x), and both signature files among exactly five assets; it also fails if the tag became
   `/releases/latest`. Anything else fails closed.
 * **A re-run** of a failed `publish` first deletes earlier drafts of the same tag (never a published
   release: that stops the run), so the "exactly one draft" gate can pass again.
@@ -128,7 +130,7 @@ cat clawd-minisign.pub                                       # 2nd line = the pu
 ## What no one has verified yet (needs a Windows VM, a Mac, or the real runners)
 
 `iscc` on the script, the installer size, notarization, `minisign` in CI, the runner labels
-(`macos-14` = arm64, `macos-15-intel` = x86_64; `build_mac.sh` fails if `uname -m` disagrees),
+(`macos-14` = arm64; `build_mac.sh` fails if `uname -m` disagrees),
 `cargo install tauri-cli` and `cargo tauri build --bundles app` on macOS. Check list for phase 14:
 
 * Install over 0.1.4 in a clean Windows VM: same folder, one Add/Remove Programs entry,

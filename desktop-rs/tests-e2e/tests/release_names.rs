@@ -22,9 +22,9 @@ fn in_workflow(updater_name: &str, version: &str) -> String {
 fn every_updater_asset_is_published_by_the_release_workflow() {
     let text = workflow();
     let version = "9.8.7";
+    // mac x86_64 is not built since 0.2.1 (0.2.0 was the last Intel release).
     for (system, arch) in [
         ("mac", "arm64"),
-        ("mac", "x86_64"),
         ("windows", "x86_64"),
         ("windows", "arm64"),
     ] {
@@ -40,12 +40,7 @@ fn every_updater_asset_is_published_by_the_release_workflow() {
 #[test]
 fn the_workflow_ships_a_dmg_beside_each_mac_zip_and_signs_the_sums() {
     let text = workflow();
-    for arch in ["arm64", "x86_64"] {
-        assert!(
-            text.contains(&format!("Clawd-$VERSION-mac-{arch}.dmg")),
-            "{arch} dmg"
-        );
-    }
+    assert!(text.contains("Clawd-$VERSION-mac-arm64.dmg"), "arm64 dmg");
     assert!(
         text.contains("SHA256SUMS.minisig"),
         "the sums must be signed"

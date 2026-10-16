@@ -17,7 +17,7 @@ way the release is made changes. Record each result in `reports/migration-report
 ## 1. Case A: 0.1.4 -> the release candidate
 
 ```sh
-gh release download vX.Y.Z -R vuduong97/usage-monitor -D rel-X.Y.Z     # the draft's 7 files
+gh release download vX.Y.Z -R vuduong97/usage-monitor -D rel-X.Y.Z     # the draft's files (7 for 0.2.0, 5 from 0.2.1)
 minisign -Vm rel-X.Y.Z/SHA256SUMS -P "$(gh variable get MINISIGN_PUBKEY -R vuduong97/usage-monitor)"
 (cd rel-X.Y.Z && shasum -a 256 -c SHA256SUMS)
 python3 tools/migration/fake_api.py --dir rel-X.Y.Z                   # leave it running

@@ -195,11 +195,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Apple silicon only since 0.2.1: 0.2.0 was the last Intel build
+        # (its x86_64 files were downloaded twice in 0.1.x's life, and the
+        # Intel runner took ~45 min). A 0.2.0 on Intel stays at 0.2.0: its
+        # updater finds no x86_64 file and offers nothing.
         include:
           - runner: macos-14          # Apple silicon
             arch: arm64
-          - runner: macos-15-intel    # Intel
-            arch: x86_64
     runs-on: ${{ matrix.runner }}
     environment: release
     steps:
@@ -303,13 +305,12 @@ jobs:
         run: |
           printf '%s\n' \
             "Clawd-$VERSION-mac-arm64.dmg" "Clawd-$VERSION-mac-arm64.zip" \
-            "Clawd-$VERSION-mac-x86_64.dmg" "Clawd-$VERSION-mac-x86_64.zip" \
             "Clawd-$VERSION-windows-setup.exe" \
             | sort > "$RUNNER_TEMP/expected.txt"
           find . -maxdepth 1 -type f -printf '%f\n' | sort \
             > "$RUNNER_TEMP/found.txt"
           diff "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/found.txt" || {
-            echo "::error::the assets are not the expected five files"
+            echo "::error::the assets are not the expected three files"
             exit 1
           }
       - name: Size gate (installer, zip, dmg)
@@ -457,9 +458,9 @@ jobs:
           echo "$rel" | jq -e '.[0].assets
               | (index("SHA256SUMS") != null)
                 and (index("SHA256SUMS.minisig") != null)
-                and length == 7' >/dev/null || {
+                and length == 5' >/dev/null || {
             echo "::error::the draft lacks SHA256SUMS or its .minisig," \
-              "or has not exactly 7 assets"
+              "or has not exactly 5 assets"
             exit 1
           }
           latest=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" \
