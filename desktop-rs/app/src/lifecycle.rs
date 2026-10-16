@@ -190,13 +190,16 @@ fn install_interrupt_flag() {
 /// `tray.first_run`: autostart on, once; plugin copies older than this app refreshed and the hook
 /// script rewritten, so an app update reaches the agents already connected. Nothing of any agent
 /// is connected here: the setup wizard asks first. Never keeps the app from starting.
-pub fn first_run(cfg: &EngineConfig, registry: &Registry) {
+pub fn first_run(
+    cfg: &EngineConfig,
+    registry: &Registry,
+    autostart: &clawd_store::autostart::Autostart,
+) {
     let paths = &cfg.paths;
     let done = firstrun::load(paths)
         .map(|p| p.get_bool("first_run_done").unwrap_or(false))
         .unwrap_or(false);
     if !done {
-        let autostart = clawd_store::autostart::Autostart::new(paths, cfg.names.clone());
         if autostart.supported() {
             match autostart.enable() {
                 Ok(_) => tracing::info!("Autostart enabled"),
@@ -865,7 +868,8 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
         return 0;
     }
     let parts = build_parts(cfg.clone());
-    first_run(&cfg, &parts.services.registry);
+    let autostart = clawd_store::autostart::Autostart::new(&cfg.paths, cfg.names.clone());
+    first_run(&cfg, &parts.services.registry, &autostart);
     let Parts {
         engine,
         services,

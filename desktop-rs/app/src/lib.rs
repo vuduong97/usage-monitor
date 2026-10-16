@@ -6,8 +6,6 @@
 //! phase 02; `commands/<group>.rs` are filled in by phase 13.
 
 pub mod cli;
-// Phase 13's command stubs: phase 13 removes this allow.
-#[allow(unused_variables, dead_code)]
 pub mod commands;
 pub mod dialogs;
 pub mod engine;

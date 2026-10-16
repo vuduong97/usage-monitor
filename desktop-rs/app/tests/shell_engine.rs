@@ -1,5 +1,5 @@
 //! Ports of `tests/test_engine.py` (token, pause, screen sync, stop) plus the panic containment
-//! of red team #12. The wiring of `run` needs the real crates (03-10): `#[ignore]`d below.
+//! of red team #12. The wiring over the real crates is in `shell_engine_wiring.rs`.
 mod common;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -267,26 +267,6 @@ fn panic_messages_are_readable() {
     assert_eq!(panic_message(&*owned), "n=3");
     let other = std::panic::catch_unwind(|| std::panic::panic_any(5_u8)).unwrap_err();
     assert_eq!(panic_message(&*other), "non-string panic payload");
-}
-
-// ---- the wiring needs the real crates ---------------------------------------------------
-
-#[test]
-#[ignore = "needs 03 (PauseReader) and 08 (ClockFinder): test_a_settings_pause_empties_the_targets end to end"]
-fn engine_handle_targets_follow_the_pause_lease() {
-    unimplemented!("B'': EngineHandle::with_parts over a temp home and a fake clock");
-}
-
-#[test]
-#[ignore = "needs 03-10: test_engine_pushes_usage_to_the_found_clock, test_daemon_running_checks_the_state_endpoint"]
-fn engine_run_pushes_usage_to_the_found_clock() {
-    unimplemented!("B'': EngineHandle::start against a loopback clock and event port");
-}
-
-#[test]
-#[ignore = "needs 03/08: test_stop_twice_after_the_loop_closed_is_harmless"]
-fn stop_twice_and_poll_now_after_stop_are_harmless() {
-    unimplemented!("B'': EngineHandle::new over a temp home; stop(); stop(); poll_now()");
 }
 
 #[tokio::test]
