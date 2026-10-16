@@ -1,0 +1,1855 @@
+{
+  "input": {
+    "note": "frames are specs; pattern(n, seed); apng hashed after inflating (see module docstring)"
+  },
+  "output": {
+    "clips": [
+      {
+        "name": "full_only",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          }
+        ],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "ok": [
+            {
+              "delay_ms": 500,
+              "x": 0,
+              "y": 0,
+              "w": 240,
+              "h": 240,
+              "rgb_sha256": "2c0196991f5445b8ddf78466dfb87ba8c0285b2ffab4df89cc50cbdca906b2de"
+            }
+          ]
+        },
+        "apng_sha256": "38f141c456ffd3a28a8c1d6d14d41a926db2cfb9e41f69f4809687fb5b4a62b4",
+        "apng_normalized_sha256": "c8f0076b4858d9b8e2e2a94c360d9be19c3cf0b3b192cd48560ce33b6ec20a80",
+        "apng_url_prefix": "data:image/png;base64,",
+        "apng_url_len_ge": true
+      },
+      {
+        "name": "full_and_spot",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          },
+          {
+            "delay": 120,
+            "x": 10,
+            "y": 20,
+            "w": 2,
+            "h": 1,
+            "seed": 3
+          }
+        ],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "ok": [
+            {
+              "delay_ms": 500,
+              "x": 0,
+              "y": 0,
+              "w": 240,
+              "h": 240,
+              "rgb_sha256": "2c0196991f5445b8ddf78466dfb87ba8c0285b2ffab4df89cc50cbdca906b2de"
+            },
+            {
+              "delay_ms": 120,
+              "x": 10,
+              "y": 20,
+              "w": 2,
+              "h": 1,
+              "rgb_sha256": "f3a8eb3d8bbb31db309b41f071ebabd46006c252a78b5d04dbc86b47cf8ed918"
+            }
+          ]
+        },
+        "apng_sha256": "09bcbdf3eb597c489ba502a3383e763af12103f7b45d33bbfe9c83c5dd65c206",
+        "apng_normalized_sha256": "82eacdc48dc9e07fe2949e66f386c98ec1a7f9da509f88f64feee941eb702341",
+        "apng_url_prefix": "data:image/png;base64,",
+        "apng_url_len_ge": true
+      },
+      {
+        "name": "many",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          },
+          {
+            "delay": 120,
+            "x": 10,
+            "y": 20,
+            "w": 2,
+            "h": 1,
+            "seed": 3
+          },
+          {
+            "delay": 65535,
+            "x": 238,
+            "y": 239,
+            "w": 2,
+            "h": 1,
+            "seed": 9
+          },
+          {
+            "delay": 0,
+            "x": 0,
+            "y": 0,
+            "w": 3,
+            "h": 3,
+            "seed": 1
+          }
+        ],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "ok": [
+            {
+              "delay_ms": 500,
+              "x": 0,
+              "y": 0,
+              "w": 240,
+              "h": 240,
+              "rgb_sha256": "2c0196991f5445b8ddf78466dfb87ba8c0285b2ffab4df89cc50cbdca906b2de"
+            },
+            {
+              "delay_ms": 120,
+              "x": 10,
+              "y": 20,
+              "w": 2,
+              "h": 1,
+              "rgb_sha256": "f3a8eb3d8bbb31db309b41f071ebabd46006c252a78b5d04dbc86b47cf8ed918"
+            },
+            {
+              "delay_ms": 65535,
+              "x": 238,
+              "y": 239,
+              "w": 2,
+              "h": 1,
+              "rgb_sha256": "3209ca30d31cd41a7ea32f747ab46076a93138d8e5c6a98eb227292b57362a5c"
+            },
+            {
+              "delay_ms": 0,
+              "x": 0,
+              "y": 0,
+              "w": 3,
+              "h": 3,
+              "rgb_sha256": "ff59a40d30586d89564b3b9b8a45a26e762ffc2e9d3028124c4a175702af8838"
+            }
+          ]
+        },
+        "apng_sha256": "a5871f90cf982ef0fb8db4d7f2dc66c21eb42a1271e78e845631afafbd1884c3",
+        "apng_normalized_sha256": "a9d7be5345c30fadc928ac4342d3b5112289e846c019302361223f9ffb13f37e",
+        "apng_url_prefix": "data:image/png;base64,",
+        "apng_url_len_ge": true
+      },
+      {
+        "name": "frame0_partial",
+        "frames": [
+          {
+            "delay": 120,
+            "x": 10,
+            "y": 20,
+            "w": 2,
+            "h": 1,
+            "seed": 3
+          }
+        ],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "error": "bad clip"
+        }
+      },
+      {
+        "name": "off_screen",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          },
+          {
+            "delay": 1,
+            "x": 239,
+            "y": 0,
+            "w": 2,
+            "h": 1,
+            "seed": 1
+          }
+        ],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "error": "bad clip frame"
+        }
+      },
+      {
+        "name": "zero_width",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          },
+          {
+            "delay": 1,
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 1,
+            "seed": 1
+          }
+        ],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "error": "bad clip frame"
+        }
+      },
+      {
+        "name": "empty",
+        "frames": [],
+        "mutate": null,
+        "raw_hex": null,
+        "result": {
+          "error": "bad clip"
+        }
+      },
+      {
+        "name": "empty_bytes",
+        "frames": null,
+        "mutate": null,
+        "raw_hex": "",
+        "result": {
+          "error": "not a clawd_render clip"
+        }
+      },
+      {
+        "name": "bad_magic",
+        "frames": null,
+        "mutate": null,
+        "raw_hex": "4e4f50450100",
+        "result": {
+          "error": "not a clawd_render clip"
+        }
+      },
+      {
+        "name": "short_header",
+        "frames": null,
+        "mutate": null,
+        "raw_hex": "434c503101",
+        "result": {
+          "error": "not a clawd_render clip"
+        }
+      },
+      {
+        "name": "count_zero_with_data",
+        "frames": null,
+        "mutate": null,
+        "raw_hex": "434c50310000616263",
+        "result": {
+          "error": "bad clip"
+        }
+      },
+      {
+        "name": "cut",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          }
+        ],
+        "mutate": "cut",
+        "raw_hex": null,
+        "result": {
+          "error": "bad clip frame"
+        }
+      },
+      {
+        "name": "trailing",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          }
+        ],
+        "mutate": "trailing",
+        "raw_hex": null,
+        "result": {
+          "error": "bad clip"
+        }
+      },
+      {
+        "name": "count_too_high",
+        "frames": [
+          {
+            "delay": 500,
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 240,
+            "seed": 7
+          }
+        ],
+        "mutate": "count_too_high",
+        "raw_hex": null,
+        "result": {
+          "error": "clip cut short"
+        }
+      }
+    ],
+    "apng_errors": [
+      {
+        "name": "no_frames",
+        "result": {
+          "error": "frame 0 must be the whole screen"
+        }
+      },
+      {
+        "name": "frame0_not_whole",
+        "result": {
+          "error": "frame 0 must be the whole screen"
+        }
+      }
+    ],
+    "bmp": [
+      {
+        "seed": 0,
+        "len": 172800,
+        "result": {
+          "ok": "2d41ebdb031a6c14a4dd6e4339396001b315a1b90cf89e83f6c809377f238aa1"
+        }
+      },
+      {
+        "seed": 5,
+        "len": 172800,
+        "result": {
+          "ok": "0fcb72eb0e2f3e8751e86ebaf46ab62480b3b0b87a8f7b413f130729ad535643"
+        }
+      },
+      {
+        "seed": 200,
+        "len": 172800,
+        "result": {
+          "ok": "6baf443baefce4d6fa4080c47f07ef592095fd248858287b970a253c09341ca2"
+        }
+      },
+      {
+        "seed": 1,
+        "len": 0,
+        "result": {
+          "error": "not a 240x240 RGB frame"
+        }
+      },
+      {
+        "seed": 1,
+        "len": 5,
+        "result": {
+          "error": "not a 240x240 RGB frame"
+        }
+      },
+      {
+        "seed": 1,
+        "len": 172799,
+        "result": {
+          "error": "not a 240x240 RGB frame"
+        }
+      },
+      {
+        "seed": 1,
+        "len": 172801,
+        "result": {
+          "error": "not a 240x240 RGB frame"
+        }
+      }
+    ],
+    "live_payload": [
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 0,
+        "now": 1800000000.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800000000,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 0,
+        "now": 1800000059.9,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800000000,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 0,
+        "now": 1800000060.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800000060,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 0,
+        "now": 86399.5,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 86340,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 25200,
+        "now": 1800000000.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800025200,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 25200,
+        "now": 1800000059.9,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800025200,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 25200,
+        "now": 1800000060.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800025260,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 25200,
+        "now": 86399.5,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 111540,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": -18000,
+        "now": 1800000000.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1799982000,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": -18000,
+        "now": 1800000059.9,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1799982000,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": -18000,
+        "now": 1800000060.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1799982060,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": -18000,
+        "now": 86399.5,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 68340,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 19800,
+        "now": 1800000000.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800019800,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 19800,
+        "now": 1800000059.9,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800019800,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 19800,
+        "now": 1800000060.0,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1800019860,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 1760191500,
+          "tf": 24
+        },
+        "gmtoff": 19800,
+        "now": 86399.5,
+        "result": {
+          "s": 42,
+          "sr": 134,
+          "w": 67,
+          "wr": 3960,
+          "st": "allowed",
+          "t": 106140,
+          "tf": 24
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 0,
+        "now": 1800000000.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 0,
+        "now": 1800000059.9,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 0,
+        "now": 1800000060.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 0,
+        "now": 86399.5,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 25200,
+        "now": 1800000000.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 25200,
+        "now": 1800000059.9,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 25200,
+        "now": 1800000060.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 25200,
+        "now": 86399.5,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": -18000,
+        "now": 1800000000.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": -18000,
+        "now": 1800000059.9,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": -18000,
+        "now": 1800000060.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": -18000,
+        "now": 86399.5,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 19800,
+        "now": 1800000000.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 19800,
+        "now": 1800000059.9,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 19800,
+        "now": 1800000060.0,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {
+          "s": 1
+        },
+        "gmtoff": 19800,
+        "now": 86399.5,
+        "result": {
+          "s": 1
+        }
+      },
+      {
+        "payload": {},
+        "gmtoff": 0,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 0,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 0,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 0,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 25200,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 25200,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 25200,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 25200,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": -18000,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": -18000,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": -18000,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": -18000,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 19800,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 19800,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 19800,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": {},
+        "gmtoff": 19800,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 0,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 0,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 0,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 0,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 25200,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 25200,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 25200,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 25200,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": -18000,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": -18000,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": -18000,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": -18000,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 19800,
+        "now": 1800000000.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 19800,
+        "now": 1800000059.9,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 19800,
+        "now": 1800000060.0,
+        "result": null
+      },
+      {
+        "payload": null,
+        "gmtoff": 19800,
+        "now": 86399.5,
+        "result": null
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 0,
+        "now": 1800000000.0,
+        "result": {
+          "t": 1800000000
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 0,
+        "now": 1800000059.9,
+        "result": {
+          "t": 1800000000
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 0,
+        "now": 1800000060.0,
+        "result": {
+          "t": 1800000060
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 0,
+        "now": 86399.5,
+        "result": {
+          "t": 86340
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 25200,
+        "now": 1800000000.0,
+        "result": {
+          "t": 1800025200
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 25200,
+        "now": 1800000059.9,
+        "result": {
+          "t": 1800025200
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 25200,
+        "now": 1800000060.0,
+        "result": {
+          "t": 1800025260
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 25200,
+        "now": 86399.5,
+        "result": {
+          "t": 111540
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": -18000,
+        "now": 1800000000.0,
+        "result": {
+          "t": 1799982000
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": -18000,
+        "now": 1800000059.9,
+        "result": {
+          "t": 1799982000
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": -18000,
+        "now": 1800000060.0,
+        "result": {
+          "t": 1799982060
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": -18000,
+        "now": 86399.5,
+        "result": {
+          "t": 68340
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 19800,
+        "now": 1800000000.0,
+        "result": {
+          "t": 1800019800
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 19800,
+        "now": 1800000059.9,
+        "result": {
+          "t": 1800019800
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 19800,
+        "now": 1800000060.0,
+        "result": {
+          "t": 1800019860
+        }
+      },
+      {
+        "payload": {
+          "t": 0
+        },
+        "gmtoff": 19800,
+        "now": 86399.5,
+        "result": {
+          "t": 106140
+        }
+      }
+    ],
+    "frame_key": [
+      {
+        "style": "classic",
+        "payload": null,
+        "minute": 0,
+        "kind": "still",
+        "result": "still|classic|0|null"
+      },
+      {
+        "style": "classic",
+        "payload": null,
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|classic|0|null"
+      },
+      {
+        "style": "classic",
+        "payload": null,
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|classic|29903333|null"
+      },
+      {
+        "style": "classic",
+        "payload": null,
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|classic|29903333|null"
+      },
+      {
+        "style": "classic",
+        "payload": {},
+        "minute": 0,
+        "kind": "still",
+        "result": "still|classic|0|{}"
+      },
+      {
+        "style": "classic",
+        "payload": {},
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|classic|0|{}"
+      },
+      {
+        "style": "classic",
+        "payload": {},
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|classic|29903333|{}"
+      },
+      {
+        "style": "classic",
+        "payload": {},
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|classic|29903333|{}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 0,
+        "kind": "still",
+        "result": "still|classic|0|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|classic|0|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|classic|29903333|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|classic|29903333|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 0,
+        "kind": "still",
+        "result": "still|classic|0|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|classic|0|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|classic|29903333|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "classic",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|classic|29903333|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "synth",
+        "payload": null,
+        "minute": 0,
+        "kind": "still",
+        "result": "still|synth|0|null"
+      },
+      {
+        "style": "synth",
+        "payload": null,
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|synth|0|null"
+      },
+      {
+        "style": "synth",
+        "payload": null,
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|synth|29903333|null"
+      },
+      {
+        "style": "synth",
+        "payload": null,
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|synth|29903333|null"
+      },
+      {
+        "style": "synth",
+        "payload": {},
+        "minute": 0,
+        "kind": "still",
+        "result": "still|synth|0|{}"
+      },
+      {
+        "style": "synth",
+        "payload": {},
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|synth|0|{}"
+      },
+      {
+        "style": "synth",
+        "payload": {},
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|synth|29903333|{}"
+      },
+      {
+        "style": "synth",
+        "payload": {},
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|synth|29903333|{}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 0,
+        "kind": "still",
+        "result": "still|synth|0|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|synth|0|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|synth|29903333|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "w": 1,
+          "s": [
+            1,
+            "\u00e9",
+            null
+          ],
+          "a": 1.5,
+          "z": {
+            "b": 1,
+            "a": true
+          }
+        },
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|synth|29903333|{\"a\": 1.5, \"s\": [1, \"\\u00e9\", null], \"w\": 1, \"z\": {\"a\": true, \"b\": 1}}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 0,
+        "kind": "still",
+        "result": "still|synth|0|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 0,
+        "kind": "clip",
+        "result": "clip|synth|0|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 29903333,
+        "kind": "still",
+        "result": "still|synth|29903333|{\"s\": 42, \"t\": 1760191500}"
+      },
+      {
+        "style": "synth",
+        "payload": {
+          "s": 42,
+          "t": 1760191500
+        },
+        "minute": 29903333,
+        "kind": "clip",
+        "result": "clip|synth|29903333|{\"s\": 42, \"t\": 1760191500}"
+      }
+    ],
+    "same_commit": [
+      {
+        "a": "abc1234",
+        "b": "abc1234",
+        "result": true
+      },
+      {
+        "a": "abc1234",
+        "b": "abc1234def0",
+        "result": true
+      },
+      {
+        "a": "ABC1234DEF",
+        "b": "abc1234",
+        "result": true
+      },
+      {
+        "a": "abc1234",
+        "b": "abc1235",
+        "result": false
+      },
+      {
+        "a": "abc12",
+        "b": "abc1234",
+        "result": false
+      },
+      {
+        "a": "abc12",
+        "b": "abc12",
+        "result": true
+      },
+      {
+        "a": "",
+        "b": "",
+        "result": true
+      },
+      {
+        "a": "abcdefg",
+        "b": "",
+        "result": false
+      },
+      {
+        "a": "abcdefg",
+        "b": "abcdefgh1",
+        "result": true
+      },
+      {
+        "a": "abcdef",
+        "b": "abcdefg",
+        "result": false
+      },
+      {
+        "a": "\u00c0BCDEFG",
+        "b": "\u00e0bcdefg1",
+        "result": true
+      }
+    ],
+    "pak_count": [
+      {
+        "name": "two",
+        "build": {
+          "count": 2
+        },
+        "mutate": null,
+        "result": {
+          "ok": 2
+        }
+      },
+      {
+        "name": "one",
+        "build": {
+          "count": 1
+        },
+        "mutate": null,
+        "result": {
+          "ok": 1
+        }
+      },
+      {
+        "name": "three",
+        "build": {
+          "count": 3
+        },
+        "mutate": null,
+        "result": {
+          "ok": 3
+        }
+      },
+      {
+        "name": "sixty_three",
+        "build": {
+          "count": 63
+        },
+        "mutate": null,
+        "result": {
+          "ok": 63
+        }
+      },
+      {
+        "name": "sixty_four",
+        "build": {
+          "count": 64
+        },
+        "mutate": null,
+        "result": {
+          "error": "unknown clawd.pak version or count"
+        }
+      },
+      {
+        "name": "zero_count",
+        "build": {
+          "count": 0
+        },
+        "mutate": null,
+        "result": {
+          "error": "unknown clawd.pak version or count"
+        }
+      },
+      {
+        "name": "tall",
+        "build": {
+          "count": 2,
+          "w": 40,
+          "h": 30
+        },
+        "mutate": null,
+        "result": {
+          "ok": 2
+        }
+      },
+      {
+        "name": "zero_width",
+        "build": {
+          "count": 2,
+          "w": 0
+        },
+        "mutate": null,
+        "result": {
+          "error": "clawd.pak animation 0 is damaged"
+        }
+      },
+      {
+        "name": "zero_frames",
+        "build": {
+          "count": 2,
+          "frames": 0
+        },
+        "mutate": null,
+        "result": {
+          "error": "clawd.pak animation 0 is damaged"
+        }
+      },
+      {
+        "name": "bad_magic",
+        "build": {
+          "count": 2
+        },
+        "mutate": "bad_magic",
+        "result": {
+          "error": "not a clawd.pak"
+        }
+      },
+      {
+        "name": "truncated",
+        "build": {
+          "count": 2
+        },
+        "mutate": "truncated",
+        "result": {
+          "error": "clawd.pak animation 1 is damaged"
+        }
+      },
+      {
+        "name": "version_two",
+        "build": {
+          "count": 2
+        },
+        "mutate": "version_two",
+        "result": {
+          "error": "unknown clawd.pak version or count"
+        }
+      },
+      {
+        "name": "short",
+        "build": {
+          "count": 2
+        },
+        "mutate": "short",
+        "result": {
+          "error": "not a clawd.pak"
+        }
+      },
+      {
+        "name": "empty",
+        "build": {
+          "count": 2
+        },
+        "mutate": "empty",
+        "result": {
+          "error": "not a clawd.pak"
+        }
+      },
+      {
+        "name": "too_big",
+        "build": {
+          "count": 2
+        },
+        "mutate": "too_big",
+        "result": {
+          "error": "not a clawd.pak"
+        }
+      },
+      {
+        "name": "frames_off_beyond",
+        "build": {
+          "count": 2
+        },
+        "mutate": "frames_off_beyond",
+        "result": {
+          "error": "clawd.pak animation 0 is damaged"
+        }
+      },
+      {
+        "name": "holds_off_beyond",
+        "build": {
+          "count": 2
+        },
+        "mutate": "holds_off_beyond",
+        "result": {
+          "error": "clawd.pak animation 0 is damaged"
+        }
+      },
+      {
+        "name": "fbytes_small",
+        "build": {
+          "count": 2
+        },
+        "mutate": "fbytes_small",
+        "result": {
+          "error": "clawd.pak animation 0 is damaged"
+        }
+      }
+    ]
+  }
+}
