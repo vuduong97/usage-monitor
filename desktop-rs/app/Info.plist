@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Merged by the Tauri bundler into Clawd.app/Contents/Info.plist (macOS only). The same keys as
+     the Python bundle (packaging/clawd.spec, info_plist). CFBundleIdentifier, the name and the
+     version come from tauri.conf.json, not from here. -->
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key>
+  <string>Clawd</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>LSMinimumSystemVersion</key>
+  <string>11.0</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Clawd tìm đồng hồ Clawd trong mạng WiFi nhà bạn để hiển thị mức dùng Claude.</string>
+  <key>NSBonjourServices</key>
+  <array>
+    <string>_clawd._tcp</string>
+  </array>
+</dict>
+</plist>
