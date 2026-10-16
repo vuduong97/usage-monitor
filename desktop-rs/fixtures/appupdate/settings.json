@@ -1,0 +1,155 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "defaults",
+        "env": {},
+        "config": null
+      },
+      {
+        "name": "env_repo",
+        "env": {
+          "CLAWD_UPDATE_REPO": "fork/usage-monitor"
+        },
+        "config": null
+      },
+      {
+        "name": "config_repo",
+        "env": {},
+        "config": "update_repo = someone/else  # mine\n"
+      },
+      {
+        "name": "env_beats_config",
+        "env": {
+          "CLAWD_UPDATE_REPO": "env/repo"
+        },
+        "config": "update_repo = cfg/repo\n"
+      },
+      {
+        "name": "config_key_is_case_insensitive",
+        "env": {},
+        "config": "UPDATE_REPO = cfg/Repo\n"
+      },
+      {
+        "name": "empty_env_is_unset",
+        "env": {
+          "CLAWD_UPDATE_REPO": ""
+        },
+        "config": "update_repo = cfg/repo\n"
+      },
+      {
+        "name": "empty_config_value",
+        "env": {},
+        "config": "update_repo =\n"
+      },
+      {
+        "name": "api_override_https",
+        "env": {
+          "CLAWD_UPDATE_API": "https://example.test/api/"
+        },
+        "config": null
+      },
+      {
+        "name": "api_override_loopback",
+        "env": {
+          "CLAWD_UPDATE_API": "http://127.0.0.1:9999"
+        },
+        "config": null
+      },
+      {
+        "name": "bad_repo",
+        "env": {
+          "CLAWD_UPDATE_REPO": "not a repo"
+        },
+        "config": null
+      },
+      {
+        "name": "bad_repo_quote",
+        "env": {
+          "CLAWD_UPDATE_REPO": "it's/x y"
+        },
+        "config": null
+      },
+      {
+        "name": "bad_repo_in_config",
+        "env": {},
+        "config": "update_repo = a/b/c\n"
+      }
+    ],
+    "auto_configs": [
+      "",
+      "auto_update = off\n",
+      "auto_update = OFF\n",
+      "auto_update = false\n",
+      "auto_update = 0\n",
+      "auto_update = no\n",
+      "auto_update = on\n",
+      "auto_update = yes\n",
+      "auto_update =\n",
+      "auto_update = off # comment\n",
+      "other = off\n"
+    ]
+  },
+  "output": {
+    "sources": [
+      {
+        "repo": "vuduong97/usage-monitor",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "fork/usage-monitor",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "someone/else",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "env/repo",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "cfg/Repo",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "cfg/repo",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "vuduong97/usage-monitor",
+        "api": "https://api.github.com"
+      },
+      {
+        "repo": "vuduong97/usage-monitor",
+        "api": "https://example.test/api"
+      },
+      {
+        "repo": "vuduong97/usage-monitor",
+        "api": "http://127.0.0.1:9999"
+      },
+      {
+        "error": "bad repository name: 'not a repo'"
+      },
+      {
+        "error": "bad repository name: \"it's/x y\""
+      },
+      {
+        "error": "bad repository name: 'a/b/c'"
+      }
+    ],
+    "auto": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  }
+}

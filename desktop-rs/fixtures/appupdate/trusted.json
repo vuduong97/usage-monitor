@@ -1,0 +1,610 @@
+{
+  "input": {
+    "cases": [
+      {
+        "api": "https://api.github.com",
+        "url": "https://api.github.com/repos/o/r/releases/latest"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://github.com/o/r/releases/download/v1/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://release-assets.githubusercontent.com/o/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://objects.githubusercontent.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://raw.githubusercontent.com/o/r/main/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://gist.githubusercontent.com/o/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://githubusercontent.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://evilgithubusercontent.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://github.com.evil.example/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://evil.example/github.com"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://github.com@evil.example/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://API.GITHUB.COM/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://github.com:8443/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://github.com./x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://github.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://api.github.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://127.0.0.1:8080/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://localhost:1/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://127.0.0.1/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://127.0.0.2/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://[::1]:1/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "http://evil.example/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "ftp://github.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "file:///etc/passwd"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "github.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": ""
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https:///x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "HTTPS://github.com/x"
+      },
+      {
+        "api": "https://api.github.com",
+        "url": "https://sub.github.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://api.github.com/repos/o/r/releases/latest"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://github.com/o/r/releases/download/v1/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://release-assets.githubusercontent.com/o/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://objects.githubusercontent.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://raw.githubusercontent.com/o/r/main/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://gist.githubusercontent.com/o/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://githubusercontent.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://evilgithubusercontent.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://github.com.evil.example/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://evil.example/github.com"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://github.com@evil.example/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://API.GITHUB.COM/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://github.com:8443/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://github.com./x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://github.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://api.github.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://127.0.0.1:8080/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://localhost:1/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://127.0.0.1/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://127.0.0.2/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://[::1]:1/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "http://evil.example/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "ftp://github.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "file:///etc/passwd"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "github.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": ""
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https:///x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "HTTPS://github.com/x"
+      },
+      {
+        "api": "http://127.0.0.1:9999",
+        "url": "https://sub.github.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://api.github.com/repos/o/r/releases/latest"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://github.com/o/r/releases/download/v1/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://release-assets.githubusercontent.com/o/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://objects.githubusercontent.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://raw.githubusercontent.com/o/r/main/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://gist.githubusercontent.com/o/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://githubusercontent.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://evilgithubusercontent.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://github.com.evil.example/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://evil.example/github.com"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://github.com@evil.example/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://API.GITHUB.COM/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://github.com:8443/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://github.com./x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://github.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://api.github.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://127.0.0.1:8080/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://localhost:1/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://127.0.0.1/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://127.0.0.2/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://[::1]:1/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "http://evil.example/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "ftp://github.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "file:///etc/passwd"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "github.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": ""
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https:///x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "HTTPS://github.com/x"
+      },
+      {
+        "api": "http://localhost:9999",
+        "url": "https://sub.github.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://api.github.com/repos/o/r/releases/latest"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://github.com/o/r/releases/download/v1/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://release-assets.githubusercontent.com/o/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://objects.githubusercontent.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://raw.githubusercontent.com/o/r/main/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://gist.githubusercontent.com/o/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://githubusercontent.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://evilgithubusercontent.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://github.com.evil.example/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://evil.example/github.com"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://github.com@evil.example/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://API.GITHUB.COM/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://github.com:8443/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://github.com./x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://github.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://api.github.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://127.0.0.1:8080/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://localhost:1/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://127.0.0.1/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://127.0.0.2/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://[::1]:1/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "http://evil.example/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "ftp://github.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "file:///etc/passwd"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "github.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": ""
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https:///x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "HTTPS://github.com/x"
+      },
+      {
+        "api": "https://example.test/api",
+        "url": "https://sub.github.com/x"
+      }
+    ]
+  },
+  "output": {
+    "trusted": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  }
+}

@@ -1,0 +1,1582 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "ok_windows",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "ok_mac",
+        "files": {
+          "Clawd-0.2.0-mac-arm64.zip": "zip-bytes"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-mac-arm64.zip",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-mac-arm64.zip"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "mac",
+        "arch": "arm64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "draft",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": true,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "prerelease",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": true,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "tag_nightly",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "nightly",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "tag_rc",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0-rc1",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "tag_padded",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": " v0.2.0 ",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "tag_missing",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": null,
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "already_current",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.2.0"
+      },
+      {
+        "name": "running_newer",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.3.0"
+      },
+      {
+        "name": "no_mac_file",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "mac",
+        "arch": "arm64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "linux",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "linux",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "no_arch_given",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "",
+        "current": "0.1.0"
+      },
+      {
+        "name": "sums_asset_missing",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "sums_lack_the_file",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "sums_override": "0000000000000000000000000000000000000000000000000000000000000000  something-else.exe\n"
+      },
+      {
+        "name": "sums_binary_mode",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "sums_override": "9C0D294C05FC1D88D698034609BB81C0C69196327594E4C69D2915C80FD9850C *Clawd-0.2.0-windows-setup.exe\n"
+      },
+      {
+        "name": "evil_asset_url",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://evil.example/Clawd.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "asset_url_missing",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": null
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_zero",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 0,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_bool",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": true,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_float",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9.0,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_string",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": "9",
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_negative",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": -1,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_too_big",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 524288001,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "size_max",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 524288000,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "notes_long_and_padded",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "notes_null",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": null,
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "notes_vietnamese_cut",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "html_url_missing",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": null,
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0"
+      },
+      {
+        "name": "sums_redirect_foreign",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS": {
+            "status": 302,
+            "location": "https://evil.example/sums"
+          }
+        }
+      },
+      {
+        "name": "sums_redirect_loop",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS": {
+            "status": 302,
+            "location": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+          }
+        }
+      },
+      {
+        "name": "sums_redirect_relative",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS": {
+            "status": 302,
+            "location": "/o/r/sums-2"
+          },
+          "https://github.com/o/r/sums-2": {
+            "status": 200,
+            "text": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c  Clawd-0.2.0-windows-setup.exe\n"
+          }
+        }
+      },
+      {
+        "name": "sums_404",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS": {
+            "status": 404
+          }
+        }
+      },
+      {
+        "name": "sums_500",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://release-assets.githubusercontent.com/o/sums": {
+            "status": 500
+          }
+        }
+      },
+      {
+        "name": "sums_too_big",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://release-assets.githubusercontent.com/o/sums": {
+            "status": 200,
+            "text": {
+              "repeat": "a",
+              "count": 65537,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "sums_exactly_64k",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://release-assets.githubusercontent.com/o/sums": {
+            "status": 200,
+            "text": {
+              "repeat": "#",
+              "count": 65436,
+              "prefix": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c  Clawd-0.2.0-windows-setup.exe\n",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "api_404",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 404
+          }
+        }
+      },
+      {
+        "name": "api_403",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 403
+          }
+        }
+      },
+      {
+        "name": "api_429",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 429
+          }
+        }
+      },
+      {
+        "name": "api_500",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 500
+          }
+        }
+      },
+      {
+        "name": "api_not_json",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 200,
+            "text": "<html>"
+          }
+        }
+      },
+      {
+        "name": "api_json_list",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 200,
+            "text": "[1, 2]"
+          }
+        }
+      },
+      {
+        "name": "api_empty_object",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 200,
+            "text": "{}"
+          }
+        }
+      },
+      {
+        "name": "api_too_large",
+        "files": {
+          "Clawd-0.2.0-windows-setup.exe": "installer"
+        },
+        "release": {
+          "tag_name": "v0.2.0",
+          "draft": false,
+          "prerelease": false,
+          "body": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "html_url": "https://github.com/o/r/releases/tag/v0.2.0",
+          "assets": [
+            {
+              "name": "Clawd-0.2.0-windows-setup.exe",
+              "size": 9,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 100,
+              "browser_download_url": "https://github.com/o/r/releases/download/v0.2.0/SHA256SUMS"
+            }
+          ]
+        },
+        "system": "windows",
+        "arch": "x86_64",
+        "current": "0.1.0",
+        "routes": {
+          "https://api.github.com/repos/o/r/releases/latest": {
+            "status": 200,
+            "text": {
+              "repeat": " ",
+              "count": 2097153,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-mac-arm64.zip",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-mac-arm64.zip",
+          "size": 9,
+          "sha256": "4b9a4ac59f3c3aa32273260df6cf4bf358d1c46f8415126aa35b6380d0abb8f7"
+        }
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": " v0.2.0 ",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": null
+      },
+      {
+        "error": "SHA256SUMS kh\u00f4ng c\u00f3 Clawd-0.2.0-windows-setup.exe"
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: \u0111\u1ecba ch\u1ec9 ho\u1eb7c k\u00edch th\u01b0\u1edbc kh\u00f4ng h\u1ee3p l\u1ec7"
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 524288000,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf\u1ebf",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "error": "\u0111\u1ecba ch\u1ec9 t\u1ea3i kh\u00f4ng \u0111\u00e1ng tin"
+      },
+      {
+        "error": "qu\u00e1 nhi\u1ec1u l\u1ea7n chuy\u1ec3n h\u01b0\u1edbng"
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "error": "kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c SHA256SUMS (HTTP 404)"
+      },
+      {
+        "error": "kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c SHA256SUMS (HTTP 500)"
+      },
+      {
+        "error": "kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c SHA256SUMS (HTTP 200)"
+      },
+      {
+        "release": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "S\u1eeda l\u1ed7i xoay m\u00e0n h\u00ecnh",
+          "page": "https://github.com/o/r/releases/tag/v0.2.0",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 9,
+          "sha256": "9c0d294c05fc1d88d698034609bb81c0c69196327594e4c69d2915c80fd9850c"
+        }
+      },
+      {
+        "release": null
+      },
+      {
+        "error": "GitHub \u0111ang gi\u1edbi h\u1ea1n s\u1ed1 l\u1ea7n h\u1ecfi, th\u1eed l\u1ea1i sau"
+      },
+      {
+        "error": "GitHub \u0111ang gi\u1edbi h\u1ea1n s\u1ed1 l\u1ea7n h\u1ecfi, th\u1eed l\u1ea1i sau"
+      },
+      {
+        "error": "GitHub tr\u1ea3 HTTP 500"
+      },
+      {
+        "error": "ph\u1ea3n h\u1ed3i kh\u00f4ng ph\u1ea3i JSON"
+      },
+      {
+        "release": null
+      },
+      {
+        "release": null
+      },
+      {
+        "error": "ph\u1ea3n h\u1ed3i qu\u00e1 l\u1edbn"
+      }
+    ]
+  }
+}

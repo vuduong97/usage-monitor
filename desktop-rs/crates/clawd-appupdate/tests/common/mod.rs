@@ -2,11 +2,13 @@
 //! testkit's in-memory transport, with a throwaway minisign key pair generated per test.
 #![allow(dead_code)]
 
+use std::io;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use clawd_appupdate::{Source, Updater, UpdaterOptions};
+use clawd_config::CommandOutput;
 use clawd_contracts::{AppPaths, SUMS_NAME, SUMS_SIG_NAME};
 use clawd_testkit::appupdate::{output_ok, FakeGitHub, FakeLauncher, FakeReply, FakeRunner};
 use clawd_testkit::{FakeClock, TempConfig};
@@ -234,4 +236,99 @@ pub fn names(dir: &Path) -> Vec<String> {
         .unwrap_or_default();
     out.sort();
     out
+}
+
+// ---- macOS: codesign and ditto replaced -----------------------------------------
+pub struct Mac {
+    pub version: &'static str,
+    pub bundle_id: &'static str,
+    pub new_team: Option<&'static str>,
+    pub running_team: Option<&'static str>,
+    pub verify_rc: i32,
+}
+
+impl Default for Mac {
+    fn default() -> Self {
+        Self {
+            version: "0.2.0",
+            bundle_id: "vn.clawd.desktop",
+            new_team: Some("ABCDE12345"),
+            running_team: Some("ABCDE12345"),
+            verify_rc: 0,
+        }
+    }
+}
+
+pub fn info_plist(version: &str, bundle_id: &str) -> String {
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \
+\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict>\
+<key>CFBundleIdentifier</key><string>{bundle_id}</string>\
+<key>CFBundleShortVersionString</key><string>{version}</string></dict></plist>\n"
+    )
+}
+
+pub struct MacRig {
+    pub rig: Rig,
+    pub gh: GitHub,
+    pub running: PathBuf,
+    pub up: Updater,
+}
+
+pub fn mac_setup(m: Mac) -> MacRig {
+    let gh = GitHub::new(vec![(ZIP_NAME, b"zip-of-the-app".to_vec())]);
+    // the rig owns its temp dir; the fake machine lives under it
+    let probe = Rig::with_runner(FakeRunner::new(|_, _| Ok(output_ok())));
+    let root = probe.cfg.root().to_path_buf();
+    let running = root.join("Applications").join("Clawd.app");
+    std::fs::create_dir_all(running.join("Contents").join("MacOS")).unwrap();
+    let running_text = running.to_string_lossy().into_owned();
+    let (version, bundle_id) = (m.version, m.bundle_id);
+    let (new_team, running_team, verify_rc) = (m.new_team, m.running_team, m.verify_rc);
+    let runner = FakeRunner::new(
+        move |program, args| match (program, args.first().copied()) {
+            ("ditto", _) => {
+                let dest = Path::new(args[3]).join("Clawd.app").join("Contents");
+                std::fs::create_dir_all(dest.join("MacOS"))?;
+                std::fs::write(dest.join("Info.plist"), info_plist(version, bundle_id))?;
+                std::fs::write(dest.join("MacOS").join("Clawd"), "#!/bin/sh\n")?;
+                Ok(output_ok())
+            }
+            ("codesign", Some("--verify")) => Ok(CommandOutput {
+                status: verify_rc,
+                ..output_ok()
+            }),
+            ("codesign", _) => {
+                let team = if *args.last().unwrap() == running_text {
+                    running_team
+                } else {
+                    new_team
+                };
+                Ok(CommandOutput {
+                    stderr: format!(
+                        "Identifier=vn.clawd.desktop\nTeamIdentifier={}\n",
+                        team.unwrap_or("not set")
+                    ),
+                    ..output_ok()
+                })
+            }
+            _ => Err(io::Error::new(io::ErrorKind::NotFound, "no such program")),
+        },
+    );
+    let rig = Rig {
+        cfg: probe.cfg,
+        clock: probe.clock,
+        launcher: probe.launcher,
+        runner,
+    };
+    let mut opts = rig.options("0.1.0", "mac", "arm64", &gh.key);
+    opts.stage = root.join("stage");
+    opts.executable = Some(running.join("Contents").join("MacOS").join("Clawd"));
+    let up = Updater::new(Some(gh.source()), opts);
+    MacRig {
+        rig,
+        gh,
+        running,
+        up,
+    }
 }

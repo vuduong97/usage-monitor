@@ -1,0 +1,592 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "ok",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "tampered_same_size",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 999,
+              "prefix": "",
+              "suffix": "installer-byteX"
+            }
+          }
+        }
+      },
+      {
+        "name": "bigger_than_announced",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 10,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "smaller_than_announced",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15005,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "foreign_first_url",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://evil.example/x",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "foreign_redirect",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://evil.example/Clawd.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "http_redirect_non_loopback_api",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "http://127.0.0.1/x"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "redirect_loop",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "three_hops_then_file",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/a"
+          },
+          "https://release-assets.githubusercontent.com/o/a": {
+            "status": 301,
+            "location": "https://release-assets.githubusercontent.com/o/b"
+          },
+          "https://release-assets.githubusercontent.com/o/b": {
+            "status": 307,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "four_redirects_is_too_many",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/a"
+          },
+          "https://release-assets.githubusercontent.com/o/a": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/b"
+          },
+          "https://release-assets.githubusercontent.com/o/b": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/c"
+          },
+          "https://release-assets.githubusercontent.com/o/c": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "http_404",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 404
+          }
+        }
+      },
+      {
+        "name": "http_500",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 500
+          }
+        }
+      },
+      {
+        "name": "redirect_without_location",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": {
+              "repeat": "installer-bytes",
+              "count": 1000,
+              "prefix": "",
+              "suffix": ""
+            }
+          }
+        }
+      },
+      {
+        "name": "http_204",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 15000,
+          "sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 204
+          }
+        }
+      },
+      {
+        "name": "empty_body_zero_size_announced_one",
+        "rel": {
+          "version": "0.2.0",
+          "tag": "v0.2.0",
+          "notes": "",
+          "page": "",
+          "name": "Clawd-0.2.0-windows-setup.exe",
+          "url": "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "size": 1,
+          "sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
+        },
+        "routes": {
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe": {
+            "status": 302,
+            "location": "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+          },
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe": {
+            "status": 200,
+            "text": ""
+          }
+        }
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "error": null,
+        "dest_sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36",
+        "dir": [
+          "Clawd-0.2.0-windows-setup.exe"
+        ],
+        "last_progress": [
+          15000,
+          15000
+        ],
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: SHA-256 kh\u00f4ng kh\u1edbp, b\u1ecf file",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": [
+          15000,
+          15000
+        ],
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: l\u1edbn h\u01a1n 10 byte \u0111\u00e3 c\u00f4ng b\u1ed1",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: nh\u1eadn 15000 byte, \u0111\u00e3 c\u00f4ng b\u1ed1 15005",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": [
+          15000,
+          15005
+        ],
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "\u0111\u1ecba ch\u1ec9 t\u1ea3i kh\u00f4ng \u0111\u00e1ng tin",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": []
+      },
+      {
+        "error": "\u0111\u1ecba ch\u1ec9 t\u1ea3i kh\u00f4ng \u0111\u00e1ng tin",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "\u0111\u1ecba ch\u1ec9 t\u1ea3i kh\u00f4ng \u0111\u00e1ng tin",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "qu\u00e1 nhi\u1ec1u l\u1ea7n chuy\u1ec3n h\u01b0\u1edbng",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": null,
+        "dest_sha256": "b8e2636f43eb7355b0d43e172a8373bf1a6809c160b54f5e09fe484218f4fb36",
+        "dir": [
+          "Clawd-0.2.0-windows-setup.exe"
+        ],
+        "last_progress": [
+          15000,
+          15000
+        ],
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/a",
+          "https://release-assets.githubusercontent.com/o/b",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "qu\u00e1 nhi\u1ec1u l\u1ea7n chuy\u1ec3n h\u01b0\u1edbng",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/a",
+          "https://release-assets.githubusercontent.com/o/b",
+          "https://release-assets.githubusercontent.com/o/c"
+        ]
+      },
+      {
+        "error": "t\u1ea3i Clawd-0.2.0-windows-setup.exe: HTTP 404",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "t\u1ea3i Clawd-0.2.0-windows-setup.exe: HTTP 500",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "t\u1ea3i Clawd-0.2.0-windows-setup.exe: HTTP 302",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "t\u1ea3i Clawd-0.2.0-windows-setup.exe: HTTP 204",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      },
+      {
+        "error": "Clawd-0.2.0-windows-setup.exe: nh\u1eadn 0 byte, \u0111\u00e3 c\u00f4ng b\u1ed1 1",
+        "dest_sha256": null,
+        "dir": [],
+        "last_progress": null,
+        "asked": [
+          "https://github.com/o/r/releases/download/v0.2.0/Clawd-0.2.0-windows-setup.exe",
+          "https://release-assets.githubusercontent.com/o/Clawd-0.2.0-windows-setup.exe"
+        ]
+      }
+    ]
+  }
+}
