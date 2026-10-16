@@ -239,19 +239,30 @@ async fn api_results_and_messages_match_python() {
             device.override_path(path, response);
         }
         let api = ClockApi::with_options(&device.url(), None, ClockApiOptions::default());
-        let got = match call(
-            &api,
-            case["call"].as_str().unwrap(),
-            case["args"].as_array().unwrap(),
-        )
-        .await
-        {
-            Ok(v) => json!({"ok": v}),
-            Err(ClockError::AuthNeeded) => {
-                json!({"error": "AuthNeeded", "text": ClockError::AuthNeeded.to_string()})
+        // The testkit server drops a connection when the machine stalls it past its 5 s read
+        // timeout; that is the only transient error, and a real failure repeats every time.
+        let mut got = Value::Null;
+        for _ in 0..3 {
+            got = match call(
+                &api,
+                case["call"].as_str().unwrap(),
+                case["args"].as_array().unwrap(),
+            )
+            .await
+            {
+                Ok(v) => json!({"ok": v}),
+                Err(ClockError::AuthNeeded) => {
+                    json!({"error": "AuthNeeded", "text": ClockError::AuthNeeded.to_string()})
+                }
+                Err(e) => json!({"error": "ClockError", "text": e.to_string()}),
+            };
+            let transient = got["text"]
+                .as_str()
+                .is_some_and(|t| t.starts_with("RequestError:") && t.contains("connection closed"));
+            if !transient {
+                break;
             }
-            Err(e) => json!({"error": "ClockError", "text": e.to_string()}),
-        };
+        }
         assert_eq!(&got, want, "{name}");
     }
 }

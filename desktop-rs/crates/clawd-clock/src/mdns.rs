@@ -54,6 +54,60 @@ impl Shared {
     fn seen(&self) -> MutexGuard<'_, Seen> {
         self.seen.lock().unwrap_or_else(|e| e.into_inner())
     }
+
+    /// The resolved record of `name`, waiting up to `timeout` for the daemon to deliver it
+    /// (`ServiceBrowser` resolves on its own as soon as a service is found).
+    fn wait_resolved(&self, name: &str, timeout: Duration) -> Option<ClockTarget> {
+        let deadline = Instant::now() + timeout;
+        let mut seen = self.seen();
+        loop {
+            if let Some(c) = seen.resolved.get(name) {
+                return Some(c.clone());
+            }
+            let left = deadline.checked_duration_since(Instant::now())?;
+            seen = self
+                .resolved
+                .wait_timeout(seen, left)
+                .unwrap_or_else(|e| e.into_inner())
+                .0;
+        }
+    }
+
+    /// Apply one daemon event to the name set (`Listener.add_service/update_service/
+    /// remove_service`).
+    fn apply(&self, event: ServiceEvent) {
+        match event {
+            ServiceEvent::ServiceFound(_, name) => {
+                self.seen().names.insert(name);
+                self.changed.fetch_add(1, Ordering::SeqCst);
+            }
+            ServiceEvent::ServiceResolved(info) => {
+                let name = info.get_fullname().to_owned();
+                let clock = clock_of(&info);
+                let mut seen = self.seen();
+                seen.names.insert(name.clone());
+                match clock {
+                    Some(c) => {
+                        seen.resolved.insert(name, c);
+                    }
+                    None => {
+                        seen.resolved.remove(&name);
+                    }
+                }
+                drop(seen);
+                self.changed.fetch_add(1, Ordering::SeqCst);
+                self.resolved.notify_all();
+            }
+            ServiceEvent::ServiceRemoved(_, name) => {
+                let mut seen = self.seen();
+                seen.names.remove(&name);
+                seen.resolved.remove(&name);
+                drop(seen);
+                self.changed.fetch_add(1, Ordering::SeqCst);
+            }
+            _ => {}
+        }
+    }
 }
 
 /// The running daemon and the thread that reads its events.
@@ -68,14 +122,20 @@ pub struct MdnsBrowser {
     running: Mutex<Option<Running>>,
 }
 
+impl Shared {
+    fn new() -> Self {
+        Self {
+            seen: Mutex::new(Seen::default()),
+            resolved: Condvar::new(),
+            changed: AtomicU64::new(0),
+        }
+    }
+}
+
 impl MdnsBrowser {
     pub fn new() -> Self {
         Self {
-            shared: Arc::new(Shared {
-                seen: Mutex::new(Seen::default()),
-                resolved: Condvar::new(),
-                changed: AtomicU64::new(0),
-            }),
+            shared: Arc::new(Shared::new()),
             running: Mutex::new(None),
         }
     }
@@ -113,37 +173,7 @@ fn clock_of(info: &mdns_sd::ResolvedService) -> Option<ClockTarget> {
 
 fn consume(shared: &Shared, receiver: mdns_sd::Receiver<ServiceEvent>) {
     while let Ok(event) = receiver.recv() {
-        match event {
-            ServiceEvent::ServiceFound(_, name) => {
-                shared.seen().names.insert(name);
-                shared.changed.fetch_add(1, Ordering::SeqCst);
-            }
-            ServiceEvent::ServiceResolved(info) => {
-                let name = info.get_fullname().to_owned();
-                let clock = clock_of(&info);
-                let mut seen = shared.seen();
-                seen.names.insert(name.clone());
-                match clock {
-                    Some(c) => {
-                        seen.resolved.insert(name, c);
-                    }
-                    None => {
-                        seen.resolved.remove(&name);
-                    }
-                }
-                drop(seen);
-                shared.changed.fetch_add(1, Ordering::SeqCst);
-                shared.resolved.notify_all();
-            }
-            ServiceEvent::ServiceRemoved(_, name) => {
-                let mut seen = shared.seen();
-                seen.names.remove(&name);
-                seen.resolved.remove(&name);
-                drop(seen);
-                shared.changed.fetch_add(1, Ordering::SeqCst);
-            }
-            _ => {}
-        }
+        shared.apply(event);
     }
 }
 
@@ -194,26 +224,9 @@ impl MdnsSource for MdnsBrowser {
     }
 
     fn resolve(&self, name: &str) -> Option<ClockTarget> {
-        if self.running().is_none() {
-            return None;
-        }
-        let deadline = Instant::now() + Duration::from_millis(RESOLVE_TIMEOUT_MS);
-        let mut seen = self.shared.seen();
-        loop {
-            if let Some(c) = seen.resolved.get(name) {
-                return Some(c.clone());
-            }
-            let left = deadline.checked_duration_since(Instant::now())?;
-            let (guard, timeout) = self
-                .shared
-                .resolved
-                .wait_timeout(seen, left)
-                .unwrap_or_else(|e| e.into_inner());
-            seen = guard;
-            if timeout.timed_out() && !seen.resolved.contains_key(name) {
-                return None;
-            }
-        }
+        self.running().as_ref()?;
+        self.shared
+            .wait_resolved(name, Duration::from_millis(RESOLVE_TIMEOUT_MS))
     }
 
     fn stop(&self) {
@@ -232,5 +245,108 @@ impl MdnsSource for MdnsBrowser {
 impl Drop for MdnsBrowser {
     fn drop(&mut self) {
         self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mdns_sd::ServiceInfo;
+    use std::collections::HashMap;
+
+    fn resolved(label: &str, ip: &str, port: u16, txt: &[(&str, &str)]) -> ServiceEvent {
+        let props: HashMap<String, String> = txt
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect();
+        let info = ServiceInfo::new(MDNS_SERVICE, label, "clawd.local.", ip, port, props).unwrap();
+        ServiceEvent::ServiceResolved(Box::new(info.as_resolved_service()))
+    }
+
+    #[test]
+    fn a_resolved_service_becomes_a_clock_like_python_resolve() {
+        let shared = Shared::new();
+        shared.apply(resolved(
+            "clawd",
+            "10.0.0.7",
+            8080,
+            &[("id", "desk-1"), ("ver", "2.16.0")],
+        ));
+        let c = shared
+            .wait_resolved("clawd._clawd._tcp.local.", Duration::ZERO)
+            .unwrap();
+        assert_eq!(
+            (c.host.as_str(), c.port, c.name.as_str()),
+            ("10.0.0.7", 8080, "desk-1")
+        );
+        assert_eq!(
+            (c.version.as_str(), c.source),
+            ("2.16.0", ClockSource::Mdns)
+        );
+        assert_eq!(shared.changed.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn without_txt_the_instance_label_is_the_name_and_port_zero_is_80() {
+        let shared = Shared::new();
+        shared.apply(resolved("clawd-9", "10.0.0.8", 0, &[]));
+        let c = shared
+            .wait_resolved("clawd-9._clawd._tcp.local.", Duration::ZERO)
+            .unwrap();
+        assert_eq!(
+            (c.name.as_str(), c.port, c.version.as_str()),
+            ("clawd-9", 80, "")
+        );
+    }
+
+    #[test]
+    fn a_service_without_an_ipv4_address_is_not_resolvable() {
+        let shared = Shared::new();
+        shared.apply(resolved("v6", "fe80::1", 80, &[]));
+        assert!(shared
+            .wait_resolved("v6._clawd._tcp.local.", Duration::ZERO)
+            .is_none());
+        assert_eq!(shared.seen().names.len(), 1, "the name is still seen");
+    }
+
+    #[test]
+    fn found_and_removed_services_bump_changed_and_keep_names_sorted() {
+        let shared = Shared::new();
+        let found = |n: &str| ServiceEvent::ServiceFound(MDNS_SERVICE.into(), n.into());
+        shared.apply(found("b._clawd._tcp.local."));
+        shared.apply(found("a._clawd._tcp.local."));
+        let names: Vec<String> = shared.seen().names.iter().cloned().collect();
+        assert_eq!(names, ["a._clawd._tcp.local.", "b._clawd._tcp.local."]);
+        shared.apply(ServiceEvent::ServiceRemoved(
+            MDNS_SERVICE.into(),
+            "a._clawd._tcp.local.".into(),
+        ));
+        assert_eq!(shared.seen().names.len(), 1);
+        assert_eq!(shared.changed.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn resolve_waits_for_the_daemon_and_gives_up_after_the_timeout() {
+        let shared = Arc::new(Shared::new());
+        assert!(shared
+            .wait_resolved("x._clawd._tcp.local.", Duration::from_millis(30))
+            .is_none());
+        let late = Arc::clone(&shared);
+        let t = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(50));
+            late.apply(resolved("x", "10.0.0.5", 80, &[]));
+        });
+        let c = shared.wait_resolved("x._clawd._tcp.local.", Duration::from_secs(5));
+        assert_eq!(c.unwrap().host, "10.0.0.5");
+        t.join().unwrap();
+    }
+
+    #[test]
+    fn an_idle_browser_resolves_nothing_and_stop_is_idempotent() {
+        let browser = MdnsBrowser::new();
+        assert!(browser.names().is_empty() && browser.changed() == 0);
+        assert!(browser.resolve("x._clawd._tcp.local.").is_none());
+        browser.stop();
+        browser.stop();
     }
 }

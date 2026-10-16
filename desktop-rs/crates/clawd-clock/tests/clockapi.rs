@@ -186,7 +186,15 @@ async fn a_post_is_not_retried() {
     device.set_down(1, Duration::from_secs(2));
     let err = impatient(&device).reboot().await.unwrap_err();
     assert!(matches!(err, ClockError::NoAnswer { .. }));
-    assert_eq!(device.calls().len(), 1);
+    // a starved test machine may show the request to the server late
+    for _ in 0..100 {
+        if !device.calls().is_empty() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    assert_eq!(device.calls().len(), 1, "one try, no retry");
 }
 
 #[tokio::test]
