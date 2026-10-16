@@ -146,7 +146,7 @@ fn an_older_desk_pak_skips_the_new_animations() {
 fn question_phrase_is_picked_once_per_question_and_never_twice_in_a_row() {
     assert!(QUESTION_TEXTS.iter().all(|t| t.len() <= 20 && t.is_ascii()));
     let mut tracker = Tracker::with_rng(None, Box::new(SystemRng::seeded(7)));
-    let mut event = |tracker: &mut Tracker, ev: &str, extra: Value| {
+    let event = |tracker: &mut Tracker, ev: &str, extra: Value| {
         let mut payload = json!({"ev": ev, "sid": "p1"});
         payload
             .as_object_mut()
