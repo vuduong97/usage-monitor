@@ -1,7 +1,7 @@
 ---
 phase: 14
 title: "E2E, parity, perf gate, migration"
-status: pending
+status: in-progress
 priority: P1
 effort: "3d"
 dependencies: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]

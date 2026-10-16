@@ -88,12 +88,12 @@ Wave C (tuần tự):              14 e2e-parity-migration → 15 release-cutove
 | 9 | completed | Merge `eac5172` |
 | 10 | completed | Merge + hardening (staged file check); reviewer PASS; Rust→Rust update/rollback và mac swap.sh phải test thật ở 14 |
 | 11 | completed | Merge + review fixes (sign chỉ chạy trên tag rust-v*); iscc/notarize/minisign chưa kiểm trên runner thật; owner phải tạo environment `release`, secrets, vars MINISIGN_PUBKEY + EXPECTED_TEAM_ID, commit Cargo.lock |
-| 12 | completed (GUI → 14) | B'' xong: 113 test app, 0 ignore; sửa lỗi `EngineHandle::stop()`; checklist GUI (tray ≤1 s, Thoát, 50 chu kỳ settings, single-instance, mac popover) chuyển sang 14 |
-| 13 | completed (GUI → 14) | Đã merge + test ignore đã chạy xanh; runtime test deny popover cần feature tauri `test` (CR, chưa làm); đã tích hợp dialog plugin `557c8b0` |
-| 14 | pending (sẵn sàng) | Mọi phase phụ thuộc đã merge; cần lần chạy GUI đầu tiên có sự đồng ý của owner (hoặc VM) |
+| 12 | completed (GUI → 14) | B'' xong, 0 ignore; sửa `EngineHandle::stop()` và thứ tự cài hook `on_payload` trước khi chạy loop (bug do e2e tìm ra); checklist GUI chuyển sang 14 |
+| 13 | completed (GUI → 14) | Đã merge + 39 test bridge còn thiếu đã viết (settings_api/setup/preview); còn thiếu runtime test deny popover (cần dòng dev-dependency `tauri` feature `test` trong `app/Cargo.toml`) |
+| 14 | in-progress | Phần headless xong và đã merge: 26 test e2e, tài liệu migration Win/mac, test-mapping 413 hàm (388 ported, 6 partial, 9 dropped, 9 Python-only, 1 gap), parity checklist 49 dòng. Lần chạy GUI cô lập đầu tiên đã chạy (tray 1.34 s, cold paint 3.5 s, warm 690 ms, RAM idle 3 MB; đo lúc máy bận). CHƯA chạy: đo lại lúc rảnh, perf-final, parity thủ công trên Win + đồng hồ thật, migration 0.1.4→Rust, Rust→Rust, rollback, Mac qua GitHub Actions |
 | 15 | pending | Chờ 14 |
 
-Tồn đọng: `main` đỏ `check_public` do `Clawd Print & Paper.html` (701 KB) — chờ owner quyết; `MINISIGN_PUBKEY` còn placeholder; cần môi trường GitHub `release`.
+Tồn đọng: `MINISIGN_PUBKEY` còn placeholder (owner tạo khoá minisign rồi điền `.env` theo `packaging-rs/release-secrets.template.env`, chạy `set-release-secrets.ps1 -Apply`); environment `release` đã tạo (chỉ tag `rust-v*`, owner duyệt); commit `desktop-rs/Cargo.lock` trước tag đầu tiên; `check_public` đã xanh (allow-list file design B); test flaky cần theo dõi `feed_security::a_grant_may_only_name_relative_feed_paths`; mac chỉ kiểm qua GitHub Actions.
 
 Đường dẫn crate tương đối `desktop-rs/`; app = `desktop-rs/app/`. Fixtures: `desktop-rs/fixtures/<area>/` (area `fw`, KHÔNG `firmware` — `tools/check_public.py:13` cấm thư mục tên `firmware`), exporter `tools/golden/export_<area>.py` — phase sở hữu area.
 
