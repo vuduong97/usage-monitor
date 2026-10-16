@@ -1,0 +1,164 @@
+{
+  "input": {
+    "label": "vn.clawd.desktop",
+    "run_key": "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "run_value": "Clawd"
+  },
+  "output": {
+    "mac": [
+      {
+        "input": {
+          "cmd": [
+            "/Applications/Clawd.app/Contents/MacOS/Clawd"
+          ]
+        },
+        "output": {
+          "dict": {
+            "Label": "vn.clawd.desktop",
+            "ProgramArguments": [
+              "/Applications/Clawd.app/Contents/MacOS/Clawd"
+            ],
+            "RunAtLoad": true,
+            "KeepAlive": {
+              "SuccessfulExit": false
+            },
+            "ThrottleInterval": 30,
+            "ProcessType": "Interactive"
+          },
+          "plist_text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>KeepAlive</key>\n\t<dict>\n\t\t<key>SuccessfulExit</key>\n\t\t<false/>\n\t</dict>\n\t<key>Label</key>\n\t<string>vn.clawd.desktop</string>\n\t<key>ProcessType</key>\n\t<string>Interactive</string>\n\t<key>ProgramArguments</key>\n\t<array>\n\t\t<string>/Applications/Clawd.app/Contents/MacOS/Clawd</string>\n\t</array>\n\t<key>RunAtLoad</key>\n\t<true/>\n\t<key>ThrottleInterval</key>\n\t<integer>30</integer>\n</dict>\n</plist>\n",
+          "plist_sha256": "e2f53971b9dbb3840e5f77fcd9032f50cfd6342833a42ae2b7dd68879d85e32d",
+          "enabled_returns": true,
+          "is_enabled_before": false,
+          "is_enabled_after": true,
+          "disable_returns": true,
+          "gone_after_disable": true,
+          "disable_again_returns": true
+        }
+      },
+      {
+        "input": {
+          "cmd": [
+            "/opt/Clawd & <Co>/Clawd \u00e9"
+          ]
+        },
+        "output": {
+          "dict": {
+            "Label": "vn.clawd.desktop",
+            "ProgramArguments": [
+              "/opt/Clawd & <Co>/Clawd \u00e9"
+            ],
+            "RunAtLoad": true,
+            "KeepAlive": {
+              "SuccessfulExit": false
+            },
+            "ThrottleInterval": 30,
+            "ProcessType": "Interactive"
+          },
+          "plist_text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>KeepAlive</key>\n\t<dict>\n\t\t<key>SuccessfulExit</key>\n\t\t<false/>\n\t</dict>\n\t<key>Label</key>\n\t<string>vn.clawd.desktop</string>\n\t<key>ProcessType</key>\n\t<string>Interactive</string>\n\t<key>ProgramArguments</key>\n\t<array>\n\t\t<string>/opt/Clawd &amp; &lt;Co&gt;/Clawd \u00e9</string>\n\t</array>\n\t<key>RunAtLoad</key>\n\t<true/>\n\t<key>ThrottleInterval</key>\n\t<integer>30</integer>\n</dict>\n</plist>\n",
+          "plist_sha256": "b3a50df0a5d01b4cc6822251c0792303b5f6c31075320dcd16fcea3fb8cdc9be",
+          "enabled_returns": true,
+          "is_enabled_before": false,
+          "is_enabled_after": true,
+          "disable_returns": true,
+          "gone_after_disable": true,
+          "disable_again_returns": true
+        }
+      },
+      {
+        "input": {
+          "cmd": [
+            "/Applications/Clawd.app/Contents/MacOS/Clawd",
+            "--flag"
+          ]
+        },
+        "output": {
+          "dict": {
+            "Label": "vn.clawd.desktop",
+            "ProgramArguments": [
+              "/Applications/Clawd.app/Contents/MacOS/Clawd",
+              "--flag"
+            ],
+            "RunAtLoad": true,
+            "KeepAlive": {
+              "SuccessfulExit": false
+            },
+            "ThrottleInterval": 30,
+            "ProcessType": "Interactive"
+          },
+          "plist_text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>KeepAlive</key>\n\t<dict>\n\t\t<key>SuccessfulExit</key>\n\t\t<false/>\n\t</dict>\n\t<key>Label</key>\n\t<string>vn.clawd.desktop</string>\n\t<key>ProcessType</key>\n\t<string>Interactive</string>\n\t<key>ProgramArguments</key>\n\t<array>\n\t\t<string>/Applications/Clawd.app/Contents/MacOS/Clawd</string>\n\t\t<string>--flag</string>\n\t</array>\n\t<key>RunAtLoad</key>\n\t<true/>\n\t<key>ThrottleInterval</key>\n\t<integer>30</integer>\n</dict>\n</plist>\n",
+          "plist_sha256": "bcfc2152468028ba43cfd69f03f2505002825a5df74178a7fe8701267715513a",
+          "enabled_returns": true,
+          "is_enabled_before": false,
+          "is_enabled_after": true,
+          "disable_returns": true,
+          "gone_after_disable": true,
+          "disable_again_returns": true
+        }
+      }
+    ],
+    "windows": [
+      {
+        "input": {
+          "cmd": [
+            "D:\\Apps\\Clawd\\Clawd.exe"
+          ]
+        },
+        "output": {
+          "run_value": "\"D:\\Apps\\Clawd\\Clawd.exe\"",
+          "run_type": "REG_SZ",
+          "enabled_returns": true,
+          "is_enabled_before": false,
+          "is_enabled_after": true,
+          "disable_returns": true,
+          "gone_after_disable": true,
+          "disable_again_returns": true
+        }
+      },
+      {
+        "input": {
+          "cmd": [
+            "D:\\Apps\\Clawd \u00e9 & Co\\Clawd.exe"
+          ]
+        },
+        "output": {
+          "run_value": "\"D:\\Apps\\Clawd \u00e9 & Co\\Clawd.exe\"",
+          "run_type": "REG_SZ",
+          "enabled_returns": true,
+          "is_enabled_before": false,
+          "is_enabled_after": true,
+          "disable_returns": true,
+          "gone_after_disable": true,
+          "disable_again_returns": true
+        }
+      },
+      {
+        "input": {
+          "cmd": [
+            "C:\\Program Files\\Clawd\\Clawd.exe"
+          ]
+        },
+        "output": {
+          "run_value": "\"C:\\Program Files\\Clawd\\Clawd.exe\"",
+          "run_type": "REG_SZ",
+          "enabled_returns": true,
+          "is_enabled_before": false,
+          "is_enabled_after": true,
+          "disable_returns": true,
+          "gone_after_disable": true,
+          "disable_again_returns": true
+        }
+      }
+    ],
+    "unsupported": {
+      "supported": {
+        "darwin": true,
+        "win32": true,
+        "linux": false
+      },
+      "linux_enable": false,
+      "linux_disable": false,
+      "linux_is_enabled": false,
+      "linux_set_enabled_true": false
+    }
+  }
+}

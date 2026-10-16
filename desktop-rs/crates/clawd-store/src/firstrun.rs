@@ -110,10 +110,13 @@ fn python_str(value: &Value) -> String {
     }
 }
 
-/// `{str(x) for x in prefs.get("agents_seen") or []}`: a value that is not a list reads as none.
+/// `{str(x) for x in prefs.get("agents_seen") or []}`: iterates like Python (a string by
+/// character, an object by key); a number or `true` (a `TypeError` there) reads as none.
 fn agents_seen_of(prefs: &Prefs) -> BTreeSet<String> {
     match prefs.get("agents_seen") {
         Some(Value::Array(items)) => items.iter().map(python_str).collect(),
+        Some(Value::String(s)) => s.chars().map(String::from).collect(),
+        Some(Value::Object(map)) => map.keys().cloned().collect(),
         _ => BTreeSet::new(),
     }
 }
@@ -288,6 +291,8 @@ mod tests {
     fn seen_tolerates_wrong_types() {
         let (_dir, paths) = temp_paths();
         write(&paths, json!({"agents_seen": "codex"}));
+        assert_eq!(seen(&paths).len(), 5); // Python iterates the string's characters
+        write(&paths, json!({"agents_seen": 5}));
         assert!(seen(&paths).is_empty());
         write(&paths, json!({"agents_seen": ["a", 3, null, true, 1.5]}));
         let got: Vec<_> = seen(&paths).into_iter().collect();

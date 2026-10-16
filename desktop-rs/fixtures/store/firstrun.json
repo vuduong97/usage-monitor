@@ -1,0 +1,2524 @@
+{
+  "input": {
+    "steps": [
+      "clock",
+      "agents",
+      "usage"
+    ],
+    "version_token": "@VERSION@"
+  },
+  "output": {
+    "cases": [
+      {
+        "prefs": "fresh",
+        "fn": "migrate",
+        "args": [],
+        "file": null,
+        "result": {
+          "setup_done": []
+        },
+        "file_text": null
+      },
+      {
+        "prefs": "fresh",
+        "fn": "load",
+        "args": [],
+        "file": null,
+        "result": {
+          "setup_done": []
+        },
+        "file_text": "{\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "pending",
+        "args": [],
+        "file": null,
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": null
+      },
+      {
+        "prefs": "fresh",
+        "fn": "should_open",
+        "args": [],
+        "file": null,
+        "result": true,
+        "file_text": null
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": null,
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": null,
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": null,
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": null,
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_shown",
+        "args": [],
+        "file": null,
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "seen",
+        "args": [],
+        "file": null,
+        "result": [],
+        "file_text": null
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": null,
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": null,
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": null,
+        "result": null,
+        "file_text": "{\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "fresh",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": null,
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": null
+      },
+      {
+        "prefs": "empty",
+        "fn": "migrate",
+        "args": [],
+        "file": "{}",
+        "result": {
+          "setup_done": []
+        },
+        "file_text": "{}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "load",
+        "args": [],
+        "file": "{}",
+        "result": {
+          "setup_done": []
+        },
+        "file_text": "{\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "pending",
+        "args": [],
+        "file": "{}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "should_open",
+        "args": [],
+        "file": "{}",
+        "result": true,
+        "file_text": "{}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "seen",
+        "args": [],
+        "file": "{}",
+        "result": [],
+        "file_text": "{}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "empty",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": {
+          "first_run_done": true,
+          "usage_source": "claude",
+          "setup_done": [
+            "clock"
+          ]
+        },
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": {
+          "first_run_done": true,
+          "usage_source": "claude",
+          "setup_done": [
+            "clock"
+          ]
+        },
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": true,
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\",\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_from_0_1_x",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"first_run_done\": true,\n  \"usage_source\": \"claude\"\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": {
+          "first_run_done": 0,
+          "setup_done": []
+        },
+        "file_text": "{\n  \"first_run_done\": 0\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": {
+          "first_run_done": 0,
+          "setup_done": []
+        },
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"first_run_done\": 0\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": true,
+        "file_text": "{\n  \"first_run_done\": 0\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [],
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": [],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [],
+        "file_text": "{\n  \"first_run_done\": 0\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": null,
+        "file_text": "{\n  \"first_run_done\": 0,\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "upgrade_falsy",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"first_run_done\": 0\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"first_run_done\": 0\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": {
+          "setup_done": [
+            "clock",
+            "agents"
+          ],
+          "x": 1
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": {
+          "setup_done": [
+            "clock",
+            "agents"
+          ],
+          "x": 1
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1,\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1,\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1,\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_list",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\"\n  ],\n  \"x\": 1\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": {
+          "setup_done": [
+            "clock",
+            "agents",
+            "usage"
+          ]
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": {
+          "setup_done": [
+            "clock",
+            "agents",
+            "usage"
+          ]
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": false,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_all",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": {
+          "setup_done": [
+            "clock",
+            7,
+            null
+          ],
+          "setup_shown": "0.0.1"
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": {
+          "setup_done": [
+            "clock",
+            7,
+            null
+          ],
+          "setup_shown": "0.0.1"
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null,\n    \"usage\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null,\n    \"agents\",\n    \"usage\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\",\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\",\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_junk",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    7,\n    null\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": {
+          "setup_done": [
+            "clock"
+          ],
+          "first_run_done": 1
+        },
+        "file_text": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": {
+          "setup_done": [
+            "clock"
+          ],
+          "first_run_done": 1
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"usage\"\n  ],\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1,\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1,\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1,\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "done_wrong_type",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": \"clock\",\n  \"first_run_done\": 1\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": {
+          "setup_done": [
+            "clock"
+          ],
+          "setup_shown": "@VERSION@"
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": {
+          "setup_done": [
+            "clock"
+          ],
+          "setup_shown": "@VERSION@"
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": false,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"usage\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\",\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\",\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_current",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": {
+          "setup_done": [
+            "clock"
+          ],
+          "setup_shown": "0.0.1"
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": {
+          "setup_done": [
+            "clock"
+          ],
+          "setup_shown": "0.0.1"
+        },
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"usage\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\",\n    \"agents\",\n    \"usage\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\",\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\",\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_old",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": \"0.0.1\"\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": {
+          "setup_done": [],
+          "setup_shown": 5
+        },
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": {
+          "setup_done": [],
+          "setup_shown": 5
+        },
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5,\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5,\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "shown_wrong_type",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"setup_shown\": 5\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": {
+          "setup_done": [],
+          "agents_seen": [
+            "pi",
+            "codex"
+          ]
+        },
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": {
+          "setup_done": [],
+          "agents_seen": [
+            "pi",
+            "codex"
+          ]
+        },
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [
+          "codex",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"amp\",\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_list",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}",
+        "result": [
+          "cursor"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"pi\",\n    \"codex\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": {
+          "setup_done": [],
+          "agents_seen": "codex"
+        },
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": {
+          "setup_done": [],
+          "agents_seen": "codex"
+        },
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": true,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"clock\"\n  ],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [],
+        "file_text": "{\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\",\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [
+          "c",
+          "d",
+          "e",
+          "o",
+          "x"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"c\",\n    \"codex\",\n    \"d\",\n    \"e\",\n    \"o\",\n    \"pi\",\n    \"x\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"amp\",\n    \"c\",\n    \"d\",\n    \"e\",\n    \"o\",\n    \"x\"\n  ]\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": null,
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "seen_wrong",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"setup_done\": [],\n  \"agents_seen\": \"codex\"\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "migrate",
+        "args": [],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": {
+          "b": 1,
+          "a": 2,
+          "setup_done": []
+        },
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "load",
+        "args": [],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": {
+          "b": 1,
+          "a": 2,
+          "setup_done": []
+        },
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "pending",
+        "args": [],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "should_open",
+        "args": [],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": true,
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_done",
+        "args": [
+          [
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": [\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_done",
+        "args": [
+          [
+            "usage",
+            "bogus",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [
+          "agents"
+        ],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": [\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_done",
+        "args": [
+          [
+            "agents",
+            "usage",
+            "clock"
+          ]
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": [\n    \"agents\",\n    \"usage\",\n    \"clock\"\n  ]\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_done",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [
+          "clock",
+          "agents",
+          "usage"
+        ],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_shown",
+        "args": [],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": null,
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": [],\n  \"setup_shown\": \"@VERSION@\"\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "seen",
+        "args": [],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "pi",
+            "codex",
+            "pi"
+          ]
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": null,
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"codex\",\n    \"pi\"\n  ]\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_seen",
+        "args": [
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": null,
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": [],\n  \"agents_seen\": [\n    \"amp\"\n  ]\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "mark_seen",
+        "args": [
+          []
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": null,
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2,\n  \"setup_done\": []\n}"
+      },
+      {
+        "prefs": "key_order",
+        "fn": "new_agents",
+        "args": [
+          [
+            "codex",
+            "pi",
+            "amp",
+            "cursor",
+            "pi"
+          ],
+          [
+            "amp"
+          ]
+        ],
+        "file": "{\n  \"b\": 1,\n  \"a\": 2\n}",
+        "result": [
+          "codex",
+          "pi",
+          "cursor",
+          "pi"
+        ],
+        "file_text": "{\n  \"b\": 1,\n  \"a\": 2\n}"
+      }
+    ]
+  }
+}

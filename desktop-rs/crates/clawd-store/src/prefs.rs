@@ -96,6 +96,39 @@ pub(crate) fn replace_file(from: &Path, to: &Path) -> io::Result<()> {
     retrying(|| std::fs::rename(from, to))
 }
 
+/// Python's `==` on two JSON values: `1 == 1.0 == True`, dicts compare without regard to key
+/// order. `update_prefs` only rewrites the file when the result is `!=` the original in this
+/// sense (so setting `clock_screen = 1` over a stored `1.0` leaves the file alone).
+pub(crate) fn py_eq(a: &Value, b: &Value) -> bool {
+    fn num(v: &Value) -> Option<f64> {
+        match v {
+            Value::Number(n) => n.as_f64(),
+            Value::Bool(b) => Some(f64::from(u8::from(*b))),
+            _ => None,
+        }
+    }
+    match (a, b) {
+        (Value::Array(x), Value::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(p, q)| py_eq(p, q))
+        }
+        (Value::Object(x), Value::Object(y)) => py_eq_maps(x, y),
+        (Value::String(x), Value::String(y)) => x == y,
+        (Value::Null, Value::Null) => true,
+        (Value::Number(x), Value::Number(y)) if x.is_i64() || x.is_u64() => {
+            if y.is_i64() || y.is_u64() {
+                x == y
+            } else {
+                num(a) == num(b)
+            }
+        }
+        _ => matches!((num(a), num(b)), (Some(x), Some(y)) if x == y),
+    }
+}
+
+fn py_eq_maps(x: &serde_json::Map<String, Value>, y: &serde_json::Map<String, Value>) -> bool {
+    x.len() == y.len() && x.iter().all(|(k, v)| y.get(k).is_some_and(|w| py_eq(v, w)))
+}
+
 /// `paths.load_prefs()`: for reading only (empty when missing, corrupt, not an object, or
 /// unreadable); changes go through [`update_prefs`].
 pub fn load_prefs(paths: &AppPaths) -> Prefs {
@@ -112,7 +145,7 @@ pub fn update_prefs<F: FnOnce(&mut Prefs)>(paths: &AppPaths, change: F) -> io::R
     let mut prefs = read_prefs(paths)?;
     let before = prefs.clone();
     change(&mut prefs);
-    if prefs != before || !paths.prefs_file().exists() {
+    if !py_eq_maps(&prefs, &before) || !paths.prefs_file().exists() {
         write_prefs(paths, &prefs)?;
     }
     Ok(prefs)
@@ -203,6 +236,28 @@ mod tests {
             "{\n  \"setup_done\": \"clock\",\n  \"usage\": {\n    \"screen\": 300\n  },\n  \"ratio\": 1.0,\n  \"name\": \"\\u0110\",\n  \"clock_screen\": 1\n}"
         );
         assert_eq!(clock_screen(&paths), Some(1));
+    }
+
+    #[test]
+    fn python_equality_decides_whether_to_rewrite() {
+        assert!(py_eq(&json!(1), &json!(1.0)));
+        assert!(py_eq(&json!(1.0), &json!(1)));
+        assert!(py_eq(&json!(true), &json!(1)));
+        assert!(!py_eq(&json!(1), &json!(2)));
+        assert!(!py_eq(&json!("1"), &json!(1)));
+        assert!(py_eq(
+            &json!({"a": 1, "b": [1.0]}),
+            &json!({"b": [1], "a": 1})
+        ));
+        assert!(!py_eq(&json!({"a": 1}), &json!({"a": 1, "b": 2})));
+        assert!(!py_eq(&json!(null), &json!(0)));
+        let (_dir, paths) = temp_paths();
+        write_raw(&paths, r#"{"clock_screen":1.0}"#);
+        set_clock_screen(&paths, 1).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(paths.prefs_file()).unwrap(),
+            r#"{"clock_screen":1.0}"#
+        );
     }
 
     #[test]

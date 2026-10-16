@@ -1,0 +1,276 @@
+{
+  "input": {
+    "max_lease": 300.0,
+    "pid_token": "\"pid\": 0"
+  },
+  "output": {
+    "hold": [
+      {
+        "input": {
+          "seconds": 60.0,
+          "reason": "firmware",
+          "now": 1000.5
+        },
+        "output": {
+          "file_text": "{\"until\": 1060.5, \"reason\": \"firmware\", \"pid\": 0}"
+        }
+      },
+      {
+        "input": {
+          "seconds": 3600.0,
+          "reason": "fw upload",
+          "now": 1000.0
+        },
+        "output": {
+          "file_text": "{\"until\": 1300.0, \"reason\": \"fw upload\", \"pid\": 0}"
+        }
+      },
+      {
+        "input": {
+          "seconds": 0.25,
+          "reason": "short",
+          "now": 5.0
+        },
+        "output": {
+          "file_text": "{\"until\": 5.25, \"reason\": \"short\", \"pid\": 0}"
+        }
+      },
+      {
+        "input": {
+          "seconds": 0.0,
+          "reason": "zero",
+          "now": 1000.0
+        },
+        "output": {
+          "file_text": "{\"until\": 1000.0, \"reason\": \"zero\", \"pid\": 0}"
+        }
+      },
+      {
+        "input": {
+          "seconds": -5.0,
+          "reason": "negative",
+          "now": 1000.0
+        },
+        "output": {
+          "file_text": "{\"until\": 995.0, \"reason\": \"negative\", \"pid\": 0}"
+        }
+      },
+      {
+        "input": {
+          "seconds": 300.0,
+          "reason": "cap edge",
+          "now": 1700000000.123456
+        },
+        "output": {
+          "file_text": "{\"until\": 1700000300.123456, \"reason\": \"cap edge\", \"pid\": 0}"
+        }
+      },
+      {
+        "input": {
+          "seconds": 10.0,
+          "reason": "unicode \u0110 \u2603",
+          "now": 1.0
+        },
+        "output": {
+          "file_text": "{\"until\": 11.0, \"reason\": \"unicode \\u0110 \\u2603\", \"pid\": 0}"
+        }
+      }
+    ],
+    "release": {
+      "exists_after_release": false
+    },
+    "reads": [
+      {
+        "name": "active",
+        "input": {
+          "file": "{\"until\": 1100.5, \"reason\": \"firmware\", \"pid\": 1}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "firmware"
+        }
+      },
+      {
+        "name": "last tick",
+        "input": {
+          "file": "{\"until\": 1100, \"reason\": \"fw\"}",
+          "now": 1099.999
+        },
+        "output": {
+          "reason": "fw"
+        }
+      },
+      {
+        "name": "expired exactly",
+        "input": {
+          "file": "{\"until\": 1100, \"reason\": \"fw\"}",
+          "now": 1100.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "expired",
+        "input": {
+          "file": "{\"until\": 900, \"reason\": \"fw\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "lease boundary 300",
+        "input": {
+          "file": "{\"until\": 1300, \"reason\": \"edge\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "edge"
+        }
+      },
+      {
+        "name": "beyond lease 301",
+        "input": {
+          "file": "{\"until\": 1301, \"reason\": \"far\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "no reason",
+        "input": {
+          "file": "{\"until\": 1100}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "settings"
+        }
+      },
+      {
+        "name": "empty reason",
+        "input": {
+          "file": "{\"until\": 1100, \"reason\": \"\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "settings"
+        }
+      },
+      {
+        "name": "null reason",
+        "input": {
+          "file": "{\"until\": 1100, \"reason\": null}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "settings"
+        }
+      },
+      {
+        "name": "numeric reason",
+        "input": {
+          "file": "{\"until\": 1100, \"reason\": 7}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "7"
+        }
+      },
+      {
+        "name": "string until",
+        "input": {
+          "file": "{\"until\": \"1100\", \"reason\": \"s\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "s"
+        }
+      },
+      {
+        "name": "bool until",
+        "input": {
+          "file": "{\"until\": true, \"reason\": \"b\"}",
+          "now": 0.5
+        },
+        "output": {
+          "reason": "b"
+        }
+      },
+      {
+        "name": "null until",
+        "input": {
+          "file": "{\"until\": null, \"reason\": \"n\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "list until",
+        "input": {
+          "file": "{\"until\": [1], \"reason\": \"l\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "missing until",
+        "input": {
+          "file": "{\"reason\": \"m\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "array file",
+        "input": {
+          "file": "[1100]",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "garbage",
+        "input": {
+          "file": "{nope",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "empty file",
+        "input": {
+          "file": "",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": null
+        }
+      },
+      {
+        "name": "unicode reason",
+        "input": {
+          "file": "{\"until\": 1100, \"reason\": \"C\\u1eadp nh\\u1eadt \\u2603\"}",
+          "now": 1000.0
+        },
+        "output": {
+          "reason": "C\u1eadp nh\u1eadt \u2603"
+        }
+      }
+    ],
+    "missing_file": null
+  }
+}

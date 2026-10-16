@@ -27,3 +27,4 @@ security-framework = { workspace = true }
 [dev-dependencies]
 clawd-testkit = { workspace = true }
 tempfile = { workspace = true }
+sha2 = { workspace = true }

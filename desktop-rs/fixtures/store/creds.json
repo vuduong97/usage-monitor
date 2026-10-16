@@ -1,0 +1,149 @@
+{
+  "input": {
+    "service": "vn.clawd.desktop",
+    "default_user": "admin"
+  },
+  "output": {
+    "puts": [
+      {
+        "input": {
+          "key": "clock-1",
+          "user": "root",
+          "password": "pa\nss"
+        },
+        "output": {
+          "ok": true,
+          "secret": "root\npa\nss",
+          "get": [
+            "root",
+            "pa\nss"
+          ]
+        }
+      },
+      {
+        "input": {
+          "key": "clock-2",
+          "user": "admin",
+          "password": ""
+        },
+        "output": {
+          "ok": true,
+          "secret": "admin\n",
+          "get": [
+            "admin",
+            ""
+          ]
+        }
+      },
+      {
+        "input": {
+          "key": "\u0110\u1ed3ng h\u1ed3",
+          "user": "ng\u01b0\u1eddi d\u00f9ng",
+          "password": "m\u1eadt kh\u1ea9u \ud83d\ude00"
+        },
+        "output": {
+          "ok": true,
+          "secret": "ng\u01b0\u1eddi d\u00f9ng\nm\u1eadt kh\u1ea9u \ud83d\ude00",
+          "get": [
+            "ng\u01b0\u1eddi d\u00f9ng",
+            "m\u1eadt kh\u1ea9u \ud83d\ude00"
+          ]
+        }
+      },
+      {
+        "input": {
+          "key": "k",
+          "user": "",
+          "password": "pw"
+        },
+        "output": {
+          "ok": true,
+          "secret": "\npw",
+          "get": [
+            "",
+            "pw"
+          ]
+        }
+      },
+      {
+        "input": {
+          "key": "k2",
+          "user": "u",
+          "password": "a\r\nb"
+        },
+        "output": {
+          "ok": true,
+          "secret": "u\na\r\nb",
+          "get": [
+            "u",
+            "a\r\nb"
+          ]
+        }
+      }
+    ],
+    "gets": [
+      {
+        "secret": "",
+        "get": null
+      },
+      {
+        "secret": "plain",
+        "get": [
+          "admin",
+          "plain"
+        ]
+      },
+      {
+        "secret": "u\np",
+        "get": [
+          "u",
+          "p"
+        ]
+      },
+      {
+        "secret": "u\n",
+        "get": [
+          "u",
+          ""
+        ]
+      },
+      {
+        "secret": "\nx",
+        "get": [
+          "",
+          "x"
+        ]
+      },
+      {
+        "secret": "a\nb\nc",
+        "get": [
+          "a",
+          "b\nc"
+        ]
+      },
+      {
+        "secret": "admin\n",
+        "get": [
+          "admin",
+          ""
+        ]
+      },
+      {
+        "secret": "\n",
+        "get": [
+          "",
+          ""
+        ]
+      },
+      {
+        "secret": "\u00e9\n\u00fc",
+        "get": [
+          "\u00e9",
+          "\u00fc"
+        ]
+      }
+    ],
+    "missing": null,
+    "after_forget": null
+  }
+}
