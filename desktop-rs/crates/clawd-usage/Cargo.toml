@@ -13,6 +13,12 @@ clawd-config = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+reqwest = { workspace = true }
+tracing = { workspace = true }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+unicode-normalization = "0.1"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 clawd-testkit = { workspace = true }
+tempfile = { workspace = true }

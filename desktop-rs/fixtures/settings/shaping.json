@@ -1,0 +1,503 @@
+{
+  "input": {
+    "note": "pure shaping of settings_api.py"
+  },
+  "output": {
+    "clean": [
+      {
+        "input": {
+          "hostname": "clawd",
+          "brightness": 50,
+          "evil": 1,
+          "usage": {
+            "screen": 1,
+            "bogus": 2
+          }
+        },
+        "result": {
+          "ok": {
+            "hostname": "clawd",
+            "brightness": 50,
+            "usage": {
+              "screen": 1
+            }
+          }
+        }
+      },
+      {
+        "input": {
+          "brightness": 101
+        },
+        "result": {
+          "error": "brightness: needs a whole number 0..100"
+        }
+      },
+      {
+        "input": {
+          "brightness": true
+        },
+        "result": {
+          "error": "brightness: needs a whole number 0..100"
+        }
+      },
+      {
+        "input": {
+          "brightness": 5.0
+        },
+        "result": {
+          "error": "brightness: needs a whole number 0..100"
+        }
+      },
+      {
+        "input": {
+          "hostname": "Bad Name"
+        },
+        "result": {
+          "error": "hostname: bad text"
+        }
+      },
+      {
+        "input": {
+          "hostname": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "result": {
+          "ok": {
+            "hostname": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      {
+        "input": {
+          "hostname": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "result": {
+          "error": "hostname: bad text"
+        }
+      },
+      {
+        "input": {
+          "rotation": 3,
+          "usage": {
+            "anim": -1,
+            "layout": 15
+          }
+        },
+        "result": {
+          "ok": {
+            "rotation": 3,
+            "usage": {
+              "anim": -1,
+              "layout": 15
+            }
+          }
+        }
+      },
+      {
+        "input": {
+          "usage": {
+            "anim": 64
+          }
+        },
+        "result": {
+          "error": "usage: anim: needs a whole number -1..63"
+        }
+      },
+      {
+        "input": {
+          "clock": {
+            "tz": "Asia/Ho_Chi_Minh",
+            "nightEnabled": true,
+            "nightStart": "22:30",
+            "nightEnd": "06:00",
+            "nightLevel": 10
+          }
+        },
+        "result": {
+          "ok": {
+            "clock": {
+              "tz": "Asia/Ho_Chi_Minh",
+              "nightEnabled": true,
+              "nightStart": "22:30",
+              "nightEnd": "06:00",
+              "nightLevel": 10
+            }
+          }
+        }
+      },
+      {
+        "input": {
+          "clock": {
+            "nightStart": "24:00"
+          }
+        },
+        "result": {
+          "error": "clock: nightStart: bad text"
+        }
+      },
+      {
+        "input": {
+          "clock": {
+            "nightEnabled": 1
+          }
+        },
+        "result": {
+          "error": "clock: nightEnabled: needs true/false"
+        }
+      },
+      {
+        "input": {
+          "wifi": [
+            {
+              "ssid": "Home",
+              "pass": "",
+              "passSet": true
+            },
+            {
+              "ssid": "Phone",
+              "pass": "password1"
+            }
+          ]
+        },
+        "result": {
+          "ok": {
+            "wifi": [
+              {
+                "ssid": "Home"
+              },
+              {
+                "ssid": "Phone",
+                "pass": "password1"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "input": {
+          "wifi": []
+        },
+        "result": {
+          "error": "wifi: 1 to 4 networks"
+        }
+      },
+      {
+        "input": {
+          "wifi": [
+            {
+              "ssid": "A"
+            },
+            {
+              "ssid": "A"
+            }
+          ]
+        },
+        "result": {
+          "error": "wifi: network A twice"
+        }
+      },
+      {
+        "input": {
+          "wifi": [
+            {
+              "ssid": "A",
+              "pass": "short"
+            }
+          ]
+        },
+        "result": {
+          "error": "wifi: bad text"
+        }
+      },
+      {
+        "input": {
+          "wifi": [
+            "x"
+          ]
+        },
+        "result": {
+          "error": "wifi: bad network row"
+        }
+      },
+      {
+        "input": "not a dict",
+        "result": {
+          "ok": {}
+        }
+      }
+    ],
+    "clock_view": [
+      {
+        "cfg": {
+          "hostname": "clawd",
+          "brightness": 999,
+          "uptime": 5,
+          "wifi": [
+            {
+              "ssid": "Home",
+              "passSet": true
+            },
+            {
+              "ssid": ""
+            },
+            "junk"
+          ]
+        },
+        "view": {
+          "hostname": "clawd",
+          "wifi": [
+            {
+              "ssid": "Home"
+            }
+          ]
+        }
+      },
+      {
+        "cfg": {
+          "hostname": "clawd",
+          "brightness": 40,
+          "rotation": 1,
+          "wifi": [
+            {
+              "ssid": "Home",
+              "passSet": true
+            }
+          ],
+          "usage": {
+            "screen": 1,
+            "anim": 3,
+            "layout": 2
+          },
+          "clock": {
+            "tz": "UTC",
+            "nightEnabled": false,
+            "nightStart": "22:00",
+            "nightEnd": "06:00",
+            "nightLevel": 5
+          }
+        },
+        "view": {
+          "hostname": "clawd",
+          "brightness": 40,
+          "rotation": 1,
+          "wifi": [
+            {
+              "ssid": "Home"
+            }
+          ],
+          "usage": {
+            "screen": 1,
+            "anim": 3,
+            "layout": 2
+          },
+          "clock": {
+            "tz": "UTC",
+            "nightEnabled": false,
+            "nightStart": "22:00",
+            "nightEnd": "06:00",
+            "nightLevel": 5
+          }
+        }
+      }
+    ],
+    "diff": [
+      {
+        "cfg": {
+          "hostname": "clawd",
+          "brightness": 40,
+          "rotation": 1,
+          "wifi": [
+            {
+              "ssid": "Home",
+              "passSet": true
+            }
+          ],
+          "usage": {
+            "screen": 1,
+            "anim": 3,
+            "layout": 2
+          },
+          "clock": {
+            "tz": "UTC",
+            "nightEnabled": false,
+            "nightStart": "22:00",
+            "nightEnd": "06:00",
+            "nightLevel": 5
+          }
+        },
+        "edited": {
+          "brightness": 60,
+          "usage": {
+            "screen": 2
+          }
+        },
+        "changes": {
+          "brightness": 60,
+          "usage": {
+            "screen": 2
+          }
+        }
+      },
+      {
+        "cfg": {
+          "hostname": "clawd",
+          "brightness": 40,
+          "rotation": 1,
+          "wifi": [
+            {
+              "ssid": "Home",
+              "passSet": true
+            }
+          ],
+          "usage": {
+            "screen": 1,
+            "anim": 3,
+            "layout": 2
+          },
+          "clock": {
+            "tz": "UTC",
+            "nightEnabled": false,
+            "nightStart": "22:00",
+            "nightEnd": "06:00",
+            "nightLevel": 5
+          }
+        },
+        "edited": {
+          "brightness": 40
+        },
+        "changes": {}
+      },
+      {
+        "cfg": {
+          "hostname": "clawd",
+          "brightness": 40,
+          "rotation": 1,
+          "wifi": [
+            {
+              "ssid": "Home",
+              "passSet": true
+            }
+          ],
+          "usage": {
+            "screen": 1,
+            "anim": 3,
+            "layout": 2
+          },
+          "clock": {
+            "tz": "UTC",
+            "nightEnabled": false,
+            "nightStart": "22:00",
+            "nightEnd": "06:00",
+            "nightLevel": 5
+          }
+        },
+        "edited": {
+          "wifi": [
+            {
+              "ssid": "Home"
+            },
+            {
+              "ssid": "Cafe",
+              "pass": "password1"
+            }
+          ]
+        },
+        "changes": {
+          "wifi": [
+            {
+              "ssid": "Home"
+            },
+            {
+              "ssid": "Cafe",
+              "pass": "password1"
+            }
+          ]
+        }
+      },
+      {
+        "cfg": {
+          "hostname": "clawd",
+          "brightness": 40,
+          "rotation": 1,
+          "wifi": [
+            {
+              "ssid": "Home",
+              "passSet": true
+            }
+          ],
+          "usage": {
+            "screen": 1,
+            "anim": 3,
+            "layout": 2
+          },
+          "clock": {
+            "tz": "UTC",
+            "nightEnabled": false,
+            "nightStart": "22:00",
+            "nightEnd": "06:00",
+            "nightLevel": 5
+          }
+        },
+        "edited": {
+          "clock": {
+            "nightEnabled": true
+          }
+        },
+        "changes": {
+          "clock": {
+            "nightEnabled": true
+          }
+        }
+      }
+    ],
+    "errors": [
+      {
+        "name": "AuthNeeded",
+        "response": {
+          "ok": false,
+          "code": "auth",
+          "error": "\u0110\u1ed3ng h\u1ed3 c\u1ea7n m\u1eadt kh\u1ea9u trang c\u00e0i \u0111\u1eb7t."
+        }
+      },
+      {
+        "name": "NoAnswer",
+        "response": {
+          "ok": false,
+          "code": "offline",
+          "error": "\u0110\u1ed3ng h\u1ed3 kh\u00f4ng tr\u1ea3 l\u1eddi. \u0110\u1ed3ng h\u1ed3 c\u00f2n b\u1eadt v\u00e0 c\u00f9ng m\u1ea1ng Wi\u2011Fi kh\u00f4ng?"
+        }
+      },
+      {
+        "name": "Http",
+        "response": {
+          "ok": false,
+          "code": "error",
+          "error": "L\u1ed7i: HTTP 500: boom"
+        }
+      }
+    ],
+    "scan": {
+      "ok": true,
+      "networks": [
+        {
+          "ssid": "Cafe",
+          "rssi": -50,
+          "enc": false
+        },
+        {
+          "ssid": "Home",
+          "rssi": -60,
+          "enc": true
+        },
+        {
+          "ssid": "Far",
+          "rssi": -100,
+          "enc": false
+        }
+      ]
+    },
+    "job_idle": {
+      "ok": true,
+      "running": false
+    }
+  }
+}

@@ -1,7 +1,6 @@
-//! `clawd-agents`: the coding agents Clawd listens to, one adapter each (phase 05 implements it).
+//! `clawd-agents`: the coding agents Clawd listens to, one adapter each .
 //!
-//! STUB (phase 02): real signatures and docs, `todo!()` bodies. Python origin:
-//! `agents/*.py` and `hooks.py` (see `desktop-rs/PORT-MAP.md`).
+//! Python origin: `agents/*.py` and `hooks.py` (see `desktop-rs/PORT-MAP.md`).
 //!
 //! DAG: depends on `clawd-events` (the shared vocabulary: `EVENTS`, `CLAUDE_HOOK_EVENTS`,
 //! `claude_event`, `pi_event`, `is_question_tool`, `is_debug_prompt`, `ascii_text`,
@@ -13,13 +12,6 @@
 //! written atomically, never touching a file that does not parse), `normalize` turns one hook
 //! payload into tracker events. No test ever writes the user's agent config: every path derives
 //! from the injected [`base::AgentCtx`].
-#![allow(
-    unused_variables,
-    dead_code,
-    clippy::new_without_default,
-    clippy::too_many_arguments,
-    clippy::type_complexity
-)] // stub crate: the owning phase removes this when it implements the bodies
 
 pub mod assets;
 pub mod base;

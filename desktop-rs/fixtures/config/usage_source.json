@@ -1,0 +1,34 @@
+{
+  "input": [
+    null,
+    "{broken",
+    "[1, 2]",
+    "{}",
+    "{\"usage_source\": \"codex\"}",
+    "{\"usage_source\": \"off\"}",
+    "{\"usage_source\": \"claude\"}",
+    "{\"usage_source\": \"claude:/x/.claude-work\"}",
+    "{\"usage_source\": \"claude:\"}",
+    "{\"usage_source\": \"gemini\"}",
+    "{\"usage_source\": 3}",
+    "{\"usage_source\": null}",
+    "{\"usage_source\": \"\"}",
+    "{\"usage_source\": true}"
+  ],
+  "output": [
+    "claude",
+    "claude",
+    "claude",
+    "claude",
+    "codex",
+    "off",
+    "claude",
+    "claude:/x/.claude-work",
+    "claude",
+    "claude",
+    "claude",
+    "claude",
+    "claude",
+    "claude"
+  ]
+}

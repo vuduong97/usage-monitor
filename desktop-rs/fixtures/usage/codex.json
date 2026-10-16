@@ -1,0 +1,499 @@
+{
+  "input": {
+    "now": 1783000000
+  },
+  "output": {
+    "payload_from": [
+      {
+        "name": "windows by length",
+        "rate_limits": {
+          "limit_id": "codex",
+          "primary": {
+            "used_percent": 12.4,
+            "window_minutes": 300,
+            "resets_at": 1783003600
+          },
+          "secondary": {
+            "used_percent": 43.0,
+            "window_minutes": 10080,
+            "resets_at": 1783172800
+          },
+          "plan_type": "plus",
+          "rate_limit_reached_type": null
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 12,
+          "w": 43,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 60,
+          "wr": 2880,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "past reset reads zero, limit reached",
+        "rate_limits": {
+          "limit_id": "codex",
+          "primary": {
+            "used_percent": 12.4,
+            "window_minutes": 300,
+            "resets_at": 1782999999
+          },
+          "secondary": {
+            "used_percent": 43.0,
+            "window_minutes": 10080,
+            "resets_at": 1783172800
+          },
+          "plan_type": "plus",
+          "rate_limit_reached_type": "primary"
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 0,
+          "w": 43,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "wr": 2880,
+          "st": "rejected"
+        }
+      },
+      {
+        "name": "older resets_in_seconds",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 5,
+            "window_minutes": 300,
+            "resets_in_seconds": 600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000060,
+        "result": {
+          "s": 5,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 9,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "usage based plan",
+        "rate_limits": {
+          "limit_id": "codex",
+          "primary": null,
+          "secondary": null,
+          "plan_type": "plus",
+          "rate_limit_reached_type": null
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": null
+      },
+      {
+        "name": "warning at 90",
+        "rate_limits": {
+          "limit_id": "codex",
+          "primary": {
+            "used_percent": 90.4,
+            "window_minutes": 300,
+            "resets_at": 1783000600
+          },
+          "secondary": {
+            "used_percent": 43.0,
+            "window_minutes": 10080,
+            "resets_at": 1783172800
+          },
+          "plan_type": "plus",
+          "rate_limit_reached_type": null
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 90,
+          "w": 43,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 10,
+          "wr": 2880,
+          "st": "allowed_warning"
+        }
+      },
+      {
+        "name": "percent .5 to even",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 12.5,
+            "window_minutes": 300,
+            "resets_at": 1783000600
+          },
+          "secondary": {
+            "used_percent": 13.5,
+            "window_minutes": 10080,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 12,
+          "w": 14,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 10,
+          "wr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "minutes .5 to even",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 5,
+            "window_minutes": 300,
+            "resets_at": 1783000150
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 5,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 2,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "only weekly",
+        "rate_limits": {
+          "secondary": {
+            "used_percent": 5,
+            "window_minutes": 10080,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 0,
+          "w": 5,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "wr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "both short, first wins",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 1,
+            "window_minutes": 300,
+            "resets_at": 1783000600
+          },
+          "secondary": {
+            "used_percent": 2,
+            "window_minutes": 300,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 1,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "no window minutes counts as long",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 5,
+            "window_minutes": 0,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 0,
+          "w": 5,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "wr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "window minutes string",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 5,
+            "window_minutes": "300",
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 5,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "bad window skipped",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 5,
+            "window_minutes": "x",
+            "resets_at": 1783000600
+          },
+          "secondary": {
+            "used_percent": 5,
+            "window_minutes": 10080,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 0,
+          "w": 5,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "wr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "used percent null",
+        "rate_limits": {
+          "primary": {
+            "used_percent": null,
+            "window_minutes": 300,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 0,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 10,
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "no reset time",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 7,
+            "window_minutes": 300
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 7,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "st": "allowed"
+        }
+      },
+      {
+        "name": "clamped",
+        "rate_limits": {
+          "primary": {
+            "used_percent": 250,
+            "window_minutes": 300,
+            "resets_at": 1783000600
+          }
+        },
+        "written": 1783000000,
+        "now": 1783000000,
+        "result": {
+          "s": 100,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 10,
+          "st": "allowed_warning"
+        }
+      }
+    ],
+    "read": [
+      {
+        "name": "newest session wins, null-window and broken rows skipped",
+        "files": [
+          {
+            "path": "2026/07/01/rollout-a.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"codex\", \"primary\": {\"used_percent\": 1, \"window_minutes\": 300, \"resets_at\": 1783003600}, \"secondary\": {\"used_percent\": 43.0, \"window_minutes\": 10080, \"resets_at\": 1783172800}, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}"
+            ],
+            "mtime": 1782999100
+          },
+          {
+            "path": "2026/07/02/rollout-b.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"codex\", \"primary\": {\"used_percent\": 12.4, \"window_minutes\": 300, \"resets_at\": 1783003600}, \"secondary\": {\"used_percent\": 43.0, \"window_minutes\": 10080, \"resets_at\": 1783172800}, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}",
+              "{\"type\":\"response_item\"}",
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"codex\", \"primary\": null, \"secondary\": null, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}",
+              "{broken"
+            ],
+            "mtime": 1782999900
+          }
+        ],
+        "now": 1783000000,
+        "result": {
+          "s": 12,
+          "w": 43,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 60,
+          "wr": 2880,
+          "st": "allowed"
+        },
+        "available": true
+      },
+      {
+        "name": "falls back to an older session when the newest has no limits",
+        "files": [
+          {
+            "path": "2026/07/01/rollout-a.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"codex\", \"primary\": {\"used_percent\": 12.4, \"window_minutes\": 300, \"resets_at\": 1783003600}, \"secondary\": {\"used_percent\": 43.0, \"window_minutes\": 10080, \"resets_at\": 1783172800}, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}"
+            ],
+            "mtime": 1782999100
+          },
+          {
+            "path": "2026/07/02/rollout-b.jsonl",
+            "lines": [
+              "{\"type\":\"response_item\"}"
+            ],
+            "mtime": 1782999900
+          }
+        ],
+        "now": 1783000000,
+        "result": {
+          "s": 12,
+          "w": 43,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 60,
+          "wr": 2880,
+          "st": "allowed"
+        },
+        "available": true
+      },
+      {
+        "name": "other limit id ignored",
+        "files": [
+          {
+            "path": "2026/07/02/rollout-a.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"other\", \"primary\": {\"used_percent\": 12.4, \"window_minutes\": 300, \"resets_at\": 1783003600}, \"secondary\": {\"used_percent\": 43.0, \"window_minutes\": 10080, \"resets_at\": 1783172800}, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}"
+            ],
+            "mtime": 1782999900
+          }
+        ],
+        "now": 1783000000,
+        "result": null,
+        "available": true
+      },
+      {
+        "name": "newest file within a day by mtime",
+        "files": [
+          {
+            "path": "2026/07/02/rollout-old.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"codex\", \"primary\": {\"used_percent\": 1, \"window_minutes\": 300, \"resets_at\": 1783003600}, \"secondary\": {\"used_percent\": 43.0, \"window_minutes\": 10080, \"resets_at\": 1783172800}, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}"
+            ],
+            "mtime": 1782999500
+          },
+          {
+            "path": "2026/07/02/rollout-new.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"limit_id\": \"codex\", \"primary\": {\"used_percent\": 2, \"window_minutes\": 300, \"resets_at\": 1783003600}, \"secondary\": {\"used_percent\": 43.0, \"window_minutes\": 10080, \"resets_at\": 1783172800}, \"plan_type\": \"plus\", \"rate_limit_reached_type\": null}}}"
+            ],
+            "mtime": 1782999950
+          }
+        ],
+        "now": 1783000000,
+        "result": {
+          "s": 2,
+          "w": 43,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 60,
+          "wr": 2880,
+          "st": "allowed"
+        },
+        "available": true
+      },
+      {
+        "name": "row timestamp drives resets_in_seconds",
+        "files": [
+          {
+            "path": "2026/07/02/rollout-a.jsonl",
+            "lines": [
+              "{\"timestamp\": \"2026-07-02T17:50:57.643Z\", \"type\": \"event_msg\", \"payload\": {\"type\": \"token_count\", \"info\": null, \"rate_limits\": {\"primary\": {\"used_percent\": 3, \"window_minutes\": 300, \"resets_in_seconds\": 7200}}}}"
+            ],
+            "mtime": 1782999900
+          }
+        ],
+        "now": 1783000000,
+        "result": {
+          "s": 3,
+          "w": 0,
+          "acct": "pro",
+          "ok": true,
+          "src": "codex",
+          "sr": 364,
+          "st": "allowed"
+        },
+        "available": true
+      },
+      {
+        "name": "no sessions",
+        "files": [],
+        "now": 1783000000,
+        "result": null,
+        "available": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,2514 @@
+{
+  "input": {
+    "port": 47913,
+    "script": "/home/u/.config/claude-usage-monitor/clawd-event.sh",
+    "marks": [
+      "clawd-event",
+      "/hook/claude"
+    ],
+    "events": [
+      "Notification",
+      "PermissionRequest",
+      "PostCompact",
+      "PostToolUse",
+      "PostToolUseFailure",
+      "PreCompact",
+      "PreToolUse",
+      "SessionEnd",
+      "SessionStart",
+      "Stop",
+      "StopFailure",
+      "SubagentStart",
+      "SubagentStop",
+      "UserPromptSubmit"
+    ],
+    "merges": [
+      {
+        "settings": {},
+        "hook": {
+          "type": "command",
+          "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+          "timeout": 2
+        }
+      },
+      {
+        "settings": {},
+        "hook": {
+          "type": "command",
+          "command": "curl.exe",
+          "args": [
+            "-s",
+            "-o",
+            "NUL",
+            "--max-time",
+            "0.3",
+            "--connect-timeout",
+            "0.2",
+            "-H",
+            "Content-Type: application/json",
+            "--data-binary",
+            "@-",
+            "http://127.0.0.1:47913/hook/claude"
+          ],
+          "async": true,
+          "timeout": 5
+        }
+      },
+      {
+        "settings": {},
+        "hook": null
+      },
+      {
+        "settings": {
+          "model": "opus",
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "Bash",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "node mine.cjs"
+                  }
+                ]
+              }
+            ],
+            "PreToolUse": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                    "timeout": 2
+                  }
+                ]
+              }
+            ]
+          },
+          "zeta": [
+            1,
+            2.5,
+            null
+          ]
+        },
+        "hook": {
+          "type": "command",
+          "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+          "timeout": 2
+        }
+      },
+      {
+        "settings": {
+          "model": "opus",
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "Bash",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "node mine.cjs"
+                  }
+                ]
+              }
+            ],
+            "PreToolUse": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                    "timeout": 2
+                  }
+                ]
+              }
+            ]
+          },
+          "zeta": [
+            1,
+            2.5,
+            null
+          ]
+        },
+        "hook": {
+          "type": "command",
+          "command": "curl.exe",
+          "args": [
+            "-s",
+            "-o",
+            "NUL",
+            "--max-time",
+            "0.3",
+            "--connect-timeout",
+            "0.2",
+            "-H",
+            "Content-Type: application/json",
+            "--data-binary",
+            "@-",
+            "http://127.0.0.1:47913/hook/claude"
+          ],
+          "async": true,
+          "timeout": 5
+        }
+      },
+      {
+        "settings": {
+          "model": "opus",
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "Bash",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "node mine.cjs"
+                  }
+                ]
+              }
+            ],
+            "PreToolUse": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                    "timeout": 2
+                  }
+                ]
+              }
+            ]
+          },
+          "zeta": [
+            1,
+            2.5,
+            null
+          ]
+        },
+        "hook": null
+      },
+      {
+        "settings": {
+          "b": 1,
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/x/clawd-event.sh'"
+                  },
+                  {
+                    "type": "command",
+                    "command": "keep.sh"
+                  }
+                ]
+              }
+            ],
+            "Other": []
+          },
+          "a": {
+            "x": true
+          }
+        },
+        "hook": {
+          "type": "command",
+          "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+          "timeout": 2
+        }
+      },
+      {
+        "settings": {
+          "b": 1,
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/x/clawd-event.sh'"
+                  },
+                  {
+                    "type": "command",
+                    "command": "keep.sh"
+                  }
+                ]
+              }
+            ],
+            "Other": []
+          },
+          "a": {
+            "x": true
+          }
+        },
+        "hook": {
+          "type": "command",
+          "command": "curl.exe",
+          "args": [
+            "-s",
+            "-o",
+            "NUL",
+            "--max-time",
+            "0.3",
+            "--connect-timeout",
+            "0.2",
+            "-H",
+            "Content-Type: application/json",
+            "--data-binary",
+            "@-",
+            "http://127.0.0.1:47913/hook/claude"
+          ],
+          "async": true,
+          "timeout": 5
+        }
+      },
+      {
+        "settings": {
+          "b": 1,
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/x/clawd-event.sh'"
+                  },
+                  {
+                    "type": "command",
+                    "command": "keep.sh"
+                  }
+                ]
+              }
+            ],
+            "Other": []
+          },
+          "a": {
+            "x": true
+          }
+        },
+        "hook": null
+      }
+    ],
+    "installed": [
+      {
+        "settings": {}
+      },
+      {
+        "settings": {
+          "model": "opus",
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "Bash",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "node mine.cjs"
+                  }
+                ]
+              }
+            ],
+            "PreToolUse": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                    "timeout": 2
+                  }
+                ]
+              }
+            ]
+          },
+          "zeta": [
+            1,
+            2.5,
+            null
+          ]
+        }
+      },
+      {
+        "settings": {
+          "b": 1,
+          "hooks": {
+            "Stop": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "'/x/clawd-event.sh'"
+                  },
+                  {
+                    "type": "command",
+                    "command": "keep.sh"
+                  }
+                ]
+              }
+            ],
+            "Other": []
+          },
+          "a": {
+            "x": true
+          }
+        }
+      },
+      {
+        "settings": {
+          "hooks": {
+            "Notification": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "PermissionRequest": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "PostCompact": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "PostToolUse": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "PostToolUseFailure": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "PreCompact": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "PreToolUse": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "SessionEnd": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "SessionStart": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "Stop": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "StopFailure": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "SubagentStart": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "SubagentStop": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ],
+            "UserPromptSubmit": [
+              {
+                "matcher": "*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "curl.exe",
+                    "args": [
+                      "-s",
+                      "-o",
+                      "NUL",
+                      "--max-time",
+                      "0.3",
+                      "--connect-timeout",
+                      "0.2",
+                      "-H",
+                      "Content-Type: application/json",
+                      "--data-binary",
+                      "@-",
+                      "http://127.0.0.1:47913/hook/claude"
+                    ],
+                    "async": true,
+                    "timeout": 5
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "output": {
+    "handlers": {
+      "darwin": {
+        "type": "command",
+        "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+        "timeout": 2
+      },
+      "win32": {
+        "type": "command",
+        "command": "curl.exe",
+        "args": [
+          "-s",
+          "-o",
+          "NUL",
+          "--max-time",
+          "0.3",
+          "--connect-timeout",
+          "0.2",
+          "-H",
+          "Content-Type: application/json",
+          "--data-binary",
+          "@-",
+          "http://127.0.0.1:47913/hook/claude"
+        ],
+        "async": true,
+        "timeout": 5
+      }
+    },
+    "script_text": "#!/bin/sh\n# clawd-event.sh [agent] [event]: an agent hook (Claude Code, Codex, Gemini CLI,\n# Cursor, Copilot CLI). Forwards the hook payload (stdin JSON) to the Clawd\n# desktop app on 127.0.0.1, which turns it into what the clock shows. No\n# arguments = Claude Code (the hooks older versions installed).\n# Never blocks or fails the agent: app not running -> curl gives up at once\n# (refused) or after 0.3 s (stuck), and the script always exits 0 silently.\nport=${CLAWD_EVENT_PORT:-47913}\nurl=\"http://127.0.0.1:${port}/hook/${1:-claude}\"\n[ -n \"$2\" ] && url=\"${url}?e=$2\"\ncurl -s -o /dev/null --max-time 0.3 --connect-timeout 0.2 \\\n  -H 'Content-Type: application/json' --data-binary @- \"$url\" >/dev/null 2>&1\nexit 0\n",
+    "merges": [
+      {
+        "hooks": {
+          "Notification": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PermissionRequest": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostToolUseFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PreCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SessionEnd": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "Stop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "StopFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SubagentStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SubagentStop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "hooks": {
+          "Notification": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PermissionRequest": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostToolUseFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PreCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SessionEnd": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "Stop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "StopFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SubagentStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SubagentStop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {},
+      {
+        "model": "opus",
+        "hooks": {
+          "Stop": [
+            {
+              "matcher": "Bash",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node mine.cjs"
+                }
+              ]
+            },
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "Notification": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PermissionRequest": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostToolUseFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PreCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SessionEnd": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "StopFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SubagentStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SubagentStop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ]
+        },
+        "zeta": [
+          1,
+          2.5,
+          null
+        ]
+      },
+      {
+        "model": "opus",
+        "hooks": {
+          "Stop": [
+            {
+              "matcher": "Bash",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node mine.cjs"
+                }
+              ]
+            },
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "Notification": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PermissionRequest": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostToolUseFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PreCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SessionEnd": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "StopFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SubagentStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SubagentStop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ]
+        },
+        "zeta": [
+          1,
+          2.5,
+          null
+        ]
+      },
+      {
+        "model": "opus",
+        "hooks": {
+          "Stop": [
+            {
+              "matcher": "Bash",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node mine.cjs"
+                }
+              ]
+            }
+          ]
+        },
+        "zeta": [
+          1,
+          2.5,
+          null
+        ]
+      },
+      {
+        "b": 1,
+        "hooks": {
+          "Notification": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PermissionRequest": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PostToolUseFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PreCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SessionEnd": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "Stop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "StopFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SubagentStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "SubagentStop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "'/home/u/.config/claude-usage-monitor/clawd-event.sh'",
+                  "timeout": 2
+                }
+              ]
+            }
+          ]
+        },
+        "a": {
+          "x": true
+        }
+      },
+      {
+        "b": 1,
+        "hooks": {
+          "Notification": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PermissionRequest": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PostToolUseFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PreCompact": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SessionEnd": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "Stop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "StopFailure": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SubagentStart": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "SubagentStop": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "matcher": "*",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "curl.exe",
+                  "args": [
+                    "-s",
+                    "-o",
+                    "NUL",
+                    "--max-time",
+                    "0.3",
+                    "--connect-timeout",
+                    "0.2",
+                    "-H",
+                    "Content-Type: application/json",
+                    "--data-binary",
+                    "@-",
+                    "http://127.0.0.1:47913/hook/claude"
+                  ],
+                  "async": true,
+                  "timeout": 5
+                }
+              ]
+            }
+          ]
+        },
+        "a": {
+          "x": true
+        }
+      },
+      {
+        "b": 1,
+        "a": {
+          "x": true
+        }
+      }
+    ],
+    "installed": [
+      false,
+      true,
+      true,
+      true
+    ]
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "input": {
+    "now": 1791711600.0,
+    "token": "sk-ant-test-probe"
+  },
+  "output": [
+    {
+      "name": "pro windows",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.07",
+        "anthropic-ratelimit-unified-5h-reset": "1791720000",
+        "anthropic-ratelimit-unified-7d-utilization": "0.08",
+        "anthropic-ratelimit-unified-7d-reset": "1792231200",
+        "anthropic-ratelimit-unified-5h-status": "allowed_warning"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed_warning",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "pro windows",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.07",
+        "anthropic-ratelimit-unified-5h-reset": "1791720000",
+        "anthropic-ratelimit-unified-7d-utilization": "0.08",
+        "anthropic-ratelimit-unified-7d-reset": "1792231200",
+        "anthropic-ratelimit-unified-5h-status": "allowed_warning"
+      },
+      "config": "clock = 24\nchime = on\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed_warning",
+          "acct": "pro",
+          "ok": true,
+          "c": 1,
+          "t": 1791736800,
+          "tf": 24
+        }
+      },
+      "tz_gmtoff": 25200
+    },
+    {
+      "name": "pro windows, no status header",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.07",
+        "anthropic-ratelimit-unified-5h-reset": "1791720000",
+        "anthropic-ratelimit-unified-7d-utilization": "0.08",
+        "anthropic-ratelimit-unified-7d-reset": "1792231200"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 140,
+          "w": 8,
+          "wr": 8660,
+          "st": "unknown",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "pro rounding .5 to even",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.125",
+        "anthropic-ratelimit-unified-5h-reset": "1791720000",
+        "anthropic-ratelimit-unified-7d-utilization": "0.135",
+        "anthropic-ratelimit-unified-7d-reset": "1792231200",
+        "anthropic-ratelimit-unified-5h-status": "allowed_warning"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 12,
+          "sr": 140,
+          "w": 14,
+          "wr": 8660,
+          "st": "allowed_warning",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "pro minutes boundary",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.07",
+        "anthropic-ratelimit-unified-5h-reset": "1791711750.0",
+        "anthropic-ratelimit-unified-7d-utilization": "0.08",
+        "anthropic-ratelimit-unified-7d-reset": "1791711690.0",
+        "anthropic-ratelimit-unified-5h-status": "allowed_warning"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 2,
+          "w": 8,
+          "wr": 2,
+          "st": "allowed_warning",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "pro garbage numbers",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "lots",
+        "anthropic-ratelimit-unified-5h-reset": "soon",
+        "anthropic-ratelimit-unified-7d-utilization": "0.08",
+        "anthropic-ratelimit-unified-7d-reset": "1792231200",
+        "anthropic-ratelimit-unified-5h-status": "allowed_warning"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 0,
+          "sr": 0,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed_warning",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "pro reset in the past",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-5h-utilization": "0.07",
+        "anthropic-ratelimit-unified-5h-reset": "1791711595",
+        "anthropic-ratelimit-unified-7d-utilization": "0.08",
+        "anthropic-ratelimit-unified-7d-reset": "1792231200",
+        "anthropic-ratelimit-unified-5h-status": "allowed_warning"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 7,
+          "sr": 0,
+          "w": 8,
+          "wr": 8660,
+          "st": "allowed_warning",
+          "acct": "pro",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "enterprise spend limit",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-overage-utilization": "0.426",
+        "anthropic-ratelimit-unified-overage-reset": "1792065600",
+        "anthropic-ratelimit-unified-status": "allowed"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 43,
+          "sr": 5900,
+          "w": 0,
+          "wr": 0,
+          "st": "allowed",
+          "acct": "ent",
+          "tp": 86,
+          "pd": 30,
+          "rd": "Oct 15",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "enterprise spend limit",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-overage-utilization": "0.426",
+        "anthropic-ratelimit-unified-overage-reset": "1792065600",
+        "anthropic-ratelimit-unified-status": "allowed"
+      },
+      "config": "clock = 24\nchime = on\n",
+      "result": {
+        "value": {
+          "s": 43,
+          "sr": 5900,
+          "w": 0,
+          "wr": 0,
+          "st": "allowed",
+          "acct": "ent",
+          "tp": 86,
+          "pd": 30,
+          "rd": "Oct 15",
+          "ok": true,
+          "c": 1,
+          "t": 1791736800,
+          "tf": 24
+        }
+      },
+      "tz_gmtoff": 25200
+    },
+    {
+      "name": "enterprise, 31st clamps to a 30-day month",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-overage-utilization": "0.5",
+        "anthropic-ratelimit-unified-overage-reset": "1793448000",
+        "anthropic-ratelimit-unified-status": "allowed_warning"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 50,
+          "sr": 28940,
+          "w": 0,
+          "wr": 0,
+          "st": "allowed_warning",
+          "acct": "ent",
+          "tp": 35,
+          "pd": 31,
+          "rd": "Oct 31",
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "enterprise, no reset header",
+      "status": 200,
+      "headers": {
+        "anthropic-ratelimit-unified-overage-utilization": "0.1"
+      },
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 10,
+          "sr": 0,
+          "w": 0,
+          "wr": 0,
+          "st": "unknown",
+          "acct": "ent",
+          "tp": 0,
+          "pd": 30,
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "no ratelimit headers at all",
+      "status": 200,
+      "headers": {},
+      "config": "clock = off\n",
+      "result": {
+        "value": {
+          "s": 0,
+          "sr": 0,
+          "w": 0,
+          "wr": 0,
+          "st": "unknown",
+          "acct": "ent",
+          "tp": 0,
+          "pd": 30,
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "401",
+      "status": 401,
+      "headers": {},
+      "config": "clock = off\n",
+      "result": {
+        "error": "TokenExpired"
+      }
+    },
+    {
+      "name": "403",
+      "status": 403,
+      "headers": {},
+      "config": "clock = off\n",
+      "result": {
+        "error": "TokenExpired"
+      }
+    },
+    {
+      "name": "429",
+      "status": 429,
+      "headers": {},
+      "config": "clock = off\n",
+      "result": {
+        "value": null
+      }
+    },
+    {
+      "name": "500",
+      "status": 500,
+      "headers": {},
+      "config": "clock = off\n",
+      "result": {
+        "value": null
+      }
+    }
+  ]
+}

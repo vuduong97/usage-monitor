@@ -1,0 +1,1154 @@
+{
+  "input": {
+    "cases": [
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "SessionStart"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "UserPromptSubmit",
+          "prompt": "fix the bug"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "PreToolUse",
+          "tool_name": "Bash",
+          "tool_input": {
+            "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "PreToolUse",
+          "tool_name": "AskUserQuestion"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "PostToolUse",
+          "tool_name": "Bash"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "PermissionRequest",
+          "tool_name": "Bash",
+          "tool_input": {
+            "command": "rm -rf x"
+          }
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "codex",
+        "hint": "Stop",
+        "payload": {
+          "session_id": "c1"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "Interrupt",
+        "payload": {
+          "session_id": "c1"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "SubagentStop"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "PostCompact"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": {
+          "session_id": "c1",
+          "hook_event_name": "Unknown"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "Stop",
+        "payload": {
+          "hook_event_name": "Stop"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "codex",
+        "hint": "",
+        "payload": "not a dict",
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "BeforeAgent",
+          "prompt": "hi"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "BeforeTool",
+          "tool_name": "run_shell_command",
+          "tool_input": {
+            "command": "ls"
+          }
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "AfterTool",
+          "tool_response": {
+            "error": "boom"
+          }
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "AfterTool",
+          "tool_response": {
+            "llmContent": "ok"
+          }
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "AfterTool",
+          "tool_response": "text"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "AfterAgent"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "PreCompress"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "Notification",
+          "notification_type": "ToolPermission",
+          "message": "ok?"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "Notification",
+          "notification_type": "ToolPermission"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "session_id": "g1",
+          "hook_event_name": "Notification",
+          "notification_type": "Other"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "SessionEnd",
+        "payload": {
+          "session_id": "g1"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "gemini",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "AfterAgent"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "sessionStart",
+          "is_background_agent": true
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "sessionStart"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "beforeSubmitPrompt",
+          "prompt": "debug this"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "postToolUse",
+          "tool_name": "MCP:search",
+          "tool_input": {
+            "command": "q"
+          }
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "session_id": "k2",
+          "hook_event_name": "postToolUseFailure",
+          "is_interrupt": true
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "postToolUseFailure"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "preCompact"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "stop",
+          "status": "aborted"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "stop",
+          "status": "error"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "stop"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "conversation_id": "k1",
+          "hook_event_name": "stop",
+          "status": "weird"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "sessionEnd",
+        "payload": {
+          "conversation_id": "k1"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "cursor",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "stop"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "SessionStart"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "sessionId": "p2",
+          "hook_event_name": "subagentStart"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "UserPromptSubmit",
+          "prompt": "fix"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "PreToolUse",
+          "tool_name": "bash",
+          "tool_input": {
+            "command": "ls"
+          }
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "sessionId": "p2",
+          "hook_event_name": "PreToolUse",
+          "toolName": "bash",
+          "toolArgs": {
+            "command": "pwd"
+          }
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "PostToolUseFailure"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "ErrorOccurred"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "ErrorOccurred",
+          "recoverable": false
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "ErrorOccurred",
+          "recoverable": true
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "notification",
+          "notification_type": "permission_prompt",
+          "message": "m"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "sessionId": "p2",
+          "hook_event_name": "notification",
+          "notificationType": "Elicitation_dialog"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "session_id": "p1",
+          "hook_event_name": "notification",
+          "notification_type": "info"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "PreCompact",
+        "payload": {
+          "session_id": "p1"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "copilot",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "Stop"
+        },
+        "needs_other_phases": false
+      },
+      {
+        "agent": "claude",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "UserPromptSubmit",
+          "session_id": "s1",
+          "prompt": "hello"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "claude",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "PreToolUse",
+          "session_id": "s1",
+          "tool_name": "Bash",
+          "tool_input": {
+            "command": "ls"
+          }
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "claude",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "Stop",
+          "session_id": "s1"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "claude",
+        "hint": "",
+        "payload": {
+          "hook_event_name": "Stop"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "claude",
+        "hint": "Stop",
+        "payload": [
+          1,
+          2
+        ],
+        "needs_other_phases": true
+      },
+      {
+        "agent": "pi",
+        "hint": "",
+        "payload": {
+          "ev": "prompt",
+          "sid": "abc"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "pi",
+        "hint": "",
+        "payload": {
+          "ev": "tool",
+          "sid": "abc",
+          "tool": "bash",
+          "cmd": "ls"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "pi",
+        "hint": "",
+        "payload": {
+          "ev": "stop",
+          "sid": 7
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "pi",
+        "hint": "",
+        "payload": {
+          "ev": "nonsense",
+          "sid": "abc"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "pi",
+        "hint": "",
+        "payload": {
+          "sid": "abc"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "pi",
+        "hint": "",
+        "payload": "text",
+        "needs_other_phases": true
+      },
+      {
+        "agent": "opencode",
+        "hint": "",
+        "payload": {
+          "ev": "prompt",
+          "sid": "abc"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "opencode",
+        "hint": "",
+        "payload": {
+          "ev": "tool",
+          "sid": "abc",
+          "tool": "bash",
+          "cmd": "ls"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "opencode",
+        "hint": "",
+        "payload": {
+          "ev": "stop",
+          "sid": 7
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "opencode",
+        "hint": "",
+        "payload": {
+          "ev": "nonsense",
+          "sid": "abc"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "opencode",
+        "hint": "",
+        "payload": {
+          "sid": "abc"
+        },
+        "needs_other_phases": true
+      },
+      {
+        "agent": "opencode",
+        "hint": "",
+        "payload": "text",
+        "needs_other_phases": true
+      },
+      {
+        "agent": "nobody",
+        "hint": "",
+        "payload": {
+          "session_id": "x"
+        },
+        "needs_other_phases": false
+      }
+    ]
+  },
+  "output": {
+    "events": [
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "",
+          "ev": "start"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "",
+          "ev": "prompt",
+          "debug": true
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "Bash",
+          "cmd": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "AskUserQuestion",
+          "ev": "attention"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "Bash",
+          "ev": "tool_done"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "Bash",
+          "cmd": "rm -rf x",
+          "ev": "attention",
+          "msg": "Allow Bash: rm -rf x"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "",
+          "ev": "stop"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "",
+          "ev": "abort"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "",
+          "ev": "subagent_stop"
+        }
+      ],
+      [
+        {
+          "src": "codex",
+          "sid": "codex:c1",
+          "tool": "",
+          "ev": "compact_done"
+        }
+      ],
+      [],
+      [],
+      [],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "prompt"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "run_shell_command",
+          "cmd": "ls",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "tool_error"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "tool_done"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "tool_done"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "stop"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "compact"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "ok?"
+        }
+      ],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Gemini needs you"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "gemini",
+          "sid": "gemini:g1",
+          "tool": "",
+          "ev": "end"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "start",
+          "sub": true
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "start",
+          "sub": false
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "prompt",
+          "debug": true
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "search",
+          "cmd": "q",
+          "ev": "tool"
+        },
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "search",
+          "cmd": "q",
+          "ev": "tool_done"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k2",
+          "tool": "",
+          "ev": "abort"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "tool_error"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "compact"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "abort"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "stop_error"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "stop"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "stop"
+        }
+      ],
+      [
+        {
+          "src": "cursor",
+          "sid": "cursor:k1",
+          "tool": "",
+          "ev": "end"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "",
+          "ev": "start"
+        }
+      ],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p2",
+          "tool": "",
+          "ev": "subagent_start"
+        }
+      ],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "",
+          "ev": "prompt",
+          "debug": true
+        }
+      ],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "bash",
+          "cmd": "ls",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p2",
+          "tool": "bash",
+          "cmd": "pwd",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "",
+          "ev": "tool_error"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "",
+          "ev": "stop_error"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "",
+          "ev": "attention",
+          "msg": "m"
+        }
+      ],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p2",
+          "tool": "",
+          "ev": "attention",
+          "msg": "Copilot needs you"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "copilot",
+          "sid": "copilot:p1",
+          "tool": "",
+          "ev": "compact"
+        }
+      ],
+      [],
+      [
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "prompt"
+        }
+      ],
+      [
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "Bash",
+          "cmd": "ls",
+          "ev": "tool"
+        }
+      ],
+      [
+        {
+          "src": "claude",
+          "sid": "claude:s1",
+          "tool": "",
+          "ev": "stop"
+        }
+      ],
+      [],
+      [],
+      [
+        {
+          "src": "pi",
+          "sid": "pi:abc",
+          "ev": "prompt",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "src": "pi",
+          "sid": "pi:abc",
+          "ev": "tool",
+          "tool": "bash",
+          "msg": "",
+          "cmd": "ls",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "src": "pi",
+          "sid": "pi:7",
+          "ev": "stop",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [],
+      [],
+      [],
+      [
+        {
+          "src": "opencode",
+          "sid": "opencode:abc",
+          "ev": "prompt",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "src": "opencode",
+          "sid": "opencode:abc",
+          "ev": "tool",
+          "tool": "bash",
+          "msg": "",
+          "cmd": "ls",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [
+        {
+          "src": "opencode",
+          "sid": "opencode:7",
+          "ev": "stop",
+          "tool": "",
+          "msg": "",
+          "cmd": "",
+          "sub": false,
+          "debug": false
+        }
+      ],
+      [],
+      [],
+      [],
+      null
+    ]
+  }
+}

@@ -1,0 +1,1605 @@
+{
+  "input": {
+    "note": "feed.plan/needed/worth_it/offer/pack_state; manifest = base_manifest, packs from the manifest"
+  },
+  "output": {
+    "manifest": {
+      "v": 1,
+      "seq": 6,
+      "date": "2026-10-14T08:00:00Z",
+      "notes": "M\u00e0n ch\u1edd hi\u1ec7n IP",
+      "variant": "esp8266-clawd",
+      "layouts": 1,
+      "styleApi": 1,
+      "commit": "c000006",
+      "files": [
+        {
+          "name": "firmware.bin",
+          "kind": "fw",
+          "size": 2048,
+          "enc": 2076,
+          "sha256": "664e6571ce31fd4e4b4b75778f90ca7cdc47f99ff76e9f1b14bd916b70af118b",
+          "crc": "dd68d7c9"
+        },
+        {
+          "name": "clawd.pak",
+          "kind": "clawdpak",
+          "size": 508,
+          "enc": 536,
+          "sha256": "5b489a15b97400e07e344c8e1e5eec5f58889a7e8b66724aeb5fd5d517d59aa9",
+          "crc": "8ef30f77"
+        },
+        {
+          "name": "desk.pak",
+          "kind": "deskpak",
+          "size": 3008,
+          "enc": 3036,
+          "sha256": "c51532bfe3a751a169bef95561e1fc76a77877530a7a0ed416818d0e8990ce5b",
+          "crc": "147ed31c"
+        }
+      ]
+    },
+    "bundles": [
+      null,
+      {
+        "seq": 5,
+        "variant": "esp8266-clawd",
+        "style_api": 0,
+        "styles": []
+      },
+      {
+        "seq": 6,
+        "variant": "esp8266-clawd",
+        "style_api": 0,
+        "styles": []
+      },
+      {
+        "seq": 7,
+        "variant": "esp8266-clawd",
+        "style_api": 0,
+        "styles": []
+      }
+    ],
+    "rows": [
+      {
+        "heap": {},
+        "result": {
+          "plan": {},
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "styleApi": 1,
+          "style": "synth",
+          "pak": 17,
+          "desk": 31
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 1
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 0
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": -3
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": true
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4.0
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": "4"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": null
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "version": "2.16.0",
+          "pak": 17,
+          "desk": 31,
+          "uptime": 900
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "version": "2.16.0"
+        },
+        "result": {
+          "plan": {},
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266",
+          "desk": 1,
+          "pak": 1
+        },
+        "result": {
+          "plan": {},
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": null,
+          "desk": 1,
+          "pak": 1
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": null
+        },
+        "result": {
+          "plan": {},
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "desk": 1
+        },
+        "result": {
+          "plan": {},
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "pak": 1
+        },
+        "result": {
+          "plan": {},
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": true,
+          "style": "synth"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 0,
+          "style": "synth"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 2,
+          "style": "synth"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 1,
+          "style": 7
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 1
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": -1,
+          "style": "x"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 2,
+          "styleApi": 1.0,
+          "style": "x"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4,
+          "pak": 17,
+          "desk": 31
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "8ef30f77",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "ok",
+            "deskpak": "ok"
+          },
+          "needed": [
+            "fw"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4,
+          "pak": 17,
+          "desk": 0,
+          "pakCrc": "8ef30f77",
+          "deskCrc": ""
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "ok",
+            "deskpak": "need"
+          },
+          "needed": [
+            "fw",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "",
+          "deskCrc": "deadbeef"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "wait",
+            "deskpak": "need"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 4,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "deadbeef",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "need",
+            "deskpak": "ok"
+          },
+          "needed": [
+            "fw",
+            "clawdpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "pak": 17,
+          "desk": 31
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "8ef30f77",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "ok",
+            "deskpak": "ok"
+          },
+          "needed": [
+            "fw"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "pak": 17,
+          "desk": 0,
+          "pakCrc": "8ef30f77",
+          "deskCrc": ""
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "ok",
+            "deskpak": "need"
+          },
+          "needed": [
+            "fw",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "",
+          "deskCrc": "deadbeef"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "wait",
+            "deskpak": "need"
+          },
+          "needed": [
+            "fw",
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 5,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "deadbeef",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "fw": "need",
+            "clawdpak": "need",
+            "deskpak": "ok"
+          },
+          "needed": [
+            "fw",
+            "clawdpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            6,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "desk": 31
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "8ef30f77",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "ok",
+            "deskpak": "ok"
+          },
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "desk": 0,
+          "pakCrc": "8ef30f77",
+          "deskCrc": ""
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "ok",
+            "deskpak": "need"
+          },
+          "needed": [
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            0,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "",
+          "deskCrc": "deadbeef"
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "wait",
+            "deskpak": "need"
+          },
+          "needed": [
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            0,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "deadbeef",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "need",
+            "deskpak": "ok"
+          },
+          "needed": [
+            "clawdpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            0,
+            7
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 7,
+          "pak": 17,
+          "desk": 31
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "unknown",
+            "deskpak": "unknown"
+          },
+          "needed": [
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 7,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "8ef30f77",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "ok",
+            "deskpak": "ok"
+          },
+          "needed": [],
+          "worth_it": false,
+          "offer": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 7,
+          "pak": 17,
+          "desk": 0,
+          "pakCrc": "8ef30f77",
+          "deskCrc": ""
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "ok",
+            "deskpak": "need"
+          },
+          "needed": [
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 7,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "",
+          "deskCrc": "deadbeef"
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "wait",
+            "deskpak": "need"
+          },
+          "needed": [
+            "clawdpak",
+            "deskpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 7,
+          "pak": 17,
+          "desk": 31,
+          "pakCrc": "deadbeef",
+          "deskCrc": "147ed31c"
+        },
+        "result": {
+          "plan": {
+            "clawdpak": "need",
+            "deskpak": "ok"
+          },
+          "needed": [
+            "clawdpak"
+          ],
+          "worth_it": true,
+          "offer": [
+            6,
+            6,
+            0,
+            0
+          ],
+          "offer_no_manifest": 0,
+          "plan_none": {}
+        }
+      }
+    ],
+    "pack_state_rows": [
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6
+        },
+        "result": {
+          "clawdpak": "unknown",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pakCrc": ""
+        },
+        "result": {
+          "clawdpak": "wait",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pakCrc": "aaaaaaaa"
+        },
+        "result": {
+          "clawdpak": "ok",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pakCrc": "bbbbbbbb"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pakCrc": null
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pakCrc": 5
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 0
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 0,
+          "pakCrc": ""
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 0,
+          "pakCrc": "aaaaaaaa"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 0,
+          "pakCrc": "bbbbbbbb"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 0,
+          "pakCrc": null
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 0,
+          "pakCrc": 5
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": false
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": false,
+          "pakCrc": ""
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": false,
+          "pakCrc": "aaaaaaaa"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": false,
+          "pakCrc": "bbbbbbbb"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": false,
+          "pakCrc": null
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": false,
+          "pakCrc": 5
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17
+        },
+        "result": {
+          "clawdpak": "unknown",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "pakCrc": ""
+        },
+        "result": {
+          "clawdpak": "wait",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "pakCrc": "aaaaaaaa"
+        },
+        "result": {
+          "clawdpak": "ok",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "pakCrc": "bbbbbbbb"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "pakCrc": null
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": 17,
+          "pakCrc": 5
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": "x"
+        },
+        "result": {
+          "clawdpak": "unknown",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": "x",
+          "pakCrc": ""
+        },
+        "result": {
+          "clawdpak": "wait",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": "x",
+          "pakCrc": "aaaaaaaa"
+        },
+        "result": {
+          "clawdpak": "ok",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": "x",
+          "pakCrc": "bbbbbbbb"
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": "x",
+          "pakCrc": null
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      },
+      {
+        "heap": {
+          "variant": "esp8266-clawd",
+          "fwSeq": 6,
+          "pak": "x",
+          "pakCrc": 5
+        },
+        "result": {
+          "clawdpak": "need",
+          "deskpak": "unknown"
+        }
+      }
+    ]
+  }
+}

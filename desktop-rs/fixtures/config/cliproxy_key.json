@@ -1,0 +1,216 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "new_service_wins",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "rc": 0,
+            "stdout": "new-key\n"
+          },
+          "clawdmeter-cliproxy": {
+            "rc": 0,
+            "stdout": "old-key\n"
+          }
+        }
+      },
+      {
+        "name": "legacy_fallback",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "rc": 44
+          },
+          "clawdmeter-cliproxy": {
+            "rc": 0,
+            "stdout": "old-key\n"
+          }
+        }
+      },
+      {
+        "name": "none_in_either",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "rc": 44
+          },
+          "clawdmeter-cliproxy": {
+            "rc": 44
+          }
+        }
+      },
+      {
+        "name": "hex_secret",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "rc": 0,
+            "stdout": "6865782d6b65790a"
+          }
+        }
+      },
+      {
+        "name": "blank_then_legacy",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "rc": 0,
+            "stdout": "  \n"
+          },
+          "clawdmeter-cliproxy": {
+            "rc": 0,
+            "stdout": "old-key"
+          }
+        }
+      },
+      {
+        "name": "security_missing",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "raises": "FileNotFoundError"
+          },
+          "clawdmeter-cliproxy": {
+            "rc": 0,
+            "stdout": "old-key\n"
+          }
+        }
+      },
+      {
+        "name": "security_timeout",
+        "platform": "darwin",
+        "replies": {
+          "clawd-cliproxy": {
+            "raises": "TimeoutExpired"
+          },
+          "clawdmeter-cliproxy": {
+            "rc": 0,
+            "stdout": "old-key\n"
+          }
+        }
+      },
+      {
+        "name": "not_macos",
+        "platform": "linux",
+        "replies": {
+          "clawd-cliproxy": {
+            "rc": 0,
+            "stdout": "new-key\n"
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "new-key",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": "old-key",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ],
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawdmeter-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ],
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawdmeter-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": "hex-key",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": "old-key",
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ],
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawdmeter-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": null,
+      "commands": [
+        [
+          "security",
+          "find-generic-password",
+          "-s",
+          "clawd-cliproxy",
+          "-w"
+        ]
+      ]
+    },
+    {
+      "key": null,
+      "commands": []
+    }
+  ]
+}

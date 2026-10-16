@@ -1,0 +1,172 @@
+{
+  "input": {},
+  "output": {
+    "to_ascii": [
+      {
+        "text": "Voc\u00ea  aprova\na a\u00e7\u00e3o?",
+        "limit": 120,
+        "result": "Voce aprova a acao?"
+      },
+      {
+        "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "limit": 120,
+        "result": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx..."
+      },
+      {
+        "text": "",
+        "limit": 120,
+        "result": ""
+      },
+      {
+        "text": "  spaced \t out\r\ntext  ",
+        "limit": 120,
+        "result": "spaced out text"
+      },
+      {
+        "text": "\u0110\u1ed3ng h\u1ed3 \u2603 \ufb01ne \u2460 \u00bd",
+        "limit": 120,
+        "result": "ong ho fine 1 12"
+      },
+      {
+        "text": "aaaaaaaaaa",
+        "limit": 10,
+        "result": "aaaaaaaaaa"
+      },
+      {
+        "text": "aaaaaaaaaaa",
+        "limit": 10,
+        "result": "aaaaaaa..."
+      },
+      {
+        "text": "ab cd ef gh",
+        "limit": 8,
+        "result": "ab cd..."
+      },
+      {
+        "text": "ab        cd",
+        "limit": 6,
+        "result": "ab cd"
+      },
+      {
+        "text": "\u001c\u001d x \u001f",
+        "limit": 120,
+        "result": "x"
+      },
+      {
+        "text": "\u65e5\u672c\u8a9e",
+        "limit": 120,
+        "result": ""
+      },
+      {
+        "text": "xxxxx",
+        "limit": 2,
+        "result": "xxxx..."
+      },
+      {
+        "text": "hello world",
+        "limit": 3,
+        "result": "..."
+      }
+    ],
+    "encode_payload": [
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1,
+          "m": "hi"
+        },
+        "limit": 180,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1,\"m\":\"hi\"}"
+      },
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1,
+          "m": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        "limit": 120,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1,\"m\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...\"}"
+      },
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1,
+          "m": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        "limit": 26,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1}"
+      },
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1,
+          "m": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        "limit": 60,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1,\"m\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxx...\"}"
+      },
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1,
+          "m": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word "
+        },
+        "limit": 90,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1,\"m\":\"word word word word word word word word word word word wo...\"}"
+      },
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1
+        },
+        "limit": 180,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1}"
+      },
+      {
+        "payload": {
+          "s": 4,
+          "ok": true,
+          "b": 1,
+          "m": "\u0110\u1ed3ng h\u1ed3"
+        },
+        "limit": 180,
+        "bytes": "{\"s\":4,\"ok\":true,\"b\":1,\"m\":\"\\u0110\\u1ed3ng h\\u1ed3\"}"
+      },
+      {
+        "payload": {
+          "m": "\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4",
+          "s": 1
+        },
+        "limit": 40,
+        "bytes": "{\"m\":\"\",\"s\":1}"
+      },
+      {
+        "payload": {
+          "s": 5,
+          "m": "a b c d e f g h i j k l m n o p q r s t u v w x y z",
+          "t": 1800000000,
+          "tf": 24
+        },
+        "limit": 70,
+        "bytes": "{\"s\":5,\"m\":\"a b c d e f g h i j k l m n o...\",\"t\":1800000000,\"tf\":24}"
+      },
+      {
+        "payload": {
+          "ok": false,
+          "why": "login",
+          "m": "alert",
+          "t": 1800000000,
+          "tf": 12
+        },
+        "limit": 180,
+        "bytes": "{\"ok\":false,\"why\":\"login\",\"m\":\"alert\",\"t\":1800000000,\"tf\":12}"
+      }
+    ]
+  }
+}
