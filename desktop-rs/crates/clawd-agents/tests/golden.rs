@@ -1,8 +1,8 @@
 //! Golden tests: replay `fixtures/agents/*.json` (written by `tools/golden/export_agents.py` from
 //! the real Python adapters) against the Rust adapters, in a temp home.
 //!
-//! Cases flagged `needs_other_phases` call `clawd-events` / `clawd-config` code that is still a
-//! `todo!()` stub until phases 03/04 merge; they run in the `#[ignore]`d `*_all` tests (run with
+//! Cases flagged `needs_other_phases` call `clawd-events` / `clawd-config` code that is still an
+//! unimplemented stub until phases 03/04 merge; they run in the `#[ignore]`d `*_all` tests (run with
 //! `cargo test -p clawd-agents -- --ignored` after those phases land).
 
 use std::collections::HashMap;
