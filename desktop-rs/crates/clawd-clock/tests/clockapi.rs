@@ -318,10 +318,11 @@ async fn wait_back_survives_a_clock_that_is_not_answering_yet() {
 
 #[tokio::test]
 async fn a_bulk_read_that_stalls_times_out_per_operation_and_is_retried() {
-    // get_file is a bulk call: its 60 s (here 1 s) is a per-read limit on a client of its own
+    // get_file is a bulk call: its 60 s (here 2 s) is a per-read limit on a client of its own.
+    // Wide margins on purpose: the retry must answer inside the limit even on a loaded machine.
     let device = FakeClockDevice::start(None);
-    device.set_down(1, Duration::from_secs(2));
-    let options = fast_with(Some(Duration::from_secs(1)));
+    device.set_down(1, Duration::from_secs(4));
+    let options = fast_with(Some(Duration::from_secs(2)));
     let c = ClockApi::with_options(&device.url(), None, options);
     assert_eq!(c.get_file("/clawd.pak", 1000).await.unwrap().len(), 100);
     assert_eq!(heap_polls(&device), 0);
