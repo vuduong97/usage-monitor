@@ -115,6 +115,12 @@ pub fn close_mdns(session: &SettingsSession) {
     }
 }
 
+/// `_diff(edited)`: what Save would send (`Err`: the schema refused a value).
+pub fn diff(b: &Bridge, edited: &Value) -> Result<Value, String> {
+    let cfg = b.data().cfg.clone();
+    Ok(clawd_clock::config_diff(&clock_view(&cfg), &clean(edited)?))
+}
+
 /// The positional JS argument `i`, `null` when the page sent fewer.
 pub fn arg(args: &[Value], i: usize) -> &Value {
     static NULL: Value = Value::Null;
@@ -282,7 +288,7 @@ impl Bridge {
         let d = self.data();
         self.services.feed.is_some()
             && !self.job_running()
-            && !d.feed_at.is_some_and(|at| at.elapsed() < FEED_RECHECK)
+            && d.feed_at.is_none_or(|at| at.elapsed() >= FEED_RECHECK)
     }
 
     /// `_kick_feed()`: check the feed in the background; the page polls `fw` meanwhile.
