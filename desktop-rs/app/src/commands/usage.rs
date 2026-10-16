@@ -24,7 +24,13 @@ const PAK_RETRY_S: f64 = 30.0;
 /// when the clock's own renderer is built into the app. With `exact` false there are no frames
 /// and the page draws its approximation from `payload`.
 pub async fn usage_preview(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    Ok(preview_of(&Bridge::of(ctx), &args).await)
+    usage_preview_on(&Bridge::of(ctx), &args).await
+}
+
+/// `usage_preview` on a bridge (the command without the Tauri context).
+pub async fn usage_preview_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
+    Ok(preview_of(&b.clone(), &args).await)
 }
 
 async fn preview_of(b: &Bridge, args: &[Value]) -> Value {
@@ -210,14 +216,25 @@ fn sources_of(b: &Bridge) -> Value {
 }
 
 /// `SettingsApi.usage_sources`.
-pub async fn usage_sources(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Bridge::of(ctx).blocking(|b| Ok(sources_of(&b))).await
+pub async fn usage_sources(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    usage_sources_on(&Bridge::of(ctx), &args).await
+}
+
+/// `usage_sources` on a bridge (the command without the Tauri context).
+pub async fn usage_sources_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    b.clone().blocking(|b| Ok(sources_of(&b))).await
 }
 
 /// `SettingsApi.set_usage_source(value)`.
 pub async fn set_usage_source(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    set_usage_source_on(&Bridge::of(ctx), &args).await
+}
+
+/// `set_usage_source` on a bridge (the command without the Tauri context).
+pub async fn set_usage_source_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
     let value = arg(&args, 0).as_str().unwrap_or_default().to_owned();
-    Bridge::of(ctx)
+    b.clone()
         .blocking(move |b| set_usage_source_of(&b, value))
         .await
 }
@@ -250,8 +267,13 @@ fn set_usage_source_of(b: &Bridge, value: String) -> Result<Value, String> {
 /// preview, which has no renderer: `{"ok": true, "pak": "<base64>"}`. Kept in the config folder
 /// and read again only when `/api/heap` reports a different pack; never part of the app itself.
 /// `{"ok": false}` when there is none to be had (the page then draws the app icon).
-pub async fn clawd_pak(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Ok(pak_of(&Bridge::of(ctx)).await)
+pub async fn clawd_pak(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    clawd_pak_on(&Bridge::of(ctx), &args).await
+}
+
+/// `clawd_pak` on a bridge (the command without the Tauri context).
+pub async fn clawd_pak_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    Ok(pak_of(&b.clone()).await)
 }
 
 async fn pak_of(b: &Bridge) -> Value {

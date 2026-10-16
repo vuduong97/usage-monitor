@@ -4,7 +4,7 @@
 
 use serde_json::{json, Value};
 
-use super::session::merged;
+use super::session::{merged, Bridge};
 use super::CommandCtx;
 use crate::state::lock;
 
@@ -19,11 +19,13 @@ pub fn public_job(job: &Value) -> Value {
 
 /// `SettingsApi.job`: `{"ok": true, "running": ..., "step", "error", "done"}`; just
 /// `running: false` when idle.
-pub async fn job(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Ok(merged(
-        json!({"ok": true}),
-        public_job(&lock(&ctx.state.jobs.job)),
-    ))
+pub async fn job(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    job_on(&Bridge::of(ctx), &args).await
+}
+
+/// `job` on a bridge (the command without the Tauri context).
+pub async fn job_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    Ok(merged(json!({"ok": true}), public_job(&lock(&b.jobs.job))))
 }
 
 #[cfg(test)]
