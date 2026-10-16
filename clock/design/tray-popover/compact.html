@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Clawd · bảng nhỏ gọn: 4 phương án</title>
+<script src="pak.js"></script>
+<style>
+  :root { --pop:rgba(28,28,27,.88); --card:#262624; --line:rgba(255,255,255,.08); --text:#faf9f5; --dim:#b0aea5; --mute:#8a887f;
+          --acc:#d97757; --ok:#9bb07a; --amber:#e0a35a; --bad:#e5786d; --track:#383833; --serif:"New York","Iowan Old Style",Georgia,serif; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--text); font:12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+         background:radial-gradient(900px 500px at 10% 0%, #4a2f26, transparent 60%), radial-gradient(700px 500px at 95% 100%, #23324a, transparent 60%), #17161a; }
+  .page { padding:24px 28px 28px; }
+  .intro { display:flex; align-items:baseline; gap:14px; margin-bottom:18px; }
+  .intro h1 { font:400 22px var(--serif); margin:0; } .intro p { margin:0; color:var(--dim); font-size:12.5px; }
+  .grid { display:grid; grid-template-columns:repeat(4, 280px); gap:30px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:8px; }
+  .mb { height:24px; border-radius:7px; background:rgba(20,20,22,.55); display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 10px; color:#e9e7e0; font-size:11.5px; }
+  .mb .me { width:22px; height:18px; border-radius:5px; background:rgba(255,255,255,.18); display:grid; place-items:center; }
+  .tray { width:14px; height:14px; border-radius:4px; background:var(--acc); position:relative; }
+  .tray::before { content:""; position:absolute; inset:3px; border:1.4px solid #fff; border-radius:50%; }
+  .tray::after { content:""; position:absolute; right:-2px; bottom:-2px; width:6px; height:6px; border-radius:50%; background:#7fd36b; border:1.5px solid #1b1b1d; }
+  .pop { margin-left:auto; background:var(--pop); backdrop-filter:blur(30px) saturate(1.4); border:1px solid var(--line); border-radius:12px;
+         box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05); overflow:hidden; }
+  .cap h3 { margin:4px 0 2px; font:400 16px var(--serif); } .cap h3 b { color:var(--acc); font-weight:400; margin-right:6px; }
+  .cap h3 small { font:11px -apple-system,system-ui,sans-serif; color:var(--mute); margin-left:6px; }
+  .cap p { margin:0; color:var(--dim); font-size:12px; }
+  canvas { display:block; image-rendering:pixelated; flex:none; }
+  .num { font-variant-numeric:tabular-nums; } .m { color:var(--mute); } .k { color:var(--dim); }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--ok); box-shadow:0 0 5px var(--ok); display:inline-block; vertical-align:1px; }
+  .bar { position:relative; height:6px; border-radius:99px; background:var(--track); }
+  .bar > i { position:absolute; left:0; top:0; bottom:0; border-radius:99px; }
+  .ib { width:22px; height:22px; border-radius:6px; display:grid; place-items:center; color:var(--mute); border:0; background:none; flex:none; }
+  .ib svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .bad { color:var(--bad); } .okc { color:var(--ok); }
+
+  /* 1 · Hai dòng */
+  .v1 { width:264px; }
+  .v1 .hd { display:flex; align-items:center; gap:8px; padding:8px 8px 4px 8px; }
+  .v1 .hd .t { flex:1; font-weight:600; font-size:12.5px; } .v1 .hd .t .m { font-weight:400; }
+  .v1 .rows { padding:4px 12px 12px; display:grid; grid-template-columns:38px 1fr 32px 44px; gap:7px 8px; align-items:center; }
+  .v1 .rows strong { text-align:right; font-size:12.5px; } .v1 .rows .m { text-align:right; font-size:11px; }
+
+  /* 2 · Clawd trên thanh */
+  .v2 { width:264px; padding:10px 12px 12px; }
+  .v2 .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+  .v2 .top b { font-weight:600; font-size:12.5px; }
+  .v2 .ride { position:relative; height:40px; }
+  .v2 .ride canvas { position:absolute; bottom:7px; }
+  .v2 .ride .bar { position:absolute; left:0; right:0; bottom:0; height:8px; }
+  .v2 .l { display:flex; justify-content:space-between; margin-top:6px; font-size:11px; }
+  .v2 .wk { margin-top:10px; display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; }
+  .v2 .wk .bar { height:4px; }
+
+  /* 3 · Hai vòng */
+  .v3 { width:256px; padding:8px 10px 10px; }
+  .v3 .top { display:flex; justify-content:space-between; align-items:center; padding:0 2px 2px; }
+  .v3 .top b { font-weight:600; font-size:12.5px; }
+  .v3 .rings { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; }
+  .v3 .rg { position:relative; display:grid; place-items:center; }
+  .v3 .rg .v { position:absolute; text-align:center; line-height:1.1; }
+  .v3 .rg .v strong { font-size:15px; display:block; } .v3 .rg .v span { font-size:10px; color:var(--mute); }
+  .v3 .sub { display:grid; grid-template-columns:1fr 60px 1fr; text-align:center; font-size:10.5px; margin-top:3px; white-space:nowrap; }
+
+  /* 4 · Một chạm */
+  .v4 { width:236px; display:flex; align-items:center; gap:6px; padding:8px 10px 8px 6px; }
+  .v4 .t { flex:1; min-width:0; }
+  .v4 .big { display:flex; align-items:baseline; gap:6px; } .v4 .big strong { font-size:24px; font-weight:600; line-height:1.05; }
+  .v4 .big span { font-size:11px; } .v4 .w { font-size:11px; margin-top:2px; white-space:nowrap; }
+  .v4 .bar { margin-top:5px; height:4px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro"><h1>Bảng nhỏ gọn</h1><p>Không chân bảng: bánh răng mở Cài đặt, bấm chuột phải biểu tượng ra menu (Thoát, Nhật ký). Số thật lúc 20:55.</p></div>
+  <div class="grid">
+
+  <div class="col">
+    <div class="mb"><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop v1">
+      <div class="hd"><canvas id="c1" width="40" height="30"></canvas><span class="t"><span class="m"><span class="dot"></span> Pro</span></span>
+        <span class="ib"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span></div>
+      <div class="rows">
+        <span class="k">Phiên</span><div class="bar" data-bar="s"></div><strong class="num" data-pct="s"></strong><span class="m num" data-rst="s"></span>
+        <span class="k">Tuần</span><div class="bar" data-bar="w"></div><strong class="num" data-pct="w"></strong><span class="m num" data-rst="w"></span>
+      </div>
+    </div>
+    <div class="cap"><h3><b>1</b>Hai dòng<small>264 × 90</small></h3><p>Mỗi kỳ một dòng: thanh, %, thời gian còn lại.</p></div>
+  </div>
+
+  <div class="col">
+    <div class="mb"><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop v2">
+      <div class="top"><b>Phiên <span class="num" data-pct="s"></span></b><span class="m">đặt lại <span data-at="s"></span></span></div>
+      <div class="ride"><canvas id="c2" width="44" height="30"></canvas><div class="bar" data-bar="s"></div></div>
+      <div class="l"><span class="okc" data-fc="s"></span><span class="m" data-rst="s"></span></div>
+      <div class="wk"><span class="k">Tuần</span><div class="bar" data-bar="w"></div><strong class="num" data-pct="w"></strong></div>
+      <div class="l" style="margin-top:4px"><span class="bad" data-fc="w"></span><span class="m" data-rst="w"></span></div>
+    </div>
+    <div class="cap"><h3><b>2</b>Clawd trên thanh<small>264 × 150</small></h3><p>Clawd đi trên thanh phiên, dừng ở đúng mức đã dùng. Tuần là dòng mảnh bên dưới.</p></div>
+  </div>
+
+  <div class="col">
+    <div class="mb"><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop v3">
+      <div class="top"><span class="m"><span class="dot"></span> Pro</span><span class="m">20:55</span></div>
+      <div class="rings">
+        <div class="rg"><canvas id="r-s" width="70" height="70"></canvas><div class="v"><strong class="num" data-pct="s"></strong><span>phiên</span></div></div>
+        <canvas id="c3" width="60" height="44"></canvas>
+        <div class="rg"><canvas id="r-w" width="70" height="70"></canvas><div class="v"><strong class="num" data-pct="w"></strong><span>tuần</span></div></div>
+      </div>
+      <div class="sub"><span class="m">còn <span data-rst="s"></span></span><span></span><span class="m">còn <span data-rst="w"></span></span></div>
+    </div>
+    <div class="cap"><h3><b>3</b>Hai vòng<small>256 × 124</small></h3><p>Hai vòng nhỏ hai bên, Clawd ôm laptop ở giữa.</p></div>
+  </div>
+
+  <div class="col">
+    <div class="mb"><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop v4">
+      <canvas id="c4" width="58" height="52"></canvas>
+      <div class="t">
+        <div class="big"><strong class="num" data-pct="s"></strong><span class="m">phiên · còn <span data-rst="s"></span></span></div>
+        <div class="bar" data-bar="s"></div>
+        <div class="w"><span class="k">Tuần <b class="num" data-pct="w"></b></span> · <span class="m">còn <span data-rst="w"></span></span></div>
+      </div>
+    </div>
+    <div class="cap"><h3><b>4</b>Một chạm<small>236 × 66</small></h3><p>Nhỏ nhất: chỉ con số phiên, một thanh, một dòng tuần. Liếc là xong.</p></div>
+  </div>
+
+  </div>
+</div>
+<script>
+'use strict';
+const NOW_MIN = 20 * 60 + 55, P = { s:10, sr:105, w:41, wr:6965 }, WIN = { s:300, w:10080 };
+const COL = { ok:'#9bb07a', amber:'#e0a35a', bad:'#e5786d', track:'#383833', text:'#faf9f5' };
+const pctCol = p => p >= 80 ? COL.bad : p >= 50 ? COL.amber : COL.ok;
+const dur = m => m < 60 ? `${m}p` : m < 1440 ? `${Math.floor(m / 60)}g${String(m % 60).padStart(2, '0')}` : `${Math.floor(m / 1440)}n ${Math.floor(m % 1440 / 60)}g`;
+const hhmm = m => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+function info(k) {
+  const pct = P[k], rem = P[k + 'r'], win = WIN[k], t = (win - rem) / win, el = win - rem;
+  const left = (100 - pct) / (pct / el), ok = left >= rem;
+  return { pct, rem, t, ok, fc: ok ? 'Đủ tới lúc đặt lại' : (k === 's' ? `Hết lúc ~${hhmm(NOW_MIN + Math.round(left))}` : `Hết sau ~${dur(Math.round(left))}`) };
+}
+const I = { s:info('s'), w:info('w') };
+const each = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
+each('[data-pct]', e => e.textContent = `${I[e.dataset.pct].pct}%`);
+each('[data-rst]', e => e.textContent = dur(I[e.dataset.rst].rem));
+each('[data-at]', e => e.textContent = hhmm(NOW_MIN + I[e.dataset.at].rem));
+each('[data-fc]', e => { const d = I[e.dataset.fc]; e.textContent = d.fc; e.className = d.ok ? 'okc' : 'bad'; });
+each('[data-bar]', e => { const d = I[e.dataset.bar]; e.innerHTML = `<i style="width:${Math.max(d.pct, 3)}%;background:${pctCol(d.pct)}"></i>`; });
+
+// ---- clawd.pak player (same as index.html) ----
+function parsePak(b64) {
+  const bin = atob(b64), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  const dv = new DataView(u.buffer), anims = {};
+  for (let i = 0, n = dv.getUint16(6, true); i < n; i++) {
+    const d = 12 + 72 * i; let name = '';
+    for (let k = 0; k < 15 && u[d + k]; k++) name += String.fromCharCode(u[d + k]);
+    const pal = [];
+    for (let k = 0; k < 16; k++) { const v = dv.getUint16(d + 28 + 2 * k, true);
+      pal.push(`rgb(${((v >> 11) & 31) * 255 / 31 | 0},${((v >> 5) & 63) * 255 / 63 | 0},${(v & 31) * 255 / 31 | 0})`); }
+    anims[name] = { w:u[d + 16], h:u[d + 17], ox:u[d + 18], oy:u[d + 19], fc:dv.getUint16(d + 20, true), ls:dv.getUint16(d + 22, true),
+                    le:dv.getUint16(d + 24, true), fb:dv.getUint16(d + 26, true), pal, fo:dv.getUint32(d + 60, true), ho:dv.getUint32(d + 64, true) };
+  }
+  return { u, dv, anims };
+}
+const PAK = parsePak(window.PAK);
+const R = v => Math.round(v * 2) / 2;          // k = 1.5 is 3 device pixels at 2x: snap to them
+const K = 1.5;
+const hold = (a, f) => PAK.dv.getUint16(a.ho + 2 * f, true) || 100;
+function sprite(name, loop = false) {
+  const s = { a:null, f:0, due:0, name:'' };
+  s.set = (n, now, lp = false) => { if (s.name === n) return; s.name = n; s.a = PAK.anims[n]; s.f = lp ? s.a.ls : 0; s.due = now + hold(s.a, s.f); };
+  s.update = now => { let g = 0; while (now >= s.due && g++ < 50) { let n = s.f + 1; if (s.f === s.a.le || n >= s.a.fc) n = s.a.ls; s.f = n; s.due += hold(s.a, n); } };
+  s.draw = (c, x, y, k, flip = false) => {
+    const a = s.a, base = a.fo + s.f * a.fb;
+    for (let gy = 0; gy < a.h; gy++) for (let gx = 0; gx < a.w; gx++) {
+      const sx = flip ? a.w - 1 - gx : gx, i = gy * a.w + sx, b = PAK.u[base + (i >> 1)], v = i & 1 ? b & 15 : b >> 4;
+      if (v) { c.fillStyle = a.pal[v]; c.fillRect(R(x + (flip ? 2 * 27 - a.ox - a.w : a.ox) * k + gx * k), R(y + (a.oy + gy) * k), k, k); }
+    }
+  };
+  s.set(name, performance.now(), loop);
+  return s;
+}
+function hidpi(id) { const cv = document.getElementById(id), r = 2, w = cv.width, h = cv.height; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  cv.width = w * r; cv.height = h * r; const c = cv.getContext('2d'); c.scale(r, r); c.imageSmoothingEnabled = false; return { c, w, h }; }
+function ring(c, cx, cy, r, lw, d) {
+  c.lineCap = 'round'; c.lineWidth = lw; c.strokeStyle = COL.track; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
+  c.strokeStyle = pctCol(d.pct); c.beginPath(); c.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * d.pct / 100); c.stroke();
+}
+
+// 1: corner mascot (rest, wave, rest, point) at 1 px per cell
+const K1 = hidpi('c1'), s1 = sprite('walking'), SEQ = [['walking', 2200], ['waving', 2600], ['walking', 2200], ['pointing', 3200]];
+// 2: walks along the session bar to the used mark, then stands; loops every 6 s
+const K2 = hidpi('c2'), s2 = sprite('crab walking'), ride = document.querySelector('.v2 .ride');
+// 3 / 4
+const K3 = hidpi('c3'), s3 = sprite('laptop', true), RS = hidpi('r-s'), RW = hidpi('r-w');
+const K4 = hidpi('c4'), s4 = sprite(I.w.ok ? 'dancing' : 'magnifier', true);
+ring(RS.c, 35, 35, 30, 6, I.s); ring(RW.c, 35, 35, 30, 6, I.w);
+
+function frame(now) {
+  { const tot = SEQ.reduce((a, x) => a + x[1], 0); let t = now % tot, i = 0; while (t >= SEQ[i][1]) t -= SEQ[i++][1];
+    s1.set(SEQ[i][0], now); if (SEQ[i][0] !== 'walking') s1.update(now);
+    K1.c.clearRect(0, 0, K1.w, K1.h); s1.draw(K1.c, K1.w / 2 - 27 * K, K1.h - 1 - 37 * K, K); }
+  { // feet centre walks from the bar's start to the fill tip, then Clawd waves there
+    const W = ride.clientWidth, tip = W * I.s.pct / 100, u = (now % 6000) / 6000, walking = u < 0.5;
+    const x = walking ? tip * (u / 0.5) : tip;
+    s2.set(walking ? 'crab walking' : 'waving', now, !walking); s2.update(now);
+    K2.c.canvas.style.left = `${Math.round(Math.min(W - K2.w, Math.max(0, x - K2.w / 2)))}px`;
+    K2.c.clearRect(0, 0, K2.w, K2.h); s2.draw(K2.c, K2.w / 2 - 27 * K, K2.h - 37 * K, K); }
+  { K3.c.clearRect(0, 0, K3.w, K3.h); s3.update(now); s3.draw(K3.c, K3.w / 2 - 32 * K, K3.h - 2 - 37 * K, K); }
+  { K4.c.clearRect(0, 0, K4.w, K4.h); s4.update(now); s4.draw(K4.c, K4.w / 2 - 29 * K, K4.h - 2 - 37 * K, K); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

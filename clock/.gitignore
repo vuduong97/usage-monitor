@@ -1,0 +1,34 @@
+# OS / editors
+.DS_Store
+.vscode/
+# agent harness state (never commit)
+.pi/
+.claude/
+# Python
+__pycache__/
+*.pyc
+.venv/
+# Node
+node_modules/
+package-lock.json
+# Generated from clawd-on-desk artwork (All Rights Reserved) — personal use only, NEVER commit
+build/desk/
+# The desktop app's clock-screen renderer zips (tools/fetch_renderer.sh): compiled from the
+# private drawing code, they only ever go to the encrypted feed
+build/renderer/
+*.desk.pak
+desk.pak
+firmware/data/desk.pak
+tools/desk/out/
+# Stock-clock backups (contain Wi-Fi/API secrets)
+.stock-backup/
+firmware/.stock-backup/
+# PlatformIO
+.pio/
+# clangd index
+firmware/.cache/
+# Firmware feed: wrangler state, release output and keys (never commit)
+.wrangler/
+rel/
+key.b64
+.dev.vars

@@ -1,0 +1,53 @@
+{
+  "hostname": "clawd-desk",
+  "wifi": [
+    {
+      "ssid": "Office",
+      "passSet": true,
+      "pass": "office-pass-1"
+    },
+    {
+      "ssid": "Home hotspot",
+      "passSet": true,
+      "pass": "hotspot-pass"
+    },
+    {
+      "ssid": "Open cafe",
+      "passSet": false,
+      "pass": ""
+    }
+  ],
+  "apSsid": "MyClock-Setup",
+  "apPassSet": true,
+  "apPass": "ap-secret-123",
+  "brightness": 63,
+  "autoBrightness": true,
+  "backlightInverted": false,
+  "rotation": 3,
+  "usage": {
+    "screen": 2,
+    "anim": -1,
+    "layout": 1
+  },
+  "clock": {
+    "tz": "Asia/Ho_Chi_Minh",
+    "tzPosix": "<+07>-7",
+    "nightEnabled": true,
+    "nightStart": "23:30",
+    "nightEnd": "06:45",
+    "nightLevel": 12
+  },
+  "display": {
+    "colorOrder": "bgr",
+    "invert": true,
+    "rGain": 90,
+    "gGain": 110,
+    "bGain": 100
+  },
+  "auth": {
+    "enabled": true,
+    "user": "boss",
+    "passSet": true,
+    "pass": "digest-pass"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "clawd-home-desk-tools",
+  "private": true,
+  "description": "Render clawd-on-desk SVG animations into the clock's /desk.pak (personal use only, output never committed)",
+  "dependencies": { "puppeteer-core": "^24.0.0", "pngjs": "^7.0.0" }
+}
