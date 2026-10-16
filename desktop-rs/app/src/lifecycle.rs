@@ -868,6 +868,13 @@ fn exit_allowed(code: Option<i32>, keep_running: bool) -> bool {
     !keep_running || code.is_some()
 }
 
+/// Whether launchd started this process for Clawd's own LaunchAgent. launchd sets
+/// `XPC_SERVICE_NAME` to the job label; an app opened from Finder or `open` gets
+/// `application.<bundle id>.<numbers>` instead, so a user's double-click still sees the alert.
+fn started_by_launch_agent(env: &Env) -> bool {
+    env.get("XPC_SERVICE_NAME").as_deref() == Some(clawd_contracts::LAUNCH_AGENT_LABEL)
+}
+
 /// `Clawd` / `Clawd tray` (`tray.main`). Returns the exit code.
 pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
     let cfg = EngineConfig::system();
@@ -877,6 +884,13 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
         std::env::consts::OS
     );
     if tauri::async_runtime::block_on(another_daemon_running(&cfg.paths, &cfg.env)) {
+        if started_by_launch_agent(&cfg.env) {
+            // 0.1.4's "restart to update" exits with a traceback (code 1), so KeepAlive starts
+            // the new app once more beside the copy the swap script opened. Nobody asked for
+            // this launch: no dialog. Exit 0 so launchd stops retrying.
+            tracing::info!("Started by the LaunchAgent while another Clawd runs; exiting quietly");
+            return 0;
+        }
         tracing::info!("Another Clawd daemon already owns the event port; exiting");
         dialogs::alert(ALREADY_RUNNING);
         return 0;
@@ -1060,7 +1074,28 @@ pub fn run_headless(cfg: EngineConfig) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::exit_allowed;
+    use super::{exit_allowed, started_by_launch_agent};
+    use clawd_contracts::Env;
+
+    fn env_with(service: Option<&str>) -> Env {
+        let service = service.map(str::to_string);
+        Env::from_fn(move |name| {
+            (name == "XPC_SERVICE_NAME")
+                .then(|| service.clone())
+                .flatten()
+        })
+    }
+
+    #[test]
+    fn only_the_launch_agent_skips_the_already_running_alert() {
+        assert!(started_by_launch_agent(&env_with(Some("vn.clawd.desktop"))));
+        // Finder / `open` / the update swap script: the user sees the alert.
+        assert!(!started_by_launch_agent(&env_with(Some(
+            "application.vn.clawd.desktop.63125481.63125487"
+        ))));
+        assert!(!started_by_launch_agent(&env_with(Some("0"))));
+        assert!(!started_by_launch_agent(&env_with(None)));
+    }
 
     #[test]
     fn the_tray_only_exits_with_a_code() {
