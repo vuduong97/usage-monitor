@@ -3,10 +3,27 @@
 //! Use them from `tests/*.rs` integration tests only (PORT-MAP rule).
 
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use serde_json::{json, Value};
 
 use crate::core::{FakeHttpServer, FakeResponse};
+
+/// `FakeHttpServer::start` with a few retries: binding a loopback port fails now and then on a
+/// busy Windows host (seen once in a full-suite run).
+fn start_server(what: &str) -> FakeHttpServer {
+    let mut last = None;
+    for _ in 0..5 {
+        match FakeHttpServer::start() {
+            Ok(server) => return server,
+            Err(e) => {
+                last = Some(e);
+                std::thread::sleep(Duration::from_millis(100));
+            }
+        }
+    }
+    panic!("{what}: {:?}", last)
+}
 
 /// `tests/fixtures/oauth_usage_max.json` of the Python repo: a Max account's
 /// `/api/oauth/usage` answer (7 % / 8 %).
@@ -23,7 +40,7 @@ pub struct FakeAnthropic {
 impl FakeAnthropic {
     pub fn start() -> Self {
         Self {
-            server: FakeHttpServer::start().expect("fake anthropic server"),
+            server: start_server("fake anthropic server"),
         }
     }
 
@@ -80,7 +97,7 @@ impl FakeClockSink {
     }
 
     pub fn start_with_status(status: u16) -> Self {
-        let server = FakeHttpServer::start().expect("fake clock server");
+        let server = start_server("fake clock server");
         server.route(
             "POST",
             "/api/usage",
@@ -128,7 +145,7 @@ impl FakeCliProxy {
         files: Value,
         upstream: impl Fn(&str) -> (u16, Value) + Send + Sync + 'static,
     ) -> Self {
-        let server = FakeHttpServer::start().expect("fake cliproxy server");
+        let server = start_server("fake cliproxy server");
         let list_calls = Arc::new(Mutex::new(0u32));
         let api_calls = Arc::new(Mutex::new(Vec::new()));
         let want = format!("Bearer {key}");
