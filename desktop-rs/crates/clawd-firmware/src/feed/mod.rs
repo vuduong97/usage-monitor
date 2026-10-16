@@ -33,9 +33,7 @@ use serde_json::{Map, Value};
 use tokio::task::JoinSet;
 
 use crate::crc32::crc32_hex;
-use crate::firmware::{
-    is_valid_style_id, sha256_hex, update_state, Bundle, StylePack,
-};
+use crate::firmware::{is_valid_style_id, sha256_hex, update_state, Bundle, StylePack};
 use crate::pyval;
 use cache::Cache;
 
@@ -130,10 +128,7 @@ impl Release {
         };
         let mut out: Vec<String> = Vec::new();
         for k in kinds {
-            if m.files.iter().any(|f| f.kind == *k)
-                && !self.has(k)
-                && !out.iter().any(|o| o == k)
-            {
+            if m.files.iter().any(|f| f.kind == *k) && !self.has(k) && !out.iter().any(|o| o == k) {
                 out.push((*k).to_owned());
             }
         }
@@ -215,11 +210,9 @@ fn styles_inner(m: &Manifest, blobs: &HashMap<String, Vec<u8>>) -> Option<Vec<St
 /// `feed.make_release(m, blobs)`: build a [`Release`] from a manifest and the fetched files
 /// (style packs from the `styles` index, each checked).
 pub fn make_release(m: &Manifest, blobs: HashMap<String, Vec<u8>>) -> Release {
-    let (name, size, sha) = m
-        .file("fw")
-        .map_or((String::new(), 0, String::new()), |f| {
-            (f.name.clone(), f.size as usize, f.sha256.clone())
-        });
+    let (name, size, sha) = m.file("fw").map_or((String::new(), 0, String::new()), |f| {
+        (f.name.clone(), f.size as usize, f.sha256.clone())
+    });
     let bundle = Bundle {
         path: PathBuf::from(name),
         size,
@@ -345,7 +338,10 @@ impl Feed {
             .inner
             .http
             // the channel is `stable` or `beta` only (see `Feed::new`): nothing to escape
-            .get(format!("{}/v1/latest?channel={}", self.inner.url, self.inner.channel));
+            .get(format!(
+                "{}/v1/latest?channel={}",
+                self.inner.url, self.inner.channel
+            ));
         let r = req.send().await.map_err(|e| net_error(&e))?;
         let code = r.status().as_u16();
         if code == 404 {
@@ -372,7 +368,9 @@ impl Feed {
         progress: Option<FetchProgress<'_>>,
     ) -> Result<Release, FeedError> {
         let Some(m) = &rel.manifest else {
-            return Err(FeedError("feed: a bundled release has no manifest".to_owned()));
+            return Err(FeedError(
+                "feed: a bundled release has no manifest".to_owned(),
+            ));
         };
         let want: Vec<FeedFile> = m
             .files
@@ -396,7 +394,12 @@ impl Feed {
         let gate = Arc::new(tokio::sync::Semaphore::new(DOWNLOAD_WORKERS));
         let mut jobs: JoinSet<Result<(FeedFile, Vec<u8>), FeedError>> = JoinSet::new();
         for f in want {
-            let (this, key, url, gate) = (self.clone(), key.clone(), urls[&f.name].clone(), gate.clone());
+            let (this, key, url, gate) = (
+                self.clone(),
+                key.clone(),
+                urls[&f.name].clone(),
+                gate.clone(),
+            );
             let seq = m.seq;
             jobs.spawn(async move {
                 let _slot = gate.acquire().await.map_err(|e| FeedError(e.to_string()))?;

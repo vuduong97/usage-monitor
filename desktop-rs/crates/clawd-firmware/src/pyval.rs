@@ -220,7 +220,12 @@ mod tests {
 
     #[test]
     fn truthiness_and_str() {
-        assert!(!truthy(&json!(0)) && !truthy(&json!("")) && !truthy(&json!([])) && !truthy(&Value::Null));
+        assert!(
+            !truthy(&json!(0))
+                && !truthy(&json!(""))
+                && !truthy(&json!([]))
+                && !truthy(&Value::Null)
+        );
         assert!(truthy(&json!("a")) && truthy(&json!(0.5)) && truthy(&json!({"a": 1})));
         assert_eq!(str_or_empty(Some(&json!(null))), "");
         assert_eq!(str_or_empty(Some(&json!(5))), "5");
@@ -254,8 +259,14 @@ mod tests {
     #[test]
     fn dumps_matches_python() {
         let v = json!({"b": 1, "a": [1, "é"], "c": null});
-        assert_eq!(json_dumps(&v, false), r#"{"b": 1, "a": [1, "\u00e9"], "c": null}"#);
-        assert_eq!(json_dumps(&v, true), r#"{"a": [1, "\u00e9"], "b": 1, "c": null}"#);
+        assert_eq!(
+            json_dumps(&v, false),
+            r#"{"b": 1, "a": [1, "\u00e9"], "c": null}"#
+        );
+        assert_eq!(
+            json_dumps(&v, true),
+            r#"{"a": [1, "\u00e9"], "b": 1, "c": null}"#
+        );
         assert_eq!(json_dumps(&json!("😀"), false), "\"\\ud83d\\ude00\"");
     }
 }

@@ -54,7 +54,11 @@ impl Cache {
             std::fs::rename(&tmp, &p)?;
             for old in std::fs::read_dir(root)? {
                 let old = old?.path();
-                if old.is_dir() && old.file_name().is_some_and(|n| n != seq.to_string().as_str()) {
+                if old.is_dir()
+                    && old
+                        .file_name()
+                        .is_some_and(|n| n != seq.to_string().as_str())
+                {
                     let _ = std::fs::remove_dir_all(old);
                 }
             }

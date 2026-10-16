@@ -227,9 +227,9 @@ pub fn update_state(heap: &Value, bundle: Option<&Bundle>) -> &'static str {
 /// style packs).
 pub fn clock_style_api(heap: &Value) -> u32 {
     match heap.get("styleApi") {
-        Some(Value::Number(n)) if n.is_i64() || n.is_u64() => {
-            n.as_u64().map_or(0, |v| u32::try_from(v).unwrap_or(u32::MAX))
-        }
+        Some(Value::Number(n)) if n.is_i64() || n.is_u64() => n
+            .as_u64()
+            .map_or(0, |v| u32::try_from(v).unwrap_or(u32::MAX)),
         _ => 0,
     }
 }
@@ -331,9 +331,21 @@ mod tests {
         let new = json!({"variant": "esp8266-clawd", "fwSeq": 1});
         assert_eq!(update_state(&old, Some(&b)), "available");
         assert_eq!(update_state(&new, Some(&b)), "current");
-        assert_eq!(update_state(&json!({"variant": "esp8266-clawd", "fwSeq": 2}), Some(&b)), "current");
-        assert_eq!(update_state(&json!({"version": "2.16.0"}), Some(&b)), "incompatible");
-        assert_eq!(update_state(&json!({"variant": "esp8266", "desk": 1, "pak": 1}), Some(&b)), "incompatible");
+        assert_eq!(
+            update_state(&json!({"variant": "esp8266-clawd", "fwSeq": 2}), Some(&b)),
+            "current"
+        );
+        assert_eq!(
+            update_state(&json!({"version": "2.16.0"}), Some(&b)),
+            "incompatible"
+        );
+        assert_eq!(
+            update_state(
+                &json!({"variant": "esp8266", "desk": 1, "pak": 1}),
+                Some(&b)
+            ),
+            "incompatible"
+        );
         assert_eq!(update_state(&old, None), "none");
     }
 
@@ -341,14 +353,24 @@ mod tests {
     fn style_packs_and_states() {
         let t = tempfile::tempdir().unwrap();
         let b = make_bundle(t.path(), 2, 1, &["synth", "paper"]).unwrap();
-        assert_eq!(b.styles.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(), ["synth", "paper"]);
+        assert_eq!(
+            b.styles.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(),
+            ["synth", "paper"]
+        );
         assert!(b.styles[1].light);
         assert_eq!(&b.styles[0].read().unwrap()[..4], b"CSTY");
         let new = json!({"variant": "esp8266-clawd", "fwSeq": 1});
-        let styled = json!({"variant": "esp8266-clawd", "fwSeq": 2, "styleApi": 1, "style": "synth"});
+        let styled =
+            json!({"variant": "esp8266-clawd", "fwSeq": 2, "styleApi": 1, "style": "synth"});
         assert_eq!(style_state(&new, Some(&b)), "update");
         assert_eq!(style_state(&styled, Some(&b)), "ready");
-        assert_eq!(style_state(&json!({"variant": "esp8266-clawd", "fwSeq": 2, "styleApi": 2}), Some(&b)), "unavailable");
+        assert_eq!(
+            style_state(
+                &json!({"variant": "esp8266-clawd", "fwSeq": 2, "styleApi": 2}),
+                Some(&b)
+            ),
+            "unavailable"
+        );
         assert_eq!(style_state(&new, None), "unavailable");
         assert_eq!(clock_style(&styled), "synth");
         assert_eq!(clock_style(&new), "");
@@ -363,22 +385,37 @@ mod tests {
     #[test]
     fn style_index_must_match_the_image() {
         let t = tempfile::tempdir().unwrap();
-        assert!(make_bundle(&t.path().join("a"), 2, 2, &["synth"]).unwrap().styles.is_empty());
-        assert!(make_bundle(&t.path().join("b"), 2, 0, &["synth"]).unwrap().styles.is_empty());
+        assert!(make_bundle(&t.path().join("a"), 2, 2, &["synth"])
+            .unwrap()
+            .styles
+            .is_empty());
+        assert!(make_bundle(&t.path().join("b"), 2, 0, &["synth"])
+            .unwrap()
+            .styles
+            .is_empty());
         let c = t.path().join("c");
         make_bundle(&c, 2, 1, &["synth"]).unwrap();
         let idx_path = c.join("styles").join("index.json");
         let mut idx: Value = serde_json::from_slice(&std::fs::read(&idx_path).unwrap()).unwrap();
         idx["styles"][0]["file"] = json!("../firmware.json");
         std::fs::write(&idx_path, idx.to_string()).unwrap();
-        assert!(load_bundle(&Env::empty(), Some(&c)).unwrap().styles.is_empty());
-        assert!(make_bundle(&t.path().join("d"), 2, 1, &["Bad Id"]).unwrap().styles.is_empty());
+        assert!(load_bundle(&Env::empty(), Some(&c))
+            .unwrap()
+            .styles
+            .is_empty());
+        assert!(make_bundle(&t.path().join("d"), 2, 1, &["Bad Id"])
+            .unwrap()
+            .styles
+            .is_empty());
     }
 
     #[test]
     fn bundle_dir_prefers_the_environment() {
         let env = Env::from_fn(|k| (k == "CLAWD_FIRMWARE_DIR").then(|| "/x/fw".to_owned()));
-        assert_eq!(bundle_dir_in(&env, Path::new("/res")), PathBuf::from("/x/fw"));
+        assert_eq!(
+            bundle_dir_in(&env, Path::new("/res")),
+            PathBuf::from("/x/fw")
+        );
         assert_eq!(
             bundle_dir_in(&Env::empty(), Path::new("/res")),
             Path::new("/res").join("firmware")
@@ -394,6 +431,10 @@ mod tests {
         assert!(!is_clawd(&json!({"variant": "x", "desk": 1, "pak": 1})));
         assert!(is_clawd(&json!({"variant": null, "desk": 1, "pak": 1})));
         assert_eq!(clock_style_api(&json!({"styleApi": 0})), 0);
-        assert!(is_valid_style_id("a_b-9") && !is_valid_style_id("") && !is_valid_style_id(&"a".repeat(16)));
+        assert!(
+            is_valid_style_id("a_b-9")
+                && !is_valid_style_id("")
+                && !is_valid_style_id(&"a".repeat(16))
+        );
     }
 }

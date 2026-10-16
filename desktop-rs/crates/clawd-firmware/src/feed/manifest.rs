@@ -61,7 +61,9 @@ fn row(
     };
     let (name, kind) = (f.get("name"), f.get("kind"));
     let name_text = match name {
-        Some(Value::String(s)) if name_ok(s) && !s.contains("..") && !names.contains(s) => s.clone(),
+        Some(Value::String(s)) if name_ok(s) && !s.contains("..") && !names.contains(s) => {
+            s.clone()
+        }
         _ => {
             return Err(err(format!(
                 "bad file name {}",
@@ -218,8 +220,18 @@ mod tests {
     #[test]
     fn manifest_checks_refuse_what_python_refuses() {
         let bad = [
-            with(|m| m["files"].as_array_mut().unwrap().push(file("../x", "fw", 1))),
-            with(|m| m["files"].as_array_mut().unwrap().push(file("clawd.pak", "clawdpak", 1))),
+            with(|m| {
+                m["files"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(file("../x", "fw", 1))
+            }),
+            with(|m| {
+                m["files"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(file("clawd.pak", "clawdpak", 1))
+            }),
             with(|m| m["files"][1]["kind"] = json!("exe")),
             with(|m| m["files"][1]["enc"] = json!(508)),
             with(|m| m["files"][1]["crc"] = json!("xyz")),
@@ -229,7 +241,12 @@ mod tests {
             with(|m| m["seq"] = json!(true)),
             with(|m| m["seq"] = json!(1_000_001)),
             with(|m| m["files"][0]["size"] = json!(4 * 1024 * 1024 + 1)),
-            with(|m| m["files"].as_array_mut().unwrap().push(file("b.bin", "fw", 9))),
+            with(|m| {
+                m["files"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(file("b.bin", "fw", 9))
+            }),
             with(|m| m["layouts"] = json!(null)),
             json!([1]),
         ];
@@ -243,11 +260,22 @@ mod tests {
         let msg = |m: Value| parse_manifest(&m).unwrap_err().0;
         assert_eq!(msg(with(|m| m["v"] = json!(2))), "not a v1 manifest");
         assert_eq!(msg(with(|m| m["seq"] = json!("6"))), "bad number '6'");
-        assert_eq!(msg(with(|m| m["files"][0]["name"] = json!("../x"))), "bad file name '../x'");
-        assert_eq!(msg(with(|m| m["files"][1]["kind"] = json!("exe"))), "unknown kind 'exe'");
-        assert_eq!(msg(with(|m| m["files"][1]["crc"] = json!("xyz"))), "bad hash for clawd.pak");
         assert_eq!(
-            msg(with(|m| m["files"] = json!([file("clawd.pak", "clawdpak", 5)]))),
+            msg(with(|m| m["files"][0]["name"] = json!("../x"))),
+            "bad file name '../x'"
+        );
+        assert_eq!(
+            msg(with(|m| m["files"][1]["kind"] = json!("exe"))),
+            "unknown kind 'exe'"
+        );
+        assert_eq!(
+            msg(with(|m| m["files"][1]["crc"] = json!("xyz"))),
+            "bad hash for clawd.pak"
+        );
+        assert_eq!(
+            msg(with(
+                |m| m["files"] = json!([file("clawd.pak", "clawdpak", 5)])
+            )),
             "a release has exactly one firmware image"
         );
         assert_eq!(msg(with(|m| m["files"][1] = json!(3))), "bad file row");
@@ -268,7 +296,10 @@ mod tests {
             m["commit"] = json!("c".repeat(60));
         }))
         .unwrap();
-        assert_eq!((m.notes.chars().count(), m.date.len(), m.commit.len()), (2000, 40, 40));
+        assert_eq!(
+            (m.notes.chars().count(), m.date.len(), m.commit.len()),
+            (2000, 40, 40)
+        );
     }
 
     #[test]
@@ -276,7 +307,17 @@ mod tests {
         for ok in ["a", "styles/synth.pak", "a.b_c-d", "0x"] {
             assert!(name_ok(ok), "{ok}");
         }
-        for bad in ["", "A", "-a", "a/", "/a", "a/b/c", ".a", "a b", &"a".repeat(49)] {
+        for bad in [
+            "",
+            "A",
+            "-a",
+            "a/",
+            "/a",
+            "a/b/c",
+            ".a",
+            "a b",
+            &"a".repeat(49),
+        ] {
             assert!(!name_ok(bad), "{bad}");
         }
     }
@@ -290,10 +331,19 @@ mod tests {
     #[test]
     fn renderers_are_kept_apart_and_validated_apart() {
         let m = parse_manifest(&with(|m| {
-            m["renderers"] = json!([renderer("renderer/win-x64.zip", "win-x64"), renderer("renderer/mac.zip", "mac")])
+            m["renderers"] = json!([
+                renderer("renderer/win-x64.zip", "win-x64"),
+                renderer("renderer/mac.zip", "mac")
+            ])
         }))
         .unwrap();
-        assert_eq!(m.renderers.iter().map(|r| r.platform.as_str()).collect::<Vec<_>>(), ["win-x64", "mac"]);
+        assert_eq!(
+            m.renderers
+                .iter()
+                .map(|r| r.platform.as_str())
+                .collect::<Vec<_>>(),
+            ["win-x64", "mac"]
+        );
         assert!(m.renderer("linux-x64").is_none() && m.files.iter().all(|f| f.kind != "renderer"));
         let changes: [fn(&mut Value); 9] = [
             |r| r["platform"] = json!("amiga"),
@@ -308,7 +358,10 @@ mod tests {
         ];
         for change in changes {
             let parsed = parse_manifest(&with(|m| {
-                m["renderers"] = json!([renderer("renderer/win-x64.zip", "win-x64"), renderer("renderer/mac.zip", "mac")]);
+                m["renderers"] = json!([
+                    renderer("renderer/win-x64.zip", "win-x64"),
+                    renderer("renderer/mac.zip", "mac")
+                ]);
                 change(&mut m["renderers"][0]);
             }))
             .unwrap();
@@ -316,7 +369,10 @@ mod tests {
             assert!(parsed.file("fw").is_some());
         }
         let dup = parse_manifest(&with(|m| {
-            m["renderers"] = json!([renderer("renderer/mac.zip", "mac"), renderer("renderer/mac2.zip", "mac")])
+            m["renderers"] = json!([
+                renderer("renderer/mac.zip", "mac"),
+                renderer("renderer/mac2.zip", "mac")
+            ])
         }))
         .unwrap();
         assert!(dup.renderers.is_empty());

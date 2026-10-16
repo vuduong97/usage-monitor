@@ -74,7 +74,10 @@ pub fn open(key: &[u8], seq: u64, f: &FeedFile, blob: &[u8]) -> Result<Vec<u8>, 
     }
     let data = decrypt(key, seq, &f.name, blob)?;
     if data.len() as u64 != f.size || sha256_hex(&data) != f.sha256 || crc32_hex(&data) != f.crc {
-        return Err(FeedError(format!("{}: does not match the manifest", f.name)));
+        return Err(FeedError(format!(
+            "{}: does not match the manifest",
+            f.name
+        )));
     }
     Ok(data)
 }
