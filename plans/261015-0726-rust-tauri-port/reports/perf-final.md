@@ -27,9 +27,9 @@ runs 2 and 3 were on a quiet machine (13-14% CPU).
 |---|---|---|---|
 | 2. RAM idle, main process, 0 windows | <= 20 MB private | 3.0 MB at +10 s, 3.1 MB at +10 min (private bytes 6.2 -> 7.7 MB) | pass |
 | 3. Settings click -> first paint | 300 ms, relaxed to <= 600-700 ms (owner, 2026-10-15) | cold 591 / 655 ms, warm median 663 ms (642-681 ms) | pass at the relaxed 0.7 s; not at 300 ms |
-| 4. Tray after launch | <= 1 s | 1054-1089 ms (idle run 1089 ms) | **just over**; cause found and fixed, see below |
+| 4. Tray after launch | <= 1 s | before the fix 1054-1089 ms; **after the fix 316 / 327 ms** (3 runs: 1107 / 316 / 327, the first run is a cold first start) | pass (median 327 ms) |
 | 50 open/close cycles | no growth | 1.3 / 3.1 / 1.6 MB after 50 cycles, 0 WebView2 processes left | pass |
-| 1. Installer | <= 8 MB | not measured: `iscc` is not installed here; `Clawd.exe` is 14.5 MB uncompressed | open |
+| 1. Installer | <= 8 MB | **5,719,188 bytes (5.5 MB)** (`Clawd-0.2.0-windows-setup.exe`, Inno Setup 6.7.3, `Clawd.exe` is 14.6 MB uncompressed) | pass |
 
 ## Tray: why it was ~1.07 s and what changed
 
@@ -39,11 +39,11 @@ loopback port takes about 2 s to fail** (measured: 2121 ms for 127.0.0.1, 2021 m
 being refused at once, so on a normal start (no other daemon) it always waited out the timeout.
 Fix (commit `3e6aba6`, `crates/clawd-events/src/probe.rs`): a 250 ms TCP connect first; the HTTP probe only runs
 when something listens. A live daemon accepts a loopback connection immediately, so the single-instance
-behaviour is unchanged. **Not re-measured yet** (needs a window launch; owner asked for no more disturbance).
+behaviour is unchanged. **Re-measured after the fix** (tree at `275ae04`, release exe built with the installer, 3 runs x 2 cycles, low priority, machine CPU 27-70% from the owner's own use): tray 316 and 327 ms in the two warm runs, 1107 ms in the first run of the batch (cold file cache). Paint in that batch was 745-896 ms cold and 731-849 ms warm, noisier than the quiet-machine numbers above (655/663 ms) because the machine was in use.
 
 ## Not measured / open
 
-* Tray after the fix; the in-process tray-click open; Windows 10; macOS (deferred to the CI/mac checks);
+* The in-process tray-click open; Windows 10; macOS (deferred to the CI/mac checks);
   Python baseline (owner decision 2026-10-15: no Python baseline, absolute numbers only).
 * The first-ever WebView2 profile creation: the first window of a fresh profile took 3477 ms in the earlier
   run under build load (`windows.md` item); only users' very first open after install sees it.
