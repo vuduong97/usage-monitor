@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "settings-window",
+  "description": "The settings window: the event API (clawd://ready, show-tab, busy-close) and the py_api command, nothing else. popover_msg is not allowed here.",
+  "windows": ["settings"],
+  "permissions": ["core:event:default", "allow-py-api"]
+}

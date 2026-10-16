@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "popover-window",
+  "description": "The macOS popover: the event API (clawd://popover-*) and the popover_msg command, nothing else. py_api is not allowed here.",
+  "windows": ["popover"],
+  "permissions": ["core:event:default", "allow-popover-msg"]
+}
