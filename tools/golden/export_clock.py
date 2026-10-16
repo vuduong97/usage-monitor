@@ -392,7 +392,7 @@ h.write_fixture(
 HEAP_URLS = [
     "http://10.0.0.5/api/usage", "http://clawd.local:8080/custom", "http://10.0.0.5/api/usage?x=1#frag",
     "https://h/", "http://[::1]:8080/api/usage", "http://10.0.0.5:80/api/usage", "http://H.Local/x",
-    "http://10.0.0.5", "10.0.0.5/api/usage", "http://u:p@10.0.0.5/api/usage",
+    "http://10.0.0.5", "10.0.0.5/api/usage", "http://u:p@10.0.0.5/api/usage", "HTTP://H/x", "Https://Clawd.Local:81/A?B",
 ]
 h.write_fixture("clock", "heap_url", input={"urls": HEAP_URLS},
                 output={"heap_urls": [bw.heap_url(u) for u in HEAP_URLS]}, ctx=ctx)

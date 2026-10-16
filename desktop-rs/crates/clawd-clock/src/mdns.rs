@@ -36,6 +36,21 @@ pub trait MdnsSource: Send + Sync {
     fn stop(&self);
 }
 
+/// How long `stop` waits for the daemon to confirm its shutdown.
+const SHUTDOWN_WAIT: Duration = Duration::from_secs(2);
+
+/// `ServiceDaemon::shutdown`, retried once when its command queue is full (`Error::Again`).
+fn shutdown_daemon(daemon: &ServiceDaemon) -> Option<mdns_sd::Receiver<mdns_sd::DaemonStatus>> {
+    match daemon.shutdown() {
+        Ok(status) => Some(status),
+        Err(mdns_sd::Error::Again) => {
+            std::thread::sleep(Duration::from_millis(50));
+            daemon.shutdown().ok()
+        }
+        Err(_) => None, // DaemonShutdown: already gone
+    }
+}
+
 /// What the event thread has learned (`MdnsBrowser._names` plus the resolved records).
 #[derive(Default)]
 struct Seen {
@@ -233,9 +248,19 @@ impl MdnsSource for MdnsBrowser {
         let Some(running) = self.running().take() else {
             return;
         };
-        // the daemon may already be half closed: ignore its answer
-        let _ = running.daemon.shutdown();
-        let _ = running.events.join();
+        // Join our event thread only once the daemon confirmed its shutdown (it then drops the
+        // browse channel and the thread's `recv` ends). Otherwise (command queue full twice, a
+        // daemon that is already gone or does not answer) detach the thread: it ends by itself
+        // when the daemon does, and `stop` must never block for ever.
+        let confirmed = match shutdown_daemon(&running.daemon) {
+            Some(status) => status.recv_timeout(SHUTDOWN_WAIT).is_ok(),
+            None => false,
+        };
+        if confirmed {
+            let _ = running.events.join();
+        } else {
+            tracing::info!("mDNS daemon did not confirm its shutdown; detaching its event thread");
+        }
         let mut seen = self.shared.seen();
         seen.names.clear();
         seen.resolved.clear();

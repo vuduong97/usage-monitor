@@ -10,7 +10,9 @@
       "http://H.Local/x",
       "http://10.0.0.5",
       "10.0.0.5/api/usage",
-      "http://u:p@10.0.0.5/api/usage"
+      "http://u:p@10.0.0.5/api/usage",
+      "HTTP://H/x",
+      "Https://Clawd.Local:81/A?B"
     ]
   },
   "output": {
@@ -24,7 +26,9 @@
       "http://H.Local/api/heap",
       "http://10.0.0.5/api/heap",
       "/api/heap",
-      "http://u:p@10.0.0.5/api/heap"
+      "http://u:p@10.0.0.5/api/heap",
+      "http://H/api/heap",
+      "https://Clawd.Local:81/api/heap"
     ]
   }
 }
