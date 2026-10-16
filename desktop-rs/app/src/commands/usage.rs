@@ -5,6 +5,7 @@
 use std::sync::Arc;
 
 use clawd_config::{read_config_dirs, read_onoff_setting, read_usage_source};
+use clawd_firmware::firmware::Bundle;
 use clawd_firmware::preview::{self, PakCache, CLASSIC, PAK_MAX};
 use clawd_usage::codex;
 use serde_json::{json, Map, Value};
@@ -53,14 +54,34 @@ async fn preview_of(b: &Bridge, args: &[Value]) -> Value {
     });
 
     // Once: the feed task may swap the renderer and its cache meanwhile.
-    let (renderer, generation) = {
+    let (first_look, env, generation) = {
         let mut d = b.data();
-        if !d.renderer_loaded {
-            d.renderer_loaded = true;
-            let env = d.env.clone().unwrap_or_else(clawd_contracts::Env::system);
-            let commit = src.as_ref().map(|r| r.commit.clone()).unwrap_or_default();
-            d.renderer = preview::load_renderer(&env, None, &commit).map(Arc::new);
+        let first = !std::mem::replace(&mut d.renderer_loaded, true);
+        (
+            first,
+            d.env.clone().unwrap_or_else(clawd_contracts::Env::system),
+            d.renderer_generation,
+        )
+    };
+    if first_look {
+        // The bundled renderer belongs to the bundled firmware, even when the feed is newer
+        // (`settings_app.py`: `firmware_commit=bundle.commit`). Loading it reads files, so it
+        // runs outside the session lock.
+        let commit = renderer_commit(b.bundle());
+        let loaded =
+            tokio::task::spawn_blocking(move || preview::load_renderer(&env, None, &commit))
+                .await
+                .unwrap_or_else(|e| {
+                    tracing::warn!("[settings] loading the preview renderer failed: {e}");
+                    None
+                });
+        let mut d = b.data();
+        if d.renderer_generation == generation && d.renderer.is_none() {
+            d.renderer = loaded.map(Arc::new);
         }
+    }
+    let (renderer, generation) = {
+        let d = b.data();
         (d.renderer.clone(), d.renderer_generation)
     };
     let Some(renderer) = renderer else {
@@ -118,6 +139,11 @@ async fn preview_of(b: &Bridge, args: &[Value]) -> Value {
     out["exact"] = json!(true);
     out["frames"] = Value::Object(frames);
     out
+}
+
+/// The commit the bundled renderer must match: the bundled firmware's, `""` without one.
+fn renderer_commit(bundle: Option<&Bundle>) -> String {
+    bundle.map(|x| x.commit.clone()).unwrap_or_default()
 }
 
 fn dedup(styles: &[String]) -> Vec<String> {
@@ -185,14 +211,19 @@ fn sources_of(b: &Bridge) -> Value {
 
 /// `SettingsApi.usage_sources`.
 pub async fn usage_sources(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Ok(sources_of(&Bridge::of(ctx)))
+    Bridge::of(ctx).blocking(|b| Ok(sources_of(&b))).await
 }
 
 /// `SettingsApi.set_usage_source(value)`.
 pub async fn set_usage_source(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
     let value = arg(&args, 0).as_str().unwrap_or_default().to_owned();
-    let listed = sources_of(&b)["options"].as_array().is_some_and(|opts| {
+    Bridge::of(ctx)
+        .blocking(move |b| set_usage_source_of(&b, value))
+        .await
+}
+
+fn set_usage_source_of(b: &Bridge, value: String) -> Result<Value, String> {
+    let listed = sources_of(b)["options"].as_array().is_some_and(|opts| {
         opts.iter()
             .any(|o| o["id"].as_str() == Some(value.as_str()))
     });
@@ -270,5 +301,30 @@ async fn pak_of(b: &Bridge) -> Value {
                 None => failure,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bundle(commit: &str) -> Bundle {
+        Bundle {
+            path: "fw.bin".into(),
+            size: 1,
+            sha256: String::new(),
+            variant: String::new(),
+            seq: 1,
+            layouts: 1,
+            commit: commit.into(),
+            style_api: 0,
+            styles: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn the_renderer_commit_is_the_bundled_firmwares() {
+        assert_eq!(renderer_commit(Some(&bundle("abc123"))), "abc123");
+        assert_eq!(renderer_commit(None), "");
     }
 }
