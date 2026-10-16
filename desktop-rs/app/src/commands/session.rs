@@ -17,7 +17,8 @@ use clawd_contracts::{AppPaths, Clock, ClockError, ClockTarget, Env, SystemClock
 use clawd_firmware::feed::{self, Feed, Release};
 use clawd_firmware::firmware::{self, Bundle};
 use clawd_firmware::preview::{self, FrameCache, Renderer, CLASSIC};
-use clawd_store::{autostart::Autostart, creds};
+use clawd_store::autostart::Autostart;
+use clawd_store::creds::{self, Keyring, OsKeyring};
 use serde_json::{json, Value};
 use tokio::sync::mpsc;
 
@@ -28,6 +29,8 @@ mod schema;
 
 pub use schema::{bad_value, base64, clean, clock_view, err, fail, merged, truthy};
 
+/// "Tìm lại" waits this long: the saved address again, or an mDNS answer.
+pub const SEARCH_WAIT: Duration = Duration::from_secs(15);
 /// The window asks the feed again after this long.
 pub const FEED_RECHECK: Duration = Duration::from_secs(600);
 /// `TYPE_IP`: what to do when no clock can be found.
@@ -76,6 +79,12 @@ pub struct SessionData {
     /// What `now` means and where environment variables come from (tests replace both).
     pub clock: Arc<dyn Clock>,
     pub env: Option<Env>,
+    /// Where the clock's web password is kept: the OS store, or an in-memory one in tests.
+    pub keyring: Arc<dyn Keyring>,
+    /// How long "Tìm lại" waits for an answer (`SEARCH_WAIT`), and the pause before a firmware
+    /// upload (`ota.SETTLE`; `None`: the firmware crate's own).
+    pub search_wait: Duration,
+    pub ota_settle: Option<Duration>,
 }
 
 impl Default for SessionData {
@@ -103,6 +112,9 @@ impl Default for SessionData {
             mdns_factory: None,
             clock: Arc::new(SystemClock),
             env: None,
+            keyring: Arc::new(OsKeyring),
+            search_wait: SEARCH_WAIT,
+            ota_settle: None,
         }
     }
 }
@@ -238,7 +250,7 @@ impl Bridge {
         let auth = if key.is_empty() {
             None
         } else {
-            creds::get(&self.services.names, &key)
+            creds::get_with(&*d.keyring, &self.services.names, &key)
         };
         d.api = Some(Arc::new(ClockApi::new(&base, auth)));
         d.base = base;

@@ -19,8 +19,13 @@ fn clock_dict(c: &ClockTarget) -> Value {
 }
 
 /// `SettingsApi.setup_state`.
-pub async fn setup_state(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Ok(setup_state_of(&Bridge::of(ctx)))
+pub async fn setup_state(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    setup_state_on(&Bridge::of(ctx), &args).await
+}
+
+/// `setup_state` on a bridge (the command without the Tauri context).
+pub async fn setup_state_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    Ok(setup_state_of(&b.clone()))
 }
 
 fn setup_state_of(b: &Bridge) -> Value {
@@ -35,20 +40,29 @@ fn setup_state_of(b: &Bridge) -> Value {
 /// `SettingsApi.finish_setup(steps)`: steps done or skipped (each step saves its own choice
 /// first).
 pub async fn finish_setup(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
+    finish_setup_on(&Bridge::of(ctx), &args).await
+}
+
+/// `finish_setup` on a bridge (the command without the Tauri context).
+pub async fn finish_setup_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
     if let Some(steps) = arg(&args, 0).as_array() {
         let steps: Vec<String> = steps.iter().map(text_of).collect();
         let steps: Vec<&str> = steps.iter().map(String::as_str).collect();
         let _ = firstrun::mark_done(b.paths(), &steps);
     }
     b.notify(ShellCmd::Setup);
-    Ok(setup_state_of(&b))
+    Ok(setup_state_of(b))
 }
 
 /// `SettingsApi.setup_clocks`: the wizard's clock step, asked every ~2 s: clocks mDNS sees, and
 /// whether the one the app uses now answers. mDNS only: nothing on the network is scanned.
-pub async fn setup_clocks(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
+pub async fn setup_clocks(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    setup_clocks_on(&Bridge::of(ctx), &args).await
+}
+
+/// `setup_clocks` on a bridge (the command without the Tauri context).
+pub async fn setup_clocks_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
     let mdns = {
         let mut d = b.data();
         match d.mdns.clone() {

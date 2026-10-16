@@ -24,14 +24,23 @@ const BUSY_BEAT: Duration = Duration::from_secs(5);
 
 /// `SettingsApi.fw`: the firmware/packs facts alone: the page asks again while `feedBusy` is
 /// true, to pick up the feed's release when the background check finishes.
-pub async fn fw(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Ok(json!({"ok": true, "fw": Bridge::of(ctx).fw_info()}))
+pub async fn fw(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    fw_on(&Bridge::of(ctx), &args).await
+}
+
+/// `fw` on a bridge (the command without the Tauri context).
+pub async fn fw_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    Ok(json!({"ok": true, "fw": b.clone().fw_info()}))
 }
 
 /// `SettingsApi.check_update`: ask the feed now (the Update tab's button); the clock's heap is
 /// read again too.
-pub async fn check_update(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
+pub async fn check_update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    check_update_on(&Bridge::of(ctx), &args).await
+}
+
+/// `check_update` on a bridge (the command without the Tauri context).
+pub async fn check_update_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
     if b.job_running() {
         return Ok(fail("busy", "Đang cập nhật rồi."));
     }
@@ -47,7 +56,12 @@ pub async fn check_update(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Val
 /// release, else the bundled firmware) in the background, then save `edited` and show `style`
 /// (`null`: leave both).
 pub async fn update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
+    update_on(&Bridge::of(ctx), &args).await
+}
+
+/// `update` on a bridge (the command without the Tauri context).
+pub async fn update_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
     if b.src().is_none() {
         return Ok(fail(
             "bad",
@@ -58,7 +72,7 @@ pub async fn update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, Str
     let prepared = (if edited.is_null() {
         Ok(json!({}))
     } else {
-        diff(&b, edited)
+        diff(b, edited)
     })
     .and_then(|changes| Ok((changes, b.style_arg(arg(&args, 1))?)));
     let (changes, style) = match prepared {
@@ -76,7 +90,7 @@ pub async fn update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, Str
     }
     b.jobs.busy.store(true, Ordering::SeqCst);
     clawd_store::paths::set_ota_busy(b.paths(), true);
-    tokio::spawn(run_update(b, changes, style));
+    tokio::spawn(run_update(b.clone(), changes, style));
     Ok(json!({"ok": true}))
 }
 
@@ -144,6 +158,7 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
     };
     let mut opts = OtaOptions::new(b.paths().clone());
     opts.progress = Some(Arc::clone(&step));
+    opts.settle = b.data().ota_settle;
 
     let src = b
         .src()

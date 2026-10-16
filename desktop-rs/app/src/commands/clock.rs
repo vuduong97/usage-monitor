@@ -3,6 +3,7 @@
 //! Each takes the positional JS `args` and returns the JSON the Python method returned
 //! (`{"ok": true, ...}` or `{"ok": false, "code", "error"}`); `Err` rejects the promise.
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use clawd_clock::{manual_clock, stored_clock};
@@ -17,28 +18,31 @@ use super::session::{arg, bad_value, diff, err, fail, merged, truthy, Bridge, TY
 use super::CommandCtx;
 use crate::state::ShellCmd;
 
-/// "Tìm lại" waits this long (s): the saved address again, or an mDNS answer.
-const SEARCH_WAIT: Duration = Duration::from_secs(15);
-
 /// `SettingsApi.login(password, user)`.
 pub async fn login(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
+    login_on(&Bridge::of(ctx), &args).await
+}
+
+/// `login` on a bridge (the command without the Tauri context).
+pub async fn login_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
     let password = arg(&args, 0).as_str().unwrap_or_default();
     let user = arg(&args, 1).as_str().unwrap_or(DEFAULT_CLOCK_USER);
     if password.is_empty() || user.is_empty() {
         return Ok(fail("bad", "Nhập mật khẩu in trên thẻ đi kèm đồng hồ."));
     }
     let (_, key) = b.address();
+    let keyring = Arc::clone(&b.data().keyring);
     let api = b.api();
     api.set_auth(Some((user.to_owned(), password.to_owned())));
     if let Err(e) = api.config().await {
-        api.set_auth(creds::get(&b.services.names, &key));
+        api.set_auth(creds::get_with(&*keyring, &b.services.names, &key));
         return Ok(match e {
             ClockError::AuthNeeded => fail("auth", "Sai mật khẩu."),
             other => err(&other),
         });
     }
-    let saved = creds::put(&b.services.names, &key, user, password);
+    let saved = creds::put_with(&*keyring, &b.services.names, &key, user, password);
     Ok(merged(b.state().await, json!({"saved": saved})))
 }
 
@@ -46,12 +50,17 @@ pub async fn login(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, Stri
 /// when it is not what the clock shows already, then POST the changed settings. The pack goes
 /// first: it is kept on the clock's filesystem, so a reboot for a WiFi change keeps it.
 pub async fn save(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    let b = Bridge::of(ctx);
+    save_on(&Bridge::of(ctx), &args).await
+}
+
+/// `save` on a bridge (the command without the Tauri context).
+pub async fn save_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
     if b.job_running() {
         return Ok(fail("busy", "Đang cập nhật firmware, chờ xong đã."));
     }
     let (changes, style) =
-        match diff(&b, arg(&args, 0)).and_then(|c| Ok((c, b.style_arg(arg(&args, 1))?))) {
+        match diff(b, arg(&args, 0)).and_then(|c| Ok((c, b.style_arg(arg(&args, 1))?))) {
             Ok(ok) => ok,
             Err(e) => return Ok(bad_value(&e)),
         };
@@ -132,7 +141,7 @@ pub async fn set_clock_on(b: &Bridge, args: &[Value]) -> Result<Value, String> {
         b.blocking(move |b| b.connect(&base, &key)).await;
         return Ok(b.state().await);
     }
-    let deadline = Instant::now() + SEARCH_WAIT;
+    let deadline = Instant::now() + b.data().search_wait;
     let last = loop {
         // Re-read: the tray may move it (mDNS).
         let stored = stored_clock(&b.store().load());
@@ -157,8 +166,13 @@ pub async fn set_clock_on(b: &Bridge, args: &[Value]) -> Result<Value, String> {
 }
 
 /// `SettingsApi.scan`: the clock's WiFi scan, one row per network, strongest first.
-pub async fn scan(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    let nets = match Bridge::of(ctx).api().scan().await {
+pub async fn scan(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    scan_on(&Bridge::of(ctx), &args).await
+}
+
+/// `scan` on a bridge (the command without the Tauri context).
+pub async fn scan_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    let nets = match b.clone().api().scan().await {
         Ok(n) => n,
         Err(e) => return Ok(err(&e)),
     };
@@ -196,8 +210,13 @@ pub fn strongest_per_ssid(nets: &[Value]) -> Vec<Value> {
 }
 
 /// `SettingsApi.reboot`.
-pub async fn reboot(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Ok(match Bridge::of(ctx).api().reboot().await {
+pub async fn reboot(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    reboot_on(&Bridge::of(ctx), &args).await
+}
+
+/// `reboot` on a bridge (the command without the Tauri context).
+pub async fn reboot_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    Ok(match b.clone().api().reboot().await {
         Ok(()) => json!({"ok": true}),
         Err(e) => err(&e),
     })
@@ -205,10 +224,16 @@ pub async fn reboot(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, St
 
 /// `SettingsApi.factory_reset(confirm)`: the clock's factory reset, after typing `XOA`.
 pub async fn factory_reset(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    factory_reset_on(&Bridge::of(ctx), &args).await
+}
+
+/// `factory_reset` on a bridge (the command without the Tauri context).
+pub async fn factory_reset_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
     if arg(&args, 0).as_str() != Some("XOA") {
         return Ok(fail("bad", "Gõ XOA để xác nhận."));
     }
-    Ok(match Bridge::of(ctx).api().factory_reset().await {
+    Ok(match b.clone().api().factory_reset().await {
         Ok(()) => json!({"ok": true}),
         Err(e) => err(&e),
     })

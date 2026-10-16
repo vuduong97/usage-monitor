@@ -25,8 +25,13 @@ fn has_wsl() -> bool {
 
 /// `SettingsApi.agents`: every agent Clawd knows, whether it is on this machine and connected.
 /// The ones shown count as offered, so the tray stops offering them.
-pub async fn agents(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Bridge::of(ctx).blocking(|b| agents_of(&b)).await
+pub async fn agents(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    agents_on(&Bridge::of(ctx), &args).await
+}
+
+/// `agents` on a bridge (the command without the Tauri context).
+pub async fn agents_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    b.clone().blocking(|b| agents_of(&b)).await
 }
 
 fn agents_of(b: &Bridge) -> Result<Value, String> {
@@ -44,9 +49,13 @@ fn agents_of(b: &Bridge) -> Result<Value, String> {
 
 /// `SettingsApi.set_agent(aid, on)`.
 pub async fn set_agent(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    Bridge::of(ctx)
-        .blocking(move |b| set_agent_of(&b, &args))
-        .await
+    set_agent_on(&Bridge::of(ctx), &args).await
+}
+
+/// `set_agent` on a bridge (the command without the Tauri context).
+pub async fn set_agent_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
+    b.clone().blocking(move |b| set_agent_of(&b, &args)).await
 }
 
 fn set_agent_of(b: &Bridge, args: &[Value]) -> Result<Value, String> {
@@ -76,9 +85,13 @@ fn set_agent_of(b: &Bridge, args: &[Value]) -> Result<Value, String> {
 /// disconnect the unticked ones that are connected; nothing else is touched. Errors are
 /// listed, the rest still go.
 pub async fn set_agents(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
-    Bridge::of(ctx)
-        .blocking(move |b| set_agents_of(&b, &args))
-        .await
+    set_agents_on(&Bridge::of(ctx), &args).await
+}
+
+/// `set_agents` on a bridge (the command without the Tauri context).
+pub async fn set_agents_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
+    let args = args_in.to_vec();
+    b.clone().blocking(move |b| set_agents_of(&b, &args)).await
 }
 
 fn set_agents_of(b: &Bridge, args: &[Value]) -> Result<Value, String> {
@@ -110,8 +123,13 @@ fn set_agents_of(b: &Bridge, args: &[Value]) -> Result<Value, String> {
 }
 
 /// `SettingsApi.disconnect_all`.
-pub async fn disconnect_all(ctx: &CommandCtx<'_>, _args: Vec<Value>) -> Result<Value, String> {
-    Bridge::of(ctx)
+pub async fn disconnect_all(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
+    disconnect_all_on(&Bridge::of(ctx), &args).await
+}
+
+/// `disconnect_all` on a bridge (the command without the Tauri context).
+pub async fn disconnect_all_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
+    b.clone()
         .blocking(|b| {
             let lines = clawd_agents::uninstall_all(b.registry());
             b.notify(ShellCmd::Setup);
