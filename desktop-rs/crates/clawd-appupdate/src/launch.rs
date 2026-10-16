@@ -10,8 +10,9 @@ use std::path::PathBuf;
 pub enum LaunchKind {
     /// The Inno Setup installer (Windows): `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP`.
     Installer,
-    /// `/bin/sh swap.sh ...` (macOS): its own process group, so launchd does not take it down
-    /// with the app (`start_new_session` in Python).
+    /// `/bin/sh swap.sh ...` (macOS): started with `process_group(0)` (its own process group,
+    /// not a new session as Python's `start_new_session`), so launchd does not take it down
+    /// with the app. Phase 14 must verify on a real Mac that it survives the app quitting.
     SwapScript,
 }
 

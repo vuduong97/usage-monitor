@@ -429,3 +429,16 @@ fn only_https_or_loopback_http_apis_are_accepted() {
         "https://api.github.com"
     );
 }
+
+#[tokio::test]
+async fn a_rust_prefixed_tag_is_not_a_release_of_this_updater() {
+    // `rust-v*` tags are the Rust pipeline's drafts/prereleases: only `vX.Y.Z` is a version
+    let mut gh = GitHub::new(vec![(EXE_NAME, b"x".to_vec())]);
+    gh.release["tag_name"] = json!("rust-v0.2.0");
+    gh.publish();
+    let got = gh
+        .source()
+        .latest("0.1.0", Some("windows"), Some("x86_64"))
+        .await;
+    assert_eq!(got, Ok(None));
+}
