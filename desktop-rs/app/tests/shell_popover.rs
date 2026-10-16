@@ -193,24 +193,137 @@ fn pak_failure_waits_before_trying_again() {
     assert!(pak_retry_allowed(NOW, NOW + PAK_RETRY_S));
 }
 
-// `test_popover.py` load_pak cases: they need the real PakCache (09) and ClockApi (08).
+// `test_popover.py` load_pak cases over the real PakCache and ClockApi, a fake clock device on
+// loopback and a temp home. The key is empty on purpose: no keychain is read.
 
-#[test]
-#[ignore = "needs 09 (PakCache): test_pak_comes_from_the_cache_first"]
-fn pak_comes_from_the_cache_first() {
-    unimplemented!("B'': popover::load_pak with a PakCache seeded in a temp dir; no clock call");
+use std::sync::Mutex;
+
+use clawd_app::popover::load_pak;
+use clawd_firmware::preview::PakCache;
+use clawd_testkit::clock::FakeClockDevice;
+use clawd_testkit::{FakeResponse, TempConfig};
+
+/// `load_pak` remembers a failure in one process-wide cell: these tests take turns.
+static PAK_TESTS: Mutex<()> = Mutex::new(());
+
+/// A valid `clawd.pak`: one animation, 8x8, two frames.
+fn pak_bytes() -> Vec<u8> {
+    let (w, h, frames) = (8usize, 8usize, 2usize);
+    let fbytes = (w * h).div_ceil(2);
+    let mut head = b"CLWD".to_vec();
+    head.extend_from_slice(&[1, 0, 1, 0, 0, 0, 0, 0]);
+    let frames_off = 12 + 72;
+    let holds_off = frames_off + fbytes * frames;
+    let mut desc = b"anim0".to_vec();
+    desc.resize(16, 0);
+    desc.extend_from_slice(&[w as u8, h as u8, 0, 0]);
+    for n in [frames, 0, frames - 1, fbytes] {
+        desc.extend_from_slice(&(n as u16).to_le_bytes());
+    }
+    desc.extend(vec![0u8; 32]);
+    desc.extend_from_slice(&(frames_off as u32).to_le_bytes());
+    desc.extend_from_slice(&(holds_off as u32).to_le_bytes());
+    desc.extend_from_slice(&[0; 4]);
+    let body: Vec<u8> = [vec![0x12u8; fbytes * frames], vec![100, 0, 100, 0]].concat();
+    [head, desc, body].concat()
+}
+
+/// A clock whose heap says it holds a pak and serves `/clawd.pak`.
+fn clock_with_pak(pak: &[u8]) -> FakeClockDevice {
+    let device = FakeClockDevice::start(None);
+    device.set_file("/clawd.pak", pak);
+    device.override_path(
+        "/api/heap",
+        FakeResponse::json(200, &json!({"uptime": 900, "pak": 1, "fwSeq": 1})),
+    );
+    device
+}
+
+fn load(tc: &TempConfig, base: &str, now: f64) -> Option<Vec<u8>> {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime")
+        .block_on(load_pak(
+            base,
+            "",
+            tc.os_names(),
+            tc.paths().pak_file(),
+            now,
+        ))
 }
 
 #[test]
-#[ignore = "needs 08 (ClockApi) and 09 (PakCache): test_pak_is_read_off_the_clock_once_and_kept"]
-fn pak_is_read_off_the_clock_once_and_kept() {
-    unimplemented!(
-        "B'': load_pak against a loopback clock; the second call is served from the cache file"
+fn pak_comes_from_the_cache_first() {
+    let _turn = PAK_TESTS.lock().unwrap_or_else(|e| e.into_inner());
+    let tc = TempConfig::new();
+    let device = clock_with_pak(&pak_bytes());
+    std::fs::create_dir_all(tc.paths().config_dir()).unwrap();
+    let cached = pak_bytes();
+    PakCache::new(tc.paths().pak_file())
+        .save(&cached, 1)
+        .expect("seed the cache");
+    assert_eq!(load(&tc, &device.url(), 3.0e9), Some(cached));
+    assert!(
+        device.server().requests().is_empty(),
+        "the clock is not asked while the cache has the pack"
+    );
+    assert_eq!(
+        load(&tc, "", 3.0e9),
+        Some(pak_bytes()),
+        "and no clock is needed at all"
     );
 }
 
 #[test]
-#[ignore = "needs 08 (ClockApi): test_pak_failure_waits_before_trying_again (end to end)"]
+fn pak_is_read_off_the_clock_once_and_kept() {
+    let _turn = PAK_TESTS.lock().unwrap_or_else(|e| e.into_inner());
+    let tc = TempConfig::new();
+    let device = clock_with_pak(&pak_bytes());
+    assert_eq!(
+        load(&tc, "", 3.0e9),
+        None,
+        "no clock, no cache: nothing to draw"
+    );
+    assert_eq!(load(&tc, &device.url(), 3.0e9), Some(pak_bytes()));
+    let asked = device.server().requests().len();
+    assert!(asked > 0);
+    assert!(
+        PakCache::new(tc.paths().pak_file()).load().is_some(),
+        "kept on disk"
+    );
+    assert_eq!(load(&tc, &device.url(), 3.0e9), Some(pak_bytes()));
+    assert_eq!(
+        device.server().requests().len(),
+        asked,
+        "the second read is the cache's"
+    );
+}
+
+#[test]
 fn pak_failure_waits_before_trying_again_end_to_end() {
-    unimplemented!("B'': a failed read, then no second clock call within PAK_RETRY_S");
+    let _turn = PAK_TESTS.lock().unwrap_or_else(|e| e.into_inner());
+    let tc = TempConfig::new();
+    let device = FakeClockDevice::start(None);
+    device.override_path("/api/heap", FakeResponse::status(500));
+    let t0 = 1.0e9;
+    assert_eq!(load(&tc, &device.url(), t0), None);
+    let asked = device.server().requests().len();
+    assert!(asked > 0, "the first attempt reached the clock");
+    assert_eq!(load(&tc, &device.url(), t0 + 10.0), None);
+    assert_eq!(
+        device.server().requests().len(),
+        asked,
+        "no new attempt within PAK_RETRY_S"
+    );
+    // The clock is fixed and the wait is over: it is read again and kept.
+    device.override_path(
+        "/api/heap",
+        FakeResponse::json(200, &json!({"uptime": 900, "pak": 1, "fwSeq": 1})),
+    );
+    device.set_file("/clawd.pak", &pak_bytes());
+    assert_eq!(
+        load(&tc, &device.url(), t0 + PAK_RETRY_S),
+        Some(pak_bytes())
+    );
 }

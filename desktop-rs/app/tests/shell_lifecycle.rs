@@ -155,15 +155,96 @@ fn the_window_shows_the_dark_background_before_the_page_paints() {
 }
 
 #[test]
-#[ignore = "needs 08 (ClockStore): settings-only mode writes clock.json (settings_app.Channel.send)"]
 fn without_a_tray_set_clock_and_use_clock_edit_clock_json() {
-    unimplemented!("B'': apply_standalone_cmd over a temp ClockStore");
+    use clawd_app::lifecycle::apply_standalone_cmd;
+    use clawd_clock::ClockStore;
+    use clawd_testkit::TempConfig;
+    use serde_json::json;
+
+    let tc = TempConfig::new();
+    let store = ClockStore::new(tc.paths().clock_file());
+
+    // Picked in the wizard: the remembered clock.
+    apply_standalone_cmd(
+        &store,
+        ShellCmd::UseClock {
+            name: "clawd".into(),
+            host: "10.0.0.7".into(),
+            port: 8080,
+            version: "1.4".into(),
+        },
+    );
+    assert_eq!(
+        store.load(),
+        json!({"name": "clawd", "host": "10.0.0.7", "port": 8080, "version": "1.4"})
+    );
+
+    // A typed address pins the clock.
+    apply_standalone_cmd(
+        &store,
+        ShellCmd::SetClock {
+            host: "10.0.0.9".into(),
+        },
+    );
+    assert_eq!(store.load(), json!({"manual_host": "10.0.0.9"}));
+
+    // "Tìm lại": the address stays, mDNS may replace it.
+    apply_standalone_cmd(
+        &store,
+        ShellCmd::SetClock {
+            host: String::new(),
+        },
+    );
+    let data = store.load();
+    assert!(data.get("manual_host").is_none(), "{data}");
+    assert_eq!(data["host"], "10.0.0.9");
+
+    // Commands that need a tray change nothing.
+    apply_standalone_cmd(&store, ShellCmd::Refresh);
+    apply_standalone_cmd(&store, ShellCmd::UsageSource);
+    assert_eq!(store.load()["host"], "10.0.0.9");
 }
 
 #[test]
-#[ignore = "needs 03/05: first_run (test_first_run_installs_no_hooks) and Clawd.exe cleanup with OsStoreNames::for_test"]
 fn first_run_enables_autostart_once_and_installs_no_hooks() {
-    unimplemented!("B'': lifecycle::first_run over a temp home");
+    use clawd_agents::Registry;
+    use clawd_app::lifecycle::first_run;
+    use clawd_contracts::Platform;
+    use clawd_store::firstrun;
+    use clawd_testkit::store::SandboxAutostart;
+    use clawd_testkit::TempConfig;
+
+    let tc = TempConfig::new();
+    let cfg = engine_config(&tc, 47913);
+    let registry = Registry::new(agent_ctx(&tc, Platform::Darwin));
+    // The LaunchAgent branch writes a plist under the temp home: no registry, no real folder.
+    let sandbox = SandboxAutostart::new(
+        tc.paths(),
+        tc.os_names(),
+        Platform::Darwin,
+        vec!["/tmp/Clawd".to_owned()],
+    );
+    let autostart = &sandbox.autostart;
+    let plist = tc.paths().launch_agent_plist(&tc.os_names().launch_label);
+
+    first_run(&cfg, &registry, autostart);
+    assert!(plist.exists(), "autostart switched on the first time");
+    let prefs = firstrun::load(tc.paths()).expect("prefs");
+    assert_eq!(prefs.get_bool("first_run_done"), Some(true));
+    assert_eq!(
+        firstrun::pending(tc.paths(), None),
+        ["clock", "agents", "usage"]
+    );
+    assert!(
+        !tc.paths().default_claude_dir().exists(),
+        "nothing of any agent is touched"
+    );
+    assert!(!tc.paths().hook_script().exists(), "no hook script written");
+
+    // The user turned it off: a second start respects that.
+    std::fs::remove_file(&plist).expect("remove plist");
+    first_run(&cfg, &registry, autostart);
+    assert!(!plist.exists(), "autostart is switched on once only");
 }
 
 // ---- opening the settings window (review P1-1) ------------------------------------------
