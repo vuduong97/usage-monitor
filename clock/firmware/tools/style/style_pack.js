@@ -25,6 +25,7 @@ const COND = { ok: 0, hot: 1, whot: 2, fresh: 3, over: 4, paceover: 5, out: 6, c
 const CLAWD_PAK = path.join(__dirname, '..', '..', 'data', 'clawd.pak');
 const STAGE_CX = 27, STAGE_FEET = 37;
 let pakNames = null;
+// name -> { w, h, ox, oy, cells }: `cells` lists every stage cell [x, y] any frame paints.
 function clawdPakNames() {
   if (pakNames) return pakNames;
   const d = fs.readFileSync(CLAWD_PAK);
@@ -32,10 +33,23 @@ function clawdPakNames() {
   pakNames = new Map();
   for (let i = 0; i < d.readUInt16LE(6); i++) {
     const o = 12 + 72 * i;
-    pakNames.set(d.toString('latin1', o, o + 16).replace(/\0.*$/s, ''), { w: d[o + 16], h: d[o + 17], ox: d[o + 18], oy: d[o + 19] });
+    const w = d[o + 16], h = d[o + 17], ox = d[o + 18], oy = d[o + 19];
+    const frames = d.readUInt16LE(o + 20), bytes = d.readUInt16LE(o + 26), at = d.readUInt32LE(o + 60);
+    const on = new Uint8Array(w * h);
+    for (let f = 0; f < frames; f++) {
+      for (let c = 0; c < w * h; c++) if ((d[at + f * bytes + (c >> 1)] >> (c & 1 ? 0 : 4)) & 15) on[c] = 1;
+    }
+    const cells = [];
+    for (let c = 0; c < w * h; c++) if (on[c]) cells.push([ox + (c % w), oy + Math.floor(c / w)]);
+    pakNames.set(d.toString('latin1', o, o + 16).replace(/\0.*$/s, ''), { w, h, ox, oy, cells });
   }
   return pakNames;
 }
+// The widest text each token can print (12 h clocks, the longest spans), for the fit check.
+const TOKEN_WORST = {
+  s: '100', w: '100', sleft: '100', end: '100', clock: '00:00 PM', dow: 'Wed', 'sr@': '00:00 PM',
+  'wr@': '00:00 PM', 'wr@d': 'Wed 00:00 PM', 'sr~': '00d 00h', 'wr~': '00d 00h', out: '~00:00 PM',
+};
 const FLAG = { zeroOk: 1, upper: 2, clamp: 4 };
 const ALIGN = { left: 0, center: 1, right: 2 };
 const TOKENS = { s: 1, w: 2, sleft: 3, clock: 4, dow: 5, 'sr@': 6, 'wr@d': 7, 'sr~': 8, 'wr~': 9, out: 10, end: 11, 'wr@': 12 };
@@ -389,6 +403,88 @@ class Style {
     return anims.length;
   }
 
+  // ---- fit: does an animation stay clear of the screen's text and data? ---------------
+  // The boxes the Clawd must not cover: every text op (its line box at the widest the
+  // tokens print, plus its track's moves) and every op bound to data (dx, x1, a gate),
+  // Clawd's own masks and animations excepted.
+  protectedBoxes() {
+    const names = new Map([...this.maskIds].map(([n, id]) => [id, n]));
+    const DATA = (s) => s > 0 && s < SRC.fixed;
+    const out = [];
+    for (const op of this.ops) {
+      if (op.kind === KIND.anim || (op.kind === KIND.mask && /^clawd/.test(names.get(op.a) || ''))) continue;
+      let x0, y0, x1, y1;
+      if (op.kind === KIND.text) {
+        let s = '';
+        for (const b of op.str) s += b < 13 ? TOKEN_WORST[Object.keys(TOKENS).find((k) => TOKENS[k] === b)] : String.fromCharCode(b);
+        if (op.flags & FLAG.upper) s = s.toUpperCase();
+        const f = this.font(op.a);
+        const str = Buffer.from(s, 'latin1').toString('utf8');
+        const w = textWidth(f, str);
+        x0 = op.x - [0, w >> 1, w][op.b];   // align: left, centre, right
+        x1 = x0 + w;
+        // the glyphs' ink rows (ClawdDraw: top = baseline - h - oy), not the taller line box
+        const base = op.y + f.lineHeight - f.baseLine;
+        const gs = [...str].map((ch) => f.glyphs[f.map.get(ch.codePointAt(0)) ?? f.map.get(63)]).filter((g) => g && g.h);
+        if (!gs.length) continue;
+        y0 = base - Math.max(...gs.map((g) => g.h + g.oy)); y1 = base - Math.min(...gs.map((g) => g.oy));
+      } else if (DATA(op.dxSrc) || DATA(op.x1Src) || op.gateSrc) {
+        if (op.kind === KIND.rect) {
+          x0 = op.x; y0 = op.y; y1 = op.y + op.h;
+          x1 = op.x + Math.max(op.w, op.c, op.w + (DATA(op.x1Src) ? op.x1Span : 0));
+        } else if (op.kind === KIND.mask) {
+          const m = this.masks[op.a];
+          x0 = op.x; y0 = op.y; x1 = op.x + m.w * op.b; y1 = op.y + m.h * op.b;
+        } else {                         // line / triangle: the hull of its points
+          const xs = [op.x, op.w, ...(op.kind === KIND.tri ? [op.x3] : [])], ys = [op.y, op.h, ...(op.kind === KIND.tri ? [op.y3] : [])];
+          x0 = Math.min(...xs); x1 = Math.max(...xs) + 1; y0 = Math.min(...ys); y1 = Math.max(...ys) + 1;
+        }
+      } else continue;
+      if (DATA(op.dxSrc)) { x0 += Math.min(0, op.dxSpan); x1 += Math.max(0, op.dxSpan); }
+      if (op.track !== 255) {             // a moving label: every step's offset
+        const st = this.tracks[op.track].steps;
+        x0 += Math.min(0, ...st.map((q) => q.dx)); x1 += Math.max(0, ...st.map((q) => q.dx));
+        y0 += Math.min(0, ...st.map((q) => q.dy)); y1 += Math.max(0, ...st.map((q) => q.dy));
+      }
+      out.push({ op, x0, y0, x1, y1 });
+    }
+    return out;
+  }
+
+  // What animation `name` would hit if `anim` (an anim op) played it: [] when it fits.
+  animFit(anim, name, boxes = this.protectedBoxes()) {
+    const a = clawdPakNames().get(name);
+    const cell = anim.a;
+    const sweep = anim.dxSrc > 0 && anim.dxSrc < SRC.fixed ? anim.dxSpan : 0;
+    const hits = new Set();
+    const home = anim.home;                 // where the old Clawd mask already drew: his own
+    for (const [cx, cy] of a.cells) {
+      const x0 = anim.x + cx * cell + Math.min(0, sweep), x1 = anim.x + (cx + 1) * cell + Math.max(0, sweep);
+      const y0 = anim.y + cy * cell, y1 = y0 + cell;
+      if (home && x0 >= home.x0 && x1 <= home.x1 && y0 >= home.y0 && y1 <= home.y1) continue;
+      if (x0 < 0 || y0 < 0 || x1 > 240 || y1 > 240) hits.add('off screen');
+      for (const b of boxes) {
+        if (x0 < b.x1 && b.x0 < x1 && y0 < b.y1 && b.y0 < y1 && !exclusive(anim, b.op)) {
+          hits.add(b.op.kind === KIND.text ? `text "${[...b.op.str].map((c) => (c < 13 ? '{}' : String.fromCharCode(c))).join('')}"` : `data op at ${b.x0},${b.y0}`);
+        }
+      }
+    }
+    return [...hits];
+  }
+
+  // Every anim op's every animation must fit; throws with what each one would cover.
+  checkAnimFit() {
+    const boxes = this.protectedBoxes();
+    const bad = [];
+    for (const op of this.ops.filter((q) => q.kind === KIND.anim)) {
+      for (const n of op.str.toString('latin1').split(',')) {
+        const hits = this.animFit(op, n, boxes);
+        if (hits.length) bad.push(`${n} at ${op.x},${op.y} cell ${op.a}: ${hits.join(', ')}`);
+      }
+    }
+    if (bad.length) throw new Error(`${this.id}: Clawd animations over the screen:\n  ${bad.join('\n  ')}`);
+  }
+
   // One anim op for a group of Clawd layers (same spot, scale and state).
   animFor(group, cfg, names) {
     const top = group[group.length - 1];   // the spot drawn last (not a glow copy beside it)
@@ -430,6 +526,16 @@ class Style {
       need: body.need | (1 << COND.anim) | (1 << COND.ok), not: body.not & ~(1 << COND.anim), gateSrc: body.gateSrc, gateLo: body.gateLo,
       gateHi: body.gateHi, dxSrc: body.dxSrc, dxSpan: body.dxSpan,
     });
+    // Clawd's own room, swept like the animation: the old masks' box and the standing
+    // Clawd's (stage cells 15..38 x 20..36, what crab walking and dancing cover). animFit
+    // lets an animation cover it; what it adds beyond must clear text, data and the edge.
+    const sw = body.dxSrc > 0 && body.dxSrc < SRC.fixed ? body.dxSpan : 0;
+    op.home = {
+      x0: Math.min(x + 15 * cell, ...group.map((q) => q.x)) + Math.min(0, sw),
+      y0: Math.min(y + 20 * cell, ...group.map((q) => q.y)),
+      x1: Math.max(x + 39 * cell, ...group.map((q) => q.x + 32 * q.b)) + Math.max(0, sw),
+      y1: Math.max(y + 37 * cell, ...group.map((q) => q.y + 40 * q.b)),
+    };
     return op;
   }
   maskId(name) {
@@ -598,4 +704,4 @@ function encodeTemplate(str, upper) {
   return { bytes: Buffer.from(bytes), lit, tok };
 }
 
-module.exports = { Style, mix, rgb565, API, SRC, COND, TOKENS, KIND };
+module.exports = { Style, mix, rgb565, API, SRC, COND, TOKENS, KIND, clawdPakNames };
