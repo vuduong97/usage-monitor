@@ -20,7 +20,7 @@ aes-gcm = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 base64 = { workspace = true }
-miniz_oxide = { workspace = true }
+miniz_oxide = { workspace = true, features = ["with-alloc"] }
 # Only the deflate method is needed (tools/build_preview.py writes a deflated zip). The workspace
 # pin enables every zip feature (bzip2, zstd, lzma, aes: C builds); see Contract CR in the phase-09 report.
 zip = { version = "9", default-features = false, features = ["deflate"] }
