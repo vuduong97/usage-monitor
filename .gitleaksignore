@@ -1,0 +1,4 @@
+# Claude Code's public OAuth client id in the clock's old Python daemon (clock/daemon, removed
+# since): not a secret, every Claude Code install carries it.
+ab1bd241180d499c95498f46480144616f096830:clock/daemon/claude_usage_daemon_windows.py:generic-api-key:61
+36ed049047bd12b0ad9d2235aea9bbc07cf6def9:clock/daemon/claude_usage_daemon.py:generic-api-key:57

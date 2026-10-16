@@ -1,6 +1,10 @@
 #!/bin/sh
 # Publish the firmware + packs to the Clawd firmware feed (feed/README.md).
 #
+# LEGACY: since the monorepo (app 0.3.0) the firmware ships inside the app and style packs go
+# out through tools/publish_packs.sh. The feed only keeps serving apps 0.1.x/0.2.x until they
+# update; there is nothing new to publish here.
+#
 #   tools/release.sh [--notes "..."]        build, encrypt, upload; publish to the beta channel
 #   tools/release.sh --stable [--notes ..]  same, straight to beta and stable
 #   tools/release.sh --promote [SEQ]        copy the beta release (or release SEQ) to stable
@@ -9,8 +13,8 @@
 # wrangler dev store in DIR instead of Cloudflare: for the end-to-end test),
 # --private (publish to Cloudflare without feed/LICENCE: only while no public app holds
 # the feed token, i.e. the owner's own test).
-# Env: DESK_PAK (default build/desk/desk.pak), CLAWD_PAK (default firmware/data/clawd.pak),
-#      RENDERER_DIR (default build/renderer: <platform>.zip, from tools/fetch_renderer.sh),
+# Env: DESK_PAK (default firmware/data/desk.pak), CLAWD_PAK (default firmware/data/clawd.pak),
+#      RENDERER_DIR (default build/renderer: <platform>.zip, tools/build_preview.py --zip),
 #      FEED_BUCKET (default clawd-fw), WRANGLER (default "npx -y wrangler@4").
 #
 set -eu
@@ -19,10 +23,10 @@ fw="$root/firmware"
 worker="$root/feed/worker"
 bucket=${FEED_BUCKET:-clawd-fw}
 WRANGLER=${WRANGLER:-"npx -y wrangler@4"}
-DESK_PAK=${DESK_PAK:-"$root/build/desk/desk.pak"}
+DESK_PAK=${DESK_PAK:-"$fw/data/desk.pak"}
 CLAWD_PAK=${CLAWD_PAK:-"$fw/data/clawd.pak"}
 RENDERER_DIR=${RENDERER_DIR:-"$root/build/renderer"}
-RENDERER_PLATFORMS="win-x64 mac"   # what tools/fetch_renderer.sh builds (the app also knows linux-x64)
+RENDERER_PLATFORMS="win-x64 mac"   # what the old renderer workflow built (the app also knows linux-x64)
 
 notes="" stable=0 promote=0 pseq="" dirty=0 tests=1 where="--remote" private=0
 while [ $# -gt 0 ]; do
@@ -104,7 +108,7 @@ for p in $RENDERER_PLATFORMS linux-x64; do
   rc=${info% *} rseq=${info#* }
   case "$head" in
     "$rc"*) ;;
-    *) echo "release: $z was built from ${rc:-an unknown commit}, this is $head (tools/fetch_renderer.sh)" >&2; exit 1 ;;
+    *) echo "release: $z was built from ${rc:-an unknown commit}, this is $head (tools/build_preview.py --zip)" >&2; exit 1 ;;
   esac
   [ ${#rc} -ge 7 ] || { echo "release: $z records no usable commit (${rc:-none})" >&2; exit 1; }
   [ "$rseq" = "$seq" ] || { echo "release: $z is for fwSeq $rseq, this is $seq" >&2; exit 1; }

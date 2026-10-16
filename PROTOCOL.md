@@ -88,7 +88,8 @@ the app only sends the newer names when every clock reports `desk` ≥ 31.
 `desk` (animations in `/desk.pak`, 0 = missing), `anim`, `deskAnim` (the desk
 animation on screen now, a variant too; only firmware that understands `v` has it),
 `reset`, `crash`, `styleApi` and `style` (the style pack API the clock draws, and
-the pack it shows: `""` = the classic screen). From `fwSeq` 6: `pakCrc` and
+the pack it shows: `""` = the classic screen; `styleApi` is 2 from `fwSeq` 8, whose
+packs play the official Clawd animations, and `styleAnim` names the one playing). From `fwSeq` 6: `pakCrc` and
 `deskCrc`, the CRC-32 (zlib, 8 hex digits) of `/clawd.pak` and `/desk.pak`. The
 value is `""` when the pack is missing or not yet checksummed: the clock checksums
 in the background from 30 s after boot, about a minute for `desk.pak`. The app compares
@@ -112,9 +113,9 @@ received, so the app can check the pack arrived intact. `desk.pak` is deleted be
 upload, because LittleFS has no room for two copies.
 
 The settings window of the desktop app also uses `/api/config`, `/update`, the two
-pack uploads (firmware feed, `feed/README.md` in clawd-home) and the
+pack uploads (the packs that ship with the app, `clock/firmware/data/`) and the
 usage screen's style pack: `POST /api/style` (multipart field `file`, a pack from
-`firmware/styles/`) shows it at once, `DELETE /api/style` goes back to the classic
+`clock/firmware/styles/`) shows it at once, `DELETE /api/style` goes back to the classic
 screen, `GET /api/style` (no login) says which one is installed. See
 `docs/STYLE_PACK.md`.
 

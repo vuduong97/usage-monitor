@@ -23,7 +23,8 @@
 //
 // Usage:
 //   CLAWD_ON_DESK_DIR=/tmp/clawd-on-desk node tools/desk/desk_to_pak.js [--only a,b] [--probe] [--sheet]
-// Output: build/desk/desk.pak, build/desk/desk.crc.json (+ build/desk/sheets/*.png with --sheet)
+// Output: build/desk/desk.pak, build/desk/desk.crc.json (+ build/desk/sheets/*.png with --sheet).
+// The app ships firmware/data/desk.pak: copy a new build there and commit it.
 'use strict';
 
 const fs = require('fs');

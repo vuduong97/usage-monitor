@@ -11,14 +11,9 @@ __pycache__/
 # Node
 node_modules/
 package-lock.json
-# Generated from clawd-on-desk artwork (All Rights Reserved) — personal use only, NEVER commit
+# tools/desk's renders and cache (the committed pack is firmware/data/desk.pak)
 build/desk/
-# The desktop app's clock-screen renderer zips (tools/fetch_renderer.sh): compiled from the
-# private drawing code, they only ever go to the encrypted feed
 build/renderer/
-*.desk.pak
-desk.pak
-firmware/data/desk.pak
 tools/desk/out/
 # Stock-clock backups (contain Wi-Fi/API secrets)
 .stock-backup/

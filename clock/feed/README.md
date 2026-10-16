@@ -1,4 +1,9 @@
-# Firmware feed
+# Firmware feed (legacy)
+
+> **Legacy.** Since app 0.3.0 the firmware ships inside the app and usage style packs go out
+> through the signed GitHub Release `packs-api{N}` (`tools/publish_packs.sh` at the repo root).
+> The feed below only keeps serving apps 0.1.x/0.2.x until they update; shut it down
+> (Worker, R2 bucket, KV) once they have.
 
 Clawd desktop installs new clock firmware and packs from here with one click (Settings ›
 Cập nhật, or the tray's "● Có firmware mới"). There is no new app release. The files are
