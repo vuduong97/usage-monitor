@@ -90,8 +90,9 @@ jobs:
           path: dist/*-setup.exe
 
   publish:
-    # Only a tag publishes. The release stays a draft until every file is attached, so the
-    # app's update check never sees a release without its installer or SHA256SUMS.
+    # Only a tag publishes, and since the Rust cutover (0.2.0) only as a DRAFT: a published
+    # 0.1.x would become /releases/latest and pull 0.1.x users away from 0.2.x. The owner
+    # publishes by hand, choosing whether it becomes latest (README, branch python-0.1.x).
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [mac, windows]
     runs-on: ubuntu-latest
@@ -112,5 +113,4 @@ jobs:
           flags=""
           case "$GITHUB_REF_NAME" in *-*) flags="--prerelease" ;; esac   # v1.2.3-rc1: never offered by the app
           gh release create "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" \
-            --title "Clawd ${GITHUB_REF_NAME#v}" --generate-notes --draft $flags
-          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
+            --title "Clawd ${GITHUB_REF_NAME#v}" --generate-notes --draft --latest=false $flags

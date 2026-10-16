@@ -167,9 +167,10 @@ Python 0.1.x để vẫn phát hành được khi cần:
 - **Bản lùi (rollback):** một bản Python có số phiên bản cao hơn bản Rust đang chạy (ví dụ `0.2.9`).
   Bản Rust chỉ nhận bản cập nhật có `SHA256SUMS.minisig` ký bằng khoá phát hành, nên bản lùi phải được
   ký tay (xem `tools/migration/fork-release.md` mục 6 trên `main`).
-- Tag `v0.1.x` đẩy từ nhánh này chạy `release.yml` của nhánh này (Python) và release đó thành
-  **latest**. Sau khi phát một bản 0.1.x, kiểm tra lại `releases/latest` và nếu cần thì đặt lại bản
-  Rust mới nhất làm latest: `gh release edit vX.Y.Z --latest`.
+- Tag `v0.1.x` đẩy từ nhánh này chạy `release.yml` của nhánh này (Python) và chỉ tạo **bản nháp**
+  (không latest). Phát hành tay: `gh release edit v0.1.x --draft=false` giữ bản Rust làm latest
+  (người dùng 0.1.x không tự nhận); thêm `--latest` chỉ khi muốn mọi app 0.1.x nhận nó (ví dụ bản
+  lùi). Sau đó kiểm `gh api repos/vuduong97/usage-monitor/releases/latest --jq .tag_name`.
 
 ## Dành cho người phát triển
 
