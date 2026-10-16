@@ -22,6 +22,7 @@ use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::{TokioIo, TokioTimer};
 use serde_json::{json, Value};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use tokio::sync::{watch, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
@@ -213,9 +214,33 @@ async fn serve_connection(stream: tokio::net::TcpStream, context: Arc<Context>, 
         .timer(TokioTimer::new())
         .header_read_timeout(limits.header_read_timeout)
         .keep_alive(false)
-        .serve_connection(TokioIo::new(stream), service);
-    // Slow bodies and answers are cut by the same overall limit as slow heads.
-    let _ = tokio::time::timeout(limits.connection_timeout, connection).await;
+        .serve_connection(TokioIo::new(stream), service)
+        .without_shutdown();
+    // Slow bodies and answers are cut by the same overall limit as slow heads (no lingering
+    // for those: the client is not reading anyway).
+    if let Ok(Ok(parts)) = tokio::time::timeout(limits.connection_timeout, connection).await {
+        linger_close(parts.io.into_inner()).await;
+    }
+}
+
+/// FIN first, then swallow what the client is still sending (a 413 is answered before the body
+/// is read): closing a socket with unread input resets it, and the reset can destroy the answer
+/// before the client reads it.
+async fn linger_close(mut stream: tokio::net::TcpStream) {
+    const LINGER: Duration = Duration::from_secs(1);
+    const LINGER_MAX_BYTES: usize = 8 * 1024 * 1024;
+    let _ = stream.shutdown().await;
+    let drain = async {
+        let mut buffer = [0u8; 16 * 1024];
+        let mut total = 0;
+        while let Ok(n) = stream.read(&mut buffer).await {
+            total += n;
+            if n == 0 || total > LINGER_MAX_BYTES {
+                break;
+            }
+        }
+    };
+    let _ = tokio::time::timeout(LINGER, drain).await;
 }
 
 /// A JSON answer in Python's `json.dumps` form.
