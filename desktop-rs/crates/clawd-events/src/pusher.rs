@@ -35,6 +35,8 @@ pub const DESK_PROBE_EVERY: f64 = 300.0;
 pub const DESK_PROBE_TIMEOUT: Duration = Duration::from_secs(12);
 /// The HID idle probe runs this often (seconds).
 const IDLE_CHECK_EVERY: f64 = 10.0;
+/// Python's `subprocess.run(["ioreg", ...], timeout=3)`.
+const IDLE_PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// `urlunsplit((scheme, netloc, path, "", ""))` of a push URL: scheme and host of `target`
 /// with `path` (what `urllib.parse` gives for a URL with a scheme; none gives just the path).
@@ -214,9 +216,15 @@ impl StatePusher {
         };
         if check_idle {
             let probe = Arc::clone(&self.idle);
-            let idle = tokio::task::spawn_blocking(move || probe())
-                .await
-                .unwrap_or(None);
+            // macOS runs `ioreg`, which can hang: an unanswered probe is "unknown" after 3 s.
+            let idle = tokio::time::timeout(
+                IDLE_PROBE_TIMEOUT,
+                tokio::task::spawn_blocking(move || probe()),
+            )
+            .await
+            .ok()
+            .and_then(Result::ok)
+            .flatten();
             let mut brain = self.brain.lock().unwrap_or_else(|e| e.into_inner());
             let usage = brain.usage.clone();
             brain.pet.observe(now, idle, usage.as_ref());
@@ -246,11 +254,8 @@ impl StatePusher {
             } else {
                 &desired.a
             };
-            if desired.txt.is_empty() {
-                tracing::info!("Clock state: {what}");
-            } else {
-                tracing::info!("Clock state: {what} - {}", desired.txt);
-            }
+            // only the animation name is logged: the text can carry a tool or message summary
+            tracing::info!("Clock state: {what}");
         }
         if self.send(&urls, &wire(&desired)).await {
             let mut st = self.state();

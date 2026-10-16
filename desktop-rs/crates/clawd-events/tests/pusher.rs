@@ -94,13 +94,49 @@ async fn sends_on_change_resends_and_clears() {
         .unwrap()
         .ingest(&hook("SessionEnd", json!({})), clock.now());
     // after agent activity: straight back to the usage screens (the minDisplay hold is over)
-    clock.advance(2.0);
     assert!(p.step().await);
     assert_eq!(
         device.state_bodies().last().unwrap(),
         &json!({"a": "", "ttl": 60})
     );
     assert_eq!(device.state_bodies().len(), 4);
+}
+
+#[tokio::test]
+async fn a_variant_change_is_pushed() {
+    // `test_the_state_carries_variants_and_a_variant_change_is_pushed`: same animation, new mix
+    let brain = brain_at_two_pm();
+    let device = FakeClockServer::start().unwrap();
+    let clock = FakeClock::new(T0);
+    let p = pusher(&brain, one_target(&device), &clock, Some(1.0));
+    brain.lock().unwrap().ingest(
+        &hook("PreToolUse", json!({"tool_name": "Bash"})),
+        clock.now(),
+    );
+    assert!(p.step().await);
+    assert_eq!(
+        device.state_bodies().last().unwrap()["v"],
+        json!(["typing boss"])
+    );
+    brain
+        .lock()
+        .unwrap()
+        .tracker
+        .sessions
+        .get_mut("claude:s1")
+        .unwrap()
+        .action
+        .clear();
+    clock.advance(0.5);
+    assert!(
+        p.step().await,
+        "the variant mix changed, so it is sent again"
+    );
+    let last = device.state_bodies().last().unwrap().clone();
+    assert_eq!(last["a"], "typing");
+    assert_eq!(last["v"], json!(["building", "carrying", "typing boss"]));
+    assert_eq!(last["txt"], "Working");
+    assert_eq!(device.state_bodies().len(), 2);
 }
 
 #[tokio::test]

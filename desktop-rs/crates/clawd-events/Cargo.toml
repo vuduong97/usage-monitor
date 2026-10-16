@@ -8,7 +8,6 @@ publish.workspace = true
 
 [dependencies]
 clawd-contracts = { workspace = true }
-clawd-config = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

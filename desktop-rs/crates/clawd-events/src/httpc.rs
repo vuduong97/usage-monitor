@@ -49,7 +49,9 @@ async fn exchange(method: Method, url: &str, json_body: Option<String>) -> Resul
     let stream = TcpStream::connect((host.trim_matches(|c| c == '[' || c == ']'), port))
         .await
         .map_err(|e| e.to_string())?;
-    let (mut sender, connection) = hyper::client::conn::http1::handshake(TokioIo::new(stream))
+    let (mut sender, connection) = hyper::client::conn::http1::Builder::new()
+        .title_case_headers(true) // the clock's tiny HTTP server is happiest with `Content-Length`
+        .handshake(TokioIo::new(stream))
         .await
         .map_err(|e| e.to_string())?;
     let driver = tokio::spawn(async move {

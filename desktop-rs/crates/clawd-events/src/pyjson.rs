@@ -56,7 +56,8 @@ impl Formatter for PyFormatter {
     ) -> io::Result<()> {
         let mut start = 0;
         for (i, c) in fragment.char_indices() {
-            if c.is_ascii() {
+            // `ensure_ascii` escapes everything outside " ".."~", DEL included
+            if c.is_ascii() && c != char::from(0x7f) {
                 continue;
             }
             w.write_all(&fragment.as_bytes()[start..i])?;
@@ -102,5 +103,11 @@ mod tests {
             r#"{"ok": true, "list": [1, 2, {"a": null}], "t": "\u0110\u1ed3ng \"h\u1ed3\"\n", "e": [], "o": {}}"#
         );
         assert_eq!(to_py_json(&json!("😀")), r#""\ud83d\ude00""#);
+        // outside " ".."~" means escaped, DEL included (serde_json leaves it raw)
+        assert_eq!(to_py_json(&json!("a\u{7f}b")), r#""a\u007fb""#);
+        assert_eq!(
+            to_py_json_compact(&json!({"a": [1, 2], "t": "é\u{7f}"})),
+            r#"{"a":[1,2],"t":"\u00e9\u007f"}"#
+        );
     }
 }

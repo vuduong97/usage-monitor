@@ -340,7 +340,9 @@ fn every_brain_scenario_matches_python() {
         let expected = outputs[name].as_array().unwrap();
         assert_eq!(actual.len(), expected.len(), "{name}: step count");
         for (i, (a, e)) in actual.iter().zip(expected).enumerate() {
-            if a != e {
+            // `desired` and `state` are what the server answers with: key order is part of it
+            let ordered = matches!(spec["steps"][i]["op"].as_str(), Some("desired" | "state"));
+            if a != e || (ordered && !same_bytes(a, e)) {
                 failures.push(format!(
                     "{name} step {i} ({}):\n  rust   {a}\n  python {e}",
                     spec["steps"][i]
