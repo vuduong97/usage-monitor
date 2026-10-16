@@ -658,7 +658,12 @@ pub fn local_utc_offset_secs(now: f64) -> i64 {
         if libc::localtime_r(&t, &mut tm).is_null() {
             0
         } else {
-            i64::from(tm.tm_gmtoff)
+            // `tm_gmtoff` is `c_long`: already i64 on 64-bit macOS and Linux (clippy flags the
+            // conversion there), i32 on 32-bit targets, so the cast is the portable spelling.
+            #[allow(clippy::unnecessary_cast)]
+            {
+                tm.tm_gmtoff as i64
+            }
         }
     }
 }
