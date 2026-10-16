@@ -3,7 +3,7 @@
 //! and `creds`. Files are compared byte for byte (`file_text`, plist text, sha256).
 
 use clawd_contracts::{AppPaths, Prefs, UsagePayload, APP_VERSION, LAUNCH_AGENT_LABEL};
-use clawd_store::autostart::{launch_agent, plist_xml, run_value, Autostart};
+use clawd_store::autostart::{launch_agent, plist_xml, run_value};
 use clawd_store::creds::{forget_with, get_with, put_with};
 use clawd_store::paths::{ota_busy, set_usage_payload, usage_payload};
 use clawd_store::pause::{hold_at, release, PauseReader};
@@ -518,7 +518,7 @@ fn windows_autostart_flow_uses_a_sandbox_registry_key() {
             clawd_contracts::Platform::Win32,
             cmd,
         );
-        let auto: &Autostart = &sandbox.autostart;
+        let auto: &clawd_store::autostart::Autostart = &sandbox.autostart;
         assert_ne!(auto.run_key(), clawd_contracts::RUN_KEY);
         assert_eq!(
             auto.is_enabled(),
