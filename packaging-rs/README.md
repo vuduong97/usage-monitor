@@ -85,6 +85,9 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   `/releases/latest`. Anything else fails closed.
 * **A re-run** of a failed `publish` first deletes earlier drafts of the same tag (never a published
   release: that stops the run), so the "exactly one draft" gate can pass again.
+* **Editing a draft**: use `gh release edit vX.Y.Z --notes-file <file>`. A raw `PATCH
+  /releases/{id}` without `tag_name` turns the draft into `untagged-<hash>` (seen on v0.2.0); then
+  `gh release edit vX.Y.Z` cannot find it until `tag_name` is set again.
 * **Going live is a manual step**: the owner downloads the draft, checks `minisign -Vm SHA256SUMS
   -P <MINISIGN_PUBKEY>` and `shasum -a 256 -c SHA256SUMS`, runs the update tests of
   `tools/migration/local-release.md` on mac and Windows against these exact files, then publishes
