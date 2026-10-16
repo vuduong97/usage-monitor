@@ -5,9 +5,6 @@
 //! The release site is rebuilt from the fixture input by the rule in the exporter's docstring;
 //! the port additionally serves (and verifies) a `SHA256SUMS.minisig` signed with a key made for
 //! the test, which Python never had.
-//!
-//! Tests marked `[03]` need `clawd_store::paths::ota_busy`, `[06]` need `clawd_config::
-//! read_config_value` (both are stubs until those phases merge).
 
 mod common;
 
@@ -573,7 +570,7 @@ async fn golden_apply() {
     );
     up.check(false).await;
     let ok = by_name("windows_ok");
-    assert_eq!(json!(up.apply(Some(1234))), ok["result"]); // [03]
+    assert_eq!(json!(up.apply(Some(1234))), ok["result"]);
     let started = rig.launcher.started();
     assert_eq!(started.len(), 1);
     assert_eq!(
@@ -588,12 +585,12 @@ async fn golden_apply() {
     );
 
     set_ota_busy(rig.paths());
-    assert_eq!(json!(up.apply(None)), by_name("windows_ota_busy")["result"]); // [03]
+    assert_eq!(json!(up.apply(None)), by_name("windows_ota_busy")["result"]);
     assert_eq!(started.len(), rig.launcher.started().len());
     std::fs::remove_file(rig.paths().ota_busy_file()).unwrap();
     std::fs::write(up.staged().unwrap().path, b"swapped after the download").unwrap();
     let changed = by_name("windows_changed_file");
-    assert_eq!(json!(up.apply(None)), changed["result"]); // [03]
+    assert_eq!(json!(up.apply(None)), changed["result"]);
     assert_eq!(
         up.staged().is_some(),
         changed["staged_after"].as_bool().unwrap()
@@ -629,7 +626,7 @@ async fn golden_apply() {
     let root = m.rig.cfg.root().to_path_buf();
     let stage = root.join("stage");
     std::fs::write(stage.join("failed"), "0.1.9").unwrap();
-    assert_eq!(json!(m.up.apply(Some(4321))), mac["result"]); // [03]
+    assert_eq!(json!(m.up.apply(Some(4321))), mac["result"]);
     let shorten = |text: &str| -> String {
         slashes(
             &text
@@ -684,7 +681,6 @@ fn golden_settings() {
             .map(|(k, v)| (k.clone(), v.as_str().unwrap().to_owned()))
             .collect();
         sources.push(match from_settings(cfg.paths(), &Env::from_map(vars)) {
-            // [06]
             Ok(s) => json!({"repo": s.repo(), "api": s.api()}),
             Err(e) => json!({"error": e.0}),
         });
@@ -708,7 +704,7 @@ fn golden_settings() {
         if !text.is_empty() {
             cfg.write_config("config", &text);
         }
-        auto.push(json!(auto_enabled(cfg.paths()))); // [06]
+        auto.push(json!(auto_enabled(cfg.paths())));
     }
     same("auto_enabled", &auto, &output["auto"]);
 }

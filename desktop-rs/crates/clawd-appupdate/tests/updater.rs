@@ -1,7 +1,5 @@
 //! `appupdate.Updater` (Python: tests/test_appupdate.py "the updater: Windows / macOS") with a
 //! fake GitHub, fake `codesign`/`ditto` and a launcher that records instead of starting.
-//!
-//! Needs `clawd_store::paths::ota_busy` (phase 03) in `apply`: tests marked `[03]` call it.
 
 mod common;
 
@@ -211,7 +209,7 @@ async fn test_apply_on_windows_runs_the_installer_silently() {
     let rig = Rig::new();
     let up = rig.windows_updater(&gh, "0.1.0");
     up.check(false).await;
-    assert_eq!(up.apply(Some(1234)), (true, String::new())); // [03]
+    assert_eq!(up.apply(Some(1234)), (true, String::new()));
     let started = rig.launcher.started();
     assert_eq!(started.len(), 1);
     assert_eq!(started[0].program.file_name().unwrap(), EXE_NAME);
@@ -226,12 +224,12 @@ async fn test_apply_refuses_while_firmware_is_installing_and_a_changed_file() {
     let up = rig.windows_updater(&gh, "0.1.0");
     up.check(false).await;
     set_ota_busy(rig.paths());
-    let (ok, why) = up.apply(None); // [03]
+    let (ok, why) = up.apply(None);
     assert!(!ok && why.contains("firmware"), "{why}");
     assert!(rig.launcher.started().is_empty());
     std::fs::remove_file(rig.paths().ota_busy_file()).unwrap();
     std::fs::write(up.staged().unwrap().path, b"swapped after the download").unwrap();
-    let (ok, why) = up.apply(None); // [03]
+    let (ok, why) = up.apply(None);
     assert!(!ok && why.contains("bị đổi"), "{why}");
     assert!(rig.launcher.started().is_empty());
     assert!(up.staged().is_none());
@@ -249,7 +247,7 @@ async fn a_launcher_that_cannot_start_the_installer_reports_it() {
     let up = rig.windows_updater(&gh, "0.1.0");
     up.check(false).await;
     rig.launcher.fail_with(io::ErrorKind::PermissionDenied);
-    let (ok, why) = up.apply(None); // [03]
+    let (ok, why) = up.apply(None);
     assert!(
         !ok && why.starts_with("Không bắt đầu được cập nhật: "),
         "{why}"
@@ -341,7 +339,7 @@ async fn the_hash_in_memory_wins_over_a_rewritten_ready_json() {
         .replace(&real, &"0".repeat(64));
     std::fs::write(&ready, text).unwrap();
     assert_eq!(up.staged().unwrap().sha256, real);
-    assert_eq!(up.apply(Some(1)), (true, String::new())); // [03]
+    assert_eq!(up.apply(Some(1)), (true, String::new()));
 }
 
 #[tokio::test]
@@ -512,7 +510,7 @@ async fn test_mac_apply_starts_the_swap_script() {
     let m = mac_setup(Mac::default());
     m.up.check(false).await;
     std::fs::write(m.rig.cfg.root().join("stage").join("failed"), "0.1.9").unwrap();
-    assert_eq!(m.up.apply(Some(4321)), (true, String::new())); // [03]
+    assert_eq!(m.up.apply(Some(4321)), (true, String::new()));
     let started = m.rig.launcher.started();
     assert_eq!(started.len(), 1);
     let stage = m.rig.cfg.root().join("stage");
@@ -545,7 +543,7 @@ async fn test_mac_apply_checks_the_bundle_again() {
     // the staged app was swapped for another version while it sat on disk
     let plist = m.rig.cfg.root().join("stage/Clawd.app/Contents/Info.plist");
     std::fs::write(&plist, info_plist("9.9.9", "vn.clawd.desktop")).unwrap();
-    let (ok, why) = m.up.apply(Some(1)); // [03]
+    let (ok, why) = m.up.apply(Some(1));
     assert!(
         !ok && why.starts_with("Không bắt đầu được cập nhật: "),
         "{why}"
@@ -562,4 +560,60 @@ fn a_source_less_updater_never_asks_github() {
     assert_eq!(st.status, "idle");
     let _ = Source::new("o/r", "https://api.github.com").unwrap();
     assert!(gh.gh.calls().is_empty());
+}
+
+// ---- ready.json may only name the file this updater staged ---------------------------------------
+fn rewrite_ready_path(stage: &std::path::Path, old: &str, new: &str) {
+    let ready = stage.join("ready.json");
+    let from = format!("\"path\":{}", serde_json::to_string(old).unwrap());
+    let to = format!("\"path\":{}", serde_json::to_string(new).unwrap());
+    let text = std::fs::read_to_string(&ready).unwrap();
+    assert!(text.contains(&from), "{text}");
+    std::fs::write(&ready, text.replace(&from, &to)).unwrap();
+}
+
+#[tokio::test]
+async fn windows_ready_json_must_name_this_versions_installer() {
+    let outside = tempfile::tempdir().unwrap();
+    let absolute = outside.path().join("evil.exe");
+    std::fs::write(&absolute, b"installer").unwrap();
+    let absolute = absolute.to_string_lossy().into_owned();
+    for evil in [
+        "../evil.exe".to_owned(),
+        r"..\evil.exe".to_owned(),
+        absolute,
+        "sub/Clawd-0.2.0-windows-setup.exe".to_owned(),
+        "Clawd-0.2.0-mac-arm64.zip".to_owned(),
+    ] {
+        let (rig, gh, up) = staged_windows().await;
+        std::fs::write(rig.stage().parent().unwrap().join("evil.exe"), b"installer").unwrap();
+        std::fs::create_dir_all(rig.stage().join("sub")).unwrap();
+        std::fs::write(rig.stage().join("sub").join(EXE_NAME), b"installer").unwrap();
+        rewrite_ready_path(&rig.stage(), EXE_NAME, &evil);
+        // the process that downloaded it (hash in memory) and a fresh one both refuse
+        assert!(up.staged().is_none(), "same process: {evil}");
+        assert!(
+            rig.bystander(&gh, "0.1.0", "windows").staged().is_none(),
+            "{evil}"
+        );
+        assert!(!up.apply(None).0, "{evil}");
+        assert!(rig.launcher.started().is_empty(), "{evil}");
+    }
+}
+
+#[tokio::test]
+async fn mac_ready_json_must_name_clawd_app() {
+    for evil in [
+        "../Clawd.app",
+        "Other.app",
+        "Clawd.app/../x",
+        "/Applications/Clawd.app",
+    ] {
+        let m = mac_setup(Mac::default());
+        assert_eq!(m.up.check(false).await.status, "ready");
+        let stage = m.rig.cfg.root().join("stage");
+        rewrite_ready_path(&stage, "Clawd.app", evil);
+        assert!(m.up.staged().is_none(), "{evil}");
+        assert!(m.rig.launcher.started().is_empty(), "{evil}");
+    }
 }

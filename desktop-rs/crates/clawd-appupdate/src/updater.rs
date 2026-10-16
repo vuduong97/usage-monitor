@@ -465,6 +465,22 @@ impl Updater {
             }
             return None;
         };
+        // `path` comes from a file anyone with write access to the stage can edit: it must be
+        // exactly the name this updater stages (never `..`, a separator or an absolute path).
+        let expected = if self.system == "mac" {
+            Some("Clawd.app".to_owned())
+        } else {
+            asset_name(&version, &self.system, &self.arch)
+        };
+        if expected.as_deref() != Some(file.as_str()) {
+            log(&format!(
+                "{version}: ready.json names an unexpected file, dropped"
+            ));
+            if !self.held_elsewhere() {
+                self.clean();
+            }
+            return None;
+        }
         let path = self.stage.join(&file);
         if !is_newer(&version, &self.current) || !path.exists() {
             if !self.held_elsewhere() {
@@ -786,8 +802,10 @@ impl Updater {
     /// `Updater.apply(pid)`: start the replacement. Windows: verify the installer against the
     /// in-memory SHA-256, spawn it **detached** (`DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP`)
     /// with `/SILENT /SUPPRESSMSGBOXES /NORESTART`. macOS: unzip, [`crate::codesign::check_bundle`]
-    /// again, write `swap.sh`, spawn `/bin/sh swap.sh <pid> <new> <app> <stage> <version>` in a
-    /// new session. `(true, "")`: the caller must quit the app now (`engine.stop()` then exit);
+    /// again, write `swap.sh`, spawn `/bin/sh swap.sh <pid> <new> <app> <stage> <version>` in its
+    /// own process group (`process_group(0)`, see [`crate::LaunchKind::SwapScript`]).
+    /// `ready.json` must name exactly `Clawd.app` (macOS) or this version's asset name
+    /// (Windows), else the stage is dropped by `staged`. `(true, "")`: the caller must quit the app now (`engine.stop()` then exit);
     /// `(false, reason)` otherwise. `pid` default: this process.
     pub fn apply(&self, pid: Option<u32>) -> (bool, String) {
         let (ok, why) = self.can();
