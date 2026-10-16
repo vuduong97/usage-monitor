@@ -10,6 +10,9 @@
 #                             with the Developer ID AND notarized: anything missing is an error.
 #                             Without it, a build with no identity gets an ad-hoc signature: it runs
 #                             on this Mac, but it is not a release and 0.1.x will not update to it.
+#   CLAWD_EXPECTED_TEAM_ID   the Team ID of the 0.1.x Developer ID (workflow variable EXPECTED_TEAM_ID):
+#                         the signed app must carry exactly this TeamIdentifier. Required when
+#                         CLAWD_REQUIRE_SIGNING=1.
 #   CLAWD_EXPECT_ARCH     fail unless `uname -m` is this (the workflow's runner label check)
 #   CLAWD_PRIVATE_FIRMWARE=1   also ship clawd_desktop/firmware and /renderer (clock owners only)
 #   CLAWD_FEED_URL, CLAWD_FEED_TOKEN, CLAWD_MINISIGN_PUBKEY   baked into the binary by cargo
@@ -30,6 +33,7 @@ if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APPLE_APP_PA
 if [ "$REQUIRE" = 1 ]; then
   [ -n "$SIGN" ] || die "a release build needs CLAWD_SIGN_IDENTITY (Developer ID Application, the same Team ID as 0.1.x); refusing an ad-hoc release"
   [ "$NOTARIZE" = 1 ] || die "a release build must be notarized: APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD are all required"
+  [ -n "${CLAWD_EXPECTED_TEAM_ID:-}" ] || die "a release build needs CLAWD_EXPECTED_TEAM_ID (the 0.1.x Team ID, repository variable EXPECTED_TEAM_ID)"
 fi
 if [ "${CLAWD_PRIVATE_FIRMWARE:-0}" = 1 ] && [ "${GITHUB_ACTIONS:-}" = true ]; then
   die "CLAWD_PRIVATE_FIRMWARE=1 is not allowed in CI: public artifacts carry no firmware"
@@ -41,9 +45,17 @@ TARGET=${CARGO_TARGET_DIR:-$ROOT/desktop-rs/target}
 # The bundler signs and notarizes by itself when it sees these; this script does both, explicitly,
 # below, so the bundler only assembles the .app (ad-hoc at most).
 rm -rf "$TARGET/release/bundle/macos/Clawd.app" dist/Clawd.app
+# With a committed Cargo.lock the build must not change it. `cargo fetch --locked` fails when the
+# lock is out of date (and fetches the crates); the arguments after `--` are what the Tauri CLI
+# hands on to cargo (not verified on a Mac: if it does not forward them, the fetch above still holds).
+LOCKED=
+if [ -f desktop-rs/Cargo.lock ]; then
+  LOCKED=--locked
+  cargo fetch --locked --manifest-path desktop-rs/Cargo.toml
+fi
 (cd desktop-rs/app && env -u APPLE_SIGNING_IDENTITY -u APPLE_CERTIFICATE -u APPLE_CERTIFICATE_PASSWORD \
   -u APPLE_ID -u APPLE_PASSWORD -u APPLE_TEAM_ID -u APPLE_API_KEY -u APPLE_API_ISSUER -u APPLE_API_KEY_PATH \
-  cargo tauri build --bundles app)
+  cargo tauri build --bundles app ${LOCKED:+-- $LOCKED})
 BUILT="$TARGET/release/bundle/macos/Clawd.app"
 [ -x "$BUILT/Contents/MacOS/Clawd" ] || die "no $BUILT/Contents/MacOS/Clawd (the binary must be named Clawd)"
 mkdir -p dist
@@ -83,9 +95,12 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 INFO=$(codesign -dv --verbose=2 "$APP" 2>&1)
 echo "$INFO" | grep -E '^(Authority|TeamIdentifier)=' | head -2
 if [ -n "$SIGN" ]; then
+  # Notarization needs the hardened runtime: `flags=0x10000(runtime)`.
+  echo "$INFO" | grep -q 'flags=.*runtime' || die "the hardened runtime flag is missing from the signature"
   TEAM=$(echo "$INFO" | sed -n 's/^TeamIdentifier=//p')
   [ -n "$TEAM" ] && [ "$TEAM" != "not set" ] || die "the app has no TeamIdentifier"
   [ -z "${APPLE_TEAM_ID:-}" ] || [ "$TEAM" = "$APPLE_TEAM_ID" ] || die "TeamIdentifier $TEAM != APPLE_TEAM_ID"
+  [ -z "${CLAWD_EXPECTED_TEAM_ID:-}" ] || [ "$TEAM" = "$CLAWD_EXPECTED_TEAM_ID" ] || die "TeamIdentifier $TEAM != the expected 0.1.x Team ID $CLAWD_EXPECTED_TEAM_ID"
 fi
 
 if [ "$NOTARIZE" = 1 ] && [ -n "$SIGN" ]; then

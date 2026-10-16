@@ -12,6 +12,7 @@ the version and they must agree: the tag, desktop-rs/app/Cargo.toml (usually inh
 Needs Python 3.11+ (tomllib). Exit 0 = agree, 1 = disagree or unreadable.
 """
 import json
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -19,6 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RS = ROOT / "desktop-rs"
 TAG_PREFIX = "rust-"
+# The version ends up in file names and in $GITHUB_OUTPUT: plain semver only (X.Y.Z[-pre.release]).
+VERSION_RE = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?")
 
 
 def cargo_version() -> str:
@@ -46,6 +49,8 @@ def main(argv: list[str]) -> int:
         print(f"cannot read the version: {err!r}", file=sys.stderr)
         return 1
     problems = []
+    if not isinstance(cargo, str) or not VERSION_RE.fullmatch(cargo):
+        problems.append(f"version {cargo!r} is not X.Y.Z or X.Y.Z-pre")
     if cargo != tauri:
         problems.append(f"app/Cargo.toml version {cargo!r} != app/tauri.conf.json version {tauri!r}")
     if len(argv) == 2:
