@@ -120,8 +120,15 @@ mod tests {
         let typed = stored_clock(&json!({"manual_host": "10.0.0.5:8080", "host": "10.0.0.6"}));
         assert_eq!(typed.unwrap().base(), "http://10.0.0.5:8080");
         let c = stored_clock(&json!({"host": "10.0.0.6", "port": "x", "name": "clawd"})).unwrap();
-        assert_eq!((c.base().as_str(), c.name.as_str(), c.source), ("http://10.0.0.6", "clawd", ClockSource::Saved));
-        let bad = stored_clock(&json!({"manual_host": "10..97.40.207", "host": "10.0.0.6"})).unwrap();
-        assert_eq!((bad.host.as_str(), bad.source), ("10.0.0.6", ClockSource::Saved));
+        assert_eq!(
+            (c.base().as_str(), c.name.as_str(), c.source),
+            ("http://10.0.0.6", "clawd", ClockSource::Saved)
+        );
+        let bad =
+            stored_clock(&json!({"manual_host": "10..97.40.207", "host": "10.0.0.6"})).unwrap();
+        assert_eq!(
+            (bad.host.as_str(), bad.source),
+            ("10.0.0.6", ClockSource::Saved)
+        );
     }
 }

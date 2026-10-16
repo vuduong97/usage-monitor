@@ -16,13 +16,15 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
-use clawd_contracts::{Clock, ClockSource, ClockTarget, MonotonicClock, StopRx, SystemClock, TargetsFn};
+use clawd_contracts::{
+    Clock, ClockSource, ClockTarget, MonotonicClock, StopRx, SystemClock, TargetsFn,
+};
 use serde_json::{json, Map, Value};
 
 use crate::clock::manual_clock;
 use crate::mdns::{MdnsBrowser, MdnsSource};
-use crate::store::{stored_clock, ClockStore};
 use crate::pyval;
+use crate::store::{stored_clock, ClockStore};
 
 /// `discovery.FAIL_LIMIT`.
 pub const FAIL_LIMIT: u32 = 3;
@@ -152,7 +154,11 @@ impl ClockFinder {
         let manual_config = !configured.is_empty();
         FinderSnapshot {
             manual_config,
-            clock: if manual_config { None } else { st.current.clone() },
+            clock: if manual_config {
+                None
+            } else {
+                st.current.clone()
+            },
             failing: st.failures >= FAIL_LIMIT || (st.current.is_none() && !manual_config),
             config_targets: configured,
             last_ok: st.last_ok,
@@ -327,7 +333,10 @@ impl ClockFinder {
     fn choose(&self, now: f64) -> bool {
         let mut st = self.lock();
         let cur = st.current.clone();
-        if cur.as_ref().is_some_and(|c| c.source == ClockSource::Manual) {
+        if cur
+            .as_ref()
+            .is_some_and(|c| c.source == ClockSource::Manual)
+        {
             return true;
         }
         let saved = self.store.load();
@@ -348,7 +357,11 @@ impl ClockFinder {
                     (&c.host, c.port, c.source) == (&m.host, m.port, ClockSource::Mdns)
                 });
                 if !same {
-                    let why = if cur.is_none() { "found" } else { "address updated" };
+                    let why = if cur.is_none() {
+                        "found"
+                    } else {
+                        "address updated"
+                    };
                     self.adopt(&mut st, m, why);
                 }
                 return true;

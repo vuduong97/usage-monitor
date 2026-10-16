@@ -302,7 +302,10 @@ impl ClockApi {
     }
 
     fn has_auth(&self) -> bool {
-        self.auth.lock().unwrap_or_else(|e| e.into_inner()).is_some()
+        self.auth
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_some()
     }
 
     // ---- plumbing --------------------------------------------------------------------
@@ -319,16 +322,9 @@ impl ClockApi {
     /// One try: send, read the whole body, under the request lock.
     async fn attempt(&self, call: &Call<'_>, url: Url) -> Result<(u16, Reply), Fail> {
         let _one_at_a_time = self.lock.lock().await;
-        let session = self
-            .auth
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .clone();
+        let session = self.auth.lock().unwrap_or_else(|e| e.into_inner()).clone();
         let timeout = self.options.timeout.unwrap_or(call.timeout);
-        let mut request = self
-            .http
-            .request(call.method.clone(), url)
-            .timeout(timeout);
+        let mut request = self.http.request(call.method.clone(), url).timeout(timeout);
         request = match &call.payload {
             Payload::Empty => request,
             Payload::Json(value) => request.json(value),
@@ -358,13 +354,7 @@ impl ClockApi {
             .unwrap_or("")
             .to_owned();
         let body = response.bytes().await.map_err(|e| classify(&e))?.to_vec();
-        Ok((
-            status,
-            Reply {
-                content_type,
-                body,
-            },
-        ))
+        Ok((status, Reply { content_type, body }))
     }
 
     /// `ClockApi._send`.
@@ -407,17 +397,13 @@ impl ClockApi {
     /// `GET /api/heap`: no login; uptime, version, fwSeq, layouts, packs. Object or
     /// `ClockError::Other("odd /api/heap answer")`.
     pub async fn heap(&self) -> Result<Value, ClockError> {
-        let d = self
-            .json(Call::get("/api/heap").retries(RETRIES))
-            .await?;
+        let d = self.json(Call::get("/api/heap").retries(RETRIES)).await?;
         object_or(d, "odd /api/heap answer")
     }
 
     /// `GET /api/config` (login when set).
     pub async fn config(&self) -> Result<Value, ClockError> {
-        let d = self
-            .json(Call::get("/api/config").retries(RETRIES))
-            .await?;
+        let d = self.json(Call::get("/api/config").retries(RETRIES)).await?;
         object_or(d, "odd /api/config answer")
     }
 
@@ -431,7 +417,10 @@ impl ClockApi {
             .json(Call::new(Method::POST, "/api/config").json(changes))
             .await?;
         if !is_ok(&d) {
-            return Err(ClockError::Other(format!("save refused: {}", pyval::repr(&d))));
+            return Err(ClockError::Other(format!(
+                "save refused: {}",
+                pyval::repr(&d)
+            )));
         }
         Ok(d)
     }
@@ -467,9 +456,7 @@ impl ClockApi {
 
     /// `GET /api/export`: the saved `config.json`, WiFi passwords included (it is a backup).
     pub async fn export(&self) -> Result<Value, ClockError> {
-        let d = self
-            .json(Call::get("/api/export").retries(RETRIES))
-            .await?;
+        let d = self.json(Call::get("/api/export").retries(RETRIES)).await?;
         object_or(d, "odd backup")
     }
 
@@ -565,9 +552,7 @@ impl ClockApi {
 
     /// `GET /api/style` (no login): `{api, active, slot, id?, name?, size?, crc?, error?}`.
     pub async fn style(&self) -> Result<Value, ClockError> {
-        let d = self
-            .json(Call::get("/api/style").retries(RETRIES))
-            .await?;
+        let d = self.json(Call::get("/api/style").retries(RETRIES)).await?;
         object_or(d, "odd /api/style answer")
     }
 
@@ -583,9 +568,8 @@ impl ClockApi {
         if self.has_auth() {
             self.config().await?;
         }
-        let refused = |e: ClockError| {
-            ClockError::Other(format!("the clock refused the style pack ({e})"))
-        };
+        let refused =
+            |e: ClockError| ClockError::Other(format!("the clock refused the style pack ({e})"));
         let reply = self
             .send(
                 Call::new(Method::POST, "/api/style")
@@ -611,9 +595,7 @@ impl ClockApi {
 
     /// `DELETE /api/style`: back to the classic screen.
     pub async fn clear_style(&self) -> Result<Value, ClockError> {
-        let d = self
-            .json(Call::new(Method::DELETE, "/api/style"))
-            .await?;
+        let d = self.json(Call::new(Method::DELETE, "/api/style")).await?;
         if !is_ok(&d) {
             return Err(ClockError::Other(format!(
                 "clear refused: {}",

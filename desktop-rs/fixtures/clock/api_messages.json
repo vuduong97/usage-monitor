@@ -1,0 +1,871 @@
+{
+  "input": {
+    "cases": [
+      {
+        "name": "heap_ok",
+        "call": "heap",
+        "args": [],
+        "path": "/api/heap",
+        "response": {
+          "json": {
+            "uptime": 5
+          }
+        }
+      },
+      {
+        "name": "heap_odd",
+        "call": "heap",
+        "args": [],
+        "path": "/api/heap",
+        "response": {
+          "json": [
+            1
+          ]
+        }
+      },
+      {
+        "name": "heap_not_json",
+        "call": "heap",
+        "args": [],
+        "path": "/api/heap",
+        "response": {
+          "text": "<html>"
+        }
+      },
+      {
+        "name": "config_odd",
+        "call": "config",
+        "args": [],
+        "path": "/api/config",
+        "response": {
+          "json": "x"
+        }
+      },
+      {
+        "name": "status_null_json",
+        "call": "status",
+        "args": [],
+        "path": "/api/status",
+        "response": {
+          "text": "null"
+        }
+      },
+      {
+        "name": "status_empty_body",
+        "call": "status",
+        "args": [],
+        "path": "/api/status",
+        "response": {
+          "text": ""
+        }
+      },
+      {
+        "name": "status_http_500_long",
+        "call": "status",
+        "args": [],
+        "path": "/api/status",
+        "response": {
+          "status": 500,
+          "text": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      },
+      {
+        "name": "status_404",
+        "call": "status",
+        "args": [],
+        "path": "/api/status",
+        "response": {
+          "status": 404,
+          "text": "nope"
+        }
+      },
+      {
+        "name": "status_401",
+        "call": "status",
+        "args": [],
+        "path": "/api/status",
+        "response": {
+          "status": 401,
+          "text": "login"
+        }
+      },
+      {
+        "name": "export_odd",
+        "call": "export",
+        "args": [],
+        "path": "/api/export",
+        "response": {
+          "json": [
+            1
+          ]
+        }
+      },
+      {
+        "name": "scan_list",
+        "call": "scan",
+        "args": [],
+        "path": "/api/scan",
+        "response": {
+          "json": [
+            {
+              "ssid": "Home",
+              "rssi": -50,
+              "enc": true
+            }
+          ]
+        }
+      },
+      {
+        "name": "scan_object",
+        "call": "scan",
+        "args": [],
+        "path": "/api/scan",
+        "response": {
+          "json": {
+            "x": 1
+          }
+        }
+      },
+      {
+        "name": "save_empty",
+        "call": "save",
+        "args": [
+          {}
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "save_ok",
+        "call": "save",
+        "args": [
+          {
+            "a": 1
+          }
+        ],
+        "path": "/api/config",
+        "response": {
+          "json": {
+            "ok": true,
+            "reboot": false
+          }
+        }
+      },
+      {
+        "name": "save_refused_repr",
+        "call": "save",
+        "args": [
+          {
+            "a": 1
+          }
+        ],
+        "path": "/api/config",
+        "response": {
+          "json": {
+            "ok": false,
+            "n": null,
+            "f": 1.5,
+            "s": "it's",
+            "l": [
+              1,
+              "a\"b",
+              true
+            ],
+            "u": "\u0110",
+            "d": {
+              "x": "y"
+            }
+          }
+        }
+      },
+      {
+        "name": "save_refused_list",
+        "call": "save",
+        "args": [
+          {
+            "a": 1
+          }
+        ],
+        "path": "/api/config",
+        "response": {
+          "json": [
+            1,
+            "a"
+          ]
+        }
+      },
+      {
+        "name": "save_ok_zero",
+        "call": "save",
+        "args": [
+          {
+            "a": 1
+          }
+        ],
+        "path": "/api/config",
+        "response": {
+          "json": {
+            "ok": 0
+          }
+        }
+      },
+      {
+        "name": "save_not_json",
+        "call": "save",
+        "args": [
+          {
+            "a": 1
+          }
+        ],
+        "path": "/api/config",
+        "response": {
+          "text": "boom"
+        }
+      },
+      {
+        "name": "reboot_ok",
+        "call": "reboot",
+        "args": [],
+        "path": "/api/reboot",
+        "response": {
+          "text": "anything"
+        }
+      },
+      {
+        "name": "reboot_500",
+        "call": "reboot",
+        "args": [],
+        "path": "/api/reboot",
+        "response": {
+          "status": 500,
+          "text": "bad"
+        }
+      },
+      {
+        "name": "firmware_empty",
+        "call": "upload_firmware",
+        "args": [
+          0
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "firmware_too_big",
+        "call": "upload_firmware",
+        "args": [
+          524289
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "firmware_ok",
+        "call": "upload_firmware",
+        "args": [
+          1000
+        ],
+        "path": "/update",
+        "response": {
+          "text": " OK\n"
+        }
+      },
+      {
+        "name": "firmware_refused",
+        "call": "upload_firmware",
+        "args": [
+          10
+        ],
+        "path": "/update",
+        "response": {
+          "text": "FAIL: bad image"
+        }
+      },
+      {
+        "name": "firmware_refused_long",
+        "call": "upload_firmware",
+        "args": [
+          10
+        ],
+        "path": "/update",
+        "response": {
+          "text": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      },
+      {
+        "name": "pack_unknown",
+        "call": "upload_pack",
+        "args": [
+          "nopak",
+          5
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "pack_unknown_quote",
+        "call": "upload_pack",
+        "args": [
+          "it's",
+          5
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "pack_empty",
+        "call": "upload_pack",
+        "args": [
+          "clawdpak",
+          0
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "pack_too_big",
+        "call": "upload_pack",
+        "args": [
+          "deskpak",
+          3000001
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "pack_ok",
+        "call": "upload_pack",
+        "args": [
+          "clawdpak",
+          5
+        ],
+        "path": "/api/clawdpak",
+        "response": {
+          "json": {
+            "ok": true,
+            "anims": 12,
+            "crc": 7
+          }
+        }
+      },
+      {
+        "name": "pack_no_anims",
+        "call": "upload_pack",
+        "args": [
+          "deskpak",
+          5
+        ],
+        "path": "/api/deskpak",
+        "response": {
+          "json": {
+            "ok": true,
+            "anims": 0
+          }
+        }
+      },
+      {
+        "name": "pack_not_ok",
+        "call": "upload_pack",
+        "args": [
+          "deskpak",
+          5
+        ],
+        "path": "/api/deskpak",
+        "response": {
+          "json": {
+            "ok": false,
+            "n": null,
+            "f": 1.5,
+            "s": "it's",
+            "l": [
+              1,
+              "a\"b",
+              true
+            ],
+            "u": "\u0110",
+            "d": {
+              "x": "y"
+            }
+          }
+        }
+      },
+      {
+        "name": "pack_not_json",
+        "call": "upload_pack",
+        "args": [
+          "clawdpak",
+          5
+        ],
+        "path": "/api/clawdpak",
+        "response": {
+          "text": "OK"
+        }
+      },
+      {
+        "name": "pack_http_413",
+        "call": "upload_pack",
+        "args": [
+          "clawdpak",
+          5
+        ],
+        "path": "/api/clawdpak",
+        "response": {
+          "status": 413,
+          "text": "too big"
+        }
+      },
+      {
+        "name": "style_ok",
+        "call": "style",
+        "args": [],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "api": 1,
+            "active": false,
+            "slot": 32768
+          }
+        }
+      },
+      {
+        "name": "style_odd",
+        "call": "style",
+        "args": [],
+        "path": "/api/style",
+        "response": {
+          "json": [
+            1
+          ]
+        }
+      },
+      {
+        "name": "install_empty",
+        "call": "install_style",
+        "args": [
+          0
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "install_too_big",
+        "call": "install_style",
+        "args": [
+          32769
+        ],
+        "path": null,
+        "response": null
+      },
+      {
+        "name": "install_ok",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": true,
+            "style": {
+              "active": true,
+              "id": "synth"
+            }
+          }
+        }
+      },
+      {
+        "name": "install_ok_no_style",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": true
+          }
+        }
+      },
+      {
+        "name": "install_ok_empty_style",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": true,
+            "style": {}
+          }
+        }
+      },
+      {
+        "name": "install_ok_not_json_type",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "text": "fine"
+        }
+      },
+      {
+        "name": "install_not_ok",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": false,
+            "x": "it's"
+          }
+        }
+      },
+      {
+        "name": "install_http_400",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "status": 400,
+          "json": {
+            "ok": false,
+            "error": "magic",
+            "style": {
+              "active": false
+            }
+          }
+        }
+      },
+      {
+        "name": "install_401",
+        "call": "install_style",
+        "args": [
+          5
+        ],
+        "path": "/api/style",
+        "response": {
+          "status": 401,
+          "text": "login"
+        }
+      },
+      {
+        "name": "clear_ok",
+        "call": "clear_style",
+        "args": [],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": true,
+            "style": {
+              "active": false
+            }
+          }
+        }
+      },
+      {
+        "name": "clear_ok_no_style",
+        "call": "clear_style",
+        "args": [],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": 1
+          }
+        }
+      },
+      {
+        "name": "clear_refused",
+        "call": "clear_style",
+        "args": [],
+        "path": "/api/style",
+        "response": {
+          "json": {
+            "ok": false
+          }
+        }
+      },
+      {
+        "name": "clear_odd",
+        "call": "clear_style",
+        "args": [],
+        "path": "/api/style",
+        "response": {
+          "json": [
+            true
+          ]
+        }
+      },
+      {
+        "name": "file_ok",
+        "call": "get_file",
+        "args": [
+          "/a.bin",
+          10
+        ],
+        "path": "/api/fs/get",
+        "response": {
+          "text": "12345"
+        }
+      },
+      {
+        "name": "file_too_big",
+        "call": "get_file",
+        "args": [
+          "/a.bin",
+          3
+        ],
+        "path": "/api/fs/get",
+        "response": {
+          "text": "12345"
+        }
+      },
+      {
+        "name": "file_404",
+        "call": "get_file",
+        "args": [
+          "/nope",
+          10
+        ],
+        "path": "/api/fs/get",
+        "response": {
+          "status": 404,
+          "text": "no such file"
+        }
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "ok": {
+          "uptime": 5
+        }
+      },
+      {
+        "error": "ClockError",
+        "text": "odd /api/heap answer"
+      },
+      {
+        "error": "ClockError",
+        "text": "not JSON from /api/heap"
+      },
+      {
+        "error": "ClockError",
+        "text": "odd /api/config answer"
+      },
+      {
+        "error": "ClockError",
+        "text": "odd /api/status answer"
+      },
+      {
+        "error": "ClockError",
+        "text": "not JSON from /api/status"
+      },
+      {
+        "error": "ClockError",
+        "text": "HTTP 500: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "error": "ClockError",
+        "text": "HTTP 404: nope"
+      },
+      {
+        "error": "AuthNeeded",
+        "text": "the clock wants its web password"
+      },
+      {
+        "error": "ClockError",
+        "text": "odd backup"
+      },
+      {
+        "ok": [
+          {
+            "ssid": "Home",
+            "rssi": -50,
+            "enc": true
+          }
+        ]
+      },
+      {
+        "ok": []
+      },
+      {
+        "ok": {
+          "ok": true,
+          "reboot": false,
+          "unchanged": true
+        }
+      },
+      {
+        "ok": {
+          "ok": true,
+          "reboot": false
+        }
+      },
+      {
+        "error": "ClockError",
+        "text": "save refused: {'ok': False, 'n': None, 'f': 1.5, 's': \"it's\", 'l': [1, 'a\"b', True], 'u': '\u0110', 'd': {'x': 'y'}}"
+      },
+      {
+        "error": "ClockError",
+        "text": "save refused: [1, 'a']"
+      },
+      {
+        "error": "ClockError",
+        "text": "save refused: {'ok': 0}"
+      },
+      {
+        "error": "ClockError",
+        "text": "not JSON from /api/config"
+      },
+      {
+        "ok": null
+      },
+      {
+        "error": "ClockError",
+        "text": "HTTP 500: bad"
+      },
+      {
+        "error": "ClockError",
+        "text": "firmware size 0 B is outside 1..524288"
+      },
+      {
+        "error": "ClockError",
+        "text": "firmware size 524289 B is outside 1..524288"
+      },
+      {
+        "ok": null
+      },
+      {
+        "error": "ClockError",
+        "text": "update refused: FAIL: bad image"
+      },
+      {
+        "error": "ClockError",
+        "text": "update refused: eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "error": "ClockError",
+        "text": "unknown pack 'nopak'"
+      },
+      {
+        "error": "ClockError",
+        "text": "unknown pack \"it's\""
+      },
+      {
+        "error": "ClockError",
+        "text": "pack size 0 B is outside 1..3000000"
+      },
+      {
+        "error": "ClockError",
+        "text": "pack size 3000001 B is outside 1..3000000"
+      },
+      {
+        "ok": {
+          "ok": true,
+          "anims": 12,
+          "crc": 7
+        }
+      },
+      {
+        "error": "ClockError",
+        "text": "the clock refused deskpak: {'ok': True, 'anims': 0}"
+      },
+      {
+        "error": "ClockError",
+        "text": "the clock refused deskpak: {'ok': False, 'n': None, 'f': 1.5, 's': \"it's\", 'l': [1, 'a\"b', True], 'u': '\u0110', 'd': {'x': 'y'}}"
+      },
+      {
+        "error": "ClockError",
+        "text": "not JSON from /api/clawdpak"
+      },
+      {
+        "error": "ClockError",
+        "text": "HTTP 413: too big"
+      },
+      {
+        "ok": {
+          "api": 1,
+          "active": false,
+          "slot": 32768
+        }
+      },
+      {
+        "error": "ClockError",
+        "text": "odd /api/style answer"
+      },
+      {
+        "error": "ClockError",
+        "text": "style pack size 0 B is outside 1..32768"
+      },
+      {
+        "error": "ClockError",
+        "text": "style pack size 32769 B is outside 1..32768"
+      },
+      {
+        "ok": {
+          "active": true,
+          "id": "synth"
+        }
+      },
+      {
+        "ok": {}
+      },
+      {
+        "ok": {}
+      },
+      {
+        "error": "ClockError",
+        "text": "the clock refused the style pack: {}"
+      },
+      {
+        "error": "ClockError",
+        "text": "the clock refused the style pack: {'ok': False, 'x': \"it's\"}"
+      },
+      {
+        "error": "ClockError",
+        "text": "the clock refused the style pack (HTTP 400: {\"ok\":false,\"error\":\"magic\",\"style\":{\"active\":false}})"
+      },
+      {
+        "error": "ClockError",
+        "text": "the clock refused the style pack (the clock wants its web password)"
+      },
+      {
+        "ok": {
+          "active": false
+        }
+      },
+      {
+        "ok": {}
+      },
+      {
+        "error": "ClockError",
+        "text": "clear refused: {'ok': False}"
+      },
+      {
+        "error": "ClockError",
+        "text": "clear refused: [True]"
+      },
+      {
+        "ok": {
+          "bytes": 5
+        }
+      },
+      {
+        "error": "ClockError",
+        "text": "/a.bin is 5 B, more than 3"
+      },
+      {
+        "error": "ClockError",
+        "text": "HTTP 404: no such file"
+      }
+    ]
+  }
+}

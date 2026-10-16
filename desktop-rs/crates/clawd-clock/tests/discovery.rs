@@ -73,7 +73,13 @@ fn there_is_no_port_scan_anywhere() {
     for file in ["finder.rs", "store.rs", "clock.rs", "mdns.rs"] {
         let path = format!("{}/src/{file}", env!("CARGO_MANIFEST_DIR"));
         let text = std::fs::read_to_string(&path).unwrap();
-        for gone in ["scan_lan", "TcpStream", "ip_network", "\"subnets\"", "reqwest"] {
+        for gone in [
+            "scan_lan",
+            "TcpStream",
+            "ip_network",
+            "\"subnets\"",
+            "reqwest",
+        ] {
             assert!(!text.contains(gone), "{file} mentions {gone}");
         }
     }
@@ -95,7 +101,11 @@ async fn first_mdns_clock_is_used_and_remembered() {
 
 #[tokio::test]
 async fn saved_clock_is_tried_at_once_then_follows_its_new_address() {
-    let r = make(&[], &[], Some(json!({"name": "clawd", "host": "192.168.1.48", "port": 80})));
+    let r = make(
+        &[],
+        &[],
+        Some(json!({"name": "clawd", "host": "192.168.1.48", "port": 80})),
+    );
     assert_eq!(r.finder.targets(), ["http://192.168.1.48/api/usage"]); // before mDNS answers
     r.mdns.set(&[named("192.168.1.60", "clawd")]); // the router gave it a new IP
     r.finder.step().await;
@@ -106,7 +116,11 @@ async fn saved_clock_is_tried_at_once_then_follows_its_new_address() {
 #[tokio::test]
 async fn remembered_clock_wins_over_another_one() {
     let other = named("10.0.0.9", "aaa-neighbour");
-    let r = make(&[other, a()], &[], Some(json!({"name": "clawd", "host": "1.2.3.4"})));
+    let r = make(
+        &[other, a()],
+        &[],
+        Some(json!({"name": "clawd", "host": "1.2.3.4"})),
+    );
     r.finder.step().await;
     assert_eq!(r.finder.targets(), ["http://10.0.0.7/api/usage"]);
 }
@@ -132,7 +146,10 @@ async fn a_silent_clock_is_only_ever_retried_at_its_own_address() {
     }
     assert_eq!(r.finder.targets(), [url]);
     r.finder.report(url, false);
-    assert!(r.finder.targets().is_empty(), "stop pushing to a screen that is not there");
+    assert!(
+        r.finder.targets().is_empty(),
+        "stop pushing to a screen that is not there"
+    );
     for _ in 0..10 {
         // a long outage: only that one address, now and then
         r.now.advance(BAD_HOLD / 2.0);
@@ -183,7 +200,11 @@ async fn typed_address_wins_over_mdns_and_failures_and_restarts() {
 
 #[tokio::test]
 async fn retry_keeps_the_address_and_tries_it_at_once() {
-    let r = make(&[], &[], Some(json!({"name": "clawd", "host": "10.97.40.207", "port": 80})));
+    let r = make(
+        &[],
+        &[],
+        Some(json!({"name": "clawd", "host": "10.97.40.207", "port": 80})),
+    );
     let url = "http://10.97.40.207/api/usage";
     drop_clock(&r.finder, url);
     r.finder.step().await;
@@ -299,7 +320,10 @@ async fn run_starts_the_browser_steps_and_stops_it() {
     }
     assert_eq!(finder.targets(), ["http://10.0.0.7/api/usage"]);
     stop_tx.send(true).unwrap();
-    tokio::time::timeout(Duration::from_secs(5), task).await.unwrap().unwrap();
+    tokio::time::timeout(Duration::from_secs(5), task)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!((mdns.start_count(), mdns.stop_count()), (1, 1));
 }
 
@@ -316,7 +340,10 @@ async fn run_without_mdns_still_serves_the_remembered_address() {
     tokio::time::sleep(Duration::from_millis(100)).await;
     assert_eq!(finder.targets(), ["http://10.0.0.6/api/usage"]);
     drop(stop_tx); // a dropped sender also ends the loop
-    tokio::time::timeout(Duration::from_secs(5), task).await.unwrap().unwrap();
+    tokio::time::timeout(Duration::from_secs(5), task)
+        .await
+        .unwrap()
+        .unwrap();
 }
 
 #[test]
@@ -331,7 +358,10 @@ fn clock_store_survives_garbage_and_writes_python_text() {
         std::fs::read_to_string(&path).unwrap(),
         "{\n  \"name\": \"\\u0110\",\n  \"host\": \"10.0.0.6\",\n  \"port\": 80,\n  \"version\": \"\"\n}"
     );
-    assert!(!path.with_extension("tmp").exists(), "the temp file was renamed away");
+    assert!(
+        !path.with_extension("tmp").exists(),
+        "the temp file was renamed away"
+    );
     std::fs::write(&path, "[1, 2]").unwrap();
     assert_eq!(store.load(), json!({}), "not an object");
     std::fs::write(&path, "{nope").unwrap();

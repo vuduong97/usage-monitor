@@ -24,11 +24,7 @@ pub fn manual_clock(raw: &str) -> Option<ClockTarget> {
     if !valid_host(host) {
         return None;
     }
-    let port = if port.is_empty() {
-        80
-    } else {
-        py_int(port)?
-    };
+    let port = if port.is_empty() { 80 } else { py_int(port)? };
     if !(0 < port && port < 65536) {
         return None;
     }
@@ -61,7 +57,9 @@ fn py_int(text: &str) -> Option<i64> {
 fn valid_label(label: &str) -> bool {
     let bytes = label.as_bytes();
     (1..=63).contains(&bytes.len())
-        && bytes.iter().all(|b| b.is_ascii_alphanumeric() || *b == b'-')
+        && bytes
+            .iter()
+            .all(|b| b.is_ascii_alphanumeric() || *b == b'-')
         && bytes[0] != b'-'
         && bytes[bytes.len() - 1] != b'-'
 }
@@ -91,9 +89,14 @@ mod tests {
 
     #[test]
     fn typed_addresses() {
-        assert_eq!(manual_clock("clawd.local:8080").unwrap().base(), "http://clawd.local:8080");
         assert_eq!(
-            manual_clock("http://10.0.0.5/whatever").unwrap().usage_url(),
+            manual_clock("clawd.local:8080").unwrap().base(),
+            "http://clawd.local:8080"
+        );
+        assert_eq!(
+            manual_clock("http://10.0.0.5/whatever")
+                .unwrap()
+                .usage_url(),
             "http://10.0.0.5/api/usage"
         );
         assert!(manual_clock("").is_none() && manual_clock(":80").is_none());
@@ -116,6 +119,8 @@ mod tests {
         ] {
             assert!(manual_clock(bad).is_none(), "{bad}");
         }
-        assert!(valid_host("clawd-home.local") && valid_host("clawd") && valid_host("10.97.40.207"));
+        assert!(
+            valid_host("clawd-home.local") && valid_host("clawd") && valid_host("10.97.40.207")
+        );
     }
 }

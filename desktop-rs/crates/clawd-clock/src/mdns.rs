@@ -101,7 +101,11 @@ fn clock_of(info: &mdns_sd::ResolvedService) -> Option<ClockTarget> {
         .filter(|v| !v.is_empty())
         .unwrap_or(label);
     let mut clock = ClockTarget::new(host.to_string(), ClockSource::Mdns);
-    clock.port = if info.get_port() == 0 { 80 } else { info.get_port() };
+    clock.port = if info.get_port() == 0 {
+        80
+    } else {
+        info.get_port()
+    };
     clock.name = id.to_owned();
     clock.version = info.get_property_val_str("ver").unwrap_or("").to_owned();
     Some(clock)

@@ -363,6 +363,9 @@ impl DeviceState {
         }
         let path = req.path();
         if path == "/api/heap" {
+            if let Some(over) = self.overrides.lock().expect("overrides").get(path) {
+                return over.clone();
+            }
             return match *self.uptime.lock().expect("uptime") {
                 Some(up) => FakeResponse::json(
                     200,
@@ -401,10 +404,9 @@ impl DeviceState {
                 200,
                 &json!({"mode": "sta", "connected": true, "ssid": "Home", "rssi": -50}),
             ),
-            ("GET", "/api/scan") => FakeResponse::json(
-                200,
-                &json!([{"ssid": "Home", "rssi": -50, "enc": true}]),
-            ),
+            ("GET", "/api/scan") => {
+                FakeResponse::json(200, &json!([{"ssid": "Home", "rssi": -50, "enc": true}]))
+            }
             ("POST", "/api/reboot" | "/api/factory" | "/api/import") => {
                 FakeResponse::json(200, &json!({"ok": true}))
             }
@@ -559,7 +561,9 @@ mod tests {
         assert_eq!(md5_hex(b""), "d41d8cd98f00b204e9800998ecf8427e");
         assert_eq!(md5_hex(b"abc"), "900150983cd24fb0d6963f7d28e17f72");
         assert_eq!(
-            md5_hex(b"12345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+            md5_hex(
+                b"12345678901234567890123456789012345678901234567890123456789012345678901234567890"
+            ),
             "57edf4a22be3c955ac49da2e2107b67a"
         );
     }

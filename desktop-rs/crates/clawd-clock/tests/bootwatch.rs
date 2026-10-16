@@ -35,7 +35,11 @@ fn rig(uptime: u64, targets: bool) -> Rig {
             Box::pin(async move { ok })
         })
     };
-    let listed = if targets { vec![url.clone()] } else { Vec::new() };
+    let listed = if targets {
+        vec![url.clone()]
+    } else {
+        Vec::new()
+    };
     let targets: TargetsFn = Arc::new(move || listed.clone());
     let watch = BootWatch::new(targets, on_restart, now.arc());
     Rig {
@@ -175,9 +179,13 @@ async fn a_target_that_goes_away_is_forgotten() {
 #[tokio::test]
 async fn non_json_or_error_answers_are_no_answer() {
     let mut r = rig(5000, true);
-    r.device.override_path("/api/heap", clawd_testkit::FakeResponse::status(500));
+    r.device
+        .override_path("/api/heap", clawd_testkit::FakeResponse::status(500));
     r.watch.step().await; // no estimate stored; nothing fires
-    r.device.override_path("/api/heap", clawd_testkit::FakeResponse::text(200, "<html>"));
+    r.device.override_path(
+        "/api/heap",
+        clawd_testkit::FakeResponse::text(200, "<html>"),
+    );
     assert!(r.watch.step().await.is_empty());
 }
 
@@ -195,6 +203,9 @@ async fn run_probes_until_stopped() {
     }
     assert_eq!(hits.lock().unwrap().len(), 1);
     stop_tx.send(true).unwrap();
-    tokio::time::timeout(Duration::from_secs(5), task).await.unwrap().unwrap();
+    tokio::time::timeout(Duration::from_secs(5), task)
+        .await
+        .unwrap()
+        .unwrap();
     drop(r.device);
 }

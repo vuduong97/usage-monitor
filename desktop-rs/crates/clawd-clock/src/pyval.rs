@@ -156,7 +156,10 @@ mod tests {
         assert_eq!(to_port(&json!(8080.0)), Some(8080));
         assert_eq!(to_port(&json!("x")), None);
         assert_eq!(to_port(&json!(70000)), None);
-        assert_eq!(repr(&json!({"ok": false, "n": null})), "{'ok': False, 'n': None}");
+        assert_eq!(
+            repr(&json!({"ok": false, "n": null})),
+            "{'ok': False, 'n': None}"
+        );
         assert_eq!(repr_str("it's"), "\"it's\"");
         assert_eq!(repr_str("a\nb"), "'a\\nb'");
     }

@@ -26,28 +26,28 @@ pub type OnRestart = Arc<dyn Fn(String, u64) -> BoxFuture<bool> + Send + Sync>;
 /// `bootwatch.heap_url`: an `http_targets` push URL (`.../api/usage`) -> that clock's
 /// `/api/heap` URL. A private duplicate of `clawd_events::heap_url` (no edge to that crate).
 fn heap_url(target: &str) -> String {
-    match reqwest::Url::parse(target) {
-        Ok(url) => {
-            let mut heap = url;
-            heap.set_path(HEAP_PATH);
-            heap.set_query(None);
-            heap.set_fragment(None);
-            heap.to_string()
-        }
-        Err(_) => target.to_owned(),
+    // `urlunsplit((scheme, netloc, HEAP_PATH, "", ""))`: without a `scheme://` there is no netloc
+    match target.split_once("://") {
+        Some((scheme, rest)) => format!("{scheme}://{}{HEAP_PATH}", authority(rest)),
+        None => HEAP_PATH.to_owned(),
     }
 }
 
-/// `urlsplit(url).netloc`, for log lines.
+/// The netloc: everything up to the first `/`, `?` or `#`.
+fn authority(rest: &str) -> &str {
+    rest.find(['/', '?', '#']).map_or(rest, |i| &rest[..i])
+}
+
+/// `urlsplit(url).netloc` without any `user:password@`, for log lines.
 fn netloc(url: &str) -> String {
-    match reqwest::Url::parse(url) {
-        Ok(u) => match (u.host_str(), u.port()) {
-            (Some(h), Some(p)) => format!("{h}:{p}"),
-            (Some(h), None) => h.to_owned(),
-            _ => String::new(),
-        },
-        Err(_) => String::new(),
-    }
+    let Some((_, rest)) = url.split_once("://") else {
+        return String::new();
+    };
+    let netloc = authority(rest);
+    netloc
+        .rsplit_once('@')
+        .map_or(netloc, |(_, host)| host)
+        .to_owned()
 }
 
 /// `bootwatch.BootWatch`.
@@ -164,12 +164,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn heap_url_keeps_scheme_and_authority() {
-        assert_eq!(heap_url("http://10.0.0.5/api/usage"), "http://10.0.0.5/api/heap");
-        assert_eq!(
-            heap_url("http://clawd.local:8080/custom"),
-            "http://clawd.local:8080/api/heap"
-        );
+    fn heap_url_matches_python() {
+        let f: clawd_testkit::Fixture<serde_json::Value, serde_json::Value> =
+            clawd_testkit::load_fixture("clock", "heap_url");
+        let urls = f.input["urls"].as_array().unwrap();
+        let want = f.output["heap_urls"].as_array().unwrap();
+        assert_eq!(urls.len(), want.len());
+        for (url, want) in urls.iter().zip(want) {
+            let url = url.as_str().unwrap();
+            assert_eq!(heap_url(url), want.as_str().unwrap(), "{url}");
+        }
+    }
+
+    #[test]
+    fn netloc_hides_credentials() {
         assert_eq!(netloc("http://clawd.local:8080/custom"), "clawd.local:8080");
+        assert_eq!(netloc("http://u:p@10.0.0.5/x"), "10.0.0.5");
     }
 }
