@@ -101,7 +101,7 @@ pub const SUMS_SIG_NAME: &str = "SHA256SUMS.minisig";
 /// It is not a valid minisign key, so verification fails closed.
 pub const MINISIGN_PUBKEY_PLACEHOLDER: &str = "PLACEHOLDER-MINISIGN-PUBLIC-KEY-REPLACE-IN-PHASE-11";
 /// minisign public key (base64 line) that signs `SHA256SUMS`. Build-time override
-/// `CLAWD_MINISIGN_PUBKEY` is how `rust-release.yml` injects the key (repository variable
+/// `CLAWD_MINISIGN_PUBKEY` is how `release.yml` injects the key (repository variable
 /// `MINISIGN_PUBKEY`) until the real key is committed here; a tag build fails if it is empty.
 pub const MINISIGN_PUBKEY: &str = match option_env!("CLAWD_MINISIGN_PUBKEY") {
     Some(key) => key,

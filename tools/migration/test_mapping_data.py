@@ -93,7 +93,7 @@ MANUAL = {
     ),
     # ---- test_appupdate.py ----------------------------------------------------------------------
     "test_the_build_names_match_the_release_workflow": PY(
-        "reads the Python `packaging/` + release.yml; the Rust release has packaging-rs/test_check_version.py (8 tests, run by CI) but no test ties the asset names of rust-release.yml to appupdate's name functions"
+        "reads the Python `packaging/` + release.yml; the Rust release has packaging-rs/test_check_version.py (8 tests, run by CI); desktop-rs/tests-e2e/tests/release_names.rs ties the asset names of release.yml to appupdate's name functions"
     ),
     "test_versions_agree": PY(
         "pyproject vs __version__; the Rust version is the single `workspace.package.version`, checked by packaging-rs/check_version.py in CI"

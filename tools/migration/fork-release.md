@@ -1,5 +1,9 @@
 # Fork releases for the migration tests (phase 14)
 
+> **Since the cutover:** make the test releases with the local fake update API instead of a fork
+> ([`local-release.md`](local-release.md)): the case numbers and checks below are unchanged, only
+> the way the release is served differs. Never push a `v*` test tag to the main repo.
+
 How the **owner** makes the test releases that 0.1.4 and the Rust app update from. Everything
 happens on **a fork** of the repository with its own `release` environment and its own **test**
 minisign key. Never on the main repo: a normal release there is offered to every installed 0.1.x.

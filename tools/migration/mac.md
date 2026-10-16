@@ -1,5 +1,9 @@
 # macOS migration and update procedure (phase 14)
 
+> **Since the cutover:** make the test releases with the local fake update API instead of a fork
+> ([`local-release.md`](local-release.md)): the case numbers and checks below are unchanged, only
+> the way the release is served differs. Never push a `v*` test tag to the main repo.
+
 Copy-paste procedure for the **owner**, to run later on an **Apple-silicon Mac, macOS 15**, ideally
 a fresh user account or a VM-like clean Mac (a second macOS user is enough: separate `~`, separate
 login keychain, separate LaunchAgents). Nothing here is run by the agents.

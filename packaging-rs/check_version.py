@@ -3,7 +3,7 @@
 
   python packaging-rs/check_version.py                  print the version (after checking
                                                         Cargo.toml == tauri.conf.json)
-  python packaging-rs/check_version.py rust-v0.2.0      also require the tag to be rust-v<version>
+  python packaging-rs/check_version.py v0.2.0           also require the tag to be v<version>
 
 The self-update compares a release tag with the version baked into the build: a release whose build
 says another version would be offered again after every update (red team #2). Three places carry
@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RS = ROOT / "desktop-rs"
-TAG_PREFIX = "rust-"
+TAG_PREFIX = "v"
 # The version ends up in file names and in $GITHUB_OUTPUT: plain semver only (X.Y.Z[-pre.release]).
 VERSION_RE = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?")
 
@@ -57,8 +57,8 @@ def main(argv: list[str]) -> int:
         tag = argv[1]
         if not tag.startswith(TAG_PREFIX):
             problems.append(f"tag {tag!r} does not start with {TAG_PREFIX!r}")
-        elif tag[len(TAG_PREFIX):] != f"v{cargo}":
-            problems.append(f"tag {tag!r} (without {TAG_PREFIX!r}: {tag[len(TAG_PREFIX):]!r}) != v{cargo}")
+        elif tag != f"{TAG_PREFIX}{cargo}":
+            problems.append(f"tag {tag!r} != {TAG_PREFIX}{cargo}")
     if problems:
         for p in problems:
             print(f"version mismatch: {p}", file=sys.stderr)

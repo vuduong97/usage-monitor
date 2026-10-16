@@ -1,5 +1,9 @@
 # Windows migration and update procedure (phase 14)
 
+> **Since the cutover:** make the test releases with the local fake update API instead of a fork
+> ([`local-release.md`](local-release.md)): the case numbers and checks below are unchanged, only
+> the way the release is served differs. Never push a `v*` test tag to the main repo.
+
 Copy-paste procedure for the **owner**, to run later on a **clean Windows VM** (Win11 for the
 main run, Win10 for the no-WebView2 case). Nothing here is run by the agents. Never run any of it
 on your everyday machine: it installs, updates and rolls back the real app, and the Run value /

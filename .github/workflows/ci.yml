@@ -1,25 +1,93 @@
 name: CI
+
+# Clawd (Rust + Tauri) lives in desktop-rs/. No secrets here (minisign
+# signing and feed tokens are release-only). Actions are pinned to commit
+# SHAs. The Python app in clawd_desktop/ is kept for reference only; its
+# tests run on the branch python-0.1.x.
 on:
   push:
-    branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  public-check:
+  check-public:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: No firmware, packs, fonts or Clawd art in this repo
-        run: python3 tools/check_public.py
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: No firmware, packs, fonts, art or home paths in this repo
+        run: python tools/check_public.py
+      - name: Tests of the release version guard
+        run: python -m unittest discover -s packaging-rs
 
-  test:
+  # The golden harness must stay safe, and the checked-in sample fixture
+  # must be what the real Python app produces (standard library only).
+  golden-harness:
+    runs-on: ubuntu-latest
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - run: python tools/golden/_harness.py --selftest
+      - run: python tools/golden/export_sample.py
+      - name: Fixtures are reproducible (no change, nothing new)
+        run: |
+          git status --porcelain desktop-rs/fixtures
+          test -z "$(git status --porcelain desktop-rs/fixtures)"
+
+  rust:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest, macos-14]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop-rs
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - run: uv sync --python 3.12 --group dev
-      - run: uv run --python 3.12 --group dev python -m pytest
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # stable branch
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.91.0
+          components: rustfmt, clippy
+      # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: desktop-rs
+      - run: cargo fmt --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - run: cargo build --workspace --release -p clawd-app
+
+  # Linux is a non-goal: only the OS-neutral crates must keep compiling there.
+  ubuntu-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop-rs
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # stable branch
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: 1.91.0
+      # v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: desktop-rs
+      - run: cargo check -p clawd-contracts -p clawd-config -p clawd-events

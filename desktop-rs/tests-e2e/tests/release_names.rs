@@ -1,4 +1,4 @@
-//! The file names the Rust updater looks for must be the ones `rust-release.yml` publishes
+//! The file names the Rust updater looks for must be the ones `release.yml` publishes
 //! (Python had `test_the_build_names_match_the_updater`). A rename on either side would stop
 //! every installed copy from finding its update, so the workflow text is checked against
 //! `clawd_appupdate::version::asset_name`.
@@ -9,7 +9,7 @@ use clawd_appupdate::version::asset_name;
 
 fn workflow() -> String {
     let path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows/rust-release.yml");
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows/release.yml");
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }
 
@@ -32,7 +32,7 @@ fn every_updater_asset_is_published_by_the_release_workflow() {
         let wanted = in_workflow(&name, version);
         assert!(
             text.contains(&wanted),
-            "rust-release.yml never names {wanted} ({system}/{arch})"
+            "release.yml never names {wanted} ({system}/{arch})"
         );
     }
 }

@@ -533,7 +533,7 @@ impl Shell {
                     })
                     .ok();
             }
-            tray::id::QUIT => self.quit(),
+            tray::id::QUIT => self.quit("tray menu"),
             _ => {}
         }
     }
@@ -548,8 +548,10 @@ impl Shell {
     }
 
     /// `Tray.quit`: stop the loops and the engine, then leave. The engine's `stop()` blocks, so it
-    /// runs on its own thread.
-    pub fn quit(&self) {
+    /// runs on its own thread. `why` goes to the log: every way out of the tray names itself, so an
+    /// unexpected exit in a user's log can be told apart from a quit or an update.
+    pub fn quit(&self, why: &str) {
+        tracing::info!("Quit: {why}");
         self.stop_tx.send_replace(true);
         let (engine, app) = (self.engine.clone(), self.app.clone());
         std::thread::Builder::new()
@@ -631,7 +633,7 @@ impl ShellBackend for Shell {
             return;
         }
         tracing::info!("Restarting to install the update");
-        self.quit();
+        self.quit("restart to install the update");
     }
 
     /// `Tray._rescan`: a wizard step or an agent changed.
@@ -848,10 +850,19 @@ fn agent_loop(shell: Arc<Shell>, mut stop: StopRx) -> LoopFuture {
 fn run_events(event: &RunEvent, keep_running: bool) {
     // No window left is not "quit": only app.exit(code) ends the tray process.
     if let RunEvent::ExitRequested { code, api, .. } = event {
-        if keep_running && code.is_none() {
+        if exit_allowed(*code, keep_running) {
+            // `app.exit(code)` (logged by `Shell::quit`) or the system ending the event loop.
+            tracing::info!("Exit requested (code {code:?})");
+        } else {
             api.prevent_exit();
         }
     }
+}
+
+/// Whether an `ExitRequested` may end the process: always for the settings-only process, and for
+/// the tray only with an exit code (`app.exit(code)`); the last window closing carries none.
+fn exit_allowed(code: Option<i32>, keep_running: bool) -> bool {
+    !keep_running || code.is_some()
 }
 
 /// `Clawd` / `Clawd tray` (`tray.main`). Returns the exit code.
@@ -931,6 +942,7 @@ pub fn run_tray(context: tauri::Context<tauri::Wry>) -> i32 {
         }
     };
     let code = app.run_return(|_, event| run_events(&event, true));
+    tracing::info!("Event loop ended (code {code})");
     engine.stop();
     tracing::info!("Bye");
     code
@@ -1041,4 +1053,23 @@ pub fn run_headless(cfg: EngineConfig) -> i32 {
         waiter.abort();
     });
     0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::exit_allowed;
+
+    #[test]
+    fn the_tray_only_exits_with_a_code() {
+        assert!(
+            !exit_allowed(None, true),
+            "last window closed: keep the tray"
+        );
+        assert!(exit_allowed(Some(0), true), "app.exit(0): quit or update");
+        assert!(
+            exit_allowed(None, false),
+            "settings-only process ends with its window"
+        );
+        assert!(exit_allowed(Some(1), false));
+    }
 }

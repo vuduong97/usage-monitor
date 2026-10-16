@@ -1,7 +1,7 @@
 ---
 phase: 15
 title: "Release cutover"
-status: pending
+status: in-progress
 priority: P1
 effort: "0.5d"
 dependencies: [14]
@@ -39,10 +39,12 @@ Chuyển kênh phát hành sang bản Rust: version 0.2.0, `release.yml` build R
 5. Theo dõi 2 tuần: log lỗi updater; tỉ lệ đã áp dụng (download count `.exe`/`.zip` 0.2.0 vs 0.1.4).
 
 ## Todo
-- [ ] Nhánh python-0.1.x (release.yml Python còn chạy)
-- [ ] Version + workflow gộp + check tag↔version Rust
-- [ ] README (mac Developer ID, cập nhật khi bấm) + release notes + end-of-support
-- [ ] Draft release + owner publish
+- [x] Nhánh python-0.1.x (release.yml Python còn chạy; CI chạy trên nhánh, xanh)
+- [x] Version + workflow gộp + check tag↔version Rust (`release.yml` tag `v*`, draft; `rust-release.yml` xoá; env `release` cần thêm `v*`)
+- [x] README (mac Developer ID, cập nhật khi bấm) + release notes + end-of-support
+- [ ] Draft release `v0.2.0`
+- [ ] Thử 0.1.4→0.2.0 và Rust→Rust + tamper trên mac và Windows (`tools/migration/local-release.md`)
+- [ ] Sao lưu khoá minisign, owner publish
 
 ## Success Criteria
 - [ ] Release `v0.2.0` có `Clawd-0.2.0-windows-setup.exe`, `Clawd-0.2.0-mac-{arm64,x86_64}.{zip,dmg}`, `SHA256SUMS`, `SHA256SUMS.minisig`

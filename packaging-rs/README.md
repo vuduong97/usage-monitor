@@ -3,8 +3,8 @@
 The Rust + Tauri port (`desktop-rs/`) keeps the release contract that Clawd 0.1.x already
 ships, so the 0.1.x self-update installs it: the same Inno `AppId`, install folder and silent
 flags on Windows, the same bundle id and **Developer ID Team ID** on macOS, the same asset names.
-The Python packaging in `packaging/` is untouched and keeps releasing through `release.yml`
-until the cutover.
+Since the cutover (0.2.0) this is the only release path on `main`; the Python packaging in
+`packaging/` is kept for reference and still releases 0.1.x from the branch `python-0.1.x`.
 
 | File | What it is |
 |---|---|
@@ -12,9 +12,10 @@ until the cutover.
 | `build_windows.ps1` | `cargo build --release -p clawd-app`, asserts `Clawd.exe`, runs `iscc`: `dist\Clawd-<version>-windows-setup.exe`. |
 | `build_mac.sh` | Tauri bundler builds `Clawd.app` for this Mac's arch, then Developer ID signing (hardened runtime), notarize, staple, `dist/Clawd-<version>-mac-<arch>.zip` + `.dmg`. |
 | `entitlements.plist` | Byte copy of `packaging/entitlements.plist`. |
-| `check_version.py` | Prints the build version; with a tag, requires `rust-v<version>`. |
+| `check_version.py` | Prints the build version; with a tag, requires `v<version>`. |
 | `../desktop-rs/app/tauri.{windows,macos}.conf.json`, `../desktop-rs/app/Info.plist` | Tauri per-platform overlays and the macOS Info.plist keys (`LSUIElement`, `NSLocalNetworkUsageDescription`, `NSBonjourServices`). |
-| `../.github/workflows/rust-release.yml` | The release workflow. |
+| `../.github/workflows/release.yml` | The release workflow. |
+| `release-notes/<version>.md` | Notes of the draft release (generated notes when missing). |
 
 ## Local builds
 
@@ -44,18 +45,18 @@ no firmware.
 Installer size: not measured here (no `iscc` in the build sandbox). The spike estimate was about
 3.5 MB (`reports/spike-decision.md`); the workflow's size gate is the real number.
 
-## Release workflow (`rust-release.yml`)
+## Release workflow (`release.yml`)
 
-* **Triggers**: pushing a tag `rust-v*`, or a manual run. Nothing runs on a branch push. Only a
-  `rust-v*` tag run builds, signs and publishes; a manual run on a branch runs just the secret-free
-  gates (`verify`, `test`) and never binds the environment `release`.
-* **Secrets** live only in the GitHub environment `release` (Settings, Environments; add the owner
-  as required reviewer and set Deployment branches and tags to the tag pattern `rust-v*` only).
-  Jobs `build-windows`, `build-mac` and `sign` are bound to it (and only run on a `rust-v*` tag);
+* **Triggers**: pushing a tag `v*`, or a manual run. Nothing runs on a branch push. Only a `v*`
+  tag run builds, signs and publishes; a manual run on a branch runs just the secret-free gates
+  (`verify`, `test`) and never binds the environment `release`.
+* **Secrets** live only in the GitHub environment `release` (Settings, Environments; the owner is
+  the required reviewer, Deployment branches and tags = the tag pattern `v*` only).
+  Jobs `build-windows`, `build-mac` and `sign` are bound to it (and only run on a `v*` tag);
   `verify`, `test` and `publish` are not.
   Secrets: `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`,
-  `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD` (same names as `release.yml`), `CLAWD_FEED_URL`,
-  `CLAWD_FEED_TOKEN`, `MINISIGN_KEY`, `MINISIGN_PASSWORD`.
+  `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`, `CLAWD_FEED_URL`, `CLAWD_FEED_TOKEN`, `MINISIGN_KEY`,
+  `MINISIGN_PASSWORD`.
   Repository **variables** (not secrets): `MINISIGN_PUBKEY` (the public key; a tag run fails if it
   is empty or not a 56-character `RW...` key) and `EXPECTED_TEAM_ID` (the 10-character Team ID of
   the 0.1.x Developer ID; the signed app must carry exactly this TeamIdentifier, a tag run fails
@@ -64,28 +65,38 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   version, the variables above, `Cargo.lock`) and `test` (`cargo test --workspace --locked`). Both
   `build-*` jobs need them.
 * **Permissions**: `contents: read` everywhere; `contents: write` only in `publish`.
-* **Tag and version**: `GITHUB_REF_NAME` without `rust-` must equal `v<version>` of
-  `desktop-rs/app/Cargo.toml` (inherited from `[workspace.package]`) and of
-  `desktop-rs/app/tauri.conf.json`. A test tag therefore needs a version bump in the same commit,
-  e.g. `0.2.0-test.1` and `rust-v0.2.0-test.1`.
+* **Tag and version**: `GITHUB_REF_NAME` must equal `v<version>` of `desktop-rs/app/Cargo.toml`
+  (inherited from `[workspace.package]`) and of `desktop-rs/app/tauri.conf.json`. The updater
+  compares the tag with the version baked into the build, so a mismatch would be an update loop.
 * **Signing**: a tag run without the Developer ID certificate, or without notarization, fails.
   There are no ad-hoc releases; only a local `build_mac.sh` run without a tag may be ad-hoc.
 * **Size gate**: installer, zip and dmg must be at most 8,000,000 bytes (fails the run). The exe
   size is only reported.
 * **Assets**: `Clawd-<v>-windows-setup.exe`, `Clawd-<v>-mac-{arm64,x86_64}.{zip,dmg}`,
   `SHA256SUMS`, `SHA256SUMS.minisig`. The workflow checks that these are exactly the files present.
-* **Publish**: one `gh release create` makes a draft **and** prerelease with `--latest=false` and
-  all seven files attached (signature first, so `SHA256SUMS` never exists without its
-  `.minisig`). A gate then reads the repository's release list (`gh release view <tag>` does not
-  reliably find a draft) and requires exactly one release for the tag with `isDraft` and
-  `isPrerelease` both true and both signature files among exactly seven assets; it also fails if
-  the tag became `/releases/latest`. Anything else fails closed. A `rust-v*`
-  release must never become "latest" on the main repo: Clawd 0.1.4 reads `/releases/latest`, and
-  `parse_version("rust-v...")` is `None`, so the whole fleet would stop getting updates. Never
-  publish the draft by hand. `rust-v*` tags are for internal tests; the real path is `release.yml`
-  after the cutover (phase 15).
-* **Before the first tag**: commit `desktop-rs/Cargo.lock` (a tag build uses `--locked`), create
-  the environment, secrets and variables above.
+* **Publish**: one `gh release create` makes a **draft** with `--latest=false` and all seven files
+  attached (signature first, so `SHA256SUMS` never exists without its `.minisig`); a version with a
+  pre-release part (`0.3.0-rc.1`) is also a prerelease. A gate then reads the repository's release
+  list (`gh release view <tag>` does not reliably find a draft) and requires exactly one draft for
+  the tag, `isPrerelease` false for `X.Y.Z` (a published prerelease is never offered by 0.1.x or
+  0.2.x), and both signature files among exactly seven assets; it also fails if the tag became
+  `/releases/latest`. Anything else fails closed.
+* **A re-run** of a failed `publish` first deletes earlier drafts of the same tag (never a published
+  release: that stops the run), so the "exactly one draft" gate can pass again.
+* **Going live is a manual step**: the owner downloads the draft, checks `minisign -Vm SHA256SUMS
+  -P <MINISIGN_PUBKEY>` and `shasum -a 256 -c SHA256SUMS`, runs the update tests of
+  `tools/migration/local-release.md` on mac and Windows against these exact files, then publishes
+  **with an explicit latest flag** (the draft was created with `--latest=false`, which may stick):
+
+  ```sh
+  gh release edit vX.Y.Z -R vuduong97/usage-monitor --draft=false --latest
+  gh api repos/vuduong97/usage-monitor/releases/latest --jq .tag_name     # must print vX.Y.Z
+  ```
+
+  From then on every 0.1.x and 0.2.x app stages it within 6 hours. If `releases/latest` still
+  names the old tag, nobody updates.
+* **Never push a test tag (`v*`) to the main repo**: a published `vX.Y.Z` reaches every user. Test
+  releases are made locally with the fake update API (`tools/migration/fake_api.py`).
 
 ## minisign key (Q2: SHA256SUMS is signed)
 
@@ -125,8 +136,7 @@ cat clawd-minisign.pub                                       # 2nd line = the pu
   `Clawd.exe cleanup`.
 * `codesign -dv --verbose=2 Clawd.app` gives the same `TeamIdentifier` as the 0.1.4 app;
   `spctl --assess --type execute -vv` says `source=Notarized Developer ID`.
-* Dry run in a fork with a test tag (never on the main repo): the draft prerelease has all five
-  files plus `SHA256SUMS` and `SHA256SUMS.minisig`.
+* The first real draft (`v0.2.0`) has all five files plus `SHA256SUMS` and `SHA256SUMS.minisig`.
 * The entitlements are a copy of the PyInstaller ones (unsigned executable memory, no library
   validation). A Rust app probably needs neither: if it runs and notarizes without them, empty the
   file.

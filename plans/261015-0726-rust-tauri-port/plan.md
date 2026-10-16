@@ -73,7 +73,7 @@ Wave C (tuần tự):              14 e2e-parity-migration → 15 release-cutove
 | 14 | [E2E, parity, perf gate, migration](./phase-14-e2e-parity-migration.md) | C | 3–13 | `desktop-rs/tests-e2e/**`, `tools/migration/**`, reports | 3d |
 | 15 | [Release cutover](./phase-15-release-cutover.md) | C | 14 | `README.md`, `.github/workflows/{release,ci}.yml`, version fields | 0.5d |
 
-### Trạng thái thực thi (cập nhật 2026-10-16)
+### Trạng thái thực thi (cập nhật 2026-10-16, tối)
 
 | # | Trạng thái | Ghi chú |
 |---|---|---|
@@ -91,9 +91,11 @@ Wave C (tuần tự):              14 e2e-parity-migration → 15 release-cutove
 | 12 | completed (GUI → 14) | B'' xong, 0 ignore; sửa `EngineHandle::stop()` và thứ tự cài hook `on_payload` trước khi chạy loop (bug do e2e tìm ra); checklist GUI chuyển sang 14 |
 | 13 | completed (GUI → 14) | Đã merge + 39 test bridge còn thiếu đã viết (settings_api/setup/preview); còn thiếu runtime test deny popover (cần dòng dev-dependency `tauri` feature `test` trong `app/Cargo.toml`) |
 | 14 | in-progress | Phần headless xong và đã merge: 26 test e2e, tài liệu migration Win/mac, test-mapping 413 hàm (388 ported, 6 partial, 9 dropped, 9 Python-only, 1 gap), parity checklist 49 dòng. Lần chạy GUI cô lập đầu tiên đã chạy (tray 1.34 s, cold paint 3.5 s, warm 690 ms, RAM idle 3 MB; đo lúc máy bận). CHƯA chạy: đo lại lúc rảnh, perf-final, parity thủ công trên Win + đồng hồ thật, migration 0.1.4→Rust, Rust→Rust, rollback, Mac qua GitHub Actions |
-| 15 | pending | Chờ 14 |
+| 15 | in-progress | Nhánh `python-0.1.x` đã push (CI xanh). Trên `feat/rust-cutover`: `rust-release.yml` → `release.yml` (tag `v*`, chỉ tạo draft, không prerelease cho X.Y.Z), `rust-ci.yml` → `ci.yml` (Python test chỉ còn ở `python-0.1.x`), `check_version.py` nhận `vX.Y.Z`, README (mac Developer ID, cập nhật khi bấm, dev = Rust), `packaging-rs/release-notes/0.2.0.md`, log lý do thoát app. Thử cập nhật bằng fake API cục bộ (`tools/migration/{fake_api.py,local-release.md}`) thay cho fork. Còn: env `release` thêm tag `v*`, tag `v0.2.0` → draft, thử mac + Windows, sao lưu khoá minisign, publish |
 
-Tồn đọng: `MINISIGN_PUBKEY` còn placeholder (owner tạo khoá minisign rồi điền `.env` theo `packaging-rs/release-secrets.template.env`, chạy `set-release-secrets.ps1 -Apply`); environment `release` đã tạo (chỉ tag `rust-v*`, owner duyệt); commit `desktop-rs/Cargo.lock` trước tag đầu tiên; `check_public` đã xanh (allow-list file design B); test flaky cần theo dõi `feed_security::a_grant_may_only_name_relative_feed_paths`; mac chỉ kiểm qua GitHub Actions.
+Cổng publish (owner, 2026-10-16): fleet công khai → chỉ publish `v0.2.0` khi 0.1.4→0.2.0 (file draft thật) **và** Rust→Rust + các ca tamper đã PASS trên **cả mac lẫn Windows**, và `D:\clawd-minisign\` đã có bản sao lưu.
+
+Tồn đọng: khoá minisign production đã tạo (`MINISIGN_PUBKEY` là biến repo), chưa sao lưu; environment `release` hiện chỉ cho tag `rust-v*` (cutover cần `v*`); `desktop-rs/Cargo.lock` đã commit; `check_public` đã xanh (allow-list file design B); test flaky cần theo dõi `feed_security::a_grant_may_only_name_relative_feed_paths`; mac chỉ kiểm qua GitHub Actions.
 
 Đường dẫn crate tương đối `desktop-rs/`; app = `desktop-rs/app/`. Fixtures: `desktop-rs/fixtures/<area>/` (area `fw`, KHÔNG `firmware` — `tools/check_public.py:13` cấm thư mục tên `firmware`), exporter `tools/golden/export_<area>.py` — phase sở hữu area.
 

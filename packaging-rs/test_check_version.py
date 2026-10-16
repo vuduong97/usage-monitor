@@ -41,15 +41,15 @@ class CheckVersion(unittest.TestCase):
 
     def test_own_version_in_app_cargo_toml(self):
         self.write(workspace=False)
-        self.assertEqual(run(["rust-v0.2.0"])[:2], (0, "0.2.0"))
+        self.assertEqual(run(["v0.2.0"])[:2], (0, "0.2.0"))
 
     def test_prerelease_version_and_tag(self):
         self.write("0.2.0-test.1", "0.2.0-test.1")
-        self.assertEqual(run(["rust-v0.2.0-test.1"])[:2], (0, "0.2.0-test.1"))
+        self.assertEqual(run(["v0.2.0-test.1"])[:2], (0, "0.2.0-test.1"))
 
     def test_tag_must_match(self):
         self.write()
-        for tag in ("rust-v0.2.1", "v0.2.0", "rust-0.2.0", "rust-v0.2.0-x", "rust-v"):
+        for tag in ("v0.2.1", "rust-v0.2.0", "0.2.0", "v0.2.0-x", "v", "V0.2.0"):
             with self.subTest(tag=tag):
                 self.assertEqual(run([tag])[0], 1)
 
@@ -71,7 +71,7 @@ class CheckVersion(unittest.TestCase):
 
     def test_too_many_arguments(self):
         self.write()
-        self.assertEqual(run(["rust-v0.2.0", "x"])[0], 1)
+        self.assertEqual(run(["v0.2.0", "x"])[0], 1)
 
 
 if __name__ == "__main__":
