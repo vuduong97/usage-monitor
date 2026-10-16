@@ -117,5 +117,6 @@ cat clawd-minisign.pub                                       # 2nd line = the pu
 * The entitlements are a copy of the PyInstaller ones (unsigned executable memory, no library
   validation). A Rust app probably needs neither: if it runs and notarizes without them, empty the
   file.
-* On a machine without the VC++ runtime: does `Clawd.exe` start? (The workflow builds with the
-  default dynamic CRT.)
+* On a machine without the VC++ runtime: does `Clawd.exe` start? A string scan of a local release
+  build found imports of the Universal CRT (`api-ms-win-crt-*`, part of Windows 10/11) and no
+  `VCRUNTIME140.dll`, so it should; confirm on the clean VM.
