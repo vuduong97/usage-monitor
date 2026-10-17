@@ -1,8 +1,24 @@
-Clawd desktop app
+Clawd desktop app and clock firmware
 
-This repository contains no firmware, fonts, animation packs or Clawd
-artwork. The app can download them, encrypted, from the clock's firmware feed and
-hand them straight to the clock; they are never written to disk. The tray icon is drawn in code (app/src/tray.rs).
+The app (app/, crates/, integrations/, tools/) and the clock firmware's own code (clock/) are
+written for this project. The firmware is licensed WTFPL (clock/firmware/platformio.ini); it
+builds on the Arduino ESP8266 core, Adafruit GFX/ST7789 and ArduinoJson under their own
+licenses.
+
+Third-party material this repository carries, and every app release ships inside the app:
+
+- clock/firmware/src/features/clawd/clawd_fonts.h: bitmap glyphs generated from Anthropic's
+  fonts (the .otf/.ttf files themselves are not in this repository).
+- clock/firmware/data/clawd.pak and the style packs (clock/firmware/styles/*.pak): Clawd
+  animations, from Anthropic's Clawd artwork.
+- clock/firmware/data/desk.pak: rendered from the clawd-on-desk artwork (All Rights Reserved,
+  personal use). The source SVGs are not in this repository.
+
+These belong to their owners and are included only so a Clawd clock can show them; they are
+not licensed under the project's terms. If you own any of it and want it removed, open an
+issue.
+
+The tray icon is drawn in code (app/src/tray.rs).
 
 Claude, Claude Code and Clawd are trademarks of Anthropic. This project is
 not affiliated with or endorsed by Anthropic. It reads your own Claude Code

@@ -1,6 +1,6 @@
 ---
 title: One public repo: clock firmware ships with the app, style packs from a signed release
-status: in progress
+status: done (not pushed)
 created: 2026-10-17
 branch: feat/monorepo (worktree ../clawd-desktop-monorepo)
 source: ak:advise session 2026-10-17 (confirmed reframing)
@@ -49,11 +49,23 @@ source: ak:advise session 2026-10-17 (confirmed reframing)
   mac/windows jobs build the renderer from `clock/firmware` and put both in the app.
 
 ## Phases
-1. [ ] Import clawd-home history under `clock/` (filter-repo, drop `.otf`, gitleaks, review)
-2. [ ] Layout: single PROTOCOL.md, commit desk.pak, drop clock's renderer.yml, gitignore
-3. [ ] Bundle: `bundle_firmware.py` (packs, rev, build/firmware), `tools/build_clock.sh`
-4. [ ] App: packs module, Bundle packs, OTA, session/commands/tray/lifecycle, UI, delete feed
-5. [ ] Packs channel: `tools/publish_packs.sh`, `.github/workflows/packs.yml`
-6. [ ] CI: firmware job, fwSeq guard, latest guard; release.yml bundles firmware + renderer
-7. [ ] Docs: NOTICE, README, packaging/README, clock/README
-8. [ ] Verify: fmt, clippy, tests, local build_mac.sh, the real clock (no flashing)
+1. [x] Import clawd-home history under `clock/` (filter-repo, drop `.otf`, gitleaks, review)
+2. [x] Layout: single PROTOCOL.md, commit desk.pak, drop clock's renderer.yml, gitignore
+3. [x] Bundle: `bundle_firmware.py` (packs, rev, build/firmware), `tools/build_clock.sh`
+4. [x] App: packs module, Bundle packs, OTA, session/commands/tray/lifecycle, UI, delete feed
+5. [x] Packs channel: `tools/publish_packs.sh`, `.github/workflows/packs.yml`
+6. [x] CI: firmware job, fwSeq guard, latest guard; release.yml bundles firmware + renderer
+7. [x] Docs: NOTICE, README, packaging/README, clock/README
+8. [x] Verify: fmt, clippy, tests, local build_mac.sh, the real clock (no flashing)
+
+## Result (2026-10-17)
+- Commits on feat/monorepo (not pushed): import 6b48739, layout 09a5676, gitleaks 970bc33,
+  then build(clock), feat(firmware)!, ci, docs.
+- Verified: `cargo +1.91.0` fmt/clippy -D warnings clean, `cargo test --workspace` 719 passed;
+  actionlint clean; bundle --check OK; renderer smoke (46 packs); loopback E2E with the real
+  minisign CLI; real clock 192.168.1.48 (fwSeq 8, styleApi 2) vs build/firmware:
+  style_state ready, packs ok, no tray offer.
+- Not verified here: release.yml/packs.yml/ci.yml on GitHub (firmware job with PlatformIO,
+  MinGW renderer on windows-latest), Windows build, publishing packs-api2.
+- Owner steps: push; check `vars.MINISIGN_PUBKEY` + secrets in environment `release`; let CI run;
+  tag v0.3.0; run "Style packs" once; later retire the Worker/R2/KV feed and archive clawd-home.

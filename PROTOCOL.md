@@ -93,7 +93,7 @@ packs play the official Clawd animations, and `styleAnim` names the one playing)
 `deskCrc`, the CRC-32 (zlib, 8 hex digits) of `/clawd.pak` and `/desk.pak`. The
 value is `""` when the pack is missing or not yet checksummed: the clock checksums
 in the background from 30 s after boot, about a minute for `desk.pak`. The app compares
-them with a firmware feed release so it only re-sends packs that differ.
+them with the packs it ships (`firmware.json` `packs`) so it only re-sends packs that differ.
 
 The app reads it every 5 s. When `uptime` shows the clock restarted, it
 sends the last `/api/usage` payload and the current `/api/state` again at

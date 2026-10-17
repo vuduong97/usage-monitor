@@ -1,23 +1,31 @@
-# clawd-home
+# clock/ (formerly clawd-home)
 
 Firmware and clock tooling for the Clawd desk clock (JUZIPi SD Pro, ESP8266,
 240×240 ST7789). The clock shows Claude usage and plays Clawd animations that
-react to what Claude Code and pi are doing. The host side is a separate repo,
-**clawd-desktop** (tray app, hooks, pi extension, `clawd` CLI).
+react to what Claude Code and pi are doing. The host side is the rest of this repo
+(tray app, hooks, pi extension, `clawd` CLI); every app release ships the firmware built
+from this folder (`sh tools/build_clock.sh` at the repo root, job `firmware` of the
+Release workflow).
 
-**Private.** Never pushed anywhere. The animation pack `desk.pak` is rendered from
-clawd-on-desk art (All Rights Reserved, personal use only) and the fonts are
-Anthropic's: generated on this Mac and never committed.
+This folder was the private repo clawd-home until 0.3.0; its history is kept (the font
+sources, `.otf`, were dropped from it). It holds `clawd_fonts.h` (generated from Anthropic's
+fonts), `firmware/data/clawd.pak` and `firmware/data/desk.pak` (rendered from clawd-on-desk
+art, All Rights Reserved): see `../NOTICE`. The clawd-on-desk SVGs and the font files are
+never committed.
+
+Changing code under `firmware/src` needs a higher `CLAWD_FW_SEQ` (`firmware/src/config.h`):
+CI fails otherwise. Style packs (`firmware/styles`) do not: they can also reach installed
+apps between releases (`../tools/publish_packs.sh`, see the root README).
 
 ```
 firmware/        PlatformIO project (envs: clawd, clawd_loader), src/, tests/, tools/
 tools/desk/      clawd-on-desk SVG -> build/desk/desk.pak (gitignored)
 tools/flash.sh   build + size check + OTA a clock
-tools/release.sh build + test + encrypt + publish a release to the firmware feed (feed/README.md)
-feed/            the feed: Cloudflare Worker over a private R2 bucket, release packer
+tools/release.sh LEGACY: publish to the old encrypted feed that apps <= 0.2.x read (feed/README.md)
+feed/            LEGACY: the old feed (Cloudflare Worker over a private R2 bucket), until 0.2.x is gone
 tools/provision.sh  stock clock -> clawd clock ready to gift
 tools/stock_fs.sh   back up / delete / restore the stock firmware's files on the clock
-PROTOCOL.md      HTTP + mDNS contract with the desktop app (identical copy in both repos)
+../PROTOCOL.md   HTTP + mDNS contract between the app and the clock (one copy, at the repo root)
 docs/FIRMWARE.md flash layout, OTA budget, endpoints, /api/heap, code map
 docs/BEHAVIOUR.md what the clock shows under the app (layers, holds, pet moments)
 docs/STYLE_PACK.md usage screen style packs: format, storage, /api/style, writing one
@@ -52,11 +60,10 @@ Restore them before flashing the stock firmware (see `docs/FIRMWARE.md`).
 
 ## Clocks for friends
 
-Friends do not get this repo. They get a clock flashed here and the desktop app
-from the public repo **clawd-desktop** (`../clawd-desktop`: tray app for Mac and
-Windows, finds the clock over mDNS `_clawd._tcp` or a LAN scan, installs the
-Claude Code hooks, the pi extension and the `clawd` CLI itself). Both sides follow
-`PROTOCOL.md` (identical copy in both repos).
+Friends get a clock flashed here and the desktop app from this repo's GitHub Releases
+(tray app for Mac and Windows, finds the clock over mDNS `_clawd._tcp`, installs the
+Claude Code hooks, the pi extension and the `clawd` CLI itself, and keeps the clock's
+firmware at the version it ships). Both sides follow `../PROTOCOL.md`.
 
 Per clock (stock JUZIPi SD Pro, firmware SDPro 1.0.x):
 
