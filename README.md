@@ -96,14 +96,14 @@ trang web của đồng hồ):
 - **Hiển thị**: độ sáng, xoay màn hình, màn hình chính, hoạt hình Clawd, múi giờ, chế độ đêm.
 - **Usage**: chọn nguồn usage (Claude: mọi tài khoản hoặc một tài khoản; Codex CLI; không hiện)
   và kiểu màn hình usage, xem trước bằng mức dùng thật của bạn, có Clawd chuyển
-  động như trên đồng hồ (bản không kèm firmware vẽ gần đúng, lấy hình Clawd từ chính đồng hồ
-  của bạn và giữ trong `~/.config/claude-usage-monitor/clawd.pak`). Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
+  động như trên đồng hồ (vẽ bằng chính mã vẽ của firmware đi kèm app). Kiểu màn hình mới có thể
+  tới giữa hai bản app: app tự tải gói đã ký về khi mở cửa sổ Cài đặt. Kiểu mà đồng hồ chưa có thì nút lưu thành **Cập nhật & áp dụng**: bấm thì app cài firmware đi kèm (khoảng 1 phút) rồi bật kiểu đó.
 - **Wi‑Fi**: các mạng đồng hồ nhớ (tối đa 4, theo thứ tự ưu tiên), tìm mạng quanh đồng hồ,
   tên đồng hồ. Lưu Wi‑Fi thì đồng hồ khởi động lại.
-- **Cập nhật**: cài firmware và gói hình (Clawd, desk, kiểu màn hình) mới nhất cho đồng hồ
-  bằng một nút, không cần tải lại app. App tự kiểm tra bản mới lúc mở và mỗi 6 giờ. Khi có
-  bản mới, menu tray hiện **● Có firmware mới**. Bấm **Kiểm tra bản mới** để hỏi ngay. Chỉ
-  những gói khác với đồng hồ mới được gửi. Tab này cũng có sao lưu / khôi phục, khởi động
+- **Cập nhật**: cài firmware và gói hình (Clawd, desk) đi kèm app cho đồng hồ bằng một nút.
+  Firmware chỉ đổi theo bản app: app mới mang firmware mới. Khi đồng hồ thiếu firmware hay gói
+  hình của app, menu tray hiện **● Có firmware mới**. **Kiểm tra bản mới** hỏi ngay xem có kiểu
+  màn hình usage mới không. Chỉ những gói khác với đồng hồ mới được gửi. Tab này cũng có sao lưu / khôi phục, khởi động
   lại và xoá cài đặt.
 - **Agent**: mỗi agent một công tắc, kèm những gì agent đó báo được cho Clawd (suy nghĩ,
   công cụ, subagent, lỗi, cần bạn) và nhãn **Beta** cho agent chưa thử thật trên máy loại này.
@@ -166,11 +166,8 @@ cargo run -p clawd-app                                   # tray từ mã nguồn
 cargo run -p clawd-app -- run                            # chạy không giao diện, log ra terminal
 cargo run -p clawd-app -- find                           # liệt kê đồng hồ trong mạng
 cargo run -p clawd-app -- settings                       # mở cửa sổ cài đặt (trang ở app/ui/)
-python tools/bundle_firmware.py <firmware.bin> --src ../clawd-home/firmware   # kèm firmware…
-python tools/build_preview.py --src ../clawd-home/firmware   # bộ vẽ màn hình đồng hồ cho cửa sổ Cài đặt (cần c++)
-python tools/build_preview.py --src … --zip out.zip   # …đóng thành zip cho nguồn firmware (clawd-home tools/fetch_renderer.sh)
-CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh    # …vào bản build (chỉ cho chủ đồng hồ)
-sh packaging/build_mac.sh                             # build Clawd.app + .zip + .dmg (trên Mac)
+sh tools/build_clock.sh                               # firmware (clock/, cần PlatformIO) + bộ vẽ màn hình -> build/
+sh packaging/build_mac.sh                             # build Clawd.app + .zip + .dmg (trên Mac), kèm build/firmware + build/renderer
 ./packaging/build_windows.ps1                         # build bộ cài .exe (trên Windows, cần Inno Setup 6)
 ```
 
@@ -185,11 +182,12 @@ tay ai: kiểm tra file, thử cập nhật (`tools/migration/local-release.md`)
 ra đúng tag thì mọi app mới nhận. Tag có dấu `-` (ví dụ `v1.2.3-rc.1`) là prerelease: app không tự cập nhật lên. Chi tiết
 secret, khoá minisign và các cổng kiểm tra: `packaging/README.md`.
 
-Xem trước màn hình usage: bản public không kèm bộ vẽ. Mỗi bản phát hành trên nguồn firmware
-có kèm bộ vẽ cho Windows và Mac (danh sách `renderers` trong manifest). App tải bộ vẽ đúng hệ
-điều hành, giải nén vào `~/.config/claude-usage-monitor/renderer/` và kiểm tra hash từng file
-mỗi lần mở cửa sổ Cài đặt. Nếu bản phát hành không có bộ vẽ hoặc đang offline, cửa sổ Cài đặt dùng
-bản xem trước gần đúng như trước.
+Firmware của đồng hồ nằm ngay trong repo này (`clock/`, trước đây là repo clawd-home). Mỗi bản
+phát hành build firmware từ đúng tag (job `firmware` của Release) và đóng vào app cùng
+`clawd.pak`, `desk.pak`, các style pack và bộ vẽ màn hình (`Contents/Resources/{firmware,renderer}`
+trên Mac, cạnh `Clawd.exe` trên Windows). Đổi mã firmware (`clock/firmware/src`) thì phải tăng
+`CLAWD_FW_SEQ` trong `clock/firmware/src/config.h`: CI chặn nếu quên, vì app chỉ cài firmware
+lên đồng hồ đang chạy số nhỏ hơn.
 
 Ký và notarize bản mac là **bắt buộc** khi phát hành: thiếu các secret `MACOS_CERT_P12` (file
 `.p12` của *Developer ID Application*, mã hoá base64), `MACOS_CERT_PASSWORD`,
@@ -228,46 +226,50 @@ crates/
   clawd-agents       mỗi agent một adapter: tìm trên máy, thêm/gỡ hook an toàn, đọc payload
   clawd-usage        mức dùng Claude / Codex, gửi lên đồng hồ
   clawd-clock        API cài đặt của đồng hồ, tìm đồng hồ (mDNS, địa chỉ đã nhớ, nhập tay)
-  clawd-firmware     firmware đi kèm, nguồn firmware, OTA, xem trước màn hình
+  clawd-firmware     firmware đi kèm, style pack từ xa (packs-api<N>), OTA, xem trước màn hình
   clawd-appupdate    tự cập nhật app: GitHub Releases, minisign, SHA-256, Team ID
   clawd-testkit      đồ giả và fixture dùng chung cho test
 tests-e2e/           test xuyên crate
 fixtures/            golden fixture ghi từ bản Python 0.1.x (đóng băng: sửa Rust, không sửa fixture)
 packaging/           build mac (Tauri bundler, ký, notarize) và Windows (Inno Setup), kiểm tra version
 integrations/        extension pi, plugin opencode (app chép vào agent) và lệnh `clawd`
-tools/               check_public, bundle_firmware / build_preview (firmware riêng tư vào private/), perf, migration
+clock/               firmware đồng hồ (PlatformIO, ESP8266), style pack, công cụ nạp/khôi phục, tài liệu phần cứng
+tools/               build_clock / bundle_firmware / build_preview (firmware vào build/), publish_packs, check_fw_seq, perf, migration
 PROTOCOL.md          giao thức giữa máy tính và đồng hồ
 ```
 
 Tuỳ chọn nâng cao nằm trong `~/.config/claude-usage-monitor/config` (dạng `khoá = giá trị`),
 dùng chung với daemon cũ: `http_targets = 192.168.1.48` để chỉ định đồng hồ cố định,
 `config_dirs = ~/.claude, ~/.claude-work` cho nhiều tài khoản, `events = off` để tắt phần
-hoạt hình, `event_port = 47913`, `feed_channel = beta` để nhận bản thử trước.
+hoạt hình, `event_port = 47913`, `packs_url = off` để không tải kiểu màn hình mới.
 
-Repo này **không chứa** firmware, font hay hình Clawd của đồng hồ (`tools/check_public.py`
-chặn trong CI). Xem `NOTICE`. Firmware chỉ vào bản build khi chạy `tools/bundle_firmware.py`
-(thư mục `private/` bị git bỏ qua); bản build như vậy chứa firmware riêng tư,
-nên chỉ phát cho người dùng đồng hồ Clawd, đừng đính vào GitHub Release công khai. Cách
-phát cho mọi người là **nguồn firmware** (`feed/` trong clawd-home). App tải firmware ở
-dạng mã hoá, chỉ giải mã trong bộ nhớ rồi gửi thẳng lên đồng hồ, không ghi file nào ra đĩa.
+Repo này chứa firmware, font và gói hình Clawd của đồng hồ (`clock/`). Xem `NOTICE` về bản
+quyền của hình Clawd và font.
 
 ### Phát style pack mới (người dùng không cài lại app)
 
-Bản build chính thức biết nguồn firmware qua hai secret của repo này, `CLAWD_FEED_URL` và
-`CLAWD_FEED_TOKEN` (đặt một lần: `gh secret set CLAWD_FEED_URL`, rồi
-`gh secret set CLAWD_FEED_TOKEN < file-token`; không dán token vào lệnh hay chat). Thiếu
-chúng thì log cửa sổ Cài đặt ghi `update feed: none` và thư viện kiểu chỉ có "Hiện tại".
-Secret chỉ vào bản build mới: sau khi đặt, phát một bản app mới (tag `vX.Y.Z`).
+Kiểu màn hình usage mới có thể tới tay người dùng giữa hai bản app, nếu firmware đang đi kèm
+app đã vẽ được chúng (cùng `STYLE_API`). Firmware thì không: nó chỉ đổi theo bản app.
 
-Từ đó, ra pack mới chỉ làm ở clawd-home, không đụng repo này:
+1. Viết `clock/firmware/tools/style/packs/<id>.js`, thêm id vào `ORDER` trong
+   `clock/firmware/tools/style/build.js`, rồi build lại `clock/firmware/styles/` (cách chạy:
+   `clock/docs/STYLE_PACK.md`). Không đổi mã firmware, không tăng `CLAWD_FW_SEQ`.
+2. Commit lên `main`, rồi chạy workflow **Style packs** (`.github/workflows/packs.yml`, chủ repo
+   duyệt environment `release`). Hoặc chạy tay: `sh tools/publish_packs.sh --publish`
+   (`MINISIGN_KEY_FILE` là khoá bí mật minisign của app, `MINISIGN_PUBKEY` là khoá công khai).
 
-1. Viết `packs/<id>.js`, thêm id vào `ORDER` trong `firmware/tools/style/build.js`, rồi
-   `node firmware/tools/style/build.js <fw-src>`.
-2. Commit, tăng `CLAWD_FW_SEQ` trong `firmware/src/config.h` (không tự tăng; phải lớn hơn bản
-   đã phát hành), chạy `tools/release.sh --notes "..."` (lên kênh **beta**).
-3. Thử bằng `feed_channel = beta` trong file config của app, rồi `tools/release.sh --promote`
-   để lên **stable**.
+Script ký `index.json` bằng đúng khoá minisign ký bản app, rồi đưa `index.json`,
+`index.json.minisig` và các `<id>.pak` lên release cố định `packs-api<N>` (tạo với
+`--latest=false`; script dừng báo lỗi nếu `releases/latest` không còn là tag `v*`, vì app 0.1.x
+và 0.2.x tự cập nhật từ đó). `rev` của gói là thời điểm commit cuối của
+`clock/firmware/styles` và phải tăng.
 
-App hỏi nguồn mỗi 10 phút khi cửa sổ Cài đặt mở, tải pack (mã hoá, giải mã trong RAM). Đồng
-hồ đã chạy cùng `styleApi` dùng pack mới ngay, không phải cài lại firmware. Tab Cập nhật vẫn
-báo "có firmware mới" vì `seq` tăng.
+App 0.3.0 trở lên tải `https://github.com/vuduong97/usage-monitor/releases/download/packs-api<N>/index.json`
+khi mở cửa sổ Cài đặt (tối đa mỗi 10 phút), kiểm chữ ký, kiểm `api` trùng `styleApi` của
+firmware đi kèm, kiểm SHA-256 và header từng gói, giữ gói trong
+`~/.config/claude-usage-monitor/style-packs/`, và chỉ dùng chúng khi `rev` lớn hơn gói đi kèm
+app. Sai ở bất kỳ bước nào thì app giữ gói đi kèm. Đổi `STYLE_API` là đổi firmware: phải ra bản
+app mới (release `packs-api<N+1>` mới sẽ được tạo khi publish lần đầu cho API đó).
+
+App 0.2.x và cũ hơn vẫn đọc nguồn firmware cũ (Cloudflare, `clock/feed/`), giữ nguyên cho tới
+khi phần lớn người dùng lên 0.3.0.

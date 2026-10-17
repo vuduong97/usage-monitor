@@ -1,11 +1,10 @@
 .venv/
 __pycache__/
 *.pyc
+# tools/build_clock.sh: build/firmware, build/renderer (shipped in the app), build/packs
 build/
 dist/
 .DS_Store
-# Private clock firmware and renderer for owner-only builds (tools/bundle_firmware.py, build_preview.py)
-private/
 .pi
 
 # Secrets never go in this public repo (gh secret set -f .env reads them from here)

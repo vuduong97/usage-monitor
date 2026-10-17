@@ -19,7 +19,7 @@ use clawd_agents::Registry;
 use clawd_appupdate::Updater;
 use clawd_config::CommandRunner;
 use clawd_contracts::{AppPaths, OsStoreNames};
-use clawd_firmware::{feed::Feed, firmware::Bundle};
+use clawd_firmware::{firmware::Bundle, packs::StyleSource};
 use serde_json::{json, Value};
 use tokio::sync::{mpsc, watch};
 
@@ -32,7 +32,7 @@ pub fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 }
 
 /// The long-lived services settings commands need (paths, OS-store names, updater, agent
-/// registry, feed, bundled firmware, command runner). Built once by phase 12, shared by every
+/// registry, remote style packs, bundled firmware, command runner). Built once by phase 12, shared by every
 /// settings window. Python passed these to `SettingsApi.__init__` as keyword arguments
 /// (`settings_api.py:133-176`).
 #[non_exhaustive]
@@ -42,9 +42,9 @@ pub struct Services {
     pub names: OsStoreNames,
     pub updater: Arc<Updater>,
     pub registry: Arc<Registry>,
-    /// `None` when the install has no feed URL/token.
-    pub feed: Option<Arc<Feed>>,
-    /// `None` in a public build (no bundled firmware).
+    /// Where remote style packs come from; `None` when switched off (`packs_url = off`).
+    pub packs: Option<StyleSource>,
+    /// `None` when the app was built without the clock firmware (a dev build).
     pub bundle: Option<Bundle>,
     pub runner: Arc<dyn CommandRunner>,
 }
@@ -55,7 +55,7 @@ impl Services {
         names: OsStoreNames,
         updater: Arc<Updater>,
         registry: Arc<Registry>,
-        feed: Option<Arc<Feed>>,
+        packs: Option<StyleSource>,
         bundle: Option<Bundle>,
         runner: Arc<dyn CommandRunner>,
     ) -> Self {
@@ -64,7 +64,7 @@ impl Services {
             names,
             updater,
             registry,
-            feed,
+            packs,
             bundle,
             runner,
         }
@@ -78,11 +78,11 @@ pub struct AppState {
     pub engine: EngineHandle,
     /// Settings -> shell messages (handled by phase 12's shell loop).
     pub shell_tx: mpsc::Sender<ShellCmd>,
-    /// Long-running settings jobs (OTA, feed check, app update).
+    /// Long-running settings jobs (OTA, app update).
     pub jobs: Arc<JobState>,
     /// Latest engine status, for the tray menu and the popover.
     pub status: watch::Receiver<Status>,
-    /// Paths, names, updater, registry, feed, bundle, runner.
+    /// Paths, names, updater, registry, packs source, bundle, runner.
     pub services: Arc<Services>,
     /// The live settings window's session (set on open, cleared on destroy by phase 12).
     pub session: SessionSlot,
@@ -153,7 +153,7 @@ impl Default for JobState {
 /// (`key`, the clock's name or host), and the tab to open on (`""`, `update`, `agents`,
 /// `setup`). Python: `SettingsApi(base, key, tab=...)` / `_connect(base, key)`.
 ///
-/// `data` is the window's mutable state (clock API client, last heap/config, feed release, frame
+/// `data` is the window's mutable state (clock API client, last heap/config, style packs, frame
 /// cache, ...): phase 13 defines it in `commands/session.rs`.
 #[non_exhaustive]
 pub struct SettingsSession {

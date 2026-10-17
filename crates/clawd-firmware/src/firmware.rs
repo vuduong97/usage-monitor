@@ -1,14 +1,16 @@
 //! The clock firmware that ships inside the app, and when to install it (`firmware.py`).
 //!
-//! A public build carries none (private, git-ignored in Python): [`load_bundle`] is `None` and
-//! the feed ([`crate::feed`]) is the source. `fwSeq`, `layouts` and `styleApi` are what an image
-//! reports in `/api/heap` once it runs; the app pushes an image only to a clawd clock whose
-//! `fwSeq` is lower (missing = 0), so it never downgrades one. `heap` arguments are the clock's
-//! `/api/heap` JSON.
+//! Every release carries it (`tools/bundle_firmware.py` builds it from `clock/firmware`); a
+//! development build without one has [`load_bundle`] `None` and nothing to install. `fwSeq`,
+//! `layouts` and `styleApi` are what an image reports in `/api/heap` once it runs; the app pushes
+//! an image only to a clawd clock whose `fwSeq` is lower (missing = 0), so it never downgrades
+//! one. `heap` arguments are the clock's `/api/heap` JSON.
 //!
-//! Next to the image, `styles/` holds the style packs built with that firmware (`index.json` +
-//! `<id>.pak`). A pack is sent to the clock (`POST /api/style`) only when the clock draws its
-//! API, either already or once the bundled image is installed.
+//! Next to the image sit `clawd.pak` and `desk.pak` (the animation packs, [`PackFile`], listed
+//! under `packs` in `firmware.json`) and `styles/`, the style packs built with that firmware
+//! (`index.json` + `<id>.pak`; `rev` orders them against the remote packs, [`crate::packs`]).
+//! A style pack is sent to the clock (`POST /api/style`) only when the clock draws its API,
+//! either already or once the bundled image is installed.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -22,7 +24,7 @@ use crate::pyval;
 
 pub use clawd_contracts::CLAWD_VARIANT;
 
-/// `firmware.StylePack`: one style pack from a bundle's `styles/index.json` (or a feed release,
+/// `firmware.StylePack`: one style pack from a bundle's `styles/index.json` (or a remote release,
 /// with `data` in memory).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StylePack {
@@ -35,7 +37,7 @@ pub struct StylePack {
     /// CRC-32 of bytes `[16..)`, from the pack header.
     pub crc: u32,
     pub light: bool,
-    /// In memory (feed releases); `None` = read `path`.
+    /// In memory (remote packs, [`crate::packs`]); `None` = read `path`.
     pub data: Option<Vec<u8>>,
 }
 
@@ -131,7 +133,7 @@ fn load_styles_inner(folder: &Path, api: u32) -> Option<Vec<StylePack>> {
 }
 
 /// `firmware.Bundle`: firmware image + manifest (`firmware.json`: `file size sha256 variant fwSeq
-/// layouts styleApi commit`).
+/// layouts styleApi commit packs`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bundle {
     pub path: PathBuf,
@@ -145,6 +147,32 @@ pub struct Bundle {
     /// Style packs the image draws (0: none).
     pub style_api: u32,
     pub styles: Vec<StylePack>,
+    /// `rev` of the style packs (`styles/index.json`; 0 when it has none).
+    pub style_rev: u64,
+    /// The animation packs (`clawdpak`, `deskpak`) that go with the image.
+    pub packs: Vec<PackFile>,
+}
+
+/// One animation pack next to the image (`firmware.json` `packs.<kind>`: `file size crc`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PackFile {
+    /// `clawdpak` | `deskpak` ([`crate::packs::PACK_KINDS`]).
+    pub kind: String,
+    pub path: PathBuf,
+    pub size: usize,
+    /// CRC-32 of the whole file, 8 lowercase hex digits (what `/api/heap` reports).
+    pub crc: String,
+}
+
+impl PackFile {
+    /// The pack, checked against the manifest (size and CRC); a damaged one is never sent.
+    pub fn read(&self) -> Result<Vec<u8>, String> {
+        let data = std::fs::read(&self.path).map_err(|e| e.to_string())?;
+        if data.len() != self.size || crate::crc32::crc32_hex(&data) != self.crc {
+            return Err(format!("bundled {} does not match its manifest", self.kind));
+        }
+        Ok(data)
+    }
 }
 
 /// `hashlib.sha256(data).hexdigest()`.
@@ -161,6 +189,57 @@ impl Bundle {
         }
         Ok(data)
     }
+
+    /// The animation pack of `kind`, if the bundle carries one.
+    pub fn pack(&self, kind: &str) -> Option<&PackFile> {
+        self.packs.iter().find(|p| p.kind == kind)
+    }
+}
+
+/// `firmware.json` `packs`: every known kind present must name a file in `folder` (no path) with
+/// a size and an 8-digit hex CRC; `None` for anything else. Unknown kinds are ignored.
+fn load_packs(folder: &Path, packs: Option<&Value>) -> Option<Vec<PackFile>> {
+    let Some(packs) = packs else {
+        return Some(Vec::new());
+    };
+    let packs = packs.as_object()?;
+    let mut out = Vec::new();
+    for kind in crate::packs::PACK_KINDS {
+        let Some(e) = packs.get(kind) else {
+            continue;
+        };
+        let file = pyval::str_of(e.get("file")?);
+        let crc = pyval::str_of(e.get("crc")?).to_ascii_lowercase();
+        if file.is_empty()
+            || file.contains('/')
+            || file.contains('\\')
+            || file == ".."
+            || crc.len() != 8
+            || !crc.bytes().all(|b| b.is_ascii_hexdigit())
+        {
+            return None;
+        }
+        let path = folder.join(&file);
+        if !path.is_file() {
+            return None;
+        }
+        out.push(PackFile {
+            kind: kind.to_owned(),
+            path,
+            size: usize::try_from(pyval::int_of(e.get("size")?)?).ok()?,
+            crc,
+        });
+    }
+    Some(out)
+}
+
+/// `rev` of `folder/index.json`, 0 when it has none (or no index).
+pub fn styles_rev(folder: &Path) -> u64 {
+    std::fs::read_to_string(folder.join("index.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<Value>(&t).ok())
+        .and_then(|m| m.get("rev").and_then(Value::as_u64))
+        .unwrap_or(0)
 }
 
 /// `firmware.load_bundle(folder)`: `None` when missing, damaged, or the image is not a file.
@@ -183,8 +262,13 @@ pub fn load_bundle(env: &Env, folder: Option<&Path>) -> Option<Bundle> {
         commit: m.get("commit").map(pyval::str_of).unwrap_or_default(),
         style_api,
         styles: Vec::new(),
+        style_rev: 0,
+        packs: load_packs(&folder, m.get("packs"))?,
     };
     b.styles = load_styles(&folder.join("styles"), b.style_api);
+    if !b.styles.is_empty() {
+        b.style_rev = styles_rev(&folder.join("styles"));
+    }
     b.path.is_file().then_some(b)
 }
 
@@ -414,6 +498,68 @@ mod tests {
             .unwrap()
             .styles
             .is_empty());
+    }
+
+    /// `make_bundle`'s folder with `clawd.pak`/`desk.pak` listed in `firmware.json` and a `rev`
+    /// in the style index.
+    fn with_packs(dir: &Path, packs: Value, rev: u64) -> Option<Bundle> {
+        std::fs::write(dir.join("clawd.pak"), b"CLWD\x01\x00pak").unwrap();
+        std::fs::write(dir.join("desk.pak"), b"CLDK\x03\x00desk").unwrap();
+        let mpath = dir.join("firmware.json");
+        let mut m: Value = serde_json::from_slice(&std::fs::read(&mpath).unwrap()).unwrap();
+        m["packs"] = packs;
+        std::fs::write(&mpath, m.to_string()).unwrap();
+        let ipath = dir.join("styles").join("index.json");
+        let mut idx: Value = serde_json::from_slice(&std::fs::read(&ipath).unwrap()).unwrap();
+        idx["rev"] = json!(rev);
+        std::fs::write(&ipath, idx.to_string()).unwrap();
+        load_bundle(&Env::empty(), Some(dir))
+    }
+
+    #[test]
+    fn animation_packs_and_the_style_rev() {
+        let t = tempfile::tempdir().unwrap();
+        let dir = t.path();
+        make_bundle(dir, 8, 1, &["synth"]).unwrap();
+        let clawd = crate::crc32::crc32_hex(b"CLWD\x01\x00pak");
+        let desk = crate::crc32::crc32_hex(b"CLDK\x03\x00desk");
+        let b = with_packs(
+            dir,
+            json!({"clawdpak": {"file": "clawd.pak", "size": 9, "crc": clawd},
+                   "deskpak": {"file": "desk.pak", "size": 10, "crc": desk.to_uppercase()},
+                   "later": {"file": "x"}}),
+            1_760_000_000,
+        )
+        .unwrap();
+        assert_eq!(b.style_rev, 1_760_000_000);
+        assert_eq!(b.packs.len(), 2);
+        assert_eq!(
+            b.pack("clawdpak").unwrap().read().unwrap(),
+            b"CLWD\x01\x00pak"
+        );
+        assert_eq!(
+            b.pack("deskpak").unwrap().crc,
+            desk,
+            "CRCs compare in lowercase"
+        );
+        std::fs::write(dir.join("desk.pak"), b"CLDK\x03\x00DESK").unwrap();
+        assert!(
+            b.pack("deskpak").unwrap().read().is_err(),
+            "a damaged pack is refused"
+        );
+
+        // A bundle without `packs` (older bundle_firmware.py) still loads, with none.
+        let old = make_bundle(&dir.join("old"), 8, 1, &["synth"]).unwrap();
+        assert!(old.packs.is_empty() && old.style_rev == 0);
+        // A path in a pack's file name, a bad CRC or a missing file refuses the whole bundle.
+        for bad in [
+            json!({"clawdpak": {"file": "../clawd.pak", "size": 9, "crc": clawd}}),
+            json!({"clawdpak": {"file": "clawd.pak", "size": 9, "crc": "xyz"}}),
+            json!({"clawdpak": {"file": "gone.pak", "size": 9, "crc": clawd}}),
+            json!(["clawd.pak"]),
+        ] {
+            assert!(with_packs(dir, bad.clone(), 1).is_none(), "{bad}");
+        }
     }
 
     #[test]

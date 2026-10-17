@@ -1,27 +1,23 @@
 #!/usr/bin/env python3
-"""Build the clock-screen renderer the settings window previews with
-(private/renderer/, git-ignored: it is compiled from the private firmware).
+"""Build the clock-screen renderer the settings window previews with: build/renderer/
+(git-ignored), compiled from clock/firmware's own drawing code. packaging/build_mac.sh and
+build_windows.ps1 ship it inside the app next to the firmware (tools/bundle_firmware.py).
 
-  python tools/build_preview.py --src ../clawd-home/firmware
-  CLAWD_PRIVATE_FIRMWARE=1 sh packaging/build_mac.sh
+  python3 tools/build_preview.py                   # clock/firmware -> build/renderer
 
-  # the feed's renderer for one platform (clawd-home .github/workflows/renderer.yml):
-  python tools/build_preview.py --src firmware --commit $(git rev-parse HEAD) \
-      --out build/renderer/mac --zip build/renderer/mac.zip
-
-The zip holds the same folder (exe, clawd.pak, styles/, preview.json); the public app
-downloads it from the feed release and unpacks it (clawd-firmware: feed.rs, preview.rs).
 On macOS the program is stripped and signed (CLAWD_SIGN_IDENTITY, else ad hoc); on
 Windows it is linked static and stripped. CXXFLAGS adds compiler flags (a universal
 Mac file: "-arch arm64 -arch x86_64").
 
 Compiles tools/preview/clawd_render.cpp with the firmware's own drawing code
 (<src>/src/features/clawd) and copies clawd.pak and the style packs (<src>/styles)
-next to it, plus a preview.json that records the firmware commit and layouts. The window only trusts the renderer
-when that matches the bundled firmware image, so it never shows a screen the
-installed firmware cannot draw. Needs a gcc/clang-style C++17 compiler (set CXX
-to pick one; on Windows use MinGW-w64 or clang).
+next to it, plus a preview.json that records the firmware commit and layouts. The window only
+trusts the renderer when that matches the bundled firmware image, so it never shows a screen
+the installed firmware cannot draw. Needs a gcc/clang-style C++17 compiler (set CXX to pick
+one; on Windows use MinGW-w64 or clang).
 """
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -29,40 +25,28 @@ import shlex
 import shutil
 import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
 # tools/ is on sys.path when this runs as a script
-from bundle_firmware import copy_styles, from_source, style_api_from_source
+from bundle_firmware import SRC, copy_styles, from_source, git_commit, style_api_from_source
 
 ROOT = Path(__file__).resolve().parent.parent
-DEST = ROOT / "private" / "renderer"
+DEST = ROOT / "build" / "renderer"
 MAIN = ROOT / "tools" / "preview" / "clawd_render.cpp"
 # The clawd_render interface this tools/preview/clawd_render.cpp speaks (arguments, stdin,
 # stdout, CLP1): RENDER_API in crates/clawd-firmware/src/preview.rs. Bump both when it changes, so an app
-# never runs a feed renderer it cannot read.
+# never runs a renderer it cannot read.
 RENDER_API = 1
 SOURCES = ("ClawdDraw.cpp", "ClawdAnim.cpp", "ClawdRate.cpp", "ClawdUi.cpp", "ClawdPack.cpp", "DeskPack.cpp",
            "StylePack.cpp")
 
 
-def git_commit(src: Path) -> str:
-    try:
-        r = subprocess.run(["git", "-C", str(src), "rev-parse", "--short", "HEAD"],
-                           capture_output=True, text=True, timeout=10, check=False)
-    except (OSError, subprocess.SubprocessError):
-        return ""
-    return r.stdout.strip() if r.returncode == 0 else ""
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", type=Path, help="the firmware dir (holds src/ and data/)")
+    ap.add_argument("--src", type=Path, default=SRC, help=f"the firmware dir (holds src/ and data/; default {SRC})")
     ap.add_argument("--commit", default="", help="firmware commit (default: git HEAD of --src)")
     ap.add_argument("--clear", action="store_true", help="remove the built renderer instead")
     ap.add_argument("--out", type=Path, default=DEST, help=f"build into this folder (default {DEST})")
-    ap.add_argument("--zip", type=Path, help="also pack the folder into this zip: the feed's renderer "
-                                               "file (clawd-home tools/release.sh)")
     ap.add_argument("--windows", action="store_true", default=sys.platform == "win32",
                     help="build a Windows .exe (default on Windows; with a MinGW CXX elsewhere)")
     a = ap.parse_args()
@@ -76,9 +60,6 @@ def main() -> int:
             return 1
         print("preview renderer removed")
         return 0
-    if not a.src:
-        print("give --src")
-        return 1
     clawd = a.src / "src" / "features" / "clawd"
     pak = a.src / "data" / "clawd.pak"
     missing = [str(p) for p in [clawd / n for n in SOURCES] + [pak] if not p.is_file()]
@@ -125,9 +106,6 @@ def main() -> int:
     print(f"built {exe} (firmware {commit or '?'}, fwSeq {seq}, layouts {layouts}, {styles} style packs)")
     if sys.platform == "darwin" and not a.windows and not finish_mac(exe):
         return 1
-    if a.zip:
-        n = write_zip(dest, exe.name, a.zip)
-        print(f"packed {n} files into {a.zip} ({a.zip.stat().st_size:,} bytes)")
     return 0
 
 
@@ -142,23 +120,6 @@ def finish_mac(exe: Path) -> bool:
             print("failed: " + " ".join(cmd))
             return False
     return True
-
-
-def write_zip(folder: Path, exe_name: str, out: Path) -> int:
-    """The renderer folder as one zip, the way the app unpacks it (preview.unpack_renderer): only
-    preview.json, the program, clawd.pak and styles/ (nothing else that sits in the folder)."""
-    names = ["preview.json", exe_name, "clawd.pak"]
-    styles = folder / "styles"
-    if styles.is_dir():
-        names += sorted(f"styles/{p.name}" for p in styles.iterdir() if p.is_file())
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        for n in names:
-            info = zipfile.ZipInfo(n, date_time=(2020, 1, 1, 0, 0, 0))     # the same bytes for the same build
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = (0o755 if n == exe_name else 0o644) << 16
-            z.writestr(info, (folder / n).read_bytes())
-    return len(names)
 
 
 if __name__ == "__main__":

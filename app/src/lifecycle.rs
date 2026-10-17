@@ -5,7 +5,7 @@
 //! tray shows (tray <= 1 s). `ExitRequested` is stopped unless it carries an exit code, so closing
 //! the last window never quits; "Thoát" stops the engine (idempotent) and calls `app.exit(0)`.
 //!
-//! The loops (refresh 3 s, feed check, app update check, agents rescan) run on Tauri's async
+//! The loops (refresh 3 s, clock firmware check, app update check, agents rescan) run on Tauri's async
 //! runtime under [`spawn_supervised`]: a panic is logged and the loop restarts after a backoff.
 //! Menu changes go through `run_on_main_thread` (AppKit wants the main thread).
 
@@ -35,10 +35,10 @@ use crate::windows;
 
 /// `tray.REFRESH`.
 pub const REFRESH: Duration = Duration::from_secs(3);
-/// `tray.FEED_FIRST`: first firmware feed check after start (s).
-pub const FEED_FIRST: Duration = Duration::from_secs(60);
-/// `tray.FEED_RETRY`: after a failed check.
-pub const FEED_RETRY: Duration = Duration::from_secs(1800);
+/// First look at whether the clock lacks the bundled firmware or its packs, after start.
+pub const FW_FIRST: Duration = Duration::from_secs(60);
+/// Then this often (the clock answers on the LAN: cheap).
+pub const FW_EVERY: Duration = Duration::from_secs(1800);
 /// `tray.AGENT_SCAN`: look for newly installed coding agents this often.
 pub const AGENT_SCAN: Duration = Duration::from_secs(600);
 /// The first agent scan comes this soon.
@@ -231,14 +231,14 @@ pub fn first_run(
 pub fn build_services(cfg: &EngineConfig) -> Arc<Services> {
     let updater = Arc::new(clawd_appupdate::updater(&cfg.paths, &cfg.env));
     let registry = Arc::new(Registry::new(cfg.agents.clone()));
-    let feed = clawd_firmware::feed::from_settings(&cfg.paths, &cfg.env).map(Arc::new);
+    let packs = clawd_firmware::packs::from_settings(&cfg.paths, &cfg.env);
     let bundle = clawd_firmware::firmware::load_bundle(&cfg.env, None);
     Arc::new(Services::new(
         cfg.paths.clone(),
         cfg.names.clone(),
         updater,
         registry,
-        feed,
+        packs,
         bundle,
         Arc::clone(&cfg.runner),
     ))
@@ -570,7 +570,7 @@ impl Shell {
         tauri::async_runtime::spawn(async move {
             let mut stop = shell.stop_rx();
             spawn_loop(&shell, "tray refresh", &stop, refresh_loop);
-            spawn_loop(&shell, "firmware feed", &stop, feed_loop);
+            spawn_loop(&shell, "clock firmware", &stop, firmware_loop);
             spawn_loop(&shell, "app update", &stop, app_update_loop);
             spawn_loop(&shell, "agent scan", &stop, agent_loop);
             loop {
@@ -675,7 +675,7 @@ fn spawn_loop(
     });
 }
 
-/// A loop that has nothing to do (no feed, updates off) still waits for the stop signal: a
+/// A loop that has nothing to do (no bundled firmware, updates off) still waits for the stop signal: a
 /// supervised loop that simply ended would be started again.
 async fn wait_for_stop(mut stop: StopRx) {
     stopped(&mut stop).await;
@@ -694,45 +694,31 @@ fn refresh_loop(shell: Arc<Shell>, mut stop: StopRx) -> LoopFuture {
     })
 }
 
-/// `Tray._feed_loop`: ask the firmware feed now and then whether the clock has something to
-/// install.
-fn feed_loop(shell: Arc<Shell>, mut stop: StopRx) -> LoopFuture {
+/// Bundle only (no network besides the clock): now and then, whether the clock lacks the firmware or the
+/// animation packs this app carries (the tray then offers them).
+fn firmware_loop(shell: Arc<Shell>, mut stop: StopRx) -> LoopFuture {
     Box::pin(async move {
-        let Some(feed) = shell.services.feed.clone() else {
+        let Some(bundle) = shell.services.bundle.clone() else {
             return wait_for_stop(stop).await;
         };
-        tracing::info!("Update feed: on");
-        let mut wait = FEED_FIRST;
+        let mut wait = FW_FIRST;
         loop {
             if sleep_or_stop(&mut stop, wait).await {
                 return;
             }
-            wait = Duration::from_secs_f64(clawd_firmware::feed::CHECK_EVERY);
+            wait = FW_EVERY;
             let Some(clock) = shell.engine.snapshot().clock else {
-                wait = FEED_FIRST; // try again soon once a clock is found
+                wait = FW_FIRST; // try again soon once a clock is found
                 continue;
-            };
-            let manifest = match feed.latest().await {
-                Ok(m) => m,
-                Err(e) => {
-                    tracing::info!("Update check: {e}");
-                    wait = FEED_RETRY;
-                    continue;
-                }
             };
             let heap = match ClockApi::new(&clock.base(), None).heap().await {
                 Ok(h) => h,
                 Err(e) => {
-                    tracing::info!("Update check: {e}");
-                    wait = FEED_RETRY;
+                    tracing::info!("Firmware check: {e}");
                     continue;
                 }
             };
-            let new = clawd_firmware::feed::offer(
-                &heap,
-                manifest.as_ref(),
-                shell.services.bundle.as_ref(),
-            );
+            let new = clawd_firmware::packs::offer(&heap, Some(&bundle));
             let mut changed = false;
             shell.update_menu(|m| {
                 if m.fw_new != new {

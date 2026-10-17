@@ -59,7 +59,7 @@ async fn preview_of(b: &Bridge, args: &[Value]) -> Value {
         "ok": true, "exact": false, "payload": live, "sentAt": sent_at, "now": now,
     });
 
-    // Once: the feed task may swap the renderer and its cache meanwhile.
+    // Once: the style packs check may swap the renderer and its cache meanwhile.
     let (first_look, env, generation) = {
         let mut d = b.data();
         let first = !std::mem::replace(&mut d.renderer_loaded, true);
@@ -70,9 +70,9 @@ async fn preview_of(b: &Bridge, args: &[Value]) -> Value {
         )
     };
     if first_look {
-        // The bundled renderer belongs to the bundled firmware, even when the feed is newer
-        // (`settings_app.py`: `firmware_commit=bundle.commit`). Loading it reads files, so it
-        // runs outside the session lock.
+        // The bundled renderer belongs to the bundled firmware (`settings_app.py`:
+        // `firmware_commit=bundle.commit`); remote style packs are added to it. Loading it reads
+        // files, so it runs outside the session lock.
         let commit = renderer_commit(b.bundle());
         let loaded =
             tokio::task::spawn_blocking(move || preview::load_renderer(&env, None, &commit))
@@ -81,9 +81,10 @@ async fn preview_of(b: &Bridge, args: &[Value]) -> Value {
                     tracing::warn!("[settings] loading the preview renderer failed: {e}");
                     None
                 });
+        let loaded = loaded.map(|r| Arc::new(b.with_remote_styles(r)));
         let mut d = b.data();
         if d.renderer_generation == generation && d.renderer.is_none() {
-            d.renderer = loaded.map(Arc::new);
+            d.renderer = loaded;
         }
     }
     let (renderer, generation) = {
@@ -341,6 +342,8 @@ mod tests {
             commit: commit.into(),
             style_api: 0,
             styles: Vec::new(),
+            style_rev: 0,
+            packs: Vec::new(),
         }
     }
 

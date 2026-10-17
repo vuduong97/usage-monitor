@@ -1,8 +1,9 @@
 //! A settings window's session: its mutable state (`SettingsSession.data`) and `Bridge`, the
 //! handle every command works through. It is the part of `SettingsApi.__init__` and the private
 //! helpers of `settings_api.py:133-420` that more than one command shares: the clock client of
-//! this window (`_connect`, `_follow_store`), the feed release (`_check_feed`, `_kick_feed`), the
-//! firmware facts (`_fw_info`), the app facts (`_app_info`) and the style helpers.
+//! this window (`_connect`, `_follow_store`), the remote style packs (`check_styles`,
+//! `kick_styles`), the firmware facts (`_fw_info`), the app facts (`_app_info`) and the style
+//! helpers.
 //!
 //! No lock is held across an `await`: commands copy what they need out of `SessionData`, ask the
 //! clock, then lock again to store the answer.
@@ -14,9 +15,9 @@ use std::time::{Duration, Instant};
 use clawd_agents::Registry;
 use clawd_clock::{stored_clock, ClockApi, ClockStore, MdnsSource};
 use clawd_contracts::{AppPaths, Clock, ClockError, ClockTarget, Env, SystemClock, APP_VERSION};
-use clawd_firmware::feed::{self, Feed, Release};
 use clawd_firmware::firmware::{self, Bundle};
-use clawd_firmware::preview::{self, FrameCache, Renderer, CLASSIC};
+use clawd_firmware::packs::{self, RemoteStyles, StyleSource};
+use clawd_firmware::preview::{FrameCache, Renderer, CLASSIC};
 use clawd_store::autostart::Autostart;
 use clawd_store::creds::{self, Keyring, OsKeyring};
 use serde_json::{json, Value};
@@ -31,8 +32,8 @@ pub use schema::{bad_value, base64, clean, clock_view, err, fail, merged, truthy
 
 /// "Tìm lại" waits this long: the saved address again, or an mDNS answer.
 pub const SEARCH_WAIT: Duration = Duration::from_secs(15);
-/// The window asks the feed again after this long.
-pub const FEED_RECHECK: Duration = Duration::from_secs(600);
+/// The window asks for remote style packs again after this long.
+pub const STYLES_RECHECK: Duration = Duration::from_secs(600);
 /// `TYPE_IP`: what to do when no clock can be found.
 pub const TYPE_IP: &str =
     "Nhập IP hiện trên màn hình đồng hồ (lúc khởi động) vào ô Nhập địa chỉ rồi bấm Dùng.";
@@ -55,15 +56,16 @@ pub struct SessionData {
     pub cfg: Value,
     /// The opening tab was already handed to the page (`_tab` is read once).
     pub tab_taken: bool,
-    /// The bundled firmware as a release, and the feed's release when it is newer (`_release`).
-    pub bundle_release: Option<Arc<Release>>,
-    pub release: Option<Arc<Release>>,
-    /// Last feed check (`_feed_at`), its error text and whether a background check runs.
-    pub feed_at: Option<Instant>,
-    pub feed_error: String,
-    pub feed_pending: bool,
-    /// One feed check at a time (`_feed_lock`).
-    pub feed_lock: Arc<tokio::sync::Mutex<()>>,
+    /// The bundled firmware as the window shows it: its own style packs, or the remote ones
+    /// ([`packs::choose`]); and those remote packs when they are in use.
+    pub view: Option<Arc<Bundle>>,
+    pub remote: Option<Arc<RemoteStyles>>,
+    /// Last remote packs check, its error text and whether a background check runs.
+    pub styles_at: Option<Instant>,
+    pub styles_error: String,
+    pub styles_pending: bool,
+    /// One remote packs check at a time.
+    pub styles_lock: Arc<tokio::sync::Mutex<()>>,
     /// The renderer that draws the clock's screen, whether the bundled one was looked for, the
     /// frames it made and which renderer they belong to (`_renderer`, `_frames`).
     pub renderer: Option<Arc<Renderer>>,
@@ -96,12 +98,12 @@ impl Default for SessionData {
             heap: json!({}),
             cfg: json!({}),
             tab_taken: false,
-            bundle_release: None,
-            release: None,
-            feed_at: None,
-            feed_error: String::new(),
-            feed_pending: false,
-            feed_lock: Arc::default(),
+            view: None,
+            remote: None,
+            styles_at: None,
+            styles_error: String::new(),
+            styles_pending: false,
+            styles_lock: Arc::default(),
             renderer: None,
             renderer_loaded: false,
             frames: None,
@@ -167,12 +169,12 @@ impl StyleError {
     }
 }
 
-/// Clears `feed_pending` when the background feed check ends.
-struct FeedPending(Bridge);
+/// Clears `styles_pending` when the background check ends.
+struct StylesPending(Bridge);
 
-impl Drop for FeedPending {
+impl Drop for StylesPending {
     fn drop(&mut self) {
-        self.0.data().feed_pending = false;
+        self.0.data().styles_pending = false;
     }
 }
 
@@ -232,11 +234,10 @@ impl Bridge {
     fn ensure_connected(&self, d: &mut SessionData) {
         if d.api.is_none() {
             self.connect_locked(d, &self.session.base, &self.session.key);
-            d.bundle_release = self
-                .services
-                .bundle
-                .clone()
-                .map(|b| Arc::new(Release::from_bundle(b)));
+            if d.view.is_none() {
+                // remote packs may have been checked before the first connection
+                d.view = self.services.bundle.clone().map(Arc::new);
+            }
         }
     }
 
@@ -303,13 +304,14 @@ impl Bridge {
         }
     }
 
-    // ---- firmware source and feed ---------------------------------------------------------
+    // ---- firmware source and remote style packs ---------------------------------------------
 
-    /// `_src`: the feed's release when it is newer than the bundled firmware, else the bundle.
-    pub fn src(&self) -> Option<Arc<Release>> {
+    /// `_src`: the bundled firmware, with the style packs the window shows (the remote ones
+    /// when they are newer, [`packs::choose`]).
+    pub fn src(&self) -> Option<Arc<Bundle>> {
         let mut d = self.data();
         self.ensure_connected(&mut d);
-        d.release.clone().or_else(|| d.bundle_release.clone())
+        d.view.clone()
     }
 
     /// The bundled firmware (`_bundle`).
@@ -317,38 +319,44 @@ impl Bridge {
         self.services.bundle.as_ref()
     }
 
-    fn feed_due(&self) -> bool {
-        let d = self.data();
-        self.services.feed.is_some()
-            && !self.job_running()
-            && d.feed_at.is_none_or(|at| at.elapsed() >= FEED_RECHECK)
+    fn styles_source(&self) -> Option<(&StyleSource, u32)> {
+        let api = self.bundle()?.style_api;
+        Some((self.services.packs.as_ref()?, api)).filter(|_| api >= 1)
     }
 
-    /// `_kick_feed()`: check the feed in the background; the page polls `fw` meanwhile.
-    pub fn kick_feed(&self) {
-        if self.data().feed_pending || !self.feed_due() {
+    fn styles_due(&self) -> bool {
+        let d = self.data();
+        self.styles_source().is_some()
+            && !self.job_running()
+            && d.styles_at.is_none_or(|at| at.elapsed() >= STYLES_RECHECK)
+    }
+
+    /// Check for remote style packs in the background; the page polls `fw` meanwhile.
+    pub fn kick_styles(&self) {
+        if self.data().styles_pending || !self.styles_due() {
             return;
         }
-        self.data().feed_pending = true;
+        self.data().styles_pending = true;
         let bridge = self.clone();
         tokio::spawn(async move {
             // Cleared however the check ends, a panic included.
-            let _pending = FeedPending(bridge.clone());
-            bridge.check_feed(false).await;
+            let _pending = StylesPending(bridge.clone());
+            bridge.check_styles(false).await;
         });
     }
 
-    /// `_check_feed(force)`: ask the feed for its newest release (at most every `FEED_RECHECK`)
-    /// and keep it, with its style packs, when it is newer than the bundle. Failures only show
-    /// as text.
-    pub async fn check_feed(&self, force: bool) {
-        let Some(feed) = self.services.feed.clone() else {
+    /// Ask for the newest remote style packs of the bundle's style API (at most every
+    /// [`STYLES_RECHECK`] unless `force`) and show them when they are newer than the bundled
+    /// ones. Failures only show as text; the bundled packs stay.
+    pub async fn check_styles(&self, force: bool) {
+        let Some((source, api)) = self.styles_source() else {
             return;
         };
+        let source = source.clone();
         if self.job_running() {
             return;
         }
-        let lock = Arc::clone(&self.data().feed_lock);
+        let lock = Arc::clone(&self.data().styles_lock);
         let _one_at_a_time = if force {
             lock.lock_owned().await
         } else {
@@ -357,95 +365,67 @@ impl Bridge {
                 Err(_) => return,
             }
         };
-        self.check_feed_locked(&feed, force).await;
-    }
-
-    async fn check_feed_locked(&self, feed: &Feed, force: bool) {
         {
             let mut d = self.data();
-            if !force && d.feed_at.is_some_and(|at| at.elapsed() < FEED_RECHECK) {
+            if !force && d.styles_at.is_some_and(|at| at.elapsed() < STYLES_RECHECK) {
                 return;
             }
-            d.feed_at = Some(Instant::now());
+            d.styles_at = Some(Instant::now());
         }
-        let manifest = match feed.latest().await {
-            Ok(m) => {
-                self.data().feed_error.clear();
-                m
+        match source.latest(api).await {
+            Ok(remote) => {
+                self.data().styles_error.clear();
+                self.use_remote(remote);
             }
             Err(e) => {
                 tracing::warn!("[settings] {e}");
-                self.data().feed_error = e.to_string();
-                return;
+                self.data().styles_error = e.to_string();
             }
-        };
-        let bundle_seq = self.bundle().map(|b| b.seq);
-        let Some(m) = manifest.filter(|m| bundle_seq.is_none_or(|seq| m.seq > seq)) else {
-            self.data().release = None;
-            return;
-        };
-        if self
-            .data()
-            .release
-            .as_ref()
-            .is_some_and(|r| r.manifest.as_ref().is_some_and(|rm| rm.seq == m.seq))
-        {
-            return;
         }
-        let mut rel = feed::make_release(&m, Default::default());
-        // The gallery needs the packs; a few hundred KB.
-        match feed.fetch(&rel, &feed::STYLE_KINDS, None).await {
-            Ok(fetched) => rel = fetched,
-            Err(e) => tracing::warn!("[settings] style packs from the feed: {e}"),
-        }
-        let rel = Arc::new(rel);
-        self.data().release = Some(Arc::clone(&rel));
-        self.use_feed_renderer(feed, &rel).await;
     }
 
-    /// `_use_feed_renderer`: preview with the renderer of the release the gallery now shows,
-    /// when it has one for this computer: the one unpacked before if it still checks out, else
-    /// downloaded once. Without it the page keeps what it had.
-    async fn use_feed_renderer(&self, feed: &Feed, rel: &Release) {
-        let Some(m) = rel.manifest.as_ref() else {
+    /// Show `remote` when it may replace the bundled packs, else the bundled ones; the preview
+    /// renderer draws whichever is shown.
+    fn use_remote(&self, remote: Option<RemoteStyles>) {
+        let Some(bundle) = self.bundle() else {
             return;
         };
-        let platform = feed::renderer_platform();
-        let Some(file) = m.renderer(platform) else {
-            return;
-        };
-        let commit = m.commit.trim_end_matches("-dirty").to_owned();
-        let root = self.paths().renderer_dir();
-        let mut renderer = preview::load_unpacked(&root, &file.sha256, &commit);
-        if renderer.is_none() {
-            match feed.fetch_renderer(rel, platform).await {
-                Ok(Some((_, bytes))) => {
-                    if let Err(e) = preview::unpack_renderer(&bytes, &root, &file.sha256) {
-                        tracing::warn!("[settings] renderer from the feed: {e}");
-                        return;
-                    }
-                }
-                Ok(None) => return,
-                Err(e) => {
-                    tracing::warn!("[settings] renderer from the feed: {e}");
-                    return;
-                }
-            }
-            renderer = preview::load_unpacked(&root, &file.sha256, &commit);
-            if renderer.is_none() {
-                tracing::warn!(
-                    "[settings] renderer from the feed (release {}) does not match it",
-                    m.seq
-                );
-                return;
-            }
-        }
-        // Both at once: a frame of the renderer before never lands in this one's cache.
+        let remote = remote
+            .filter(|r| packs::uses_remote(bundle, r))
+            .map(Arc::new);
         let mut d = self.data();
+        if d.remote.as_deref() == remote.as_deref() {
+            return;
+        }
+        if let Some(r) = &remote {
+            tracing::info!(
+                "[settings] style packs rev {} ({} packs)",
+                r.rev,
+                r.styles.len()
+            );
+        }
+        d.view = Some(Arc::new(packs::choose(bundle, remote.as_deref())));
+        d.remote = remote;
+        // Both at once: a frame of the packs before never lands in this one's cache. The
+        // renderer is reloaded on the next preview, with the packs now shown.
         d.frames = Some(FrameCache::new(FRAME_CACHE_SIZE));
-        d.renderer = renderer.map(Arc::new);
-        d.renderer_loaded = true;
+        d.renderer = None;
+        d.renderer_loaded = false;
         d.renderer_generation += 1;
+    }
+
+    /// `renderer` drawing the remote packs in use too (same ids replace the bundled ones).
+    pub fn with_remote_styles(&self, renderer: Renderer) -> Renderer {
+        let remote = self.data().remote.clone();
+        match remote {
+            Some(r) => renderer.with_styles(
+                r.styles
+                    .iter()
+                    .filter(|p| p.path.is_file())
+                    .map(|p| (p.id.clone(), p.path.clone())),
+            ),
+            None => renderer,
+        }
     }
 
     /// `_bundle_info()`.
@@ -453,35 +433,28 @@ impl Bridge {
         let Some(src) = self.src() else {
             return Value::Null;
         };
-        let from_feed = self.data().release.is_some();
-        let mut out = json!({
+        let remote = self.data().remote.is_some();
+        let packs: serde_json::Map<String, Value> = src
+            .packs
+            .iter()
+            .map(|p| (p.kind.clone(), json!(p.size)))
+            .collect();
+        json!({
             "seq": src.seq, "size": src.size, "commit": src.commit, "styleApi": src.style_api,
-            "source": if from_feed { "feed" } else { "app" },
-        });
-        if let (true, Some(m)) = (from_feed, src.manifest.as_ref()) {
-            let date: String = src.date().chars().take(10).collect();
-            let packs: serde_json::Map<String, Value> = m
-                .files
-                .iter()
-                .filter(|f| feed::PACK_KINDS.contains(&f.kind.as_str()))
-                .map(|f| (f.kind.clone(), json!(f.size)))
-                .collect();
-            out["notes"] = json!(src.notes());
-            out["date"] = json!(date);
-            out["packs"] = Value::Object(packs);
-        }
-        out
+            "source": "app", "packs": packs,
+            "stylesRev": src.style_rev, "stylesSource": if remote { "remote" } else { "app" },
+        })
     }
 
     /// `_fw_info()`: the firmware/packs facts the page shows.
     pub fn fw_info(&self) -> Value {
         let src = self.src();
-        let (heap, feed_error, feed_busy) = {
+        let (heap, styles_error, styles_busy) = {
             let d = self.data();
-            (d.heap.clone(), d.feed_error.clone(), d.feed_pending)
+            (d.heap.clone(), d.styles_error.clone(), d.styles_pending)
         };
-        let bundle = src.as_deref().map(|r| &r.bundle);
-        let packs: Vec<Value> = bundle
+        let bundle = src.as_deref();
+        let list: Vec<Value> = bundle
             .map(|b| {
                 b.styles
                     .iter()
@@ -490,9 +463,9 @@ impl Bridge {
             })
             .unwrap_or_default();
         let mut state = firmware::update_state(&heap, bundle);
-        let plan = feed::plan(&heap, src.as_deref());
+        let plan = packs::plan(&heap, bundle);
         if state == "current"
-            && feed::PACK_KINDS
+            && packs::PACK_KINDS
                 .iter()
                 .any(|k| plan.get(*k).and_then(Value::as_str) == Some("need"))
         {
@@ -500,11 +473,11 @@ impl Bridge {
         }
         let active = firmware::clock_style(&heap);
         json!({
-            "update": state, "plan": plan, "feedError": feed_error, "feedBusy": feed_busy,
+            "update": state, "plan": plan, "stylesError": styles_error, "stylesBusy": styles_busy,
             "styles": {
                 "state": firmware::style_state(&heap, bundle),
                 "active": if active.is_empty() { CLASSIC.to_owned() } else { active },
-                "packs": packs,
+                "packs": list,
             },
             "seq": firmware::clock_seq(&heap), "bundle": self.bundle_info(),
         })
@@ -649,7 +622,7 @@ impl Bridge {
             }
         };
         self.data().heap = heap.clone();
-        self.kick_feed(); // in the background: the page polls fw() meanwhile
+        self.kick_styles(); // in the background: the page polls fw() meanwhile
         let cfg = match self.api().config().await {
             Ok(c) => c,
             Err(e) => {

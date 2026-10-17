@@ -35,12 +35,15 @@ Without `CLAWD_SIGN_IDENTITY` the app is signed ad-hoc: it runs on this Mac, but
 release** (0.1.x will not accept it). Set `CLAWD_REQUIRE_SIGNING=1` to make a missing identity or
 missing notarization an error (the script does that by itself when `GITHUB_REF_TYPE=tag`).
 
-Environment read at build time: `CLAWD_FEED_URL`, `CLAWD_FEED_TOKEN` (firmware feed, baked into
-the binary by cargo, never in the repo), `CLAWD_MINISIGN_PUBKEY`, `CARGO_TARGET_DIR`.
-`CLAWD_PRIVATE_FIRMWARE=1` also ships `private/firmware` and `private/renderer`
-(output of `tools/bundle_firmware.py` and `tools/build_preview.py`) next to the exe /
-in `Contents/Resources`. Clock owners only: both scripts refuse it in CI, public artifacts carry
-no firmware.
+Environment read at build time: `CLAWD_MINISIGN_PUBKEY` (baked into the binary by cargo: it
+verifies app updates and remote style packs), `CARGO_TARGET_DIR`.
+
+Both scripts ship the clock firmware: `build/firmware` (image, `clawd.pak`, `desk.pak`, style
+packs; `tools/bundle_firmware.py`) and `build/renderer` (the clock-screen renderer;
+`tools/build_preview.py`), in `Contents/Resources` / next to the exe. `sh tools/build_clock.sh`
+builds both (PlatformIO and a C++17 compiler). The bundle is checked first
+(`tools/bundle_firmware.py --check`: intact, and built from this source's `fwSeq`/`styleApi`). A
+CI or signed build without them fails; a local build without them only warns.
 
 Installer size: not measured here (no `iscc` in the build sandbox). The spike estimate was about
 3.5 MB (`reports/spike-decision.md`); the workflow's size gate is the real number.
@@ -55,15 +58,22 @@ Installer size: not measured here (no `iscc` in the build sandbox). The spike es
   Jobs `build-windows`, `build-mac` and `sign` are bound to it (and only run on a `v*` tag);
   `verify`, `test` and `publish` are not.
   Secrets: `MACOS_CERT_P12`, `MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`,
-  `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`, `CLAWD_FEED_URL`, `CLAWD_FEED_TOKEN`, `MINISIGN_KEY`,
-  `MINISIGN_PASSWORD`.
+  `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`, `MINISIGN_KEY`, `MINISIGN_PASSWORD`. (The old
+  `CLAWD_FEED_URL` / `CLAWD_FEED_TOKEN` are no longer read by any build; they can be deleted once
+  the old feed is retired.)
   Repository **variables** (not secrets): `MINISIGN_PUBKEY` (the public key; a tag run fails if it
   is empty or not a 56-character `RW...` key) and `EXPECTED_TEAM_ID` (the 10-character Team ID of
   the 0.1.x Developer ID; the signed app must carry exactly this TeamIdentifier, a tag run fails
   if it is unset). Take it from `codesign -dv --verbose=2` of an installed 0.1.4 app.
-* **Gates before any secret is used**: `verify` (`check_public`, version-guard tests, tag and
-  version, the variables above, `Cargo.lock`) and `test` (`cargo test --workspace --locked`). Both
-  `build-*` jobs need them.
+* **Gates before any secret is used**: `verify` (version-guard tests, tag and version, the
+  variables above, `Cargo.lock`), `test` (`cargo test --workspace --locked`) and `firmware` (the
+  clock firmware bundle from the tag, PlatformIO, uploaded as the artifact `clock-firmware`).
+  Both `build-*` jobs need them; each downloads the bundle and builds its own renderer
+  (`tools/build_clock.sh --renderer`; MinGW `g++` on Windows, signed with the Developer ID on Mac).
+* **Style packs** between app releases: workflow `packs.yml` (manual, from `main`, environment
+  `release`) runs `tools/publish_packs.sh --publish`: `index.json` signed with the same minisign
+  key, on the fixed release `packs-api<N>`, always `--latest=false`. CI (`ci.yml`, job `repo`)
+  fails whenever `releases/latest` is not a `v*` tag.
 * **Permissions**: `contents: read` everywhere; `contents: write` only in `publish`.
 * **Tag and version**: `GITHUB_REF_NAME` must equal `v<version>` of `app/Cargo.toml`
   (inherited from `[workspace.package]`) and of `app/tauri.conf.json`. The updater

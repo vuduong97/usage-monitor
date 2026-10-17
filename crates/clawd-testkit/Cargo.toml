@@ -26,5 +26,6 @@ clawd-appupdate = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
+minisign = "0.7"
 # test-util: tokio::time::pause()/advance() for the poll/OTA/boot-watch loops
 tokio = { workspace = true, features = ["test-util"] }

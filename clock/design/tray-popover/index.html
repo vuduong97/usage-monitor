@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Clawd · bảng bấm từ thanh menu: 4 phương án</title>
+<!-- pak.js = window.PAK, the clock's own clawd.pak in base64 (private art: keep out of clawd-desktop).
+     Rebuild: python3 -c "import base64;open('pak.js','w').write('window.PAK=\"'+base64.b64encode(open('../../firmware/data/clawd.pak','rb').read()).decode()+'\";')" -->
+<script src="pak.js"></script>
+<style>
+  :root { --bg:#141413; --pop:rgba(28,28,27,.86); --card:#232321; --line:rgba(255,255,255,.08); --line2:#2f2f2c;
+          --text:#faf9f5; --dim:#b0aea5; --mute:#8a887f; --acc:#d97757; --ok:#9bb07a; --amber:#e0a35a; --bad:#e5786d; --track:#33332f;
+          --serif:"New York","Iowan Old Style",Georgia,serif; --mono:ui-monospace,Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--text); font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+         background:radial-gradient(1200px 700px at 15% 0%, #4a2f26 0%, transparent 60%),
+                    radial-gradient(900px 600px at 90% 100%, #23324a 0%, transparent 60%), #17161a; -webkit-font-smoothing:antialiased; }
+  .page { padding:28px 32px 36px; }
+  .intro { display:flex; align-items:baseline; gap:16px; margin-bottom:22px; }
+  .intro h1 { font:400 24px var(--serif); margin:0; }
+  .intro p { margin:0; color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(4, 336px); gap:28px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:10px; }
+  /* faux menu bar, the popover hangs under the Clawd icon */
+  .mb { height:26px; border-radius:8px; background:rgba(20,20,22,.55); backdrop-filter:blur(20px); display:flex; align-items:center;
+        justify-content:flex-end; gap:14px; padding:0 12px; color:#e9e7e0; font-size:12px; }
+  .mb svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; }
+  .mb .me { width:24px; height:20px; border-radius:5px; background:rgba(255,255,255,.18); display:grid; place-items:center; }
+  .tray { width:16px; height:16px; border-radius:4px; background:var(--acc); position:relative; }
+  .tray::before { content:""; position:absolute; inset:3px; border:1.6px solid #fff; border-radius:50%; }
+  .tray::after { content:""; position:absolute; right:-2px; bottom:-2px; width:7px; height:7px; border-radius:50%; background:#7fd36b; border:1.5px solid #1b1b1d; }
+  .pop { width:336px; margin-left:auto; background:var(--pop); backdrop-filter:blur(30px) saturate(1.4); border:1px solid var(--line);
+         border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05); overflow:hidden; }
+  .cap h3 { margin:6px 0 2px; font:400 18px var(--serif); } .cap h3 b { color:var(--acc); font-weight:400; margin-right:6px; }
+  .cap p { margin:0; color:var(--dim); font-size:12.5px; } .cap ul { margin:6px 0 0; padding-left:16px; color:var(--mute); font-size:12px; }
+  canvas { display:block; image-rendering:pixelated; }
+  /* shared bits */
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); box-shadow:0 0 6px var(--ok); display:inline-block; }
+  .chip { font-size:11px; padding:1px 8px; border-radius:99px; white-space:nowrap; font-weight:500; }
+  .chip.ok { background:rgba(155,176,122,.16); color:#c6d6ab; } .chip.amber { background:rgba(224,163,90,.16); color:#f0c48f; }
+  .chip.bad { background:rgba(229,120,109,.16); color:#f2a69d; }
+  .bar { position:relative; height:8px; border-radius:99px; background:var(--track); }
+  .bar > i { position:absolute; left:0; top:0; bottom:0; border-radius:99px; }
+  .foot { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:1px solid var(--line); color:var(--mute); font-size:11.5px; }
+  .foot .sp { flex:1; }
+  .btn { border:1px solid var(--line2); background:rgba(255,255,255,.04); color:var(--text); border-radius:7px; padding:4px 11px; font:inherit; font-size:12px; cursor:pointer; }
+  .btn.pri { background:var(--acc); border-color:var(--acc); color:#1a1310; font-weight:500; }
+  .ib { width:26px; height:26px; border-radius:7px; display:grid; place-items:center; color:var(--dim); border:0; background:none; cursor:pointer; }
+  .ib:hover { background:rgba(255,255,255,.07); color:var(--text); }
+  .ib svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .k { color:var(--dim); } .m { color:var(--mute); font-size:12px; } .num { font-variant-numeric:tabular-nums; }
+
+  /* A: Gọn */
+  .A .hd { display:flex; align-items:center; gap:10px; padding:12px 12px 10px 10px; }
+  .A .hd .t { flex:1; min-width:0; } .A .hd .t b { display:block; font-size:14px; font-weight:600; }
+  .A .row { padding:10px 16px 12px; }
+  .A .row + .row { border-top:1px solid var(--line); }
+  .A .l1 { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .A .l1 strong { font-size:20px; font-weight:600; }
+  .A .l2 { display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
+  .A .warn { margin-top:8px; display:flex; gap:7px; align-items:flex-start; color:#f2a69d; font-size:12px; }
+  .A .warn svg { width:14px; height:14px; flex:none; margin-top:2px; stroke:currentColor; fill:none; stroke-width:2; }
+
+  /* B: Sân khấu */
+  .B .stage { position:relative; }
+  .B .stage .clk { position:absolute; left:14px; top:10px; font:30px var(--serif); }
+  .B .stage .who { position:absolute; right:12px; top:14px; font-size:12px; color:var(--dim); display:flex; gap:6px; align-items:center; }
+  .B .body { padding:12px 16px 14px; }
+  .B .lab { display:flex; justify-content:space-between; color:var(--dim); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+  .B .big { display:flex; align-items:center; gap:10px; margin:2px 0 8px; }
+  .B .big strong { font-size:46px; line-height:1; font-weight:600; letter-spacing:-.02em; } .B .big strong small { font-size:22px; }
+  .B .big .chip { margin-left:auto; }
+  .B .bar { height:12px; }
+  .B .fc { margin-top:9px; font-size:12.5px; }
+  .B .wk { margin:0 12px 12px; background:var(--card); border-radius:10px; padding:10px 12px; }
+  .B .wk .l1 { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+  .B .wk .bar { height:6px; }
+
+  /* C: Vòng đôi */
+  .C .hd { display:flex; align-items:center; gap:8px; padding:12px 12px 0 16px; }
+  .C .hd b { font-size:13px; font-weight:600; } .C .hd .sp { flex:1; }
+  .C .ring { display:grid; place-items:center; padding:6px 0 2px; position:relative; }
+  .C .ring .mid { position:absolute; text-align:center; top:122px; width:100%; }
+  .C .ring .mid .s { color:var(--mute); font-size:11px; margin-top:2px; }
+  .C .ring .mid .c { font:26px var(--serif); line-height:1; }
+  .C .leg { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:6px 12px 14px; }
+  .C .leg > div { background:var(--card); border-radius:10px; padding:9px 11px; }
+  .C .leg .t { display:flex; align-items:center; gap:6px; color:var(--dim); font-size:12px; }
+  .C .leg .t i { width:8px; height:8px; border-radius:50%; }
+  .C .leg strong { display:block; font-size:22px; font-weight:600; margin:2px 0; }
+
+  /* D: Clawd kể */
+  .D .scene { display:grid; grid-template-columns:118px 1fr; align-items:end; gap:4px; padding:16px 14px 6px 8px; }
+  .D .say { position:relative; background:#f3efe6; color:#1d1b18; border-radius:14px; padding:10px 12px; margin-bottom:34px; font-size:12.5px; line-height:1.45; }
+  .D .say::before { content:""; position:absolute; left:-7px; bottom:16px; border:8px solid transparent; border-right-color:#f3efe6; border-left:0; }
+  .D .say b { display:block; font-size:13.5px; margin-bottom:2px; }
+  .D .tiles { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 12px; }
+  .D .tile { background:var(--card); border-radius:10px; padding:9px 11px 11px; }
+  .D .tile .l1 { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+  .D .tile strong { font-size:18px; font-weight:600; }
+  .D .tile .bar { height:6px; } .D .tile .m { margin-top:6px; font-size:11.5px; }
+  .D .act { margin:8px 12px 12px; display:flex; align-items:center; gap:10px; padding:8px 11px; border-radius:10px; border:1px dashed var(--line2); }
+  .D .act .sp { flex:1; min-width:0; } .D .act .sp b { font-weight:500; } .D .act code { font:12px var(--mono); color:var(--acc); }
+  .D .spin { font:15px var(--mono); color:var(--acc); width:14px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="intro"><h1>Bấm biểu tượng Clawd → bảng nhỏ</h1>
+    <p>Số liệu thật lúc 20:55 (phiên 10 %, tuần 41 %, gói Pro). Clawd là sprite thật từ <code>clawd.pak</code> của đồng hồ, đang chạy.</p></div>
+  <div class="grid">
+
+  <!-- ===================== A ===================== -->
+  <div class="col">
+    <div class="mb"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/></svg><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop A">
+      <div class="hd">
+        <canvas id="a-clawd" width="60" height="44"></canvas>
+        <div class="t"><b>clawd</b><span class="m"><span class="dot"></span>&nbsp; Đã kết nối · Pro</span></div>
+        <button class="ib" title="Cài đặt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      </div>
+      <div class="row" data-u="s">
+        <div class="l1"><span class="k">Phiên 5 giờ</span><strong class="num" data-f="pct"></strong></div>
+        <div class="bar" data-f="bar"></div>
+        <div class="l2"><span class="m" data-f="reset"></span><span data-f="chip"></span></div>
+      </div>
+      <div class="row" data-u="w">
+        <div class="l1"><span class="k">Tuần</span><strong class="num" data-f="pct"></strong></div>
+        <div class="bar" data-f="bar"></div>
+        <div class="l2"><span class="m" data-f="reset"></span><span data-f="chip"></span></div>
+        <div class="warn"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span data-f="fc"></span></div>
+      </div>
+      <div class="foot"><span>Cập nhật 20:55</span><span class="sp"></span><button class="btn">Cài đặt…</button><button class="ib" title="Thêm"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>
+    </div>
+    <div class="cap"><h3><b>A</b>Gọn</h3>
+      <p>Giống menu macOS: Clawd nhỏ đứng cạnh tên đồng hồ, rồi hai thanh.</p>
+      <ul><li>Đọc nhanh nhất, ít chỗ nhất</li><li>Chỉ hiện cảnh báo khi có chuyện (tuần đang vượt nhịp)</li></ul></div>
+  </div>
+
+  <!-- ===================== B ===================== -->
+  <div class="col">
+    <div class="mb"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/></svg><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop B">
+      <div class="stage"><canvas id="b-stage" width="336" height="112"></canvas><div class="clk">20:55</div><div class="who"><span class="dot"></span>clawd</div></div>
+      <div class="body" data-u="s">
+        <div class="lab"><span>Phiên 5 giờ</span><span data-f="resetAt"></span></div>
+        <div class="big"><strong class="num" data-f="pctBig"></strong><span data-f="chip"></span></div>
+        <div class="bar" data-f="bar"></div>
+        <div class="fc" data-f="fc"></div>
+      </div>
+      <div class="wk" data-u="w">
+        <div class="l1"><span><span class="k">Tuần</span>&nbsp; <span class="m" data-f="reset"></span></span><strong class="num" data-f="pct"></strong></div>
+        <div class="bar" data-f="bar"></div>
+        <div class="fc m" style="margin-top:7px" data-f="fc"></div>
+      </div>
+      <div class="foot"><span>Pro · cập nhật 20:55</span><span class="sp"></span><button class="btn">Cài đặt…</button><button class="ib" title="Thêm"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>
+    </div>
+    <div class="cap"><h3><b>B</b>Sân khấu</h3>
+      <p>Clawd bò ngang sàn, càng dùng nhiều càng chạy nhanh (như màn Pixel trên đồng hồ). Phiên hiện tại là số to, tuần là thẻ phụ.</p>
+      <ul><li>Vui mắt, giống "mở cửa sổ nhìn vào đồng hồ"</li><li>Dự báo bằng lời: đủ tới lúc đặt lại / hết lúc mấy giờ</li></ul></div>
+  </div>
+
+  <!-- ===================== C ===================== -->
+  <div class="col">
+    <div class="mb"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/></svg><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop C">
+      <div class="hd"><span class="dot"></span><b>clawd</b><span class="m">· Pro</span><span class="sp"></span>
+        <button class="ib" title="Cài đặt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button></div>
+      <div class="ring"><canvas id="c-ring" width="220" height="220"></canvas>
+        <div class="mid"><div class="c">20:55</div><div class="s">phiên đặt lại 22:40</div></div></div>
+      <div class="leg">
+        <div data-u="s"><div class="t"><i data-f="swatch"></i>Phiên 5 giờ</div><strong class="num" data-f="pct"></strong><div class="m" data-f="resetShort"></div><div style="margin-top:6px" data-f="chip"></div></div>
+        <div data-u="w"><div class="t"><i data-f="swatch"></i>Tuần</div><strong class="num" data-f="pct"></strong><div class="m" data-f="resetShort"></div><div style="margin-top:6px" data-f="chip"></div></div>
+      </div>
+      <div class="foot"><span>Cập nhật 20:55</span><span class="sp"></span><button class="btn">Cài đặt…</button><button class="ib" title="Thêm"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>
+    </div>
+    <div class="cap"><h3><b>C</b>Vòng đôi</h3>
+      <p>Giống màn "Vòng đôi" trên đồng hồ: vòng ngoài là phiên, vòng trong là tuần, Clawd ôm laptop ở giữa.</p>
+      <ul><li>Liền mạch với đồng hồ trên bàn</li><li>Hai con số ngang hàng, dễ so</li></ul></div>
+  </div>
+
+  <!-- ===================== D ===================== -->
+  <div class="col">
+    <div class="mb"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/></svg><span class="me"><span class="tray"></span></span><span>Th 2 20:55</span></div>
+    <div class="pop D">
+      <div class="scene"><canvas id="d-clawd" width="118" height="132"></canvas>
+        <div class="say" id="d-say"></div></div>
+      <div class="tiles">
+        <div class="tile" data-u="s"><div class="l1"><span class="k">Phiên</span><strong class="num" data-f="pct"></strong></div><div class="bar" data-f="bar"></div><div class="m" data-f="resetShort"></div></div>
+        <div class="tile" data-u="w"><div class="l1"><span class="k">Tuần</span><strong class="num" data-f="pct"></strong></div><div class="bar" data-f="bar"></div><div class="m" data-f="resetShort"></div></div>
+      </div>
+      <div class="act"><span class="spin" id="d-spin">✻</span><span class="sp"><b>Claude Code</b> <span class="m">đang sửa</span> <code>tray.py</code></span><span class="m">76 lượt hôm nay</span></div>
+      <div class="foot"><span>Cập nhật 20:55</span><span class="sp"></span><button class="btn">Cài đặt…</button><button class="ib" title="Thêm"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>
+    </div>
+    <div class="cap"><h3><b>D</b>Clawd kể</h3>
+      <p>Clawd nói một câu dễ hiểu về tình hình, hành động đổi theo mức dùng (nhảy múa khi thoải mái, cầm kính lúp khi tuần vượt nhịp). Có thêm dòng Claude Code đang làm gì.</p>
+      <ul><li>Thân thiện nhất, hợp làm quà</li><li>Cần thêm dữ liệu sự kiện (đã có từ hook)</li></ul></div>
+  </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+// ---------------- data: the real payload at 20:55 ----------------
+const NOW_MIN = 20 * 60 + 55;
+const P = { s:10, sr:105, w:41, wr:6965 };
+const WIN = { s:300, w:10080 };
+const COL = { ok:'#9bb07a', amber:'#e0a35a', bad:'#e5786d', track:'#33332f', text:'#faf9f5' };
+const pctCol = p => p >= 80 ? COL.bad : p >= 50 ? COL.amber : COL.ok;
+const dur = m => m < 60 ? `${m}p` : m < 1440 ? `${Math.floor(m / 60)}g ${m % 60}p` : `${Math.floor(m / 1440)}n ${Math.floor(m % 1440 / 60)}g`;
+const durLong = m => m < 60 ? `${m} phút` : m < 1440 ? `${Math.floor(m / 60)} giờ ${m % 60} phút` : `${Math.floor(m / 1440)} ngày ${Math.floor(m % 1440 / 60)} giờ`;
+const hhmm = m => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+function info(k) {
+  const pct = P[k], rem = P[k + 'r'], win = WIN[k], t = Math.min(1, Math.max(0, (win - rem) / win));
+  const end = t > 0.05 ? pct / t : 0;
+  const pace = t < 0.05 ? ['ok', 'Mới đặt lại'] : end > 100 ? ['bad', 'Vượt nhịp'] : end >= 70 ? ['amber', 'Sát nhịp'] : ['ok', 'Dưới nhịp'];
+  const el = win - rem, left = pct > 0 ? (100 - pct) / (pct / el) : Infinity;
+  const fc = left >= rem ? ['ok', 'Đủ dùng tới lúc đặt lại']
+           : ['bad', k === 's' ? `Với nhịp này sẽ hết lúc ~${hhmm(NOW_MIN + Math.round(left))}` : `Với nhịp này sẽ hết sau ~${durLong(Math.round(left))}`];
+  return { pct, rem, t, pace, fc, left };
+}
+const I = { s:info('s'), w:info('w') };
+document.querySelectorAll('[data-u]').forEach(el => {
+  const d = I[el.dataset.u];
+  el.querySelectorAll('[data-f]').forEach(f => {
+    switch (f.dataset.f) {
+      case 'pct': f.textContent = `${d.pct}%`; break;
+      case 'pctBig': f.innerHTML = `${d.pct}<small>%</small>`; break;
+      case 'reset': f.textContent = `Đặt lại sau ${dur(d.rem)}`; break;
+      case 'resetShort': f.textContent = `còn ${dur(d.rem)}`; break;
+      case 'resetAt': f.textContent = `đặt lại ${hhmm(NOW_MIN + d.rem)}`; break;
+      case 'chip': f.innerHTML = `<span class="chip ${d.pace[0]}">${d.pace[1]}</span>`; break;
+      case 'swatch': f.style.background = pctCol(d.pct); break;
+      case 'fc': f.textContent = d.fc[1]; f.style.color = d.fc[0] === 'ok' ? COL.ok : COL.bad; break;
+      case 'bar': f.innerHTML = `<i style="width:${Math.max(d.pct, 2)}%;background:${pctCol(d.pct)}"></i>`; break;
+    }
+  });
+});
+// A shows its warning only when the week is in trouble
+document.querySelector('.A .warn').style.display = I.w.fc[0] === 'ok' ? 'none' : '';
+document.querySelector('#d-say').innerHTML = I.w.fc[0] === 'ok'
+  ? `<b>Hôm nay thoải mái!</b>Phiên mới dùng ${I.s.pct}%, tuần ${I.w.pct}%. Cứ code tiếp.`
+  : `<b>Tuần này hơi nhanh</b>Giữ nhịp này thì hết hạn mức tuần sau ~${durLong(Math.round(I.w.left))}, còn ${dur(I.w.rem)} mới đặt lại. Phiên hiện tại vẫn ổn (${I.s.pct}%).`;
+
+// ---------------- clawd.pak: parse + play (ClawdPlayer, simplified) ----------------
+function parsePak(b64) {
+  const bin = atob(b64), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  const dv = new DataView(u.buffer), anims = {};
+  for (let i = 0, n = dv.getUint16(6, true); i < n; i++) {
+    const d = 12 + 72 * i; let name = '';
+    for (let k = 0; k < 15 && u[d + k]; k++) name += String.fromCharCode(u[d + k]);
+    const pal = [];
+    for (let k = 0; k < 16; k++) { const v = dv.getUint16(d + 28 + 2 * k, true);
+      pal.push(`rgb(${((v >> 11) & 31) * 255 / 31 | 0},${((v >> 5) & 63) * 255 / 63 | 0},${(v & 31) * 255 / 31 | 0})`); }
+    anims[name] = { w:u[d + 16], h:u[d + 17], ox:u[d + 18], oy:u[d + 19], fc:dv.getUint16(d + 20, true), ls:dv.getUint16(d + 22, true),
+                    le:dv.getUint16(d + 24, true), fb:dv.getUint16(d + 26, true), pal, fo:dv.getUint32(d + 60, true), ho:dv.getUint32(d + 64, true) };
+  }
+  return { u, dv, anims };
+}
+const PAK = parsePak(window.PAK);
+const hold = (a, f) => PAK.dv.getUint16(a.ho + 2 * f, true) || 100;
+function sprite(name, loop = false) {
+  const s = { a:null, f:0, due:0, name:'' };
+  // loop = start inside the loop (the prop is already out: laptop open, magnifier up)
+  s.set = (n, now, loop = false) => { if (s.name === n) return; s.name = n; s.a = PAK.anims[n]; s.f = loop ? s.a.ls : 0; s.due = now + hold(s.a, s.f); };
+  s.update = now => { let g = 0; while (now >= s.due && g++ < 50) { let n = s.f + 1; if (s.f === s.a.le || n >= s.a.fc) n = s.a.ls; s.f = n; s.due += hold(s.a, n); } };
+  // (x, y) is the origin of the pack's shared frame: every anim's feet sit at y = 37 cells
+  s.draw = (c, x, y, k, flip = false) => {
+    const a = s.a, base = a.fo + s.f * a.fb;
+    for (let gy = 0; gy < a.h; gy++) for (let gx = 0; gx < a.w; gx++) {
+      const sx = flip ? a.w - 1 - gx : gx, i = gy * a.w + sx, b = PAK.u[base + (i >> 1)], v = i & 1 ? b & 15 : b >> 4;
+      if (v) { c.fillStyle = a.pal[v]; c.fillRect(Math.round(x + (flip ? 2 * 27 - a.ox - a.w : a.ox) * k + gx * k), Math.round(y + (a.oy + gy) * k), k, k); }
+    }
+  };
+  s.set(name, performance.now(), loop);
+  return s;
+}
+function hidpi(cv) { const r = 2, w = cv.width, h = cv.height; cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * r; cv.height = h * r;
+  const c = cv.getContext('2d'); c.scale(r, r); c.imageSmoothingEnabled = false; return { c, w, h }; }
+
+// A: corner mascot, rests on "walking" frame 0, then waves / points (ClawdMascot)
+const A = hidpi(document.getElementById('a-clawd')), aS = sprite('walking');
+const A_SEQ = [['walking', 2200], ['waving', 2600], ['walking', 2200], ['pointing', 3200]];
+// B: crab strolls the floor; speed follows the session %
+const B = hidpi(document.getElementById('b-stage')), bS = sprite('crab walking');
+let bx = 40, bdir = 1;
+// C: laptop Clawd in the middle of the rings
+const C = hidpi(document.getElementById('c-ring')), cS = sprite('laptop', true);
+// D: mood = magnifier when the week is over pace, dancing when all is fine
+const D = hidpi(document.getElementById('d-clawd')), dS = sprite(I.w.fc[0] === 'ok' ? 'dancing' : 'magnifier', true);
+const SPIN = ['·', '✻', '✽', '✶', '✳', '✢'];
+
+function ring(c, cx, cy, r, lw, frac, col) {
+  c.lineCap = 'round'; c.lineWidth = lw;
+  c.strokeStyle = COL.track; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
+  if (frac > 0) { c.strokeStyle = col; c.beginPath(); c.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); c.stroke(); }
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(64, now - last); last = now;
+  // A
+  { const tot = A_SEQ.reduce((s, x) => s + x[1], 0); let t = now % tot, i = 0; while (t >= A_SEQ[i][1]) t -= A_SEQ[i++][1];
+    aS.set(A_SEQ[i][0], now); if (A_SEQ[i][0] !== 'walking') aS.update(now);
+    A.c.clearRect(0, 0, A.w, A.h); aS.draw(A.c, -12, -32, 2); }
+  // B
+  { const c = B.c; const g = c.createLinearGradient(0, 0, 0, B.h); g.addColorStop(0, '#2a201b'); g.addColorStop(1, '#141413');
+    c.fillStyle = g; c.fillRect(0, 0, B.w, B.h);
+    c.fillStyle = '#3a3a35'; for (let x = 6; x < B.w - 6; x += 6) c.fillRect(x, 102, 3, 3);
+    bS.update(now); const k = 3, speed = 0.02 + 0.08 * I.s.pct / 100;
+    bx += bdir * speed * dt; if (bx > B.w - 30 * k + 12) { bx = B.w - 30 * k + 12; bdir = -1; } if (bx < -36) { bx = -36; bdir = 1; }
+    bS.draw(c, bx, 102 - 37 * k, k, bdir < 0); }
+  // C
+  { const c = C.c; c.clearRect(0, 0, C.w, C.h); const cx = 110, cy = 110;
+    ring(c, cx, cy, 100, 12, I.s.pct / 100, pctCol(I.s.pct)); ring(c, cx, cy, 82, 8, I.w.pct / 100, pctCol(I.w.pct));
+    cS.update(now); cS.draw(c, cx - 32 * 2, cy - 6 - 37 * 2, 2); }
+  // D
+  { const c = D.c; c.clearRect(0, 0, D.w, D.h);
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(59, 124, 40, 6, 0, 0, Math.PI * 2); c.fill();
+    dS.update(now); dS.draw(c, 59 - 27 * 3 - (dS.name === 'magnifier' ? 6 : 0), 124 - 37 * 3, 3);
+    document.getElementById('d-spin').textContent = SPIN[Math.floor(now / 160) % SPIN.length]; }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

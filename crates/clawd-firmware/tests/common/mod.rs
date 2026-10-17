@@ -1,10 +1,9 @@
 //! Helpers shared by the integration tests.
 #![allow(dead_code)]
 
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use clawd_firmware::crc32::{crc32, crc32_hex};
+use clawd_firmware::crc32::crc32_hex;
 use clawd_testkit::fw::make_style_pack;
 use serde_json::{json, Value};
 
@@ -25,42 +24,6 @@ pub fn write_styles(folder: &Path, ids: &[&str], api: u32) {
         json!({"api": api, "styles": rows}).to_string(),
     )
     .unwrap();
-}
-
-pub fn zip_of(files: &[(&str, &[u8])]) -> Vec<u8> {
-    let mut w = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    let opts = zip::write::SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated);
-    for (n, d) in files {
-        w.start_file(*n, opts).unwrap();
-        w.write_all(d).unwrap();
-    }
-    w.finish().unwrap().into_inner()
-}
-
-/// A renderer zip as `tools/build_preview.py --zip` packs it, around a fake program.
-pub fn renderer_zip(commit: &str, extra: &[(&str, &[u8])]) -> Vec<u8> {
-    let synth = make_style_pack("synth");
-    let paper = make_style_pack("paper");
-    let row = |id: &str, d: &[u8]| {
-        json!({"id": id, "name": id, "file": format!("{id}.pak"), "size": d.len(),
-               "crc": format!("{:08x}", crc32(&d[16..])), "light": id == "paper"})
-    };
-    let index =
-        json!({"api": 1, "styles": [row("synth", &synth), row("paper", &paper)]}).to_string();
-    let preview = json!({"exe": "clawd_render", "pak": "clawd.pak", "commit": commit,
-        "layouts": 1, "styleApi": 1, "fwSeq": 6})
-    .to_string();
-    let mut files: Vec<(&str, &[u8])> = vec![
-        ("preview.json", preview.as_bytes()),
-        ("clawd_render", b"program"),
-        ("clawd.pak", b"pak"),
-        ("styles/index.json", index.as_bytes()),
-        ("styles/synth.pak", &synth),
-        ("styles/paper.pak", &paper),
-    ];
-    files.extend_from_slice(extra);
-    zip_of(&files)
 }
 
 /// A folder with the fake renderer program (`fake_clawd_render`) as `clawd_render`, the way

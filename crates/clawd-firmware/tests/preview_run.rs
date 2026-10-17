@@ -1,17 +1,12 @@
-//! Running the renderer program and the feed renderer store (`tests/test_preview.py`,
-//! `tests/test_renderer_feed.py` window part). The "renderer" is the `fake_clawd_render` test
-//! binary, copied next to a `mode` file, so this runs on every OS.
+//! Running the renderer program (`tests/test_preview.py`). The "renderer" is the
+//! `fake_clawd_render` test binary, copied next to a `mode` file, so this runs on every OS.
 mod common;
 
-use std::collections::HashMap;
 use std::time::Duration;
 
 use clawd_contracts::{Env, UsagePayload};
-use clawd_firmware::feed::{self, Feed, Release};
 use clawd_firmware::preview::{self, load_renderer, PreviewError, CLASSIC, FRAME_BYTES};
-use clawd_firmware::renderer_store::load_feed_renderer;
-use clawd_testkit::fw::{release_files, FakeFeed, TOKEN};
-use common::{fake_renderer_folder, renderer_zip, zip_of};
+use common::fake_renderer_folder;
 use serde_json::json;
 
 fn payload(v: serde_json::Value) -> UsagePayload {
@@ -166,125 +161,20 @@ async fn a_missing_program_is_an_io_error() {
     ));
 }
 
-// ---- the feed renderer of a release ---------------------------------------------------------
-
-fn rel_of(m: &feed::Manifest) -> Release {
-    feed::make_release(m, HashMap::new())
-}
-
-async fn setup(ff: &FakeFeed, seq: u64, renderers: &[(&str, Vec<u8>)]) -> (Feed, Release) {
-    ff.publish(
-        seq,
-        release_files(&["synth", "paper"], 1),
-        "stable",
-        "",
-        1,
-        renderers,
-    );
-    let f = Feed::new(&ff.url(), TOKEN, "stable", None);
-    let m = f.latest().await.unwrap().unwrap();
-    (f.clone(), rel_of(&m))
-}
-
-const OTHER: &str = if cfg!(target_os = "macos") {
-    "win-x64"
-} else {
-    "mac"
-};
+// ---- remote style packs ---------------------------------------------------------------------
 
 #[tokio::test]
-async fn the_window_previews_with_the_releases_renderer_and_reuses_it() {
+async fn a_remote_style_pack_is_drawn_by_the_bundled_renderer() {
     let t = tempfile::tempdir().unwrap();
-    let root = t.path().join("renderer");
-    let ff = FakeFeed::start();
-    let plat = feed::renderer_platform();
-    let (f, rel) = setup(&ff, 6, &[(plat, renderer_zip("c000006", &[]))]).await;
-    let r = load_feed_renderer(&f, &rel, &root, plat)
-        .await
-        .expect("renderer");
-    let mut ids: Vec<_> = r.styles.keys().cloned().collect();
-    ids.sort();
-    assert_eq!(ids, ["paper", "synth"]);
-    assert_eq!(ff.got(&format!("renderer/{plat}.zip")), 1);
-    let again = load_feed_renderer(&f, &rel, &root, plat)
-        .await
-        .expect("renderer");
-    assert_eq!(again, r);
-    assert_eq!(
-        ff.got(&format!("renderer/{plat}.zip")),
-        1,
-        "unpacked already: no download"
+    let d = fake_renderer_folder(t.path(), "frame", "c");
+    let remote = t.path().join("cache").join("tetris.pak");
+    std::fs::create_dir_all(remote.parent().unwrap()).unwrap();
+    std::fs::write(&remote, clawd_testkit::fw::make_style_pack("tetris")).unwrap();
+    let r = load(&d).with_styles([("tetris".to_owned(), remote.clone())]);
+    r.draw("tetris", None).await.unwrap();
+    let args = log(&d, "args.log");
+    assert!(
+        args.split_whitespace().last().unwrap() == remote.to_string_lossy(),
+        "{args}"
     );
-}
-
-#[tokio::test]
-async fn the_window_keeps_its_fallback_when_the_renderer_is_missing_or_unusable() {
-    let t = tempfile::tempdir().unwrap();
-    let root = t.path().join("renderer");
-    let ff = FakeFeed::start();
-    let plat = feed::renderer_platform();
-    // none for this computer
-    let (f, rel) = setup(&ff, 6, &[(OTHER, renderer_zip("c000006", &[]))]).await;
-    assert!(load_feed_renderer(&f, &rel, &root, plat).await.is_none());
-    // not a renderer (a stray dll)
-    let (f, rel) = setup(
-        &ff,
-        7,
-        &[(plat, renderer_zip("c000007", &[("other.dll", b"x")]))],
-    )
-    .await;
-    assert!(load_feed_renderer(&f, &rel, &root, plat).await.is_none());
-    assert!(!root.exists() || std::fs::read_dir(&root).unwrap().next().is_none());
-    // built from another commit than the release
-    let (f, rel) = setup(&ff, 8, &[(plat, renderer_zip("another", &[]))]).await;
-    assert!(load_feed_renderer(&f, &rel, &root, plat).await.is_none());
-    // a release from a Worker that does not sign renderers
-    ff.sign_renderers(false);
-    let (f, rel) = setup(&ff, 9, &[(plat, renderer_zip("c000009", &[]))]).await;
-    assert!(load_feed_renderer(&f, &rel, &root, plat).await.is_none());
-    assert_eq!(
-        rel.styles.len(),
-        0,
-        "the release itself is untouched by the renderer"
-    );
-    // a "-dirty" firmware commit matches the renderer built from the clean one
-    ff.sign_renderers(true);
-    ff.publish(
-        10,
-        release_files(&["synth"], 1),
-        "stable",
-        "",
-        1,
-        &[(plat, renderer_zip("c000010", &[]))],
-    );
-    ff.edit_manifest(10, |m| m["commit"] = json!("c000010-dirty"));
-    let m = f.latest().await.unwrap().unwrap();
-    assert!(load_feed_renderer(&f, &rel_of(&m), &root, plat)
-        .await
-        .is_some());
-}
-
-#[tokio::test]
-async fn a_changed_unpacked_file_is_unpacked_again() {
-    let t = tempfile::tempdir().unwrap();
-    let root = t.path().join("renderer");
-    let ff = FakeFeed::start();
-    let plat = feed::renderer_platform();
-    let (f, rel) = setup(&ff, 6, &[(plat, renderer_zip("c000006", &[]))]).await;
-    let r = load_feed_renderer(&f, &rel, &root, plat).await.unwrap();
-    std::fs::write(&r.pak, b"changed").unwrap();
-    let again = load_feed_renderer(&f, &rel, &root, plat).await.unwrap();
-    assert_eq!(std::fs::read(&again.pak).unwrap(), b"pak");
-    assert_eq!(ff.got(&format!("renderer/{plat}.zip")), 2);
-}
-
-#[tokio::test]
-async fn zip_helper_builds_what_the_store_expects() {
-    // guards the test helper itself: a zip with only a preview.json is not a renderer
-    let t = tempfile::tempdir().unwrap();
-    let bad = zip_of(&[(
-        "preview.json",
-        br#"{"exe":"clawd_render","pak":"clawd.pak"}"#,
-    )]);
-    assert!(preview::unpack_renderer(&bad, &t.path().join("r"), &"ab".repeat(32)).is_err());
 }

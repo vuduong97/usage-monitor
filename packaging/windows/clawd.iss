@@ -49,8 +49,8 @@ Type: files; Name: "{app}\libssl*.dll"
 [Files]
 Source: "{#ExeDir}\Clawd.exe"; DestDir: "{app}"; Flags: ignoreversion
 #ifdef ResourcesDir
-; Private build only (CLAWD_PRIVATE_FIRMWARE=1): firmware\ and renderer\ next to the exe, where
-; clawd_firmware::resources_dir() looks. A public build has no ResourcesDir.
+; The clock firmware (build\firmware) and renderer (build\renderer) next to the exe, where
+; clawd_firmware::resources_dir() looks. Only a local build without them has no ResourcesDir.
 Source: "{#ResourcesDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 #endif
 

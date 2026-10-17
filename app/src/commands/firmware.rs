@@ -1,5 +1,6 @@
-//! Settings commands: firmware and packs (`settings_api.py`): the facts, the feed check and the
-//! background install (the page polls `job` meanwhile).
+//! Settings commands: firmware and packs (`settings_api.py`): the facts, the remote style packs
+//! check and the background install (the page polls `job` meanwhile). The firmware itself only
+//! ever comes with the app.
 //! Each takes the positional JS `args` and returns the JSON the Python method returned
 //! (`{"ok": true, ...}` or `{"ok": false, "code", "error"}`); `Err` rejects the promise.
 
@@ -8,8 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use clawd_contracts::ClockError;
-use clawd_firmware::feed;
-use clawd_firmware::firmware;
+use clawd_firmware::firmware::{self, Bundle};
 use clawd_firmware::ota::{self, OtaOptions};
 use clawd_firmware::preview::CLASSIC;
 use serde_json::{json, Value};
@@ -22,8 +22,8 @@ use crate::state::lock;
 /// often while the install reports progress.
 const BUSY_BEAT: Duration = Duration::from_secs(5);
 
-/// `SettingsApi.fw`: the firmware/packs facts alone: the page asks again while `feedBusy` is
-/// true, to pick up the feed's release when the background check finishes.
+/// `SettingsApi.fw`: the firmware/packs facts alone: the page asks again while `stylesBusy` is
+/// true, to pick up remote style packs when the background check finishes.
 pub async fn fw(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
     fw_on(&Bridge::of(ctx), &args).await
 }
@@ -33,8 +33,8 @@ pub async fn fw_on(b: &Bridge, _args: &[Value]) -> Result<Value, String> {
     Ok(json!({"ok": true, "fw": b.clone().fw_info()}))
 }
 
-/// `SettingsApi.check_update`: ask the feed now (the Update tab's button); the clock's heap is
-/// read again too.
+/// `SettingsApi.check_update`: ask for remote style packs now (the Update tab's button); the
+/// clock's heap is read again too.
 pub async fn check_update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
     check_update_on(&Bridge::of(ctx), &args).await
 }
@@ -47,14 +47,14 @@ pub async fn check_update_on(b: &Bridge, _args: &[Value]) -> Result<Value, Strin
     if let Ok(heap) = b.api().heap().await {
         b.data().heap = heap;
     }
-    b.check_feed(true).await;
+    b.check_styles(true).await;
     let heap = b.data().heap.clone();
-    Ok(json!({"ok": true, "fw": b.fw_info(), "heap": heap, "feed": b.services.feed.is_some()}))
+    Ok(json!({"ok": true, "fw": b.fw_info(), "heap": heap, "packs": b.services.packs.is_some()}))
 }
 
-/// `SettingsApi.update(edited, style)`: install the newest firmware and packs (the feed's
-/// release, else the bundled firmware) in the background, then save `edited` and show `style`
-/// (`null`: leave both).
+/// `SettingsApi.update(edited, style)`: install the bundled firmware (when newer) and the
+/// animation packs that differ in the background, then save `edited` and show `style` (`null`:
+/// leave both).
 pub async fn update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, String> {
     update_on(&Bridge::of(ctx), &args).await
 }
@@ -63,10 +63,7 @@ pub async fn update(ctx: &CommandCtx<'_>, args: Vec<Value>) -> Result<Value, Str
 pub async fn update_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
     let args = args_in.to_vec();
     if b.src().is_none() {
-        return Ok(fail(
-            "bad",
-            "Chưa có bản firmware nào để cài (app không kèm firmware, và chưa đọc được nguồn cập nhật).",
-        ));
+        return Ok(fail("bad", "Bản app này không kèm firmware cho đồng hồ."));
     }
     let edited = arg(&args, 0);
     let prepared = (if edited.is_null() {
@@ -165,31 +162,9 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
         .ok_or_else(|| UpdateFailure::Other("no firmware to install".into()))?;
     let need = if style.is_some() { src.style_api } else { 0 };
     let api = b.api();
-    let from_feed = b.data().release.is_some();
-    let heap = match b.services.feed.clone().filter(|_| from_feed) {
-        Some(feedsrc) => {
-            step("download");
-            let now = api.heap().await.map_err(UpdateFailure::Clock)?;
-            let mut kinds: Vec<String> = feed::needed(&now, Some(&src));
-            kinds.extend(feed::STYLE_KINDS.iter().map(|k| (*k).to_owned()));
-            let mut seen = std::collections::HashSet::new();
-            kinds.retain(|k| seen.insert(k.clone()));
-            let kinds: Vec<&str> = kinds.iter().map(String::as_str).collect();
-            let progress = {
-                let step = Arc::clone(&step);
-                move |_: &str, _: u64, _: u64| step("download")
-            };
-            let fetched = feedsrc
-                .fetch(&src, &kinds, Some(&progress))
-                .await
-                .map_err(|e| UpdateFailure::Other(e.to_string()))?;
-            let fetched = Arc::new(fetched);
-            b.data().release = Some(Arc::clone(&fetched));
-            ota::install_release(&*api, &fetched, changes, need, &opts).await
-        }
-        None => ota::install_then_save(&*api, &src.bundle, changes, need, &opts).await,
-    }
-    .map_err(UpdateFailure::Clock)?;
+    let heap = ota::install_bundle(&*api, &src, changes, need, &opts)
+        .await
+        .map_err(UpdateFailure::Clock)?;
     b.data().heap = heap.clone();
     let shown = firmware::clock_style(&heap);
     match style {
@@ -215,9 +190,9 @@ async fn install(b: &Bridge, changes: &Value, style: Option<&str>) -> Result<(),
     Ok(())
 }
 
-/// `_refresh_style(src)`: the clock's style pack, re-sent when the release carries a different
+/// `_refresh_style(src)`: the clock's style pack, re-sent when the packs shown carry a different
 /// build of it. Failures are not the install's.
-async fn refresh_style(b: &Bridge, src: &feed::Release) {
+async fn refresh_style(b: &Bridge, src: &Bundle) {
     let id = firmware::clock_style(&b.data().heap);
     if id.is_empty() {
         return;

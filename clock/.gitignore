@@ -1,0 +1,29 @@
+# OS / editors
+.DS_Store
+.vscode/
+# agent harness state (never commit)
+.pi/
+.claude/
+# Python
+__pycache__/
+*.pyc
+.venv/
+# Node
+node_modules/
+package-lock.json
+# tools/desk's renders and cache (the committed pack is firmware/data/desk.pak)
+build/desk/
+build/renderer/
+tools/desk/out/
+# Stock-clock backups (contain Wi-Fi/API secrets)
+.stock-backup/
+firmware/.stock-backup/
+# PlatformIO
+.pio/
+# clangd index
+firmware/.cache/
+# Firmware feed: wrangler state, release output and keys (never commit)
+.wrangler/
+rel/
+key.b64
+.dev.vars

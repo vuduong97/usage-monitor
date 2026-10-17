@@ -32,7 +32,7 @@ use tokio::task::JoinHandle;
 
 /// 2026-10-11 09:40 UTC: the `now` of the golden usage fixtures.
 pub const NOW: f64 = 1_791_711_600.0;
-/// A token the fake Anthropic accepts (`tools/check_public.py` allows only this prefix).
+/// A token the fake Anthropic accepts (a fake: no real token is ever committed).
 pub const TOKEN: &str = "sk-ant-test-e2e";
 
 /// Poll `cond` every 20 ms until it holds or `secs` pass.

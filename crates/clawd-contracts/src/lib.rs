@@ -13,7 +13,6 @@ mod clock;
 mod consts;
 mod env;
 mod errors;
-mod feed;
 mod os_store;
 mod pet;
 mod platform;
@@ -28,9 +27,8 @@ pub use clock::{ClockSource, ClockTarget};
 pub use consts::*;
 pub use env::Env;
 pub use errors::{
-    AgentError, AuthNeeded, ClockError, FeedError, TokenExpired, UpdateError, UsageNotApplicable,
+    AgentError, AuthNeeded, ClockError, TokenExpired, UpdateError, UsageNotApplicable,
 };
-pub use feed::{FeedFile, FeedManifest};
 pub use os_store::OsStoreNames;
 pub use pet::PetConfig;
 pub use platform::Platform;

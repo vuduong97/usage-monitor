@@ -29,14 +29,15 @@ pub const LOG_FILE_NAME: &str = "clawd-desktop.log";
 /// The rotated log (`LOG_FILE.with_suffix(".log.1")`).
 pub const LOG_ROTATED_FILE_NAME: &str = "clawd-desktop.log.1";
 pub const PAK_FILE_NAME: &str = "clawd.pak";
-pub const RENDERER_DIR_NAME: &str = "renderer";
 pub const HOOK_SCRIPT_NAME: &str = "clawd-event.sh";
 pub const OTA_BUSY_FILE_NAME: &str = "ota.busy";
 /// `pause.PAUSE_FILE` (the engine's push lease; NOT `ota.busy`).
 pub const PAUSE_FILE_NAME: &str = "pause.json";
 pub const PET_FILE_NAME: &str = "pet.json";
 pub const ATTENTION_FILE_NAME: &str = "attention";
-pub const FEED_CACHE_DIR_NAME: &str = "feed-cache";
+/// Remote usage style packs, one file per SHA-256 (`clawd_firmware::packs`). New in 0.3.0; the
+/// old feed's `feed-cache/` and `renderer/` are left alone (0.2.x may run again).
+pub const STYLE_PACKS_DIR_NAME: &str = "style-packs";
 pub const APP_UPDATE_DIR_NAME: &str = "app-update";
 
 /// `paths.LOG_MAX`: the log rotates once it passes this many bytes.
@@ -107,10 +108,6 @@ pub const MINISIGN_PUBKEY: &str = match option_env!("CLAWD_MINISIGN_PUBKEY") {
     Some(key) => key,
     None => MINISIGN_PUBKEY_PLACEHOLDER,
 };
-
-// ---- build-time feed defaults (replace `_feed_build.py`; secrets never in the repo) ---
-pub const BUILD_FEED_URL: Option<&str> = option_env!("CLAWD_FEED_URL");
-pub const BUILD_FEED_TOKEN: Option<&str> = option_env!("CLAWD_FEED_TOKEN");
 
 // ---- clock firmware ---------------------------------------------------------------
 /// `firmware.CLAWD_VARIANT`.

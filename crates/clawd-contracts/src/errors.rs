@@ -34,11 +34,6 @@ impl From<AuthNeeded> for ClockError {
     }
 }
 
-/// `feed.FeedError`: the feed did not answer, refused, or sent something that does not check out.
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
-#[error("{0}")]
-pub struct FeedError(pub String);
-
 /// `appupdate.UpdateError`. Messages stay Vietnamese as in Python; new minisign failures are
 /// new Vietnamese texts recorded in the phase-10 fixtures.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

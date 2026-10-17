@@ -1,7 +1,7 @@
-//! `usage_preview_*` and `clawd_pak_*` of `tests/test_preview.py`, and `usage_preview` of
-//! `tests/test_renderer_feed.py`: the settings commands over the real renderer runner (the
-//! fake `clawd_render` program of `clawd-firmware`, so it runs on every OS), a fake clock for
-//! `/clawd.pak` and the real feed client. Test names are the Python names without `test_`.
+//! `usage_preview_*` and `clawd_pak_*` of `tests/test_preview.py`: the settings commands over
+//! the real renderer runner (the fake `clawd_render` program of `clawd-firmware`, so it runs on
+//! every OS), a fake clock for `/clawd.pak` and the real remote style packs client. Test names
+//! are the Python names without `test_`.
 
 mod settings_support;
 
@@ -11,10 +11,9 @@ use std::sync::Arc;
 use clawd_app::commands::session::Bridge;
 use clawd_app::commands::usage::{clawd_pak_on, usage_preview_on};
 use clawd_contracts::{Env, UsagePayload};
-use clawd_firmware::crc32::crc32;
-use clawd_firmware::feed::{renderer_platform, Feed};
+use clawd_firmware::packs::StyleSource;
 use clawd_firmware::preview::{load_renderer, PakCache, PAK_MAX};
-use clawd_testkit::fw::{make_style_pack, release_files, FakeFeed, TOKEN};
+use clawd_testkit::fw::FakePacks;
 use clawd_testkit::{FakeClock as FakeNow, TempConfig};
 use serde_json::{json, Value};
 use settings_support::*;
@@ -215,80 +214,56 @@ async fn usage_preview_before_any_usage_draws_the_waiting_screen() {
     );
 }
 
-fn feed_heap() -> Value {
-    with(styled_heap(), json!({"fwSeq": 5, "style": "synth"}))
-}
-
-/// `renderer_zip`: a renderer as `tools/build_preview.py --zip` packs it, around the fake
-/// program.
-fn renderer_zip(commit: &str) -> Vec<u8> {
-    let exe_name = if cfg!(windows) {
-        "clawd_render.exe"
-    } else {
-        "clawd_render"
-    };
-    let exe = std::fs::read(fake_renderer_exe()).unwrap();
-    let packs: Vec<(String, Vec<u8>)> = ["synth", "paper"]
-        .iter()
-        .map(|id| ((*id).to_owned(), make_style_pack(id)))
-        .collect();
-    let rows: Vec<Value> = packs
-        .iter()
-        .map(|(id, d)| {
-            json!({"id": id, "name": id, "file": format!("{id}.pak"), "size": d.len(),
-                "crc": format!("{:08x}", crc32(&d[16..])), "light": id == "paper"})
-        })
-        .collect();
-    let index = json!({"api": 1, "styles": rows}).to_string();
-    let preview = json!({"exe": exe_name, "pak": "clawd.pak", "commit": commit, "layouts": 1,
-        "styleApi": 1, "fwSeq": 6})
-    .to_string();
-    let mut files: Vec<(String, Vec<u8>)> = vec![
-        ("preview.json".into(), preview.into_bytes()),
-        (exe_name.into(), exe),
-        ("clawd.pak".into(), b"pak".to_vec()),
-        ("styles/index.json".into(), index.into_bytes()),
-    ];
-    files.extend(
-        packs
-            .into_iter()
-            .map(|(id, d)| (format!("styles/{id}.pak"), d)),
-    );
-    let refs: Vec<(&str, &[u8])> = files
-        .iter()
-        .map(|(n, d)| (n.as_str(), d.as_slice()))
-        .collect();
-    zip_stored(&refs)
+/// The services of `b`'s window with a remote packs source.
+fn with_packs(b: &Bridge, src: StyleSource) -> clawd_app::state::Services {
+    let s = &b.services;
+    clawd_app::state::Services::new(
+        s.paths.clone(),
+        s.names.clone(),
+        Arc::clone(&s.updater),
+        Arc::clone(&s.registry),
+        Some(src),
+        s.bundle.clone(),
+        Arc::clone(&s.runner),
+    )
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn usage_preview_draws_with_the_feed_renderer() {
-    let tc = TempConfig::new();
-    let ff = FakeFeed::start();
-    let platform = renderer_platform();
-    ff.publish(
-        6,
-        release_files(&["synth", "paper"], 1),
-        "stable",
-        "",
-        1,
-        &[(platform, renderer_zip("c000006"))],
+async fn usage_preview_draws_remote_packs_with_the_bundled_renderer() {
+    let p = preview(&["synth", "paper"], true, true, "frame");
+    let fp = FakePacks::start();
+    fp.publish(1, 500, &["tetris", "synth"]);
+    let src = StyleSource::new(
+        &fp.url(),
+        &fp.public_key(),
+        Some(p.rig.paths().style_packs_dir()),
     );
-    let feed = Feed::new(
-        &ff.url(),
-        TOKEN,
-        "stable",
-        Some(tc.paths().feed_cache_dir()),
-    );
-    let rig = Build::new().temp(tc).heap(feed_heap()).feed(feed).build();
-    rig.bridge.state().await;
-    assert!(wait_for(30, || rig.bridge.fw_info()["feedBusy"] == json!(false)).await);
-    assert_eq!(rig.bridge.fw_info()["bundle"]["source"], "feed");
-    let out = usage_preview_on(&rig.bridge, &[json!(["classic", "synth"]), json!(false)])
+    // the same window, now with a packs source; the bundled renderer is found through the env
+    let folder = p.folder.clone();
+    p.rig.bridge.data().env = Some(Env::from_fn(move |k| {
+        (k == "CLAWD_PREVIEW_DIR").then(|| folder.display().to_string())
+    }));
+    let b = Bridge {
+        services: Arc::new(with_packs(&p.rig.bridge, src)),
+        ..p.rig.bridge.clone()
+    };
+    b.check_styles(true).await;
+    assert_eq!(b.fw_info()["bundle"]["stylesSource"], "remote");
+    let out = usage_preview_on(&b, &[json!(["classic", "tetris", "synth"]), json!(false)])
         .await
         .unwrap();
     assert_eq!(out["exact"], true, "{out}");
-    assert_eq!(keys(&out), ["classic", "synth"]);
+    assert_eq!(keys(&out), ["classic", "synth", "tetris"]);
+    let cache = p.rig.paths().style_packs_dir();
+    let drawn = p.log("args.log");
+    assert!(
+        drawn
+            .lines()
+            .filter(|l| l.contains(&*cache.to_string_lossy()))
+            .count()
+            == 2,
+        "tetris and the new synth come from the packs cache: {drawn}"
+    );
 }
 
 // ---- the clock's own clawd.pak ---------------------------------------------------------------
