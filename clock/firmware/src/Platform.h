@@ -24,7 +24,9 @@ static inline void platformTimeBegin(const char* tz, const char* s1, const char*
   configTzTime(tz, s1, s2);   // ESP32 core: sets TZ + starts SNTP
 }
 static inline void platformMdnsUpdate() { /* ESP32 mDNS answers from a background task */ }
-static inline void platformAnalogWriteInit(uint8_t pin) { (void)pin; /* analogWrite defaults to 8-bit (0..255) */ }
+// Backlight: LEDC PWM (hardware), 8-bit duty 0..255.
+static inline void platformBacklightInit(uint8_t pin) { (void)pin; /* analogWrite defaults to 8-bit (0..255) */ }
+static inline void platformBacklightWrite(uint8_t pin, uint8_t duty) { analogWrite(pin, duty); }
 static inline bool platformScanIsOpen(int i) { return WiFi.encryptionType(i) == WIFI_AUTH_OPEN; }
 static inline String platformUpdateError() { return String(Update.errorString()); }
 static inline uint32_t platformChipId() { return (uint32_t)ESP.getEfuseMac(); }
@@ -70,7 +72,17 @@ static inline void platformTimeBegin(const char* tz, const char* s1, const char*
   configTime(tz, s1, s2);     // ESP8266 core: TZ-string overload, sets TZ + starts SNTP
 }
 static inline void platformMdnsUpdate() { MDNS.update(); }
-static inline void platformAnalogWriteInit(uint8_t pin) { (void)pin; analogWriteRange(255); }
+// Backlight: analogWrite (timer-interrupt PWM) at 25 kHz, not the core's 1 kHz. At a low
+// duty (the app's 15 % quiet-hours cap) 1-8 kHz flickers visibly on the clock; 15-40 kHz
+// mostly does not (measured on the clock, 2026-10-18). 25 kHz is above hearing, so the
+// backlight driver cannot whine. The hardware sigma-delta generator was tried instead and
+// hung the clock (anim frozen, off the network) within minutes: don't use it here.
+static inline void platformBacklightInit(uint8_t pin) {
+  (void)pin;
+  analogWriteRange(255);
+  analogWriteFreq(25000);
+}
+static inline void platformBacklightWrite(uint8_t pin, uint8_t duty) { analogWrite(pin, duty); }
 static inline bool platformScanIsOpen(int i) { return WiFi.encryptionType(i) == ENC_TYPE_NONE; }
 static inline String platformUpdateError() { return Update.getErrorString(); }
 static inline uint32_t platformChipId() { return ESP.getChipId(); }

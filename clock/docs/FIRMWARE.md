@@ -148,6 +148,13 @@ After the YCbCr trim, the pull-mode removal and the v3 desk pack (2026-10-12, 17
 while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.log   # 24 h soak
 ```
 
+## Backlight (fwSeq 9, 2026-10-18)
+
+The backlight (GPIO5, active low) is driven by `analogWrite` at 25 kHz (`platformBacklightInit` in `src/Platform.h`), not the core's 1 kHz. At the app's quiet-hours cap of 15 %, 1–8 kHz flickers visibly with or without an animation; 15–40 kHz mostly does not. A faint flicker remains at 15 % during desk animations: `analogWrite` is a timer-interrupt PWM, and WiFi and flash reads delay the interrupt.
+
+- Cost at 25 kHz on the `typing` desk animation: draw p50 13.3 ms (was 10.9 at 1 kHz), no late frames added. 5-minute soak at 0/15/50/100 %: no reset, heap steady around 26 KB.
+- The hardware sigma-delta generator (`sigmaDeltaAttachPin`) was tried on this pin and hung the clock within minutes (animation frozen, off the network, once a hardware watchdog reset). Don't use it here.
+
 ## Code map
 
 | Path | Role |
@@ -169,4 +176,4 @@ while sleep 60; do curl -s http://clawd-3fa2.local/api/heap; echo; done >> heap.
 | `tools/gzip_webui.py` | Writes `src/webui.h` (gzip) from `src/webui.html`, the single web UI source. |
 | `tests/host/run.sh` | Host test: applies a config with dead keys through `Settings.cpp` and the save/load path, and compares with `fixtures/expected.json`. |
 
-Build (`pio run -e clawd`, fwSeq 8, style API 2: the packs play the official Clawd animations from `/clawd.pak`): 504,736 B image, RAM 46,028 B (the player keeps one 832 B frame). Before (fwSeq 7, this machine's toolchain): 502,240 B image, RAM 45,032 B. Before (usage `src`, fwSeq 7): 501,984 B image, RAM 44,988 B. Before (pack CRCs, fwSeq 6): 501,520 B image. Before (style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).
+Build (`pio run -e clawd`, fwSeq 9, backlight PWM 25 kHz): 504,784 B image, RAM 46,028 B. Before (fwSeq 8, style API 2: the packs play the official Clawd animations from `/clawd.pak`): 504,736 B image, RAM 46,028 B (the player keeps one 832 B frame). Before (fwSeq 7, this machine's toolchain): 502,240 B image, RAM 45,032 B. Before (usage `src`, fwSeq 7): 501,984 B image, RAM 44,988 B. Before (pack CRCs, fwSeq 6): 501,520 B image. Before (style packs): 499,664 B image (OTA budget 524,288 B), RAM 44,352 B of 81,920 (54.1%).

@@ -76,7 +76,7 @@ void gfxBegin(const Settings& s) {
   // if panel init has trouble. A dark backlight then means the sketch didn't get
   // this far (early crash / bad flash) — a useful boot indicator.
   pinMode(TFT_BL, OUTPUT);
-  platformAnalogWriteInit(TFT_BL);
+  platformBacklightInit(TFT_BL);
   gfxSetBrightness(s.brightness, s.backlightInverted);
 
 #if defined(CLAWD_ESP32C2) || defined(CLAWD_ESP32)
@@ -113,7 +113,7 @@ void gfxSetBrightness(uint8_t pct, bool inverted) {
   if (pct > 100) pct = 100;
   int duty = (int)pct * 255 / 100;
   if (inverted) duty = 255 - duty;
-  analogWrite(TFT_BL, duty);
+  platformBacklightWrite(TFT_BL, (uint8_t)duty);
 }
 
 void gfxSetRotation(uint8_t r) {
