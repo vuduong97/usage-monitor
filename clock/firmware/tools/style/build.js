@@ -28,6 +28,7 @@ const ORDER = [
   'hairline', 'widget', 'tonal', 'brutal', 'soft', 'oled', 'ink', 'tufte', 'frost', 'bigtype',
 ];
 const MAX_PACK = 20 * 1024;
+const MAX_ANIMATED = 64;   // ops with an animation track the clock accepts (STYLE_MAX_ANIMATED)
 const MIN_ANIMS = 5;   // Clawd animations per screen (anims.js), at most 8 (the firmware's list)
 
 // The pack's source drawn, its Clawd turned into animations with `cfg`.
@@ -97,6 +98,8 @@ function main() {
     const cell = S.ops.find((q) => q.kind === 6).a;
     console.log(`${file}: ${r.buf.length} B, ${r.ops} ops, ${r.tracks} tracks, ${r.palette} colours, Clawd ${cfg.set.join('/')} x${animOps} cell ${cell}, fonts ${fonts}`);
     if (r.buf.length > MAX_PACK) { console.error(`${file}: over the ${MAX_PACK} B budget`); failed = true; }
+    const tracked = S.ops.filter((o) => o.track !== 255).length;
+    if (tracked > MAX_ANIMATED) { console.error(`${file}: ${tracked} animated ops (the clock takes ${MAX_ANIMATED})`); failed = true; }
   }
   fs.writeFileSync(path.join(outDir, 'index.json'), JSON.stringify({ api: API, styles: index }, null, 2) + '\n');
   if (failed) process.exit(1);

@@ -245,8 +245,8 @@
       "id": "monitor",
       "name": "Patient monitor",
       "file": "monitor.pak",
-      "size": 15616,
-      "crc": "e8c810f6",
+      "size": 14532,
+      "crc": "3ccdd522",
       "light": false
     },
     {

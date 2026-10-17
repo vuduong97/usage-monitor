@@ -134,8 +134,8 @@ node tools/style/build.js <clawd-home>/firmware/src     # writes styles/*.pak + 
 
 The argument is the reference firmware's `src`, which holds the LVGL font `.c`
 files the compiler subsets.
-- The build fails when a pack is over 20 KB, or when a fixed label uses a glyph its
-  font lacks.
+- The build fails when a pack is over 20 KB, has more than 64 ops with an animation
+  track (the clock refuses it), or when a fixed label uses a glyph its font lacks.
 - Packs are committed with the firmware, like `clawd_fonts.h`.
 - The desktop app's `tools/bundle_firmware.py --src` and `tools/build_preview.py
   --src` copy `styles/` next to the bundled image and the preview renderer.
