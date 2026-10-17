@@ -285,7 +285,7 @@ pub struct TrayModel {
     pub detail: String,
     /// A newer app is downloaded and checked (version), `""`: none.
     pub app_new: String,
-    /// A newer release for the clock (`feed.offer`), 0: none.
+    /// The bundled firmware for the clock, when it lacks it or its packs (`packs::offer`), 0: none.
     pub fw_new: u64,
     /// Wizard steps not done yet.
     pub setup_left: Vec<String>,

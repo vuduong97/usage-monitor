@@ -28,8 +28,8 @@ use clawd_clock::ClockApi;
 use clawd_contracts::{AppPaths, Clock, ClockError, MonotonicClock};
 use serde_json::Value;
 
-use crate::feed::{self, Release};
 use crate::firmware::{self, Bundle};
+use crate::packs::{pack_state, PACK_KINDS};
 
 /// `ota.SETTLE`: let a push the engine already started finish before the upload.
 pub const SETTLE: Duration = Duration::from_secs(6);
@@ -205,20 +205,22 @@ pub async fn install<A: ClockOps + ?Sized>(
     opts: &OtaOptions,
 ) -> Result<Value, ClockError> {
     let image = bundle.read().map_err(other)?;
-    install_image(api, bundle, image, opts).await
+    opts.say("check");
+    let heap = api.heap().await?;
+    let new = install_image(api, bundle, image, &heap, opts).await?;
+    opts.say("done");
+    Ok(new)
 }
 
-/// The body of `ota.install` once the image bytes are in hand (a feed release reads them from
-/// memory, a bundle from disk).
+/// The body of `ota.install` once the image bytes and the clock's heap are in hand.
 async fn install_image<A: ClockOps + ?Sized>(
     api: &A,
     bundle: &Bundle,
     image: Vec<u8>,
+    heap: &Value,
     opts: &OtaOptions,
 ) -> Result<Value, ClockError> {
-    opts.say("check");
-    let heap = api.heap().await?;
-    let state = firmware::update_state(&heap, Some(bundle));
+    let state = firmware::update_state(heap, Some(bundle));
     if state != "available" {
         return Err(other(format!("no update to install ({state})")));
     }
@@ -245,24 +247,24 @@ async fn install_image<A: ClockOps + ?Sized>(
     if firmware::clock_seq_signed(&new) < i128::from(bundle.seq) {
         return Err(other("the clock came back on its old firmware"));
     }
-    opts.say("done");
     Ok(new)
 }
 
-/// `ota._wait_crcs(api, heap, rel, ...)`: a heap in which no pack of `rel` is still being
-/// checksummed (or the last one after [`CRC_WAIT`]: those packs are then sent anyway).
+/// `ota._wait_crcs(api, heap, bundle, ...)`: a heap in which no pack of the bundle is still
+/// being checksummed (or the last one after [`CRC_WAIT`]: those packs are then sent anyway).
 async fn wait_crcs<A: ClockOps + ?Sized>(
     api: &A,
     mut heap: Value,
-    rel: &Release,
+    bundle: &Bundle,
     opts: &OtaOptions,
 ) -> Value {
     let clock = opts.clock();
     let end = clock.now() + CRC_WAIT.as_secs_f64();
     let waiting = |heap: &Value| {
-        feed::PACK_KINDS.iter().any(|k| {
-            rel.pack(k)
-                .is_some_and(|(_, crc)| feed::pack_state(heap, k, &crc) == "wait")
+        PACK_KINDS.iter().any(|k| {
+            bundle
+                .pack(k)
+                .is_some_and(|p| pack_state(heap, k, &p.crc) == "wait")
         })
     };
     while waiting(&heap) && clock.now() < end {
@@ -274,23 +276,25 @@ async fn wait_crcs<A: ClockOps + ?Sized>(
     heap
 }
 
-/// `ota.install_packs(api, rel, heap, ...)`: send the release's `clawd.pak`, then `desk.pak`,
+/// `ota.install_packs(api, bundle, heap, ...)`: send the bundle's `clawd.pak`, then `desk.pak`,
 /// where the clock's differs (CRC in `/api/heap`), after waiting out any checksum in progress.
 /// One retry each. Returns the clock's heap afterwards.
 pub async fn install_packs<A: ClockOps + ?Sized>(
     api: &A,
-    rel: &Release,
+    bundle: &Bundle,
     heap: Value,
     opts: &OtaOptions,
 ) -> Result<Value, ClockError> {
-    let heap = wait_crcs(api, heap, rel, opts).await;
-    let todo: Vec<(&str, Vec<u8>, String)> = feed::PACK_KINDS
-        .iter()
-        .filter_map(|k| {
-            let (data, crc) = rel.pack(k)?;
-            (feed::pack_state(&heap, k, &crc) != "ok").then_some((*k, data, crc))
-        })
-        .collect();
+    let heap = wait_crcs(api, heap, bundle, opts).await;
+    let mut todo: Vec<(&str, Vec<u8>, &str)> = Vec::new();
+    for kind in PACK_KINDS {
+        let Some(p) = bundle.pack(kind) else {
+            continue;
+        };
+        if pack_state(&heap, kind, &p.crc) != "ok" {
+            todo.push((kind, p.read().map_err(other)?, &p.crc));
+        }
+    }
     if todo.is_empty() {
         return Ok(heap);
     }
@@ -311,7 +315,7 @@ pub async fn install_packs<A: ClockOps + ?Sized>(
                     }
                 };
                 match r.get("crc").and_then(Value::as_str) {
-                    Some(got) if !got.is_empty() && got != crc => {
+                    Some(got) if !got.is_empty() && got != *crc => {
                         if last {
                             return Err(other(format!(
                                 "{kind} arrived damaged (CRC {got}, want {crc})"
@@ -335,23 +339,23 @@ fn style_api_missing(heap: &Value, need_style_api: u32) -> bool {
     need_style_api != 0 && firmware::clock_style_api(heap) != need_style_api
 }
 
-/// `ota.install_release(api, rel, changes, need_style_api, ...)`: everything a feed release
-/// brings that this clock lacks: the firmware (when newer), then the packs that differ, then POST
-/// `changes`. Returns the clock's heap.
-pub async fn install_release<A: ClockOps + ?Sized>(
+/// Everything the bundle brings that this clock lacks: the firmware (when newer), then the
+/// animation packs that differ, then POST `changes`. `ClockError` when the clock afterwards does
+/// not draw style packs of API `need_style_api` (0: no need). Returns the clock's heap.
+pub async fn install_bundle<A: ClockOps + ?Sized>(
     api: &A,
-    rel: &Release,
+    bundle: &Bundle,
     changes: &Value,
     need_style_api: u32,
     opts: &OtaOptions,
 ) -> Result<Value, ClockError> {
     opts.say("check");
     let mut heap = api.heap().await?;
-    if firmware::update_state(&heap, Some(&rel.bundle)) == "available" {
-        let image = rel.read().map_err(other)?;
-        heap = install_image(api, &rel.bundle, image, opts).await?;
+    if firmware::update_state(&heap, Some(bundle)) == "available" {
+        let image = bundle.read().map_err(other)?;
+        heap = install_image(api, bundle, image, &heap, opts).await?;
     }
-    heap = install_packs(api, rel, heap, opts).await?;
+    heap = install_packs(api, bundle, heap, opts).await?;
     if style_api_missing(&heap, need_style_api) {
         return Err(other("the new firmware does not draw these style packs"));
     }
@@ -362,33 +366,11 @@ pub async fn install_release<A: ClockOps + ?Sized>(
     Ok(heap)
 }
 
-/// `ota.install_then_save(api, bundle, changes, need_style_api, ...)`: [`install`], then POST
-/// `changes`; `ClockError` when the new image does not draw style packs of API `need_style_api`
-/// (0: no need).
-pub async fn install_then_save<A: ClockOps + ?Sized>(
-    api: &A,
-    bundle: &Bundle,
-    changes: &Value,
-    need_style_api: u32,
-    opts: &OtaOptions,
-) -> Result<Value, ClockError> {
-    let heap = install(api, bundle, opts).await?;
-    if style_api_missing(&heap, need_style_api) {
-        return Err(other("the new firmware does not draw these style packs"));
-    }
-    if has_changes(changes) {
-        api.save(changes).await?;
-    }
-    Ok(heap)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::crc32::crc32_hex;
-    use crate::feed::{make_release, parse_manifest};
     use serde_json::json;
-    use std::collections::HashMap;
     use std::sync::Mutex;
 
     const IMAGE_LEN: usize = 1000;
@@ -541,10 +523,26 @@ mod tests {
         }
     }
 
-    fn bundle(dir: &std::path::Path, seq: u64) -> Bundle {
+    /// A bundle in `dir`: the image, and with `packs` both animation packs.
+    fn bundle_in(dir: &std::path::Path, seq: u64, packs: bool) -> Bundle {
         std::fs::create_dir_all(dir).unwrap();
         let image = [&[0xe9u8][..], &[0u8; IMAGE_LEN - 1]].concat();
         std::fs::write(dir.join("fw.bin"), &image).unwrap();
+        let mut files = Vec::new();
+        if packs {
+            for (kind, name, data) in [
+                ("clawdpak", "clawd.pak", CLAWD),
+                ("deskpak", "desk.pak", DESK),
+            ] {
+                std::fs::write(dir.join(name), data).unwrap();
+                files.push(crate::firmware::PackFile {
+                    kind: kind.into(),
+                    path: dir.join(name),
+                    size: data.len(),
+                    crc: crc32_hex(data),
+                });
+            }
+        }
         Bundle {
             path: dir.join("fw.bin"),
             size: image.len(),
@@ -555,29 +553,13 @@ mod tests {
             commit: "abc1234".into(),
             style_api: 0,
             styles: Vec::new(),
+            style_rev: 0,
+            packs: files,
         }
     }
 
-    /// A feed release holding the image and both packs in memory.
-    fn release(seq: u64) -> Release {
-        let image = vec![0xe9u8; 2048];
-        let row = |name: &str, kind: &str, data: &[u8]| {
-            json!({"name": name, "kind": kind, "size": data.len(), "enc": data.len() + 28,
-                   "sha256": crate::firmware::sha256_hex(data), "crc": crc32_hex(data)})
-        };
-        let m = parse_manifest(
-            &json!({"v": 1, "seq": seq, "variant": "esp8266-clawd", "layouts": 1,
-            "styleApi": 1, "commit": "c1",
-            "files": [row("firmware.bin", "fw", &image), row("clawd.pak", "clawdpak", CLAWD),
-                      row("desk.pak", "deskpak", DESK)]}),
-        )
-        .unwrap();
-        let blobs: HashMap<String, Vec<u8>> = HashMap::from([
-            ("firmware.bin".to_owned(), image),
-            ("clawd.pak".to_owned(), CLAWD.to_vec()),
-            ("desk.pak".to_owned(), DESK.to_vec()),
-        ]);
-        make_release(&m, blobs)
+    fn bundle(dir: &std::path::Path, seq: u64) -> Bundle {
+        bundle_in(dir, seq, false)
     }
 
     fn old() -> Value {
@@ -596,7 +578,7 @@ mod tests {
         let t = tempfile::tempdir().unwrap();
         let rec = Recorder::default();
         let api = FakeClock::new(old(), new1());
-        install_then_save(
+        install_bundle(
             &api,
             &bundle(t.path(), 1),
             &json!({"brightness": 40}),
@@ -653,7 +635,7 @@ mod tests {
         let b = bundle(t.path(), 2);
         let rec = Recorder::default();
         let no_styles = json!({"variant": "esp8266-clawd", "fwSeq": 2});
-        let e = install_then_save(
+        let e = install_bundle(
             &FakeClock::new(new1(), no_styles),
             &b,
             &json!({}),
@@ -666,7 +648,7 @@ mod tests {
             e.to_string(),
             "the new firmware does not draw these style packs"
         );
-        let h = install_then_save(
+        let h = install_bundle(
             &FakeClock::new(new1(), styled()),
             &b,
             &json!({}),
@@ -735,21 +717,22 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
-    async fn install_release_firmware_then_only_the_packs_that_differ() {
+    async fn install_bundle_firmware_then_only_the_packs_that_differ() {
         let rec = Recorder::default();
-        let rel = release(6);
+        let t = tempfile::tempdir().unwrap();
+        let rel = bundle_in(t.path(), 6, true);
         let after = heap(
             6,
             json!({"pakCrc": crc32_hex(CLAWD), "deskCrc": "0badc0de"}),
         );
         let api = FakeClock::new(heap(5, json!({})), after);
-        let h = install_release(&api, &rel, &json!({"brightness": 30}), 0, &rec.opts())
+        let h = install_bundle(&api, &rel, &json!({"brightness": 30}), 0, &rec.opts())
             .await
             .unwrap();
         assert_eq!(
             api.log(),
             [
-                "fw 2048".to_owned(),
+                format!("fw {IMAGE_LEN}"),
                 format!("deskpak {}", DESK.len()),
                 r#"save {"brightness":30}"#.to_owned()
             ]
@@ -768,9 +751,10 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
-    async fn install_release_packs_only_and_nothing_when_current() {
+    async fn install_bundle_packs_only_and_nothing_when_current() {
         let rec = Recorder::default();
-        let rel = release(6);
+        let t = tempfile::tempdir().unwrap();
+        let rel = bundle_in(t.path(), 6, true);
         let api = FakeClock::new(
             heap(
                 6,
@@ -778,7 +762,7 @@ mod tests {
             ),
             json!({}),
         );
-        install_release(&api, &rel, &json!({}), 0, &rec.opts())
+        install_bundle(&api, &rel, &json!({}), 0, &rec.opts())
             .await
             .unwrap();
         assert_eq!(api.log(), [format!("deskpak {}", DESK.len())]);
@@ -789,7 +773,7 @@ mod tests {
             ),
             json!({}),
         );
-        install_release(&api, &rel, &json!({}), 0, &rec.opts())
+        install_bundle(&api, &rel, &json!({}), 0, &rec.opts())
             .await
             .unwrap();
         assert!(api.log().is_empty());
@@ -797,7 +781,8 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn pack_upload_retries_once_then_fails() {
-        let rel = release(6);
+        let t = tempfile::tempdir().unwrap();
+        let rel = bundle_in(t.path(), 6, true);
         let both = |extra: Value| {
             heap(6, json!({"pakCrc": "1", "deskCrc": crc32_hex(DESK)}))
                 .as_object()
@@ -811,19 +796,19 @@ mod tests {
         let rec = Recorder::default();
         let api = FakeClock::new(both(json!({})), json!({})).with(|s| s.fail_uploads = 1);
         let start = tokio::time::Instant::now();
-        install_release(&api, &rel, &json!({}), 0, &rec.opts())
+        install_bundle(&api, &rel, &json!({}), 0, &rec.opts())
             .await
             .unwrap();
         assert_eq!(api.log(), [format!("clawdpak {}", CLAWD.len())]);
         assert_eq!(start.elapsed(), PACK_RETRY_GAP);
         let api = FakeClock::new(both(json!({})), json!({})).with(|s| s.bad_crc = 2);
-        let e = install_release(&api, &rel, &json!({}), 0, &rec.opts())
+        let e = install_bundle(&api, &rel, &json!({}), 0, &rec.opts())
             .await
             .unwrap_err();
         assert!(e.to_string().contains("damaged"), "{e}");
         let rec = Recorder::default();
         let api = FakeClock::new(both(json!({})), json!({})).with(|s| s.fail_uploads = 2);
-        assert!(install_release(&api, &rel, &json!({}), 0, &rec.opts())
+        assert!(install_bundle(&api, &rel, &json!({}), 0, &rec.opts())
             .await
             .is_err());
         assert_eq!(rec.releases(), 1);
@@ -831,9 +816,10 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn a_checksum_in_progress_is_waited_out_but_only_for_crc_wait() {
-        let rel = release(6);
+        let t = tempfile::tempdir().unwrap();
+        let rel = bundle_in(t.path(), 6, true);
         let rec = Recorder::default();
-        // polls: install_release's first heap = 1, then wait_crcs polls; the 3rd poll reveals CRCs
+        // polls: install_bundle's first heap = 1, then wait_crcs polls; the 3rd poll reveals CRCs
         let api = FakeClock::new(
             heap(6, json!({"pakCrc": "", "deskCrc": crc32_hex(DESK)})),
             heap(
@@ -842,7 +828,7 @@ mod tests {
             ),
         );
         let start = tokio::time::Instant::now();
-        install_release(&api, &rel, &json!({}), 0, &rec.opts())
+        install_bundle(&api, &rel, &json!({}), 0, &rec.opts())
             .await
             .unwrap();
         assert!(
@@ -893,19 +879,18 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
-    async fn an_undownloaded_firmware_is_an_error_not_a_panic() {
-        let rel = release(6);
-        let mut bare = rel.clone();
-        bare.blobs.remove("firmware.bin");
-        let e = install_release(
-            &FakeClock::new(heap(5, json!({})), json!({})),
-            &bare,
-            &json!({}),
-            0,
-            &Recorder::default().opts(),
-        )
-        .await
-        .unwrap_err();
-        assert_eq!(e.to_string(), "the firmware is not downloaded yet");
+    async fn a_damaged_bundled_pack_is_an_error_not_sent() {
+        let t = tempfile::tempdir().unwrap();
+        let rel = bundle_in(t.path(), 6, true);
+        std::fs::write(t.path().join("desk.pak"), b"damaged").unwrap();
+        let api = FakeClock::new(
+            heap(6, json!({"pakCrc": crc32_hex(CLAWD), "deskCrc": "1"})),
+            json!({}),
+        );
+        let e = install_bundle(&api, &rel, &json!({}), 0, &Recorder::default().opts())
+            .await
+            .unwrap_err();
+        assert_eq!(e.to_string(), "bundled deskpak does not match its manifest");
+        assert!(api.log().is_empty());
     }
 }

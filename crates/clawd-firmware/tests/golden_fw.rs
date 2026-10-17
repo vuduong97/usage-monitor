@@ -1,15 +1,14 @@
-//! Golden tests: the Rust port reproduces what the real Python `feed.py` / `firmware.py` /
-//! `preview.py` produced (`python-0.1.x:tools/golden/export_fw.py` -> `fixtures/fw/*.json`). Byte inputs are
+//! Golden tests: the Rust port reproduces what the real Python `firmware.py` / `preview.py` (and,
+//! for the pack plan, `feed.py`) produced (`python-0.1.x:tools/golden/export_fw.py` -> `fixtures/fw/*.json`). Byte inputs are
 //! specs regenerated here; byte outputs are hex / sha256 digests.
 mod common;
 
-use std::collections::HashMap;
 use std::path::Path;
 
 use clawd_contracts::{Env, UsagePayload};
 use clawd_firmware::crc32::crc32;
-use clawd_firmware::feed::{self, decrypt, open, parse_manifest, FeedFile};
-use clawd_firmware::firmware::{self, sha256_hex, Bundle, StylePack};
+use clawd_firmware::firmware::{self, sha256_hex, Bundle, PackFile, StylePack};
+use clawd_firmware::packs;
 use clawd_firmware::preview;
 use clawd_testkit::load_fixture_value;
 use serde_json::{json, Value};
@@ -73,77 +72,6 @@ fn sha(data: &[u8]) -> String {
     sha256_hex(data)
 }
 
-// ---- manifest -----------------------------------------------------------------------------------
-
-fn file_json(f: &FeedFile) -> Value {
-    json!({"name": f.name, "kind": f.kind, "size": f.size, "enc": f.enc, "sha256": f.sha256,
-           "crc": f.crc, "platform": f.platform})
-}
-
-fn manifest_json(m: &feed::Manifest) -> Value {
-    json!({"seq": m.seq, "variant": m.variant, "layouts": m.layouts, "style_api": m.style_api,
-           "files": m.files.iter().map(file_json).collect::<Vec<_>>(), "date": m.date, "notes": m.notes,
-           "commit": m.commit,
-           "renderers": m.renderers.iter().map(file_json).collect::<Vec<_>>()})
-}
-
-#[test]
-fn manifest_matches_python() {
-    let out = fixture("manifest");
-    let cases = arr(&out["cases"]);
-    assert!(cases.len() > 60);
-    for c in cases {
-        let got = parse_manifest(&c["manifest"]);
-        match (expected(&c["result"]), got) {
-            (Ok(want), Ok(m)) => assert_eq!(&manifest_json(&m), want, "{}", c["name"]),
-            (Err(want), Err(e)) => assert_eq!(e.0, want, "{}", c["name"]),
-            (want, got) => panic!("{}: python {want:?}, rust {got:?}", c["name"]),
-        }
-    }
-}
-
-// ---- decrypt -------------------------------------------------------------------------------------
-
-#[test]
-fn decrypt_opens_what_python_sealed() {
-    let out = fixture("decrypt");
-    for c in arr(&out["decrypt"]) {
-        let key = hex::decode(c["key"].as_str().unwrap()).unwrap();
-        let blob = hex::decode(c["blob"].as_str().unwrap()).unwrap();
-        let got = decrypt(
-            &key,
-            c["seq"].as_u64().unwrap(),
-            c["name"].as_str().unwrap(),
-            &blob,
-        );
-        match (expected(&c["result"]), got) {
-            (Ok(want), Ok(plain)) => assert_eq!(hex::encode(plain), want.as_str().unwrap(), "{c}"),
-            (Err(want), Err(e)) => assert_eq!(e.0, want, "{c}"),
-            (want, got) => panic!("python {want:?}, rust {got:?} for {c}"),
-        }
-    }
-    for c in arr(&out["open"]) {
-        let f = &c["file"];
-        let row = FeedFile {
-            name: f["name"].as_str().unwrap().into(),
-            kind: "clawdpak".into(),
-            size: f["size"].as_u64().unwrap(),
-            enc: f["enc"].as_u64().unwrap(),
-            sha256: f["sha256"].as_str().unwrap().into(),
-            crc: f["crc"].as_str().unwrap().into(),
-            platform: String::new(),
-        };
-        let key = hex::decode(c["key"].as_str().unwrap()).unwrap();
-        let blob = hex::decode(c["blob"].as_str().unwrap()).unwrap();
-        let got = open(&key, c["seq"].as_u64().unwrap(), &row, &blob);
-        match (expected(&c["result"]), got) {
-            (Ok(want), Ok(plain)) => assert_eq!(hex::encode(plain), want.as_str().unwrap(), "{c}"),
-            (Err(want), Err(e)) => assert_eq!(e.0, want, "{}", c["name"]),
-            (want, got) => panic!("python {want:?}, rust {got:?} for {}", c["name"]),
-        }
-    }
-}
-
 // ---- heaps, plan, offer ---------------------------------------------------------------------------
 
 fn bundle_of(spec: &Value) -> Bundle {
@@ -168,6 +96,8 @@ fn bundle_of(spec: &Value) -> Bundle {
                 data: None,
             })
             .collect(),
+        style_rev: 0,
+        packs: Vec::new(),
     }
 }
 
@@ -220,52 +150,65 @@ fn firmware_heap_readers_match_python() {
     }
 }
 
-#[test]
-fn plan_needed_offer_and_pack_state_match_python() {
-    let out = fixture("feed_state");
-    let m = parse_manifest(&out["manifest"]).unwrap();
-    let rel = feed::make_release(&m, HashMap::new());
-    let bundles: Vec<Option<Bundle>> = arr(&out["bundles"])
+/// The bundle a feed manifest described (Python planned against the release; the app now plans
+/// against the bundle, with the same rule).
+fn bundle_of_manifest(m: &Value) -> Bundle {
+    let packs = arr(&m["files"])
         .iter()
-        .map(|b| (!b.is_null()).then(|| bundle_of(b)))
+        .filter(|f| packs::PACK_KINDS.contains(&f["kind"].as_str().unwrap()))
+        .map(|f| PackFile {
+            kind: f["kind"].as_str().unwrap().into(),
+            path: f["name"].as_str().unwrap().into(),
+            size: f["size"].as_u64().unwrap() as usize,
+            crc: f["crc"].as_str().unwrap().into(),
+        })
         .collect();
+    Bundle {
+        path: "firmware.bin".into(),
+        size: 1,
+        sha256: String::new(),
+        variant: m["variant"].as_str().unwrap().into(),
+        seq: m["seq"].as_u64().unwrap(),
+        layouts: m["layouts"].as_u64().unwrap() as u32,
+        commit: m["commit"].as_str().unwrap().into(),
+        style_api: m["styleApi"].as_u64().unwrap() as u32,
+        styles: Vec::new(),
+        style_rev: 0,
+        packs,
+    }
+}
+
+#[test]
+fn plan_worth_it_and_pack_state_match_python() {
+    let out = fixture("feed_state");
+    let b = bundle_of_manifest(&out["manifest"]);
     for row in arr(&out["rows"]) {
         let (heap, want) = (&row["heap"], &row["result"]);
         // key order is part of the contract (fw, clawdpak, deskpak): compare the text
         assert_eq!(
-            serde_json::to_string(&feed::plan(heap, Some(&rel))).unwrap(),
+            serde_json::to_string(&packs::plan(heap, Some(&b))).unwrap(),
             serde_json::to_string(&want["plan"]).unwrap(),
             "{heap}"
         );
         assert_eq!(
-            json!(feed::needed(heap, Some(&rel))),
-            want["needed"],
-            "{heap}"
-        );
-        assert_eq!(
-            json!(feed::worth_it(heap, Some(&rel))),
+            json!(packs::worth_it(heap, Some(&b))),
             want["worth_it"],
             "{heap}"
         );
-        for (i, b) in bundles.iter().enumerate() {
-            assert_eq!(
-                json!(feed::offer(heap, Some(&m), b.as_ref())),
-                want["offer"][i],
-                "{heap} bundle {i}"
-            );
-        }
-        assert_eq!(
-            json!(feed::offer(heap, None, None)),
-            want["offer_no_manifest"]
-        );
+        let offered = if want["worth_it"].as_bool().unwrap() {
+            b.seq
+        } else {
+            0
+        };
+        assert_eq!(packs::offer(heap, Some(&b)), offered, "{heap}");
         assert!(
-            feed::plan(heap, None).is_empty() && want["plan_none"].as_object().unwrap().is_empty()
+            packs::plan(heap, None).is_empty() && want["plan_none"].as_object().unwrap().is_empty()
         );
     }
     for row in arr(&out["pack_state_rows"]) {
         for kind in ["clawdpak", "deskpak"] {
             assert_eq!(
-                json!(feed::pack_state(&row["heap"], kind, "aaaaaaaa")),
+                json!(packs::pack_state(&row["heap"], kind, "aaaaaaaa")),
                 row["result"][kind],
                 "{} {kind}",
                 row["heap"]
@@ -319,45 +262,6 @@ fn bundles_on_disk_match_python() {
             }
             (want, got) => panic!("{name}: python {want}, rust {got:?}"),
         }
-    }
-}
-
-#[test]
-fn feed_style_packs_match_python() {
-    let out = fixture("bundle");
-    for c in arr(&out["styles_of"]) {
-        let index_name = c["index_name"].as_str().unwrap();
-        let blobs: HashMap<String, Vec<u8>> = c["blobs"]
-            .as_object()
-            .unwrap()
-            .iter()
-            .map(|(n, s)| (n.clone(), materialize(s)))
-            .collect();
-        let m = feed::Manifest {
-            v: 1,
-            seq: 6,
-            variant: "esp8266-clawd".into(),
-            layouts: 1,
-            style_api: c["style_api"].as_u64().unwrap() as u32,
-            files: vec![FeedFile {
-                name: index_name.into(),
-                kind: "styles".into(),
-                size: 10,
-                enc: 38,
-                sha256: "0".repeat(64),
-                crc: "0".repeat(8),
-                platform: String::new(),
-            }],
-            date: String::new(),
-            notes: String::new(),
-            commit: String::new(),
-            renderers: Vec::new(),
-        };
-        let got: Vec<Value> = feed::styles_of(&m, &blobs)
-            .iter()
-            .map(|p| json!({"id": p.id, "name": p.name, "size": p.size, "crc": p.crc, "light": p.light}))
-            .collect();
-        assert_eq!(Value::Array(got), c["result"], "{}", c["name"]);
     }
 }
 
@@ -571,92 +475,6 @@ fn pak_count_matches_python() {
             (Ok(want), Ok(n)) => assert_eq!(json!(n), *want, "{}", c["name"]),
             (Err(want), Err(e)) => assert_eq!(e.to_string(), want, "{}", c["name"]),
             (want, got) => panic!("{}: python {want:?}, rust {got:?}", c["name"]),
-        }
-    }
-}
-
-// ---- renderer zip -------------------------------------------------------------------------------
-
-#[test]
-fn renderer_unpack_matches_python() {
-    let out = fixture("renderer_unpack");
-    let t = tempfile::tempdir().unwrap();
-    let sha_b = "cd".repeat(32);
-    for c in arr(&out["cases"]) {
-        let name = c["name"].as_str().unwrap();
-        let files: Vec<(&str, Vec<u8>)> = c["files"]
-            .as_object()
-            .unwrap()
-            .iter()
-            .map(|(n, s)| (n.as_str(), materialize(s)))
-            .collect();
-        let zip = common::zip_of(
-            &files
-                .iter()
-                .map(|(n, d)| (*n, d.as_slice()))
-                .collect::<Vec<_>>(),
-        );
-        let root = t.path().join(format!("r-{name}"));
-        let sha256 = c["sha256"].as_str().unwrap();
-        let got = preview::unpack_renderer(&zip, &root, sha256);
-        match (expected(&c["result"]), got) {
-            (Ok(want), Ok(folder)) => {
-                assert_eq!(
-                    folder.file_name().unwrap().to_str().unwrap(),
-                    want.as_str().unwrap(),
-                    "{name}"
-                );
-                assert_eq!(
-                    std::fs::read_to_string(folder.join(".files.json")).unwrap(),
-                    c["marker_text"].as_str().unwrap(),
-                    "{name}"
-                );
-                let mut on_disk: Vec<String> = Vec::new();
-                let mut stack = vec![folder.clone()];
-                while let Some(d) = stack.pop() {
-                    for e in std::fs::read_dir(d).unwrap() {
-                        let p = e.unwrap().path();
-                        if p.is_dir() {
-                            stack.push(p);
-                        } else {
-                            on_disk.push(
-                                p.strip_prefix(&folder)
-                                    .unwrap()
-                                    .to_string_lossy()
-                                    .replace('\\', "/"),
-                            );
-                        }
-                    }
-                }
-                on_disk.sort();
-                assert_eq!(json!(on_disk), c["files_on_disk"], "{name}");
-                let loaded = preview::load_unpacked(&root, sha256, "").map(|r| {
-                    let mut styles: Vec<String> = r.styles.keys().cloned().collect();
-                    styles.sort();
-                    json!({"commit": r.commit, "styles": styles})
-                });
-                assert_eq!(loaded.unwrap_or(Value::Null), c["load"], "{name}");
-                assert_eq!(
-                    preview::load_unpacked(&root, sha256, "zzzzzzz").is_some(),
-                    c["load_other_commit"].as_bool().unwrap(),
-                    "{name}"
-                );
-                assert_eq!(
-                    preview::load_unpacked(&root, &sha_b, "").is_some(),
-                    c["load_other_zip"].as_bool().unwrap(),
-                    "{name}"
-                );
-            }
-            (Err(want), Err(e)) => {
-                assert!(
-                    matches!(e, preview::PreviewError::Invalid(_)),
-                    "{name}: {e:?}"
-                );
-                assert_eq!(e.to_string(), want, "{name}");
-                let empty = !root.exists() || std::fs::read_dir(&root).unwrap().next().is_none();
-                assert_eq!(empty, c["root_left_empty"].as_bool().unwrap(), "{name}");
-            }
-            (want, got) => panic!("{name}: python {want:?}, rust {got:?}"),
         }
     }
 }

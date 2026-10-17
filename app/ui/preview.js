@@ -1,7 +1,7 @@
 // Approximate canvas drawing of the clock's usage screens (240x240), from the real usage
 // payload. The settings window shows the clock's own render when the app has it
 // (preview.py); this is the fallback when it does not, so it is labelled "gần đúng".
-// Mirrors the classic screen in clawd-home/firmware/src/features/clawd/ClawdUi.cpp
+// Mirrors the classic screen in clock/firmware/src/features/clawd/ClawdUi.cpp
 // (two cards + status line). System fonts stand in for the clock's own. Clawd is
 // the real sprite when the app could read /clawd.pak off the user's clock
 // (settings_api.clawd_pak, setPak below), played like ClawdMascot in the firmware's
@@ -46,7 +46,7 @@ const PV = (() => {
     if (f > 0) rr(c, x, y, Math.max(f, h), h, h / 2, col);
   }
   // ---- Clawd from the clock's own clawd.pak ----------------------------------------------
-  // Format: firmware/tools/clawd_assets.js (clawd-home); reader: ClawdPack.cpp. The player
+  // Format: clock/firmware/tools/clawd_assets.js; reader: ClawdPack.cpp. The player
   // follows ClawdAnim.cpp (ClawdPlayer, ClawdMascot at usage-rate group 0): when the
   // firmware's timings or acts change, change them here too.
   const MAS = { gx0:15, gy0:16, gw:28, gh:21, actLoopMs:2500, stillMs:4000, acts:['pointing', 'waving'] };

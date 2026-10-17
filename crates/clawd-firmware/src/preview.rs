@@ -6,30 +6,28 @@
 //! pixels in a BMP, or the loop in an animated PNG, for the settings page. A renderer is only
 //! trusted when built from the bundled firmware's commit (else the page draws an approximation).
 //!
-//! A public build has no renderer; it uses the feed release's, unpacked into
-//! `~/.config/claude-usage-monitor/renderer/<sha16>/` with a `.files.json` marker and re-verified
-//! file by file on every load: the one decrypted program the app keeps on disk. Unzip defends
-//! against path traversal. No renderer binary, zip, pak or APNG is ever committed: tests use a
-//! fake renderer program and compare hashes.
+//! Every release ships the renderer next to the firmware (`renderer/` in the app's resources,
+//! `tools/build_preview.py`). Remote style packs (`crate::packs`) are drawn by the same program:
+//! [`Renderer::with_styles`] adds their cached files. Tests use a fake renderer program and
+//! compare hashes.
 //!
-//! Blocking calls here (`load_*`, `unpack_renderer`, [`PakCache`], file reads) go through
+//! Blocking calls here (`load_*`, [`PakCache`], file reads) go through
 //! `spawn_blocking` in async callers. [`Renderer::draw`] / [`Renderer::clip`] are async (the
 //! child runs on tokio's process driver, killed when the timeout drops the future).
 
 use std::collections::{HashMap, VecDeque};
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
 
 use base64::Engine as _;
 use clawd_contracts::{Env, UsagePayload};
-use serde_json::{json, Value};
+use serde_json::Value;
 use thiserror::Error;
 use tokio::io::AsyncWriteExt;
 
 use crate::crc32::crc32;
-use crate::firmware::{load_styles, sha256_hex};
+use crate::firmware::load_styles;
 use crate::pyval;
 
 /// `preview.W` / `preview.H`.
@@ -50,12 +48,6 @@ pub const CLASSIC: &str = "classic";
 /// `preview.PAK_MAX`.
 pub const PAK_MAX: usize = 512_000;
 
-/// `preview.UNPACK_MAX`: bytes, all files of a renderer zip together.
-const UNPACK_MAX: u64 = 64 * 1024 * 1024;
-/// `preview.UNPACK_FILES`.
-const UNPACK_FILES: usize = 256;
-/// `preview.MARK`: `{"zip": sha256, "files": {name: sha256}}`, written last.
-const MARK: &str = ".files.json";
 const PAK_HEADER: usize = 12;
 const PAK_DESC: usize = 72;
 
@@ -73,7 +65,7 @@ fn invalid(msg: impl Into<String>) -> PreviewError {
 }
 
 /// `preview.preview_dir()`: `env` var `CLAWD_PREVIEW_DIR`, else `renderer/` in the app's resources
-/// dir (private builds only).
+/// dir.
 pub fn preview_dir(env: &Env) -> PathBuf {
     preview_dir_in(env, &crate::resources_dir())
 }
@@ -115,6 +107,14 @@ fn payload_stdin(payload: Option<&UsagePayload>) -> Option<(Vec<u8>, &UsagePaylo
 }
 
 impl Renderer {
+    /// This renderer, also drawing the packs in `extra` (id -> `.pak` file): remote style packs
+    /// replace bundled ones of the same id. The program itself does not change.
+    pub fn with_styles(&self, extra: impl IntoIterator<Item = (String, PathBuf)>) -> Renderer {
+        let mut r = self.clone();
+        r.styles.extend(extra);
+        r
+    }
+
     /// `Renderer._args(style)`.
     fn args(&self, style: &str, clip: bool) -> Result<Vec<String>, PreviewError> {
         let mut args = vec!["--pak".to_owned(), self.pak.to_string_lossy().into_owned()];
@@ -441,176 +441,6 @@ pub fn same_commit(a: &str, b: &str) -> bool {
     a == b || (n >= 7 && a.chars().take(n).eq(b.chars().take(n)))
 }
 
-// ---- the renderer of a feed release, unpacked --------------------------------------------
-
-/// `preview.RENDERER_FILE.fullmatch`: only what `build_preview.py` puts in the folder.
-fn renderer_file(name: &str) -> bool {
-    if matches!(
-        name,
-        "preview.json" | "clawd_render" | "clawd_render.exe" | "clawd.pak" | "styles/index.json"
-    ) {
-        return true;
-    }
-    name.strip_prefix("styles/")
-        .and_then(|f| f.strip_suffix(".pak"))
-        .is_some_and(crate::firmware::is_valid_style_id)
-}
-
-/// A manifest `sha256` is 64 lowercase hex; refuse anything that could be a path.
-fn sha_prefix(sha256: &str) -> Result<&str, PreviewError> {
-    if sha256.len() >= 16 && sha256.bytes().all(|b| b.is_ascii_hexdigit()) {
-        Ok(&sha256[..16])
-    } else {
-        Err(invalid("renderer zip: bad sha256"))
-    }
-}
-
-/// `preview.unpack_renderer(data, root, sha256)`: unpack a renderer zip (already checked against
-/// the manifest's `sha256`) into `root/<sha256[:16]>`, replacing what is there and dropping older
-/// folders; returns the folder. `Invalid` when the zip is not a renderer (only
-/// `preview.json`, `clawd_render[.exe]`, `clawd.pak`, `styles/...` are accepted; at most 256
-/// files, 64 MiB), `Io` when it cannot be written.
-///
-/// Names are taken as stored: a backslash or `..` never matches, so nothing can land outside the
-/// folder (Python's `zipfile` turns `\` into `/` on Windows only; here a backslash is always
-/// refused).
-pub fn unpack_renderer(data: &[u8], root: &Path, sha256: &str) -> Result<PathBuf, PreviewError> {
-    let prefix = sha_prefix(sha256)?;
-    let files = read_renderer_zip(data)?;
-    let (exe, _pak) = renderer_names(&files)?;
-    #[cfg(not(unix))]
-    let _ = &exe; // only the POSIX build marks it executable
-    std::fs::create_dir_all(root)?;
-    let folder = root.join(prefix);
-    let tmp = root.join(format!(".{prefix}.{}.tmp", std::process::id()));
-    let _ = std::fs::remove_dir_all(&tmp);
-    std::fs::create_dir_all(tmp.join("styles"))?;
-    let written = (|| -> std::io::Result<()> {
-        for (name, body) in &files {
-            std::fs::write(tmp.join(name), body)?;
-        }
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(tmp.join(&exe), std::fs::Permissions::from_mode(0o755))?;
-        }
-        let hashes: serde_json::Map<String, Value> = files
-            .iter()
-            .map(|(n, b)| (n.clone(), Value::from(sha256_hex(b))))
-            .collect();
-        let mark = pyval::json_dumps(&json!({"zip": sha256, "files": hashes}), false);
-        std::fs::write(tmp.join(MARK), mark)?;
-        if folder.exists() {
-            // a damaged copy (load_unpacked refused it); Windows keeps a running program's
-            // folder: Io, the next window retries
-            std::fs::remove_dir_all(&folder)?;
-        }
-        std::fs::rename(&tmp, &folder)
-    })();
-    if let Err(e) = written {
-        let _ = std::fs::remove_dir_all(&tmp);
-        return Err(e.into());
-    }
-    if let Ok(entries) = std::fs::read_dir(root) {
-        for old in entries.flatten().map(|e| e.path()) {
-            // one release's renderer is enough (a running one may stay)
-            if old.is_dir() && old.file_name() != folder.file_name() {
-                let _ = std::fs::remove_dir_all(old);
-            }
-        }
-    }
-    Ok(folder)
-}
-
-/// The files of a renderer zip, each read whole and CRC-checked.
-fn read_renderer_zip(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>, PreviewError> {
-    let zip_err = |e: &dyn std::fmt::Display| invalid(format!("renderer zip: {e}"));
-    let mut z = zip::ZipArchive::new(std::io::Cursor::new(data)).map_err(|e| zip_err(&e))?;
-    let mut infos: Vec<(usize, String, u64)> = Vec::new();
-    for i in 0..z.len() {
-        let f = z.by_index_raw(i).map_err(|e| zip_err(&e))?;
-        if !f.is_dir() {
-            infos.push((
-                i,
-                String::from_utf8_lossy(f.name_raw()).into_owned(),
-                f.size(),
-            ));
-        }
-    }
-    let mut names: Vec<&str> = infos.iter().map(|(_, n, _)| n.as_str()).collect();
-    names.sort_unstable();
-    names.dedup();
-    let total: u64 = infos.iter().map(|(_, _, s)| *s).sum();
-    if infos.is_empty()
-        || infos.len() > UNPACK_FILES
-        || names.len() != infos.len()
-        || !infos.iter().all(|(_, n, _)| renderer_file(n))
-        || total > UNPACK_MAX
-    {
-        return Err(invalid("not a renderer zip"));
-    }
-    let mut files = Vec::with_capacity(infos.len());
-    for (i, name, size) in infos {
-        let mut f = z.by_index(i).map_err(|e| zip_err(&e))?;
-        let mut body = Vec::with_capacity(size as usize);
-        // a lying header cannot make us read more than it declared; the CRC is checked at EOF
-        (&mut f)
-            .take(size + 1)
-            .read_to_end(&mut body)
-            .map_err(|e| zip_err(&e))?;
-        if body.len() as u64 != size {
-            return Err(zip_err(&"file size does not match its header"));
-        }
-        files.push((name, body));
-    }
-    Ok(files)
-}
-
-/// The `exe` and `pak` names `preview.json` of an unpacked zip announces, checked.
-fn renderer_names(files: &[(String, Vec<u8>)]) -> Result<(String, String), PreviewError> {
-    let get = |n: &str| files.iter().find(|(name, _)| name == n).map(|(_, b)| b);
-    let unusable = || invalid("renderer zip without a usable preview.json");
-    let m: Value = serde_json::from_slice(get("preview.json").ok_or_else(unusable)?)
-        .map_err(|_| unusable())?;
-    let (Some(exe), Some(pak)) = (m.get("exe"), m.get("pak")) else {
-        return Err(unusable());
-    };
-    let (exe, pak) = (pyval::str_of(exe), pyval::str_of(pak));
-    if get(&exe).is_none()
-        || !exe.starts_with("clawd_render")
-        || pak != "clawd.pak"
-        || get(&pak).is_none()
-    {
-        return Err(invalid(
-            "renderer zip: preview.json names files it does not hold",
-        ));
-    }
-    Ok((exe, pak))
-}
-
-/// `preview.load_unpacked(root, sha256, firmware_commit)`: the renderer `unpack_renderer` left
-/// for this zip, every file re-checked against the marker (damaged or changed: `None`, so it is
-/// unpacked again).
-pub fn load_unpacked(root: &Path, sha256: &str, firmware_commit: &str) -> Option<Renderer> {
-    let folder = root.join(sha_prefix(sha256).ok()?);
-    let mark: Value =
-        serde_json::from_str(&std::fs::read_to_string(folder.join(MARK)).ok()?).ok()?;
-    let files = mark.get("files")?.as_object()?;
-    if mark.get("zip")?.as_str()? != sha256 || !files.contains_key("preview.json") {
-        return None;
-    }
-    for (name, digest) in files {
-        if !renderer_file(name) {
-            return None;
-        }
-        let body = std::fs::read(folder.join(name)).ok()?;
-        if digest.as_str()? != sha256_hex(&body) {
-            return None;
-        }
-    }
-    load_renderer_from(&folder, firmware_commit)
-}
-
 // ---- BMP, live payload ----------------------------------------------------------------------
 
 /// `preview.bmp_data_url(rgb)`: a 24-bit BMP of a [`W`]x[`H`] RGB frame as a `data:` URL (both
@@ -856,7 +686,7 @@ pub fn frame_key(style: &str, payload: Option<&UsagePayload>, minute: u64, kind:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
+    use serde_json::json;
 
     fn payload(v: Value) -> UsagePayload {
         UsagePayload(v.as_object().unwrap().clone())
@@ -1152,20 +982,10 @@ mod tests {
         assert!(c.load().is_none());
     }
 
-    // ---- renderer zip ----------------------------------------------------------------------
+    // ---- renderer folder -------------------------------------------------------------------
 
-    fn make_zip(files: &[(&str, &[u8])]) -> Vec<u8> {
-        let mut w = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-        let opts = zip::write::SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
-        for (n, d) in files {
-            w.start_file(*n, opts).unwrap();
-            w.write_all(d).unwrap();
-        }
-        w.finish().unwrap().into_inner()
-    }
-
-    fn good_files(commit: &str) -> Vec<(String, Vec<u8>)> {
+    /// A renderer folder the way `tools/build_preview.py` leaves it (with a fake program).
+    fn renderer_folder(dir: &Path, commit: &str) -> PathBuf {
         let pack = {
             let mut rest = b"synth".to_vec();
             rest.resize(80, 0);
@@ -1178,151 +998,24 @@ mod tests {
         };
         let index = json!({"api": 1, "styles": [{"id": "synth", "name": "Synth", "file": "synth.pak",
             "size": pack.len(), "crc": format!("{:08x}", crc32(&pack[16..])), "light": false}]});
-        vec![
-            (
-                "preview.json".into(),
-                json!({"exe": "clawd_render", "pak": "clawd.pak", "commit": commit, "styleApi": 1})
-                    .to_string()
-                    .into_bytes(),
-            ),
-            ("clawd_render".into(), b"program".to_vec()),
-            ("clawd.pak".into(), b"pak".to_vec()),
-            ("styles/index.json".into(), index.to_string().into_bytes()),
-            ("styles/synth.pak".into(), pack),
-        ]
-    }
-
-    fn zip_of(files: &[(String, Vec<u8>)]) -> Vec<u8> {
-        make_zip(
-            &files
-                .iter()
-                .map(|(n, d)| (n.as_str(), d.as_slice()))
-                .collect::<Vec<_>>(),
+        std::fs::create_dir_all(dir.join("styles")).unwrap();
+        std::fs::write(
+            dir.join("preview.json"),
+            json!({"exe": "clawd_render", "pak": "clawd.pak", "commit": commit, "styleApi": 1})
+                .to_string(),
         )
-    }
-
-    const SHA: &str = "abababababababababababababababababababababababababababababababab";
-    const SHA2: &str = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd";
-
-    #[test]
-    fn unpack_then_load_and_every_file_is_checked() {
-        let t = tempfile::tempdir().unwrap();
-        let root = t.path().join("r");
-        let zip = zip_of(&good_files("c000006"));
-        let folder = unpack_renderer(&zip, &root, SHA).unwrap();
-        assert_eq!(folder, root.join(&SHA[..16]));
-        let r = load_unpacked(&root, SHA, "").unwrap();
-        assert_eq!(
-            (
-                r.styles.keys().cloned().collect::<Vec<_>>(),
-                r.commit.as_str()
-            ),
-            (vec!["synth".to_owned()], "c000006")
-        );
-        assert!(
-            load_unpacked(&root, SHA2, "").is_none(),
-            "another zip: not unpacked"
-        );
-        assert!(
-            load_unpacked(&root, SHA, "zzzzzzz").is_none(),
-            "built from another firmware"
-        );
-        std::fs::write(folder.join("styles").join("synth.pak"), b"changed").unwrap();
-        assert!(
-            load_unpacked(&root, SHA, "").is_none(),
-            "a changed file: unpack again"
-        );
-        unpack_renderer(&zip, &root, SHA).unwrap();
-        assert!(load_unpacked(&root, SHA, "").is_some());
-    }
-
-    #[test]
-    fn unpacking_a_newer_renderer_drops_the_older() {
-        let t = tempfile::tempdir().unwrap();
-        let root = t.path().join("r");
-        unpack_renderer(&zip_of(&good_files("c000006")), &root, SHA).unwrap();
-        unpack_renderer(&zip_of(&good_files("c000007")), &root, SHA2).unwrap();
-        let names: Vec<_> = std::fs::read_dir(&root)
-            .unwrap()
-            .map(|e| e.unwrap().file_name().into_string().unwrap())
-            .collect();
-        assert_eq!(names, [&SHA2[..16]]);
-    }
-
-    #[test]
-    fn a_zip_that_is_not_a_renderer_is_refused_and_writes_nothing() {
-        let t = tempfile::tempdir().unwrap();
-        let root = t.path().join("r");
-        let with = |extra: &str| {
-            let mut f = good_files("c1");
-            f.push((extra.to_owned(), b"x".to_vec()));
-            zip_of(&f)
-        };
-        let without = |name: &str| {
-            zip_of(
-                &good_files("c1")
-                    .into_iter()
-                    .filter(|(n, _)| n != name)
-                    .collect::<Vec<_>>(),
-            )
-        };
-        let preview = |v: Value| {
-            let mut f = good_files("c1");
-            f[0].1 = v.to_string().into_bytes();
-            zip_of(&f)
-        };
-        let cases: Vec<(&str, Vec<u8>)> = vec![
-            ("..", with("../evil")),
-            ("abs", with("/abs")),
-            ("dotdot-in-styles", with("styles/../../x.pak")),
-            ("other-dll", with("other.dll")),
-            ("backslash", with("styles\\x.pak")),
-            ("backslash-dotdot", with("..\\evil")),
-            ("windows-drive", with("C:/x.pak")),
-            ("no-preview", without("preview.json")),
-            ("no-pak", without("clawd.pak")),
-            ("not-json", {
-                let mut f = good_files("c1");
-                f[0].1 = b"not json".to_vec();
-                zip_of(&f)
-            }),
-            (
-                "exe-is-pak",
-                preview(json!({"exe": "clawd.pak", "pak": "clawd.pak"})),
-            ),
-            (
-                "exe-not-in-zip",
-                preview(json!({"exe": "clawd_render.exe", "pak": "clawd.pak"})),
-            ),
-            ("not-a-zip", b"PK nope".to_vec()),
-        ];
-        for (name, z) in cases {
-            let e = unpack_renderer(&z, &root, SHA);
-            assert!(matches!(e, Err(PreviewError::Invalid(_))), "{name}: {e:?}");
-            assert!(
-                !root.exists() || std::fs::read_dir(&root).unwrap().next().is_none(),
-                "{name} wrote something"
-            );
-        }
-        assert!(unpack_renderer(&zip_of(&good_files("c1")), &root, "../x").is_err());
-    }
-
-    #[test]
-    fn a_marker_naming_a_file_outside_the_folder_is_not_trusted() {
-        let t = tempfile::tempdir().unwrap();
-        let root = t.path().join("r");
-        let folder = unpack_renderer(&zip_of(&good_files("c1")), &root, SHA).unwrap();
-        let mut mark: Value =
-            serde_json::from_slice(&std::fs::read(folder.join(MARK)).unwrap()).unwrap();
-        mark["files"]["../outside"] = json!("00".repeat(32));
-        std::fs::write(folder.join(MARK), mark.to_string()).unwrap();
-        assert!(load_unpacked(&root, SHA, "").is_none());
+        .unwrap();
+        std::fs::write(dir.join("clawd_render"), b"program").unwrap();
+        std::fs::write(dir.join("clawd.pak"), b"pak").unwrap();
+        std::fs::write(dir.join("styles/index.json"), index.to_string()).unwrap();
+        std::fs::write(dir.join("styles/synth.pak"), pack).unwrap();
+        dir.to_path_buf()
     }
 
     #[test]
     fn a_renderer_for_another_render_api_is_not_run() {
         let t = tempfile::tempdir().unwrap();
-        let folder = unpack_renderer(&zip_of(&good_files("c1")), &t.path().join("r"), SHA).unwrap();
+        let folder = renderer_folder(&t.path().join("r"), "c1");
         assert!(load_renderer(&Env::empty(), Some(&folder), "").is_some());
         let mut m: Value =
             serde_json::from_slice(&std::fs::read(folder.join("preview.json")).unwrap()).unwrap();
@@ -1335,8 +1028,7 @@ mod tests {
     fn load_renderer_needs_every_file_and_trusts_only_its_commit() {
         let t = tempfile::tempdir().unwrap();
         assert!(load_renderer(&Env::empty(), Some(&t.path().join("nothing")), "").is_none());
-        let folder =
-            unpack_renderer(&zip_of(&good_files("aaaaaaa")), &t.path().join("r"), SHA).unwrap();
+        let folder = renderer_folder(&t.path().join("r"), "aaaaaaa");
         assert!(load_renderer(&Env::empty(), Some(&folder), "bbbbbbb").is_none());
         assert!(load_renderer(&Env::empty(), Some(&folder), "aaaaaaa").is_some());
         assert!(load_renderer(&Env::empty(), Some(&folder), "").is_some());
@@ -1350,6 +1042,24 @@ mod tests {
     }
 
     #[test]
+    fn remote_packs_join_the_renderers_own() {
+        let t = tempfile::tempdir().unwrap();
+        let folder = renderer_folder(&t.path().join("r"), "c1");
+        let r = load_renderer(&Env::empty(), Some(&folder), "").unwrap();
+        let more = r.with_styles([
+            ("synth".to_owned(), PathBuf::from("/cache/new-synth.pak")),
+            ("tetris".to_owned(), PathBuf::from("/cache/tetris.pak")),
+        ]);
+        assert_eq!(more.styles["synth"], PathBuf::from("/cache/new-synth.pak"));
+        assert!(more.styles.contains_key("tetris") && more.exe == r.exe);
+        assert_eq!(
+            r.styles["synth"],
+            folder.join("styles/synth.pak"),
+            "the original is kept"
+        );
+    }
+
+    #[test]
     fn preview_dir_prefers_the_environment() {
         let env = Env::from_fn(|k| (k == "CLAWD_PREVIEW_DIR").then(|| "/x/pv".to_owned()));
         assert_eq!(
@@ -1360,19 +1070,5 @@ mod tests {
             preview_dir_in(&Env::empty(), Path::new("/res")),
             Path::new("/res").join("renderer")
         );
-    }
-
-    #[test]
-    fn a_zip_over_its_limits_is_refused() {
-        let mut files = good_files("c1");
-        for i in 0..=UNPACK_FILES {
-            files.push((format!("styles/s{i}.pak"), vec![1]));
-        }
-        assert!(unpack_renderer(
-            &zip_of(&files),
-            &tempfile::tempdir().unwrap().path().join("r"),
-            SHA
-        )
-        .is_err());
     }
 }

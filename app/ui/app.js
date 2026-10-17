@@ -139,7 +139,7 @@ function styleChanged() { return Boolean(orig) && style !== activeStyle(); }
 function styles() {    // the gallery: the classic screen, then the packs the app carries
   const packs = (S && S.fw && S.fw.styles && S.fw.styles.packs) || [];
   const out = [{ id:'classic', name:'Hiện tại', light:false }, ...packs];
-  // The clock runs a pack this build does not carry (no bundle, no feed): show it as a card so the
+  // The clock runs a pack this build does not carry (no bundle, an older app): show it as a card so the
   // gallery matches the clock, and "Hiện tại" reads as a change away from it, not as the current one.
   const act = activeStyle();
   if (act !== 'classic' && !packs.some(p => p.id === act)) out.push({ id: act, name: act, light:false, running:true });
@@ -482,19 +482,20 @@ function renderUpdate() {
   const add = (k, v) => kv.append(el('span', null, k), el('span', null, v));
   add('Đồng hồ đang chạy', h.version ? `${h.version} (bản #${h.fwSeq || 0}) · bật ${uptime(h.uptime || 0)}` : '—');
   if (h.version) add('Bộ nhớ', `heap ${kb(h.heap || 0)} · loop ${h.loopMaxMs ?? '?'} ms`);
-  const b = fw && fw.bundle, feed = b && b.source === 'feed';
-  add(feed ? 'Bản mới nhất' : 'Đi kèm app', b ? `bản #${b.seq}${b.date ? ' · ' + b.date : ''}${b.commit ? ' · ' + b.commit : ''} · ${kb(b.size)}` : 'không có');
+  const b = fw && fw.bundle;
+  add('Đi kèm app', b ? `bản #${b.seq}${b.commit ? ' · ' + b.commit : ''} · ${kb(b.size)}` : 'không có');
+  const nStyles = (fw && fw.styles && fw.styles.packs || []).length;
+  if (b && nStyles) add('Kiểu màn hình', `${nStyles} kiểu · ${b.stylesSource === 'remote' ? 'bản mới tải về' : 'đi kèm app'}`);
   const plan = (fw && fw.plan) || {};
   const todo = Object.keys(plan).filter(k => plan[k] !== 'ok').map(k => PACK_NAME[k] + (plan[k] === 'wait' ? ' (đồng hồ đang kiểm tra)' : ''));
   if (todo.length) add('Sẽ cài', todo.join(' · '));
-  if (feed && b.notes) add('Ghi chú', b.notes);
   const st = fw ? fw.update : 'none';
-  const from = feed ? 'Có bản mới' : 'Có bản mới hơn đi kèm app';
+  const from = 'Có bản mới hơn đi kèm app';
   $('fwText').textContent = {
     available: from + (fw && fw.styles && fw.styles.state === 'update' ? ': thêm các kiểu màn hình usage mới' : '') + '. Cài mất vài phút, cài đặt trên đồng hồ được giữ nguyên.',
     packs: 'Firmware đã mới nhất, nhưng gói hoạt hình trên đồng hồ khác bản mới nhất. Bấm Cập nhật để gửi lại.',
     current: 'Đồng hồ đang chạy bản mới nhất.',
-    none: (fw && fw.feedError) ? 'Chưa đọc được nguồn cập nhật. Kiểm tra mạng rồi thử lại.' : 'Chưa có bản firmware nào để cài.',
+    none: 'Bản app này không kèm firmware cho đồng hồ.',
     incompatible: 'Đồng hồ này không chạy firmware Clawd nên app không cập nhật được.',
   }[st] || '';
   const fwTodo = st === 'available' || st === 'packs';
@@ -594,12 +595,13 @@ async function pollJob() {
 }
 $('fwBtn').addEventListener('click', () => startUpdate(null, null));
 $('fwCheck').addEventListener('click', async () => {
-  $('fwCheck').disabled = true; msg('Đang hỏi nguồn cập nhật…');
+  $('fwCheck').disabled = true; msg('Đang hỏi kiểu màn hình mới…');
   try {
     const r = await api.check_update();
     if (!r.ok) return msg(r.error, 'err');
     S.fw = r.fw; S.heap = r.heap; renderAll();
-    msg(r.fw.update === 'available' || r.fw.update === 'packs' ? 'Có bản cập nhật.' : r.fw.feedError ? 'Chưa đọc được nguồn cập nhật.' : 'Đồng hồ đang chạy bản mới nhất.', r.fw.feedError ? 'err' : 'good');
+    msg(r.fw.update === 'available' || r.fw.update === 'packs' ? 'Có bản cập nhật.' : r.fw.stylesError ? 'Chưa tải được kiểu màn hình mới. Kiểm tra mạng rồi thử lại.' : 'Đồng hồ đang chạy bản mới nhất.', r.fw.stylesError ? 'err' : 'good');
+    renderGallery(); refreshLive();
   } finally { renderUpdate(); }
 });
 window.clawdShowTab = t => showTab(t);
@@ -660,24 +662,24 @@ function apply(r) {
   renderAll();
   if (r.tab) showTab(r.tab);                 // the tray's "new firmware" item opens the Update tab
   if (r.ok && tab === 'wifi' && !scan.nets && !scan.busy) doScan();   // opened on #wifi before the clock answered
-  if (r.ok && r.fw && r.fw.feedBusy) watchFeed();
+  if (r.ok && r.fw && r.fw.stylesBusy) watchStyles();
 }
-// The update feed is read in the background (settings_api._kick_feed), so the window shows the
-// clock at once with the packs the app carries. Ask again until the feed is done, then show
-// what it brought (a newer release, its packs).
-let feedWatch = false;
-async function watchFeed() {
-  if (feedWatch) return;
-  feedWatch = true;
+// New usage screens (signed style packs on GitHub) are looked for in the background
+// (Bridge::kick_styles), so the window shows the clock at once with the packs the app carries.
+// Ask again until that is done, then show what it brought.
+let stylesWatch = false;
+async function watchStyles() {
+  if (stylesWatch) return;
+  stylesWatch = true;
   try {
-    for (let i = 0; i < 120 && S && S.fw && S.fw.feedBusy; i++) {   // up to about 90 s
+    for (let i = 0; i < 120 && S && S.fw && S.fw.stylesBusy; i++) {   // up to about 90 s
       await new Promise(res => setTimeout(res, 750));
       const r = await api.fw();
       if (r && r.ok && S) S.fw = r.fw;
     }
-  } catch (err) { console.warn('feed check failed', err); }
-  finally { feedWatch = false; }
-  if (S && S.fw) S.fw.feedBusy = false;
+  } catch (err) { console.warn('style packs check failed', err); }
+  finally { stylesWatch = false; }
+  if (S && S.fw) S.fw.stylesBusy = false;
   renderGallery(); renderUpdate(); refreshLive();
 }
 async function load() { msg('Đang đọc cài đặt từ đồng hồ…'); apply(await api.state()); }

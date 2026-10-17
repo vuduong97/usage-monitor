@@ -73,10 +73,9 @@ pub async fn save_on(b: &Bridge, args_in: &[Value]) -> Result<Value, String> {
             shown.as_str()
         }
     });
-    // Back to the classic screen only deletes the clock's pack: it needs neither a bundle nor a
-    // feed.
+    // Back to the classic screen only deletes the clock's pack: it needs no bundle.
     if style.as_deref().is_some_and(|s| s != CLASSIC)
-        && firmware::style_state(&heap, b.src().as_deref().map(|r| &r.bundle)) != "ready"
+        && firmware::style_state(&heap, b.src().as_deref()) != "ready"
     {
         return Ok(fail(
             "bad",

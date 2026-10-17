@@ -1,6 +1,6 @@
 //! `clawd-appupdate`: updates of the app itself, from the project's GitHub Releases (phase 10).
-//! The clock's firmware has its own feed (`clawd-firmware`); nothing here touches that feed or
-//! its token. Python origin: `appupdate.py` (see `plans/261015-0726-rust-tauri-port/PORT-MAP.md`).
+//! The clock's firmware ships inside the app (`clawd-firmware`); remote style packs are a separate
+//! release of the same repo (`packs-api{N}`, never `latest`), signed by the same key. Python origin: `appupdate.py` (see `plans/261015-0726-rust-tauri-port/PORT-MAP.md`).
 //!
 //! How it works (frozen): ask `GET /repos/<owner>/<name>/releases/latest` (public API, no
 //! token; draft and prerelease are never offered; tag `vX.Y.Z` is the version) -> a newer release

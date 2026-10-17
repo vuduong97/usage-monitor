@@ -17,8 +17,8 @@ use clawd_app::state::{JobState, Services, SettingsSession, ShellCmd};
 use clawd_appupdate::{Updater, UpdaterOptions};
 use clawd_contracts::{AppPaths, OsStoreNames, Platform};
 use clawd_firmware::crc32::{crc32, crc32_hex};
-use clawd_firmware::feed::Feed;
 use clawd_firmware::firmware::{load_bundle, sha256_hex, Bundle};
+use clawd_firmware::packs::StyleSource;
 use clawd_store::creds::Keyring;
 use clawd_testkit::clock::DigestGate;
 use clawd_testkit::config::FakeRunner;
@@ -413,7 +413,7 @@ pub struct Build {
     pub heap: Value,
     pub password: Option<String>,
     pub bundle: Option<Bundle>,
-    pub feed: Option<Arc<Feed>>,
+    pub packs: Option<StyleSource>,
     /// `None`: the fake clock; `Some("")`: no clock at all.
     pub base: Option<String>,
     pub key: String,
@@ -435,7 +435,7 @@ impl Build {
             heap: new_heap(),
             password: None,
             bundle: None,
-            feed: None,
+            packs: None,
             base: None,
             key: "clawd".into(),
             tab: String::new(),
@@ -464,8 +464,8 @@ impl Build {
         self
     }
 
-    pub fn feed(mut self, f: Feed) -> Self {
-        self.feed = Some(Arc::new(f));
+    pub fn packs(mut self, p: StyleSource) -> Self {
+        self.packs = Some(p);
         self
     }
 
@@ -500,7 +500,7 @@ impl Build {
                 UpdaterOptions::new(paths, runner.clone()),
             )),
             Arc::new(Registry::new(common::agent_ctx(&tc, Platform::Darwin))),
-            self.feed,
+            self.packs,
             self.bundle,
             runner,
         );

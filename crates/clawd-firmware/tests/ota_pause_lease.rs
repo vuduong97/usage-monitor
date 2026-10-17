@@ -73,6 +73,8 @@ fn bundle(dir: &std::path::Path) -> Bundle {
         commit: String::new(),
         style_api: 0,
         styles: Vec::new(),
+        style_rev: 0,
+        packs: Vec::new(),
     }
 }
 

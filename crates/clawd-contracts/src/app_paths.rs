@@ -87,10 +87,6 @@ impl AppPaths {
     pub fn pak_file(&self) -> PathBuf {
         self.in_config(PAK_FILE_NAME)
     }
-    /// `paths.RENDERER_DIR`.
-    pub fn renderer_dir(&self) -> PathBuf {
-        self.in_config(RENDERER_DIR_NAME)
-    }
     /// `paths.HOOK_SCRIPT`: `clawd-event.sh`, copied here so app updates never break hooks.
     pub fn hook_script(&self) -> PathBuf {
         self.in_config(HOOK_SCRIPT_NAME)
@@ -116,9 +112,9 @@ impl AppPaths {
     pub fn pet_file(&self) -> PathBuf {
         self.in_config(PET_FILE_NAME)
     }
-    /// `feed.CACHE_DIR`.
-    pub fn feed_cache_dir(&self) -> PathBuf {
-        self.in_config(FEED_CACHE_DIR_NAME)
+    /// The remote usage style packs, cached by SHA-256 (`clawd_firmware::packs`).
+    pub fn style_packs_dir(&self) -> PathBuf {
+        self.in_config(STYLE_PACKS_DIR_NAME)
     }
     /// `appupdate.STAGE_DIR` (`ready.json`, `swap.sh`, `apply.log`, `failed`).
     pub fn app_update_stage_dir(&self) -> PathBuf {
