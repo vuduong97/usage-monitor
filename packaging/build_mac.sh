@@ -14,8 +14,12 @@
 #                         the signed app must carry exactly this TeamIdentifier. Required when
 #                         CLAWD_REQUIRE_SIGNING=1.
 #   CLAWD_EXPECT_ARCH     fail unless `uname -m` is this (the workflow's runner label check)
-#   CLAWD_PRIVATE_FIRMWARE=1   also ship private/firmware and private/renderer (clock owners only)
-#   CLAWD_FEED_URL, CLAWD_FEED_TOKEN, CLAWD_MINISIGN_PUBKEY   baked into the binary by cargo
+#   CLAWD_MINISIGN_PUBKEY   baked into the binary by cargo (app updates and remote style packs)
+#
+# The clock's firmware ships inside the app: build/firmware (image, clawd.pak, desk.pak, style
+# packs) and build/renderer (the clock-screen renderer), both from `sh tools/build_clock.sh`
+# (CI: the firmware job's artifact + tools/build_clock.sh --renderer). A release (signed, or any
+# CI run) without them fails; a local build without them only warns.
 set -eu
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
@@ -35,8 +39,11 @@ if [ "$REQUIRE" = 1 ]; then
   [ "$NOTARIZE" = 1 ] || die "a release build must be notarized: APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD are all required"
   [ -n "${CLAWD_EXPECTED_TEAM_ID:-}" ] || die "a release build needs CLAWD_EXPECTED_TEAM_ID (the 0.1.x Team ID, repository variable EXPECTED_TEAM_ID)"
 fi
-if [ "${CLAWD_PRIVATE_FIRMWARE:-0}" = 1 ] && [ "${GITHUB_ACTIONS:-}" = true ]; then
-  die "CLAWD_PRIVATE_FIRMWARE=1 is not allowed in CI: public artifacts carry no firmware"
+NEED_FW=0
+if [ "$REQUIRE" = 1 ] || [ "${GITHUB_ACTIONS:-}" = true ]; then NEED_FW=1; fi
+if [ ! -f build/firmware/firmware.json ] || [ ! -f build/renderer/preview.json ]; then
+  [ "$NEED_FW" = 0 ] || die "no build/firmware or build/renderer: run sh tools/build_clock.sh first (a release always carries the clock firmware)"
+  echo "build_mac.sh: no build/firmware or build/renderer (sh tools/build_clock.sh): this app carries no clock firmware" >&2
 fi
 
 VERSION=$(python3 packaging/check_version.py) || die "Cargo.toml and tauri.conf.json disagree on the version"
@@ -73,14 +80,13 @@ plist() { /usr/libexec/PlistBuddy -c "Print :$1" "$PLIST"; }
 [ "$(plist NSBonjourServices:0)" = _clawd._tcp ] || die "NSBonjourServices lacks _clawd._tcp"
 plist NSLocalNetworkUsageDescription >/dev/null || die "NSLocalNetworkUsageDescription is missing"
 
-if [ "${CLAWD_PRIVATE_FIRMWARE:-0}" = 1 ]; then
-  [ -f private/firmware/firmware.json ] || die "no firmware bundle in private/firmware (tools/bundle_firmware.py)"
-  cp -R private/firmware "$APP/Contents/Resources/firmware"
-  if [ -f private/renderer/preview.json ]; then
-    cp -R private/renderer "$APP/Contents/Resources/renderer"
-  else
-    echo "no clock-screen renderer built (tools/build_preview.py); the preview will be approximate" >&2
+if [ -f build/firmware/firmware.json ]; then
+  python3 tools/bundle_firmware.py --check build/firmware || die "build/firmware does not check out"
+  cp -R build/firmware "$APP/Contents/Resources/firmware"
+  if [ -f build/renderer/preview.json ]; then
+    cp -R build/renderer "$APP/Contents/Resources/renderer"
   fi
+  echo "bundled the clock firmware: $(python3 -c 'import json;m=json.load(open("build/firmware/firmware.json"));print("fwSeq",m["fwSeq"],"styleApi",m["styleApi"],"commit",m["commit"])')"
 fi
 
 if [ -n "$SIGN" ]; then

@@ -26,8 +26,7 @@ same files by hand as `vX.Y.Z` on the fork.
 
 3. Fork Settings > Environments > `release`: required reviewer = you; deployment tags `rust-v*` only.
    Secrets (environment `release`): `MINISIGN_KEY` (whole content of `fork-test.key`),
-   `MINISIGN_PASSWORD`, `CLAWD_FEED_URL`, `CLAWD_FEED_TOKEN` (any value for a test: the firmware
-   feed is not exercised; never a real token), and for macOS `MACOS_CERT_P12`,
+   `MINISIGN_PASSWORD`, and for macOS `MACOS_CERT_P12`,
    `MACOS_CERT_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`
    (a **Developer ID Application certificate of the same Team** as 0.1.4; see `mac.md`).
    Repository **variables**: `MINISIGN_PUBKEY` = the public key line, `EXPECTED_TEAM_ID` = the

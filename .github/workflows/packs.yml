@@ -1,0 +1,64 @@
+name: Style packs
+
+# Publish the usage style packs of clock/firmware/styles (main) to the GitHub Release
+# packs-api<N>, signed with the app's minisign key: installed apps whose firmware draws style
+# API <N> pick them up without an app release. Firmware is never published here.
+#
+#  - Manual only (Actions > Style packs > Run workflow), from main.
+#  - Bound to the environment `release` (required reviewers = the owner): the minisign secret
+#    key lives there.
+#  - The release is created/edited with --latest=false; the script fails if releases/latest
+#    is not a v* tag afterwards (apps 0.1.x/0.2.x update from it).
+#  - The packs' rev must go up (the commit time of the last change to clock/firmware/styles).
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Republish even if the rev did not go up"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packs
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      # v4.4.0 (== tag v4)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0   # rev = commit time of clock/firmware/styles
+      - name: Sign and publish packs-api<N>
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLAWD_REPO: ${{ github.repository }}
+          MINISIGN_KEY: ${{ secrets.MINISIGN_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+          MINISIGN_PUBKEY: ${{ vars.MINISIGN_PUBKEY }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ -z "$MINISIGN_KEY" ] || [ -z "$MINISIGN_PUBKEY" ]; then
+            echo "::error::secret MINISIGN_KEY or variable MINISIGN_PUBKEY is not set"
+            exit 1
+          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq minisign
+          umask 077
+          printf '%s\n' "$MINISIGN_KEY" > "$RUNNER_TEMP/minisign.key"
+          set -- --publish
+          [ "$FORCE" = true ] && set -- "$@" --force
+          MINISIGN_KEY_FILE="$RUNNER_TEMP/minisign.key" sh tools/publish_packs.sh "$@" |
+            tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Remove the secret key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/minisign.key"
