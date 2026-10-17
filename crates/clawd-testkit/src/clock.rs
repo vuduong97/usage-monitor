@@ -353,10 +353,21 @@ impl DeviceState {
             path: req.path().to_owned(),
             signed,
         });
-        let slow = self
-            .down
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
-            .is_ok();
+        // Take one from `down` if it is not 0 (`fetch_update` is deprecated after 1.91, and its
+        // replacement `try_update` is newer than the workspace's rust-version).
+        let mut left = self.down.load(Ordering::SeqCst);
+        let slow = loop {
+            if left == 0 {
+                break false;
+            }
+            match self
+                .down
+                .compare_exchange(left, left - 1, Ordering::SeqCst, Ordering::SeqCst)
+            {
+                Ok(_) => break true,
+                Err(now) => left = now,
+            }
+        };
         if slow {
             let delay = *self.down_delay.lock().expect("delay");
             return FakeResponse::text(200, "late").with_delay(delay);

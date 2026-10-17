@@ -623,8 +623,8 @@ pub fn bmp_data_url(rgb: &[u8]) -> Result<String, PreviewError> {
     let mut pixels = Vec::with_capacity(FRAME_BYTES);
     for y in (0..H).rev() {
         // bottom-up, RGB -> BGR
-        for px in rgb[y * stride..(y + 1) * stride].chunks_exact(3) {
-            pixels.extend_from_slice(&[px[2], px[1], px[0]]);
+        for &[r, g, b] in rgb[y * stride..(y + 1) * stride].as_chunks::<3>().0 {
+            pixels.extend_from_slice(&[b, g, r]);
         }
     }
     let mut bmp = b"BM".to_vec();

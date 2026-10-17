@@ -12,8 +12,7 @@ use crate::pytext::strip;
 pub fn read_config_dirs(paths: &AppPaths) -> Vec<PathBuf> {
     let raw = config_entries(paths)
         .into_iter()
-        .filter(|(key, _)| key == "config_dirs")
-        .next_back()
+        .rfind(|(key, _)| key == "config_dirs")
         .map(|(_, value)| value)
         .unwrap_or_default();
     let dirs: Vec<PathBuf> = raw
