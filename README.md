@@ -94,6 +94,11 @@ Bấm biểu tượng → **Cài đặt…** để mở cửa sổ cài đặt (
 trang web của đồng hồ):
 
 - **Hiển thị**: độ sáng, xoay màn hình, màn hình chính, hoạt hình Clawd, múi giờ, chế độ đêm.
+  Mục **Nâng cao: Animation theo skill** cho chọn animation và chữ riêng khi bạn gọi một skill
+  (ví dụ `/ak-cook` → wizard "Cooking"), có nút ▶ phát thử trên đồng hồ, xuất/nhập. Chạy với
+  Claude Code và pi; câu hỏi, lỗi, nghĩ lâu, chạy test, debug và đọc/tìm file vẫn hiện như cũ.
+  Luật nằm trên máy (`~/.config/claude-usage-monitor/animation-rules.json`), lưu ngay, không
+  gửi xuống đồng hồ; chỉ tên skill rời khỏi hook, không bao giờ nội dung prompt.
 - **Usage**: chọn nguồn usage (Claude: mọi tài khoản hoặc một tài khoản; Codex CLI; không hiện)
   và kiểu màn hình usage, xem trước bằng mức dùng thật của bạn, có Clawd chuyển
   động như trên đồng hồ (vẽ bằng chính mã vẽ của firmware đi kèm app). Kiểu màn hình mới có thể

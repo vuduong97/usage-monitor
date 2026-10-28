@@ -116,6 +116,10 @@ impl AppPaths {
     pub fn style_packs_dir(&self) -> PathBuf {
         self.in_config(STYLE_PACKS_DIR_NAME)
     }
+    /// The skill animation rules the settings window edits and the Brain follows.
+    pub fn skill_rules_file(&self) -> PathBuf {
+        self.in_config(SKILL_RULES_FILE_NAME)
+    }
     /// `appupdate.STAGE_DIR` (`ready.json`, `swap.sh`, `apply.log`, `failed`).
     pub fn app_update_stage_dir(&self) -> PathBuf {
         self.in_config(APP_UPDATE_DIR_NAME)

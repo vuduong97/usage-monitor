@@ -428,6 +428,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-positioner",
+ "tempfile",
  "tokio",
  "tracing",
 ]

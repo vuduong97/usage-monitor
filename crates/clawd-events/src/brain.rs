@@ -9,6 +9,7 @@ use tokio::sync::Notify;
 
 use crate::pet::Pet;
 use crate::pokes::Pokes;
+use crate::skill_rules::{RulesWatch, SkillRules};
 use crate::tracker::{make_view, Tracker};
 
 /// The Brain is shared by the event server (ingests), the state pusher (reads `desired`) and the
@@ -47,6 +48,9 @@ pub struct Brain {
     /// Last view handed out, for minDisplay.
     shown: Option<View>,
     shown_since: f64,
+    /// The skill animation rules file, re-read when it changes (`None`: rules only come from
+    /// [`Brain::set_skill_rules`], as in tests).
+    rules_watch: Option<RulesWatch>,
 }
 
 impl Brain {
@@ -84,7 +88,23 @@ impl Brain {
             turn_queue,
             shown: None,
             shown_since: 0.0,
+            rules_watch: None,
         }
+    }
+
+    /// Follow the skill animation rules file: read now, then again whenever it changes, so the
+    /// settings window's edits apply without a restart.
+    pub fn watch_skill_rules(&mut self, path: std::path::PathBuf, now: f64) {
+        let mut watch = RulesWatch::new(path);
+        if let Some(rules) = watch.poll(now) {
+            self.tracker.rules = rules;
+        }
+        self.rules_watch = Some(watch);
+    }
+
+    /// Replace the skill animation rules.
+    pub fn set_skill_rules(&mut self, rules: SkillRules) {
+        self.tracker.rules = rules;
     }
 
     /// Wrap into the shared handle the server and pusher take.
@@ -142,6 +162,10 @@ impl Brain {
     /// (poke moment > agent > focus > pet moment > idle pick), honouring the minDisplay holds.
     pub fn desired(&mut self, now: f64) -> DesiredState {
         self.sync_turns();
+        if let Some(rules) = self.rules_watch.as_mut().and_then(|w| w.poll(now)) {
+            self.tracker.rules = rules;
+        }
+        self.tracker.desk_new = self.pet.desk_new;
         let mut v = match self.pokes.moment(now) {
             Some(poke) => Some(poke),
             None => self.tracker.view(now),

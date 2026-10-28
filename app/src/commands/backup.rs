@@ -18,9 +18,18 @@ const BACKUP_MAX_BYTES: u64 = 1024 * 1024;
 
 const NOT_A_BACKUP: &str = "File này không phải bản sao lưu của đồng hồ.";
 
-/// The file dialog (`_dialog`): the picked path, `None` when cancelled. It blocks until the
-/// user answers, so it runs off the async threads.
+/// The file dialog (`_dialog`) for a clock backup: the picked path, `None` when cancelled.
 async fn pick_file(app: &AppHandle, save_as: Option<String>) -> Option<PathBuf> {
+    pick_json(app, save_as, "Bản sao lưu (*.json)").await
+}
+
+/// A `.json` file dialog with `label` as its filter name: the picked path, `None` when
+/// cancelled. It blocks until the user answers, so it runs off the async threads.
+pub(super) async fn pick_json(
+    app: &AppHandle,
+    save_as: Option<String>,
+    label: &'static str,
+) -> Option<PathBuf> {
     let app = app.clone();
     tokio::task::spawn_blocking(move || {
         let mut dialog = app.dialog().file();
@@ -30,11 +39,9 @@ async fn pick_file(app: &AppHandle, save_as: Option<String>) -> Option<PathBuf> 
         let picked = match save_as {
             Some(name) => dialog
                 .set_file_name(name)
-                .add_filter("Bản sao lưu (*.json)", &["json"])
+                .add_filter(label, &["json"])
                 .blocking_save_file(),
-            None => dialog
-                .add_filter("Bản sao lưu (*.json)", &["json"])
-                .blocking_pick_file(),
+            None => dialog.add_filter(label, &["json"]).blocking_pick_file(),
         };
         picked.and_then(|p| p.into_path().ok())
     })
@@ -46,7 +53,7 @@ async fn pick_file(app: &AppHandle, save_as: Option<String>) -> Option<PathBuf> 
     })
 }
 
-fn cancelled() -> Value {
+pub(super) fn cancelled() -> Value {
     json!({"ok": false, "code": "cancel", "error": ""})
 }
 

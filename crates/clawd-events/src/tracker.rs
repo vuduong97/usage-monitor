@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 
 use crate::pyval::{text_or_empty, truthy};
 use crate::rng::{Rng, SystemRng};
+use crate::skill_rules::{normalize_skill, SkillRule, SkillRules};
 use crate::source_events::char_prefix;
 use crate::vocab::{
     action_text, ascii_text, is_question_tool, is_test_command, tool_action, variants_of,
@@ -35,6 +36,8 @@ pub const WIZARD_AFTER: f64 = 1800.0;
 /// `events.DIZZY_ERRORS`, `events.DIZZY_WINDOW`.
 pub const DIZZY_ERRORS: usize = 3;
 pub const DIZZY_WINDOW: f64 = 120.0;
+/// Skills an agent loaded in one turn that are remembered for skill rules.
+pub const NESTED_SKILLS_MAX: usize = 8;
 
 /// `events.Moment`: a timed animation queued by the pet or a poke.
 #[derive(Debug, Clone, PartialEq)]
@@ -78,6 +81,10 @@ pub struct Sess {
     pub debugging: bool,
     pub debug_next: bool,
     pub edits: u32,
+    /// The skill the user invoked in this turn's prompt (normalized; skill animation rules).
+    pub skill: String,
+    /// Skills the agent loaded during this turn, oldest first (`Skill` tool, `SKILL.md` reads).
+    pub nested: Vec<String>,
 }
 
 /// Called with `now` when a turn starts (the Pet counts turns per day).
@@ -119,6 +126,10 @@ pub struct Tracker {
     /// Recent failures (dizzy).
     errors: Vec<f64>,
     dizzy_until: f64,
+    /// Skill animation rules (empty = the plain behaviour).
+    pub rules: SkillRules,
+    /// Every clock has the newer desk.pak (set by the Brain from the Pet's probe result).
+    pub desk_new: bool,
 }
 
 impl Tracker {
@@ -136,6 +147,8 @@ impl Tracker {
             last_ask_text: String::new(),
             errors: Vec::new(),
             dizzy_until: 0.0,
+            rules: SkillRules::default(),
+            desk_new: false,
         }
     }
 
@@ -202,6 +215,8 @@ impl Tracker {
                 s.quiet_since = now;
                 s.debugging = s.debug_next || truthy(ev.get("debug"));
                 s.debug_next = false;
+                s.skill = normalize_skill(&text_or_empty(ev.get("skill")));
+                s.nested.clear();
             }
             "tool" => {
                 s.state = "working".into();
@@ -218,6 +233,14 @@ impl Tracker {
                 s.testing = is_test_command(ev.get("cmd").and_then(Value::as_str));
                 if truthy(ev.get("debug")) {
                     s.debugging = true;
+                }
+                let nested = normalize_skill(&text_or_empty(ev.get("skill_nested")));
+                if !nested.is_empty() {
+                    s.nested.retain(|n| *n != nested);
+                    if s.nested.len() >= NESTED_SKILLS_MAX {
+                        s.nested.remove(0);
+                    }
+                    s.nested.push(nested);
                 }
             }
             "tool_done" => {
@@ -322,6 +345,8 @@ impl Tracker {
             s.edits = 0;
             s.testing = false;
             s.running = 0;
+            s.skill.clear();
+            s.nested.clear();
         }
         if s.state != "attention" && s.state != "waiting" {
             s.asking = false;
@@ -421,14 +446,14 @@ impl Tracker {
         let agents =
             active.len() + main.iter().map(|s| s.subs as usize).sum::<usize>() + child_processes;
         if agents == 1 && !active.is_empty() {
-            return Some(Self::session_view(active[0], now));
+            return Some(self.session_view(active[0], now).0);
         }
         if agents > 0 {
             // The most recent session's reading/debugger/ultrathink shows through,
-            // counted; anything plainer leaves the many-agents animation.
+            // counted; anything plainer (a skill rule too) leaves the many-agents animation.
             if !active.is_empty() {
-                let v = Self::session_view(latest(active.iter().copied()), now);
-                if SESSION_SHOWS_THROUGH.contains(&v.anim.as_str()) || v.debug {
+                let (v, from_rule) = self.session_view(latest(active.iter().copied()), now);
+                if !from_rule && (SESSION_SHOWS_THROUGH.contains(&v.anim.as_str()) || v.debug) {
                     let text = format!("{} ({agents})", v.text);
                     return Some(View { text, ..v });
                 }
@@ -450,34 +475,67 @@ impl Tracker {
         None
     }
 
+    /// The skill rule for a session's turn: the skill the user typed, else the most recent
+    /// skill the agent loaded that has a rule (so `/ak-cook` keeps its rule when it loads
+    /// `ak-journal`, and a skill the agent picked by itself still counts).
+    fn rule_for(&self, s: &Sess) -> Option<&SkillRule> {
+        if self.rules.is_empty() {
+            return None;
+        }
+        if let Some(rule) = self.rules.get(&s.skill, self.desk_new) {
+            return Some(rule);
+        }
+        s.nested
+            .iter()
+            .rev()
+            .find_map(|skill| self.rules.get(skill, self.desk_new))
+    }
+
     /// One thinking/working session: ultrathink > testing (debugger) >
-    /// reading > typing boss > wizard > typing (thinking before its first tool).
-    /// The text always says what the animation shows: a debugging turn is the
-    /// debugger ("Debugging"), a long turn the wizard ("Long task").
-    fn session_view(s: &Sess, now: f64) -> View {
+    /// reading > skill rule > typing boss > wizard > typing (thinking before its first tool,
+    /// unless a skill rule applies). The text always says what the animation shows: a
+    /// debugging turn is the debugger ("Debugging"), a long turn the wizard ("Long task").
+    /// The flag is true when a skill rule decided the view.
+    fn session_view(&self, s: &Sess, now: f64) -> (View, bool) {
         let with_variants = |mut v: View, variants: &[&str]| {
             v.variants = owned(variants);
             v
         };
+        let ruled = |rule: &SkillRule, default_text: &str| {
+            let text = if rule.text.is_empty() {
+                default_text
+            } else {
+                &rule.text
+            };
+            (make_view(&rule.anim, text, "agent"), true)
+        };
         if s.running == 0 && now - s.quiet_since >= ULTRATHINK_AFTER {
-            return with_variants(
-                make_view("ultrathink", "Thinking hard", "agent"),
-                variants_of("ultrathink"),
-            );
+            let v = make_view("ultrathink", "Thinking hard", "agent");
+            return (with_variants(v, variants_of("ultrathink")), false);
         }
         if s.state == "thinking" {
-            return make_view("thinking", "Thinking", "agent");
+            if let Some(rule) = self.rule_for(s) {
+                return ruled(rule, "Thinking");
+            }
+            return (make_view("thinking", "Thinking", "agent"), false);
         }
         if s.testing {
-            return make_view("debugger", "Testing", "agent");
+            return (make_view("debugger", "Testing", "agent"), false);
         }
         if s.debugging {
-            return View {
+            let v = View {
                 debug: true,
                 ..make_view("debugger", DEBUG_TEXT, "agent")
             };
+            return (v, false);
         }
-        let anim = if READING_ACTIONS.contains(&s.action.as_str()) {
+        let reading = READING_ACTIONS.contains(&s.action.as_str());
+        if !reading {
+            if let Some(rule) = self.rule_for(s) {
+                return ruled(rule, action_text(&s.action).0);
+            }
+        }
+        let anim = if reading {
             "reading"
         } else if s.edits >= EDIT_STREAK {
             "typing boss"
@@ -487,14 +545,16 @@ impl Tracker {
             "typing"
         };
         if anim == "wizard" {
-            return with_variants(make_view(anim, WIZARD_TEXT, "agent"), variants_of("wizard"));
+            let v = make_view(anim, WIZARD_TEXT, "agent");
+            return (with_variants(v, variants_of("wizard")), false);
         }
         let variants: &[&str] = if anim == "typing" && s.action.is_empty() {
             &WORKING_VARIANTS
         } else {
             variants_of(anim)
         };
-        with_variants(make_view(anim, action_text(&s.action).0, "agent"), variants)
+        let v = make_view(anim, action_text(&s.action).0, "agent");
+        (with_variants(v, variants), false)
     }
 
     /// `Tracker.snapshot(now)`: the `sessions` array of `GET /state`

@@ -20,6 +20,7 @@ pub mod probe;
 pub mod pusher;
 pub mod rng;
 pub mod server;
+pub mod skill_rules;
 pub mod source_events;
 pub mod tracker;
 pub mod vocab;
@@ -33,10 +34,13 @@ pub use config::{read_event_port, read_pet_config};
 pub use idle::read_hid_idle;
 pub use pet::Pet;
 pub use pokes::Pokes;
-pub use probe::daemon_running;
+pub use probe::{daemon_running, poke};
 pub use pusher::{heap_url, state_url, wire, StatePusher};
 pub use server::{EventServer, NormalizeFn};
-pub use source_events::{claude_event, pi_event, tool_summary};
+pub use skill_rules::{normalize_skill, SkillRule, SkillRules};
+pub use source_events::{
+    claude_event, claude_event_with_skill, nested_skill, pi_event, prompt_skill, tool_summary,
+};
 pub use tracker::{Moment, Sess, Tracker};
 pub use vocab::{
     ascii_text, is_debug_prompt, is_debug_skill_load, is_question_tool, is_test_command,

@@ -28,6 +28,19 @@ pub async fn daemon_running(port: u16, timeout: Duration) -> bool {
     }
 }
 
+/// `POST /poke` to the Clawd daemon on this machine (`clawd play ...` does the same): the
+/// daemon's JSON answer, or `Err(why)` when no daemon answered. The settings window uses it to
+/// play a skill rule's animation on the clock.
+pub async fn poke(
+    port: u16,
+    cmd: &serde_json::Value,
+    timeout: Duration,
+) -> Result<serde_json::Value, String> {
+    let url = format!("http://127.0.0.1:{port}/poke");
+    let reply = httpc::request(Method::POST, &url, Some(cmd.to_string()), timeout).await?;
+    serde_json::from_slice(&reply.body).map_err(|e| format!("bad reply: {e}"))
+}
+
 /// How long to wait for the TCP connect before concluding that nothing listens on the port.
 const LISTEN_CHECK: Duration = Duration::from_millis(250);
 

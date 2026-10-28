@@ -4,8 +4,13 @@
 
 use serde_json::{json, Map, Value};
 
+use std::sync::LazyLock;
+
+use regex::Regex;
+
 use crate::pyval::{py_str, text_or_empty, truthy};
-use crate::vocab::{is_debug_prompt, is_debug_skill_load, EVENTS};
+use crate::skill_rules::normalize_skill;
+use crate::vocab::{is_debug_prompt, is_debug_skill_load, tool_action, EVENTS};
 
 /// First `n` characters (Python `s[:n]`).
 pub(crate) fn char_prefix(s: &str, n: usize) -> String {
@@ -125,13 +130,15 @@ pub fn claude_event(p: &Value) -> Option<Value> {
 }
 
 /// `events.pi_event(p)`: validate an event a pi/opencode extension already shaped like the
-/// tracker's, filling `src = "pi"` and a prefixed `sid`.
+/// tracker's, filling `src = "pi"` and a prefixed `sid`. The skill names the pi extension sends
+/// (`skill`: typed in the prompt, `skill_nested`: loaded by the agent) pass through normalized,
+/// and only when present.
 pub fn pi_event(p: &Value) -> Option<Value> {
     let map = p.as_object()?;
     let kind = map.get("ev")?.as_str().filter(|k| EVENTS.contains(k))?;
     let sid = map.get("sid").filter(|s| truthy(Some(s)))?;
     let debug = matches!(map.get("debug"), Some(Value::Bool(true)));
-    Some(json!({
+    let mut ev = json!({
         "src": "pi",
         "sid": format!("pi:{}", char_prefix(&py_str(sid), 160)),
         "ev": kind,
@@ -140,7 +147,88 @@ pub fn pi_event(p: &Value) -> Option<Value> {
         "cmd": char_prefix(&text_or_empty(map.get("cmd")), 300),
         "sub": truthy(map.get("sub")),
         "debug": debug,
-    }))
+    });
+    for key in ["skill", "skill_nested"] {
+        let name = normalize_skill(&text_or_empty(map.get(key)));
+        if !name.is_empty() {
+            ev[key] = json!(name);
+        }
+    }
+    Some(ev)
+}
+
+static SKILL_BLOCK_NAME: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"<skill\s+name="([^"]+)""#).expect("SKILL_BLOCK_NAME"));
+static SKILL_FILE_DIR: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)(?:^|[/\\])([^/\\]+)[/\\]SKILL\.md\n?$").expect("SKILL_FILE_DIR")
+});
+
+/// The skill a prompt invokes, normalized: a typed `/name args` (Claude Code passes the line as
+/// typed; pi's `/skill:name`), or the first `<skill name="...">` block pi expanded into it.
+/// Empty when there is none. Only this name ever leaves the hook, never the prompt.
+pub fn prompt_skill(prompt: &str) -> String {
+    if let Some(caps) = SKILL_BLOCK_NAME.captures(prompt) {
+        return normalize_skill(&caps[1]);
+    }
+    let line = prompt.trim_start();
+    if !line.starts_with('/') {
+        return String::new();
+    }
+    normalize_skill(line.split_whitespace().next().unwrap_or(""))
+}
+
+/// The skill a tool call loads, normalized: a `Skill` tool (`skill` or `command` input), or a
+/// read of `<name>/SKILL.md`. Empty when the call loads no skill.
+pub fn nested_skill(tool: &str, input: &Value) -> String {
+    let Some(map) = input.as_object() else {
+        return String::new();
+    };
+    if tool.trim().eq_ignore_ascii_case("skill") {
+        let raw = [map.get("skill"), map.get("command")]
+            .into_iter()
+            .flatten()
+            .find_map(Value::as_str)
+            .unwrap_or_default();
+        return normalize_skill(raw);
+    }
+    if tool_action(tool) == "read" {
+        let path = [map.get("file_path"), map.get("path")]
+            .into_iter()
+            .flatten()
+            .find_map(Value::as_str)
+            .unwrap_or_default();
+        if let Some(caps) = SKILL_FILE_DIR.captures(path) {
+            return normalize_skill(&caps[1]);
+        }
+    }
+    String::new()
+}
+
+/// [`claude_event`] plus the skill names skill animation rules need: `skill` on a prompt that
+/// invokes one, `skill_nested` on a tool call that loads one. What the live Claude adapter uses;
+/// `claude_event` itself stays the Python port the golden fixtures pin.
+pub fn claude_event_with_skill(p: &Value) -> Option<Value> {
+    let mut ev = claude_event(p)?;
+    let (key, name) = match p.get("hook_event_name").and_then(Value::as_str) {
+        Some("UserPromptSubmit") => (
+            "skill",
+            prompt_skill(p.get("prompt").and_then(Value::as_str).unwrap_or_default()),
+        ),
+        Some("PreToolUse") => (
+            "skill_nested",
+            nested_skill(
+                p.get("tool_name")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default(),
+                p.get("tool_input").unwrap_or(&Value::Null),
+            ),
+        ),
+        _ => return Some(ev),
+    };
+    if !name.is_empty() {
+        ev[key] = json!(name);
+    }
+    Some(ev)
 }
 
 #[cfg(test)]
@@ -205,6 +293,92 @@ mod tests {
             serde_json::to_string(&ev).unwrap(),
             r#"{"src":"pi","sid":"pi:a","ev":"tool","tool":"bash","msg":"","cmd":"","sub":true,"debug":false}"#
         );
+    }
+
+    #[test]
+    fn skills_from_prompts_and_tool_calls() {
+        assert_eq!(prompt_skill("/ak-cook dạng bảng"), "ak-cook");
+        assert_eq!(prompt_skill("  /ak:cook"), "ak-cook");
+        assert_eq!(prompt_skill("/skill:ak-advise x"), "ak-advise");
+        assert_eq!(
+            prompt_skill("<skill name=\"ak-plan\" location=\"x\">\nbody\n</skill>\n\ngo"),
+            "ak-plan"
+        );
+        assert_eq!(prompt_skill("fix /ak-cook later"), "");
+        assert_eq!(prompt_skill("/Users/me/file.txt explain"), "");
+        assert_eq!(prompt_skill(""), "");
+        assert_eq!(
+            nested_skill("Skill", &json!({"skill": "ak:journal"})),
+            "ak-journal"
+        );
+        assert_eq!(
+            nested_skill("skill", &json!({"command": "/ak-plan"})),
+            "ak-plan"
+        );
+        assert_eq!(
+            nested_skill(
+                "read",
+                &json!({"path": "/u/.agents/skills/ak-cook/SKILL.md"})
+            ),
+            "ak-cook"
+        );
+        assert_eq!(
+            nested_skill("Read", &json!({"file_path": "C:\\s\\ak-fix\\SKILL.md"})),
+            "ak-fix"
+        );
+        assert_eq!(
+            nested_skill("read", &json!({"path": "ak-cook/refs/x.md"})),
+            ""
+        );
+        assert_eq!(
+            nested_skill("edit", &json!({"path": "ak-cook/SKILL.md"})),
+            ""
+        );
+        assert_eq!(nested_skill("Skill", &json!("x")), "");
+    }
+
+    #[test]
+    fn claude_events_carry_skill_names_only_when_there_is_one() {
+        let with = |name: &str, extra: Value| {
+            let mut p = json!({"hook_event_name": name, "session_id": "s1"});
+            p.as_object_mut()
+                .unwrap()
+                .extend(extra.as_object().unwrap().clone());
+            claude_event_with_skill(&p).unwrap()
+        };
+        let ev = with("UserPromptSubmit", json!({"prompt": "/ak-cook build it"}));
+        assert_eq!(ev["skill"], "ak-cook");
+        assert_eq!(ev["ev"], "prompt");
+        let ev = with(
+            "PreToolUse",
+            json!({"tool_name": "Skill", "tool_input": {"skill": "ak:journal"}}),
+        );
+        assert_eq!(ev["skill_nested"], "ak-journal");
+        // nothing to add: exactly what claude_event gives
+        for (name, extra) in [
+            ("UserPromptSubmit", json!({"prompt": "fix the bug"})),
+            (
+                "PreToolUse",
+                json!({"tool_name": "Bash", "tool_input": {"command": "ls"}}),
+            ),
+            ("Stop", json!({})),
+        ] {
+            let mut p = json!({"hook_event_name": name, "session_id": "s1"});
+            p.as_object_mut()
+                .unwrap()
+                .extend(extra.as_object().unwrap().clone());
+            assert_eq!(claude_event_with_skill(&p), claude_event(&p), "{name}");
+        }
+        assert!(claude_event_with_skill(&json!({"x": 1})).is_none());
+    }
+
+    #[test]
+    fn pi_events_pass_skill_names_through_normalized() {
+        let ev = pi_event(&json!({"ev": "prompt", "sid": "a", "skill": "ak:cook"})).unwrap();
+        assert_eq!(ev["skill"], "ak-cook");
+        assert!(ev.get("skill_nested").is_none());
+        let ev = pi_event(&json!({"ev": "tool", "sid": "a", "skill_nested": "bad name"})).unwrap();
+        assert!(ev.get("skill_nested").is_none());
     }
 
     #[test]

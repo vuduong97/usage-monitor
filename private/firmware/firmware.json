@@ -1,0 +1,10 @@
+{
+  "file": "clawd-firmware.bin",
+  "size": 499776,
+  "sha256": "695728b47bb9280bd79fbc8b82bfa3237e1b6a6bd956787212a4e9ccfe7368ea",
+  "variant": "esp8266-clawd",
+  "fwSeq": 5,
+  "layouts": 1,
+  "styleApi": 1,
+  "commit": "02c4adc"
+}

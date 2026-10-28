@@ -92,6 +92,9 @@ impl Agent for Claude {
         Ok("Đã ngắt.".to_owned())
     }
     fn normalize(&self, p: &Value, _hint: &str) -> Vec<Value> {
-        clawd_events::claude_event(p).into_iter().collect()
+        // with the skill names skill animation rules need (`claude_event` + `skill`/`skill_nested`)
+        clawd_events::claude_event_with_skill(p)
+            .into_iter()
+            .collect()
     }
 }

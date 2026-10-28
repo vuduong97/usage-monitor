@@ -196,6 +196,11 @@ fn view_json(view: Option<clawd_contracts::View>) -> Value {
 
 /// One scenario, step by step, the way `export_events.run_scenario` runs it.
 fn run_scenario(spec: &Value) -> Vec<Value> {
+    run_scenario_via(spec, claude_event)
+}
+
+/// [`run_scenario`] with Claude payloads mapped by `claude`.
+fn run_scenario_via(spec: &Value, claude: fn(&Value) -> Option<Value>) -> Vec<Value> {
     use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
     use std::sync::Arc;
 
@@ -235,7 +240,7 @@ fn run_scenario(spec: &Value) -> Vec<Value> {
             "claude" | "pi" | "event" => {
                 let payload = &step["payload"];
                 let event = match op {
-                    "claude" => claude_event(payload),
+                    "claude" => claude(payload),
                     "pi" => pi_event(payload),
                     _ => Some(payload.clone()),
                 };
@@ -360,5 +365,35 @@ fn every_brain_scenario_matches_python() {
             .cloned()
             .collect::<Vec<_>>()
             .join("\n")
+    );
+}
+
+/// The live Claude adapter adds skill names (`skill`, `skill_nested`) to events. With no skill
+/// animation rules that must change nothing: every scenario run through it gives the Python
+/// outputs, apart from those two keys on the recorded events.
+#[test]
+fn skill_names_change_nothing_without_rules() {
+    let fixture = load_fixture_value("events", "scenarios");
+    let inputs = fixture["input"].as_object().unwrap();
+    let outputs = fixture["output"].as_object().unwrap();
+    let mut extended = 0;
+    for (name, spec) in inputs {
+        let actual = run_scenario_via(spec, clawd_events::claude_event_with_skill);
+        for (i, (a, e)) in actual
+            .iter()
+            .zip(outputs[name].as_array().unwrap())
+            .enumerate()
+        {
+            let mut a = a.clone();
+            if let Some(event) = a.get_mut("event").and_then(Value::as_object_mut) {
+                let had = event.remove("skill").is_some() | event.remove("skill_nested").is_some();
+                extended += usize::from(had);
+            }
+            assert_eq!(&a, e, "{name} step {i}");
+        }
+    }
+    assert!(
+        extended > 0,
+        "the fixtures load a skill (ak:debug) somewhere"
     );
 }

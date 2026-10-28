@@ -2,7 +2,7 @@
 //!
 //! One `generate_handler![py_api, popover_msg]` (red team #7). `py_api(name, args)` replaces
 //! pywebview's `js_api`: it refuses any window but `settings`, checks `name` against the
-//! 32-name allowlist (the names `app/ui/*.js` call, verified by the test below) and
+//! 37-name allowlist (the names `app/ui/*.js` call, verified by the test below) and
 //! calls the function in `commands/<group>.rs` (phase 13). `popover_msg` refuses any window but
 //! `popover` and calls `crate::popover::handle` (phase 12). Not exposed on purpose: `preview`,
 //! `busy`, `set_hooks`, `close_mdns`. Capabilities (phase 13) allow `py_api` only for `settings`
@@ -24,6 +24,7 @@ pub mod jobs;
 pub mod misc;
 pub mod session;
 pub mod setup;
+pub mod skills;
 pub mod state;
 pub mod update;
 pub mod usage;
@@ -62,16 +63,19 @@ py_api_table! {
     "clawd_pak" => usage::clawd_pak,
     "disconnect_all" => agents::disconnect_all,
     "export_backup" => backup::export_backup,
+    "export_skill_rules" => skills::export_skill_rules,
     "factory_reset" => clock::factory_reset,
     "finish_setup" => setup::finish_setup,
     "fw" => firmware::fw,
     "import_backup" => backup::import_backup,
+    "import_skill_rules" => skills::import_skill_rules,
     "job" => jobs::job,
     "login" => clock::login,
     "open_log" => misc::open_log,
     "open_web" => misc::open_web,
     "reboot" => clock::reboot,
     "save" => clock::save,
+    "save_skill_rules" => skills::save_skill_rules,
     "scan" => clock::scan,
     "set_agent" => agents::set_agent,
     "set_agents" => agents::set_agents,
@@ -81,6 +85,8 @@ py_api_table! {
     "setup_clocks" => setup::setup_clocks,
     "setup_state" => setup::setup_state,
     "setup_use_clock" => setup::setup_use_clock,
+    "skill_anim_preview" => skills::skill_anim_preview,
+    "skill_rules" => skills::skill_rules,
     "state" => state::state,
     "update" => firmware::update,
     "usage_preview" => usage::usage_preview,
@@ -180,10 +186,10 @@ mod tests {
     }
 
     #[test]
-    fn allowlist_is_the_32_names_the_ui_calls() {
-        assert_eq!(PY_API_NAMES.len(), 32);
+    fn allowlist_is_the_37_names_the_ui_calls() {
+        assert_eq!(PY_API_NAMES.len(), 37);
         let unique: BTreeSet<_> = PY_API_NAMES.iter().copied().collect();
-        assert_eq!(unique.len(), 32, "duplicate name");
+        assert_eq!(unique.len(), 37, "duplicate name");
         for hidden in ["preview", "busy", "set_hooks", "close_mdns"] {
             assert!(!unique.contains(hidden));
         }

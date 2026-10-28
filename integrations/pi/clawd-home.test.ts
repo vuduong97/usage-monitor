@@ -3,7 +3,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { EventEmitter } from "node:events";
-import clawdHome, { isDebugPrompt, isDebugSkillRead, isUserInput, post, sessionId } from "./clawd-home.ts";
+import clawdHome, {
+  isDebugPrompt, isDebugSkillRead, isUserInput, post, promptSkill, sessionId, skillRead,
+} from "./clawd-home.ts";
 
 function fakePi() {
   const handlers = new Map<string, (e: any, ctx: any) => unknown>();
@@ -150,9 +152,33 @@ test("debug turns send only a verdict, matching the daemon's rules", () => {
   assert.deepEqual(sent, [
     { ev: "prompt", sid: "S1", sub: false, debug: true },
     { ev: "prompt", sid: "S1", sub: false },
-    { ev: "tool", sid: "S1", sub: false, tool: "read", debug: true },
+    { ev: "tool", sid: "S1", sub: false, tool: "read", debug: true, skill_nested: "ak-fix" },
     { ev: "tool", sid: "S1", sub: false, tool: "read" },
   ]);
+});
+
+test("skill rules get only the skill's name, typed or loaded", () => {
+  for (const [prompt, skill] of [
+    ["/skill:ak-cook build the tab", "ak-cook"], ["/ak:plan x", "ak:plan"], ["  /ak-advise", "ak-advise"],
+    ['<skill name="ak-cook" location="x">\nbody\n</skill>\n\n--auto', "ak-cook"],
+    ["please /ak-cook", ""], ["/Users/me/a.txt explain", ""], ["/", ""], ["", ""], [undefined, ""],
+  ] as const) assert.equal(promptSkill(prompt), skill, String(prompt));
+  assert.equal(skillRead("read", { path: "/u/.agents/skills/ak-journal/SKILL.md" }), "ak-journal");
+  assert.equal(skillRead("read", { file_path: "C:\\s\\ak-git\\SKILL.md" }), "ak-git");
+  assert.equal(skillRead("read", { path: "skills/ak-cook/references/x.md" }), "");
+  assert.equal(skillRead("edit", { path: "skills/ak-cook/SKILL.md" }), "");
+
+  const sent: any[] = [];
+  const { pi, handlers } = fakePi();
+  clawdHome(pi, (b) => sent.push(b), fakeStdin());
+  const fire = (name: string, e: any = {}) => handlers.get(name)!(e, tui);
+  fire("before_agent_start", { prompt: '<skill name="ak-cook" location="x">\nsecret body\n</skill>\n\ngo' });
+  fire("tool_call", { toolName: "read", input: { path: "/s/ak-journal/SKILL.md" } });
+  assert.deepEqual(sent, [
+    { ev: "prompt", sid: "S1", sub: false, skill: "ak-cook" },
+    { ev: "tool", sid: "S1", sub: false, tool: "read", skill_nested: "ak-journal" },
+  ]);
+  assert.ok(!JSON.stringify(sent).includes("secret"));   // the prompt never leaves pi
 });
 
 test("a question tool's own untitled dialog keeps the question phrase on the clock", () => {

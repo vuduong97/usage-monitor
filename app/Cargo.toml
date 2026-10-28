@@ -40,3 +40,4 @@ tauri-build = { workspace = true }
 
 [dev-dependencies]
 clawd-testkit = { workspace = true }
+tempfile = { workspace = true }

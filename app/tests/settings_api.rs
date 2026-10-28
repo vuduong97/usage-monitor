@@ -469,7 +469,8 @@ async fn retry_with_no_address_says_to_type_one() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn private_state_is_not_exposed_to_the_page() {
-    // only the 32 commands of the page exist; the Python object's `preview`, `busy`,
+    // only the 37 commands of the page exist (32 from Python + 5 skill animation rule
+    // commands); the Python object's `preview`, `busy`,
     // `set_hooks` and `close_mdns` are not reachable from it
     let mut names: Vec<&str> = PY_API_NAMES.to_vec();
     names.sort_unstable();
@@ -505,6 +506,11 @@ async fn private_state_is_not_exposed_to_the_page() {
         "setup_state",
         "finish_setup",
         "setup_clocks",
+        "skill_rules",
+        "save_skill_rules",
+        "skill_anim_preview",
+        "export_skill_rules",
+        "import_skill_rules",
         "setup_use_clock",
     ];
     want.sort_unstable();

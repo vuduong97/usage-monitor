@@ -715,6 +715,38 @@
       .warn {
         color: var(--warnfg);
       }
+      /* ---- Skill animations (Display tab, advanced) ---- */
+      .adv {
+        margin-top: 14px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+      .adv > summary {
+        cursor: pointer;
+        color: var(--dim);
+        font-size: 13px;
+        padding: 4px 0 10px;
+      }
+      .adv > summary:hover {
+        color: var(--text);
+      }
+      .sr {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto auto;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .sr.head {
+        color: var(--mute);
+        font-size: 11px;
+        padding-top: 0;
+      }
+      .sr .play {
+        font-size: 12px;
+        padding: 4px 9px;
+      }
       /* ---- Agent tab ---- */
       .ag {
         display: flex;
@@ -1076,6 +1108,31 @@
                 ></span>
               </div>
             </div>
+            <details class="adv" id="skillAdv">
+              <summary>Nâng cao: Animation theo skill</summary>
+              <p class="sub">
+                Khi bạn gọi một skill (ví dụ <b>/ak-cook</b>), Clawd chạy animation bạn chọn trong cả
+                lượt đó. Lưu ngay trên máy này, không cần “Lưu vào đồng hồ”.
+              </p>
+              <div class="sr head" aria-hidden="true">
+                <span>Skill</span><span>Animation</span><span>Chữ (trống = mặc định)</span
+                ><span></span><span></span>
+              </div>
+              <div id="skillRules"></div>
+              <datalist id="skillNames"></datalist>
+              <p class="note">
+                Chạy với Claude Code và pi. Câu hỏi, lỗi, nghĩ lâu, chạy test, debug và đọc/tìm
+                file vẫn hiện như bình thường.
+              </p>
+              <p class="note warn hide" id="skillProblems"></p>
+              <div class="row u-mt14">
+                <button class="btn ghost small" id="skillAdd">Thêm skill</button
+                ><button class="btn ghost small" id="skillExport">Xuất…</button
+                ><button class="btn ghost small" id="skillImport">Nhập…</button
+                ><button class="btn danger small" id="skillClear">Xoá hết</button>
+              </div>
+              <p class="note" id="skillMsg" role="status"></p>
+            </details>
           </section>
 
           <!-- USAGE -->
@@ -1327,5 +1384,6 @@
     <script src="preview.js"></script>
     <script src="app.js"></script>
     <script src="setup.js"></script>
+    <script src="skills.js"></script>
   </body>
 </html>

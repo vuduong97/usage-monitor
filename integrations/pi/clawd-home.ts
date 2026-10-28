@@ -53,6 +53,31 @@ export function isDebugSkillRead(tool: string, input: any): boolean {
   return tool === "read" && typeof path === "string" && DEBUG_SKILL_FILE.test(path);
 }
 
+// Skill animation rules (the daemon's prompt_skill / nested_skill, kept in step):
+// only the skill's name is sent, never the prompt. The daemon normalizes it.
+const SKILL_TOKEN = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/;
+const SKILL_FILE_DIR = /(?:^|[/\\])([^/\\]+)[/\\]SKILL\.md$/i;
+
+/** The skill a prompt invokes: the first `<skill name="...">` pi expanded, or a
+ *  typed `/skill:name` / `/name`. Empty when there is none. */
+export function promptSkill(text: unknown): string {
+  if (typeof text !== "string") return "";
+  const block = /<skill\s+name="([^"]+)"/.exec(text);
+  if (block) return SKILL_TOKEN.test(block[1]) ? block[1] : "";
+  const line = text.trimStart();
+  if (!line.startsWith("/")) return "";
+  const name = (line.split(/\s/, 1)[0] ?? "").slice(1).replace(/^skill:/i, "");
+  return SKILL_TOKEN.test(name) ? name : "";
+}
+
+/** The skill a `read` of `<name>/SKILL.md` loads. Empty otherwise. */
+export function skillRead(tool: string, input: any): string {
+  const path = input?.path ?? input?.file_path;
+  if (tool !== "read" || typeof path !== "string") return "";
+  const m = SKILL_FILE_DIR.exec(path);
+  return m && SKILL_TOKEN.test(m[1]) ? m[1] : "";
+}
+
 export function sessionId(ctx: Ctx): string {
   try {
     return String(ctx?.sessionManager?.getSessionId?.() || "default");
@@ -173,7 +198,12 @@ export default function clawdHome(
   };
 
   pi.on("session_start", (_e, ctx) => emit("start", ctx));
-  pi.on("before_agent_start", (e, ctx) => emit("prompt", ctx, isDebugPrompt(e?.prompt) ? { debug: true } : {}));
+  pi.on("before_agent_start", (e, ctx) => {
+    const extra: Record<string, unknown> = isDebugPrompt(e?.prompt) ? { debug: true } : {};
+    const skill = promptSkill(e?.prompt);
+    if (skill) extra.skill = skill;
+    return emit("prompt", ctx, extra);
+  });
   pi.on("tool_call", (e, ctx) => {
     const tool = String(e?.toolName ?? "");
     if (QUESTION_TOOLS.has(tool)) {
@@ -185,6 +215,8 @@ export default function clawdHome(
     const cmd = e?.input?.command;      // lets the daemon spot test runs ("debugger")
     const extra: Record<string, unknown> = typeof cmd === "string" ? { tool, cmd: cmd.slice(0, 300) } : { tool };
     if (isDebugSkillRead(tool, e?.input)) extra.debug = true;
+    const nested = skillRead(tool, e?.input);
+    if (nested) extra.skill_nested = nested;
     emit("tool", ctx, extra);
     if (SUBAGENT_TOOLS.has(tool)) emit("subagent_start", ctx, { tool });
     return undefined;

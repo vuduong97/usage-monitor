@@ -616,6 +616,8 @@ async fn run(shared: Arc<Shared>, mut stop: StopRx) {
                 Box::new(move || clawd_store::prefs::clock_screen(&paths) == Some(SCREEN_USAGE)),
             )
             .shared();
+            // Skill animation rules: the settings window writes the file, the Brain follows it.
+            lock(&the_brain).watch_skill_rules(cfg.paths.skill_rules_file(), now_epoch());
             let normalize_fn: NormalizeFn = Arc::new(normalize);
             let mut srv = EventServer::new(Arc::clone(&the_brain), normalize_fn).with_port(s.port);
             match srv.start().await {

@@ -39,6 +39,8 @@ pub const ATTENTION_FILE_NAME: &str = "attention";
 /// old feed's `feed-cache/` and `renderer/` are left alone (0.2.x may run again).
 pub const STYLE_PACKS_DIR_NAME: &str = "style-packs";
 pub const APP_UPDATE_DIR_NAME: &str = "app-update";
+/// Skill animation rules (`clawd_events::skill_rules`). New in 0.3.0.
+pub const SKILL_RULES_FILE_NAME: &str = "animation-rules.json";
 
 /// `paths.LOG_MAX`: the log rotates once it passes this many bytes.
 pub const LOG_MAX: u64 = 1_000_000;
