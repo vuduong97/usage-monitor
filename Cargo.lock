@@ -397,7 +397,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-agents"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-config",
  "clawd-contracts",
@@ -410,7 +410,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-app"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-agents",
  "clawd-appupdate",
@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-appupdate"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-config",
  "clawd-contracts",
@@ -456,7 +456,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-clock"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-contracts",
  "clawd-testkit",
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-config"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-contracts",
  "clawd-store",
@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-contracts"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -491,7 +491,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-e2e"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-agents",
  "clawd-app",
@@ -510,7 +510,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-events"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bytes",
  "clawd-contracts",
@@ -531,7 +531,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-firmware"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "base64 0.23.1",
  "clawd-clock",
@@ -555,7 +555,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-store"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-contracts",
  "clawd-testkit",
@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-testkit"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clawd-agents",
  "clawd-appupdate",
@@ -593,7 +593,7 @@ dependencies = [
 
 [[package]]
 name = "clawd-usage"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "chrono",
  "clawd-config",
