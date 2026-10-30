@@ -402,11 +402,14 @@ mod tests {
         assert_eq!(watch.poll(12.0), Some(SkillRules::default()));
 
         let skills = dir.join("skills");
-        for name in ["ak-cook", "ak:plan", "notes"] {
+        // A `:` cannot be in a Windows file name (error 267), so there `ak:plan` cannot exist on
+        // disk; the folder name is normalized by `normalize_skill` either way.
+        let plan = if cfg!(windows) { "ak-plan" } else { "ak:plan" };
+        for name in ["ak-cook", plan, "notes"] {
             std::fs::create_dir_all(skills.join(name)).unwrap();
         }
         std::fs::write(skills.join("ak-cook").join("SKILL.md"), "x").unwrap();
-        std::fs::write(skills.join("ak:plan").join("SKILL.md"), "x").unwrap();
+        std::fs::write(skills.join(plan).join("SKILL.md"), "x").unwrap();
         assert_eq!(
             find_skills(&[skills.clone(), skills, dir.join("missing")]),
             vec!["ak-cook".to_owned(), "ak-plan".to_owned()]
